@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>TimeLens - Chọn nhân vật</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-fixed": "#ffdea1",
+                        "on-tertiary-fixed": "#410001",
+                        "tertiary": "#ffb4aa",
+                        "secondary": "#44dbd5",
+                        "surface-container-high": "#292932",
+                        "error": "#ffb4ab",
+                        "on-primary": "#402d00",
+                        "on-tertiary-fixed-variant": "#8f100d",
+                        "on-surface-variant": "#d2c5b0",
+                        "inverse-on-surface": "#2f3038",
+                        "background": "#12131b",
+                        "on-error-container": "#ffdad6",
+                        "primary-container": "#d4a437",
+                        "surface-container-lowest": "#0d0e15",
+                        "on-primary-fixed": "#261900",
+                        "secondary-fixed-dim": "#44dbd5",
+                        "surface": "#12131b",
+                        "on-tertiary-container": "#840507",
+                        "on-tertiary": "#690003",
+                        "outline": "#9b8f7c",
+                        "surface-variant": "#33343d",
+                        "tertiary-fixed-dim": "#ffb4aa",
+                        "surface-container-low": "#1a1b23",
+                        "on-primary-fixed-variant": "#5c4300",
+                        "tertiary-container": "#ff8a7b",
+                        "surface-container": "#1e1f27",
+                        "surface-tint": "#f2bf50",
+                        "secondary-fixed": "#68f8f1",
+                        "inverse-surface": "#e3e1ed",
+                        "error-container": "#93000a",
+                        "on-background": "#e3e1ed",
+                        "outline-variant": "#4f4636",
+                        "on-secondary-container": "#004543",
+                        "primary-fixed-dim": "#f2bf50",
+                        "secondary-container": "#00bcb6",
+                        "surface-bright": "#383941",
+                        "inverse-primary": "#7a5900",
+                        "on-secondary-fixed-variant": "#00504d",
+                        "tertiary-fixed": "#ffdad5",
+                        "on-error": "#690005",
+                        "on-primary-container": "#533c00",
+                        "on-surface": "#e3e1ed",
+                        "on-secondary-fixed": "#00201f",
+                        "on-secondary": "#003735",
+                        "surface-dim": "#12131b",
+                        "surface-container-highest": "#33343d",
+                        "primary": "#f2bf50"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "md": "16px",
+                        "safe-area-inset": "20px",
+                        "xs": "8px",
+                        "xl": "32px",
+                        "sm": "12px",
+                        "lg": "24px",
+                        "base": "4px"
+                    },
+                    "fontFamily": {
+                        "label-sm": ["Be Vietnam Pro"],
+                        "headline-lg": ["Be Vietnam Pro"],
+                        "body-md": ["Be Vietnam Pro"],
+                        "headline-lg-mobile": ["Be Vietnam Pro"],
+                        "title-md": ["Be Vietnam Pro"],
+                        "display-lg": ["Be Vietnam Pro"],
+                        "body-lg": ["Be Vietnam Pro"]
+                    },
+                    "fontSize": {
+                        "label-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                        "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "headline-lg-mobile": ["22px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+                        "title-md": ["18px", { "lineHeight": "24px", "fontWeight": "600" }],
+                        "display-lg": ["34px", { "lineHeight": "42px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            background-color: #12131b;
+            color: #e3e1ed;
+        }
+        
+        .dong-son-pattern {
+            background-image: radial-gradient(circle at center, #9b8f7c 1px, transparent 1px);
+            background-size: 20px 20px;
+            opacity: 0.05;
+        }
+        
+        .glass-panel {
+            background: rgba(30, 31, 39, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid #2E2F38;
+        }
+
+        .bloom-primary {
+            box-shadow: 0 0 20px rgba(242, 191, 80, 0.2);
+        }
+
+        .bloom-secondary {
+            box-shadow: 0 0 20px rgba(68, 219, 213, 0.2);
+        }
+    </style>
+</head>
+<body class="font-body-md text-body-md overflow-x-hidden min-h-screen">
+<!-- TopNavBar (Web) -->
+<nav class="hidden md:flex bg-surface/70 dark:bg-surface/70 backdrop-blur-xl docked full-width top-0 sticky border-b border-outline-variant flex justify-between items-center h-16 px-xl ml-64 z-50">
+<div class="flex items-center gap-md">
+<span class="font-headline-lg text-headline-lg font-bold text-primary">TimeLens</span>
+</div>
+<div class="flex items-center gap-md">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+<input class="bg-surface-container border border-outline-variant rounded-full py-2 pl-10 pr-4 text-on-surface focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary transition-all w-64" placeholder="Tìm kiếm nhân vật..." type="text"/>
+</div>
+<button class="text-on-surface-variant hover:text-secondary transition-colors p-2 rounded-full hover:bg-surface-variant/50">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="text-on-surface-variant hover:text-secondary transition-colors p-2 rounded-full hover:bg-surface-variant/50">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<img alt="User Profile Avatar" class="w-8 h-8 rounded-full border border-outline-variant ml-2" data-alt="A small circular avatar portrait of a modern young Vietnamese person against a neutral dark background, styled for a sleek tech app interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBnNbg7G6J6PxC9TPJl1r4URC8aZrH_iiY4S-8XkriFqyO8fKfR66H1r7Rl7NyNBhL02t6vYgpULSLGj420ZsXijrPHbzzoAnpqImpOAeRIXg-YE5yhAwh-gdtYnRvgPjqyxMgfmI9MO2-6k1hLOsC5HCUi661zBdt_2vadn7aGlnhWb2ISte-Oqny7TXeCDwlVuNQEqBKZbsb9wmzlgqjsL-juA8tZ6uVJibakrsZo84RLpKH4P39yR3ieZRAHhRiISUlrOZDWlVej"/>
+</div>
+</nav>
+<!-- SideNavBar (Web) -->
+<aside class="hidden md:flex flex-col bg-surface-container dark:bg-surface-container h-screen w-64 fixed left-0 top-0 border-r border-outline-variant z-40 p-lg">
+<div class="mb-xl text-center">
+<img alt="User Profile Avatar" class="w-20 h-20 rounded-full mx-auto border-2 border-primary bloom-primary mb-sm" data-alt="A high quality portrait photo of a young Vietnamese user acting as an avatar in a dark mode application interface. The lighting is moody with subtle golden accents." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCVjTX8qI8cSSkUifY2rxaj5lBlbf8p8zGvX0L76z0dBbNcAV91wQXE7f9Sq2HD0DNfNtq4GMp9twYS-p3qtRZe7lAeIFZ444PWRCuZqVr1isNF-rNIFwOSll4NvsFJEMR9D1ygcQPDR3q1I9qGVCKsUADi5Hf54ipErQYL1OuDzk--GZN_JyUVghUAvZLS0qsjWiSDK544Hv_vyYaGZRhgmVNgu0vSkBcrzhQbC8V0L76L-UmDtsDf8uA4o8v9jL2LWC2W3d_YW0ft"/>
+<h2 class="font-title-md text-title-md text-on-surface font-semibold">TimeLens</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Nhà du hành di sản</p>
+</div>
+<nav class="flex-1 space-y-2">
+<a class="text-on-surface-variant flex items-center gap-md p-md hover:bg-surface-variant/50 hover:text-secondary transition-colors rounded-lg active:scale-95 duration-200" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-sm text-label-sm">Trang chủ</span>
+</a>
+<a class="text-secondary font-bold flex items-center gap-md p-md bg-secondary-container/10 rounded-lg active:scale-95 duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">explore</span>
+<span class="font-label-sm text-label-sm">Khám phá</span>
+</a>
+<a class="text-on-surface-variant flex items-center gap-md p-md hover:bg-surface-variant/50 hover:text-secondary transition-colors rounded-lg active:scale-95 duration-200" href="#">
+<span class="material-symbols-outlined">military_tech</span>
+<span class="font-label-sm text-label-sm">Nhiệm vụ</span>
+</a>
+<a class="text-on-surface-variant flex items-center gap-md p-md hover:bg-surface-variant/50 hover:text-secondary transition-colors rounded-lg active:scale-95 duration-200" href="#">
+<span class="material-symbols-outlined">history_edu</span>
+<span class="font-label-sm text-label-sm">Cổ vật</span>
+</a>
+<a class="text-on-surface-variant flex items-center gap-md p-md hover:bg-surface-variant/50 hover:text-secondary transition-colors rounded-lg active:scale-95 duration-200" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-sm text-label-sm">Hồ sơ</span>
+</a>
+</nav>
+<div class="mt-auto pt-lg">
+<button class="w-full bg-primary text-on-primary font-title-md text-title-md py-sm rounded-lg hover:bg-surface-tint transition-colors bloom-primary">
+                Bắt đầu hành trình
+            </button>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="md:ml-64 p-safe-area-inset min-h-screen relative">
+<div class="dong-son-pattern absolute inset-0 z-0 pointer-events-none"></div>
+<div class="relative z-10 max-w-7xl mx-auto space-y-xl pt-lg">
+<!-- Page Header -->
+<div class="flex justify-between items-end border-b border-outline-variant pb-md">
+<div>
+<h1 class="font-display-lg text-display-lg text-on-surface font-bold">Chọn nhân vật</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant mt-1">Kết nối với các linh hồn vĩ đại của lịch sử Việt Nam.</p>
+</div>
+</div>
+<!-- Featured Character Card (Bento Style) -->
+<div class="glass-panel rounded-xl overflow-hidden grid grid-cols-1 lg:grid-cols-3 gap-0 bloom-primary relative">
+<!-- Image Side -->
+<div class="lg:col-span-2 relative h-64 lg:h-auto">
+<img alt="Hai Bà Trưng Cinematic Background" class="absolute inset-0 w-full h-full object-cover object-top opacity-80 mix-blend-overlay" data-alt="A cinematic, highly detailed digital painting of two formidable ancient Vietnamese female warriors (Hai Ba Trung) riding war elephants into battle. The scene is illuminated by dramatic, moody lighting with deep shadows and intense golden rim light. The atmosphere is epic, historical, and slightly mythical, embodying a Neo-Heritage dark aesthetic with rich lacquer-inspired textures and subtle glowing neon accents." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAFePiD-urtz5OHfpvuVhscl-AO0kvo6Pz4GYLCAAMgAenECTmdOPPj2nm4B2MXCQHy4l26p-d9A71iGneM1uiLs6MpAHRPXPlSsTU9c5giyygEB7VxhVMgVLuutKQEUGLk0dcS98U7YvJnclnhuV66YiSQxnuuNQAg8RMgsNio11rCvA78ChkS4sWPR2eojhauEpChoJckKhLghBCtHY99fSZt4ATb7K5PrvCCmZReER5B7R1FFf9Bs3y2ErQ18aSsAXXc7AqFgrld"/>
+<div class="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-transparent lg:bg-gradient-to-l lg:from-transparent lg:via-background/50 lg:to-background"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-background to-transparent lg:hidden"></div>
+<div class="absolute bottom-md left-md lg:bottom-lg lg:left-lg">
+<div class="flex items-center gap-2 mb-2">
+<span class="bg-primary/20 text-primary border border-primary/50 px-3 py-1 rounded-full font-label-sm text-label-sm uppercase tracking-wider backdrop-blur-sm">Nổi bật</span>
+<span class="bg-secondary/20 text-secondary border border-secondary/50 px-3 py-1 rounded-full font-label-sm text-label-sm backdrop-blur-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">check_circle</span> Đã chọn
+                            </span>
+</div>
+<h2 class="font-display-lg text-display-lg text-primary font-bold drop-shadow-lg">Hai Bà Trưng</h2>
+<p class="font-title-md text-title-md text-on-surface-variant">Anh hùng dân tộc - Kỷ Nguyên Chống Bắc Thuộc</p>
+</div>
+</div>
+<!-- Info Side -->
+<div class="p-lg lg:p-xl flex flex-col justify-center bg-surface-container/90 relative z-10 border-l border-outline-variant lg:border-t-0 border-t">
+<div class="space-y-4">
+<div>
+<h3 class="font-label-sm text-label-sm text-secondary uppercase tracking-widest mb-1">Chỉ số đặc trưng</h3>
+<div class="space-y-3 mt-3">
+<div>
+<div class="flex justify-between font-label-sm text-label-sm mb-1">
+<span class="text-on-surface">Lãnh đạo</span>
+<span class="text-primary">95</span>
+</div>
+<div class="w-full bg-surface-variant rounded-full h-1.5">
+<div class="bg-gradient-to-r from-primary to-secondary h-1.5 rounded-full" style="width: 95%"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between font-label-sm text-label-sm mb-1">
+<span class="text-on-surface">Chiến thuật</span>
+<span class="text-primary">88</span>
+</div>
+<div class="w-full bg-surface-variant rounded-full h-1.5">
+<div class="bg-gradient-to-r from-primary to-secondary h-1.5 rounded-full" style="width: 88%"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between font-label-sm text-label-sm mb-1">
+<span class="text-on-surface">Tầm ảnh hưởng</span>
+<span class="text-primary">92</span>
+</div>
+<div class="w-full bg-surface-variant rounded-full h-1.5">
+<div class="bg-gradient-to-r from-primary to-secondary h-1.5 rounded-full" style="width: 92%"></div>
+</div>
+</div>
+</div>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mt-4 line-clamp-3">
+                            "Một xin rửa sạch nước thù, Hai xin đem lại nghiệp xưa họ Hùng..." Lãnh đạo cuộc khởi nghĩa oanh liệt chống lại ách đô hộ, biểu tượng bất diệt của tinh thần bất khuất.
+                        </p>
+<button class="w-full mt-6 bg-surface-variant border border-primary text-primary font-title-md text-title-md py-sm rounded-lg hover:bg-primary/10 transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined">swords</span> Bắt đầu cốt truyện
+                        </button>
+</div>
+</div>
+</div>
+<!-- Filters -->
+<div class="flex items-center gap-md overflow-x-auto pb-2 scrollbar-hide">
+<span class="font-label-sm text-label-sm text-on-surface-variant whitespace-nowrap">Thời kỳ:</span>
+<button class="bg-primary/20 text-primary border border-primary px-4 py-1.5 rounded-full font-label-sm text-label-sm whitespace-nowrap bloom-primary">Tất cả</button>
+<button class="bg-surface-container border border-outline-variant text-on-surface px-4 py-1.5 rounded-full font-label-sm text-label-sm whitespace-nowrap hover:border-secondary hover:text-secondary transition-colors">Triều Trần</button>
+<button class="bg-surface-container border border-outline-variant text-on-surface px-4 py-1.5 rounded-full font-label-sm text-label-sm whitespace-nowrap hover:border-secondary hover:text-secondary transition-colors">Triều Lê</button>
+<button class="bg-surface-container border border-outline-variant text-on-surface px-4 py-1.5 rounded-full font-label-sm text-label-sm whitespace-nowrap hover:border-secondary hover:text-secondary transition-colors">Triều Nguyễn</button>
+<button class="bg-surface-container border border-outline-variant text-on-surface px-4 py-1.5 rounded-full font-label-sm text-label-sm whitespace-nowrap hover:border-secondary hover:text-secondary transition-colors">Khởi nghĩa</button>
+</div>
+<!-- Character Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-lg pb-xl">
+<!-- Character Card 1 (Unlocked) -->
+<div class="glass-panel rounded-xl overflow-hidden group cursor-pointer border border-outline-variant hover:border-secondary hover:bloom-secondary transition-all duration-300">
+<div class="h-48 relative overflow-hidden">
+<img alt="Trần Hưng Đạo Portrait" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-70" data-alt="A stylized portrait of the legendary Vietnamese general Tran Hung Dao, rendered in a dark, atmospheric Neo-Heritage style. He wears ornate ancient armor with subtle golden motifs inspired by Dong Son drums. The background is a moody, smoky battlefield illuminated by flashes of neon cyan energy, blending history with a futuristic sci-fi aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBIJnHju8lazv1QtWUJpk40HIQKWQqHZjgdUqqP6rr6Hv-Art4-0e3ctDx1QMAJv95xyGi1sadkDst3BPvw4YVtCFjfiw2YmmGLJcpeY7IsxV4zikR2YtC7FFa5IUHae2aw1B14IgZ5ENMNMkhdopllYww5YCVxErSvoDLBP8GKRuKJ-13yngXWjYNvaGhEry8BbGKVVgIFaGLzuriWWhZiIAIsuIY-Ntq5Oxs-YZmvsbC_vPevHJgZeC_bwhJXClmrvYXGIdZj-QZQ"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-high to-transparent"></div>
+<div class="absolute top-2 right-2 bg-secondary/20 text-secondary p-1 rounded-full backdrop-blur-sm">
+<span class="material-symbols-outlined text-[16px]">lock_open</span>
+</div>
+</div>
+<div class="p-md bg-surface-container-high">
+<div class="flex justify-between items-start mb-2">
+<div>
+<h3 class="font-title-md text-title-md text-on-surface font-bold">Trần Hưng Đạo</h3>
+<p class="font-label-sm text-label-sm text-secondary">Triều Trần</p>
+</div>
+<span class="bg-surface-variant px-2 py-1 rounded text-xs text-on-surface-variant border border-outline-variant">Lv. 12</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant text-sm line-clamp-2">Đại vương chỉ huy quân đội Đại Việt ba lần đánh tan quân Nguyên Mông xâm lược.</p>
+</div>
+</div>
+<!-- Character Card 2 (Unlocked) -->
+<div class="glass-panel rounded-xl overflow-hidden group cursor-pointer border border-outline-variant hover:border-secondary hover:bloom-secondary transition-all duration-300">
+<div class="h-48 relative overflow-hidden">
+<img alt="Nguyễn Huệ Portrait" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-70" data-alt="A dramatic illustration of Emperor Quang Trung (Nguyen Hue) leading a rapid march. The scene is dynamic, captured at night with fiery torchlight reflecting off intricate lacquered armor. The aesthetic is modern dark-mode with deep shadows, high-contrast gold highlights, and a cinematic intensity suited for a high-end UI card." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDR0bl8I9dw075Ox8lHr0TmB0wF2niD1Ab88ofdWTKC1VIscu4bDhgnB24dxgFCGYE6LXVn0-wqHS8DqUPL7q_rFm5ZYBMQJsalVzSlk_mGzRCXFfO3ESB48bt4Pl8_Z3GD0895vno_P-ocjZqjJ12t_-E2Ps76brXSHxiwKgBIK_xLz8Z7y-JlUYVFutW0B1iW11XMKrUX-TKJVkY8_wr_YaQN4FUL-FDThUrKxrZgMfNSz1YJUSCyEaqbA687n8n1ot9V5MnmMMiE"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-high to-transparent"></div>
+<div class="absolute top-2 right-2 bg-secondary/20 text-secondary p-1 rounded-full backdrop-blur-sm">
+<span class="material-symbols-outlined text-[16px]">lock_open</span>
+</div>
+</div>
+<div class="p-md bg-surface-container-high">
+<div class="flex justify-between items-start mb-2">
+<div>
+<h3 class="font-title-md text-title-md text-on-surface font-bold">Quang Trung</h3>
+<p class="font-label-sm text-label-sm text-secondary">Triều Tây Sơn</p>
+</div>
+<span class="bg-surface-variant px-2 py-1 rounded text-xs text-on-surface-variant border border-outline-variant">Lv. 8</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant text-sm line-clamp-2">Vị hoàng đế bách chiến bách thắng, thần tốc đại phá quân Thanh.</p>
+</div>
+</div>
+<!-- Character Card 3 (Locked) -->
+<div class="glass-panel rounded-xl overflow-hidden relative border border-outline-variant/50 opacity-80">
+<div class="h-48 relative overflow-hidden grayscale">
+<img alt="Lê Lợi Portrait Locked" class="w-full h-full object-cover opacity-50" data-alt="A silhouette or obscured portrait of the ancient Vietnamese king Le Loi, set against a misty, dark landscape depicting the legend of the returned sword at Hoan Kiem lake. The image is rendered in grayscale with a heavy dark overlay, emphasizing mystery and a 'locked' or undiscovered state in a video game interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBbNZwILDd5sltTIpjt0m4i2Kqsa6l9p8tQWKIMwbmxhkvViGFtFYtcfiGO35z2uB_vIa2og1MX_dtgYuG3e4fgS9isnRleTamaR4Q0Op3IGN-TK5kEaKI8lfavvbRYWWVVvC58oxnzFMJelnj3OXiNhteJEILJzoqLhbyR5hP069W5dE5D9aQ_61sMTzKr-9J_pc8cjDkk7k2ZKChG1R2qNo856PxjCSHKy3y5ZYi0SctgfowLit8vF3bC5kIKEFOcr4CAoigsNnPM"/>
+<div class="absolute inset-0 bg-background/60 backdrop-blur-[2px]"></div>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<div class="bg-surface-variant/80 p-3 rounded-full mb-2">
+<span class="material-symbols-outlined text-on-surface-variant text-[24px]">lock</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Cần 500 Mảnh Cổ Vật</span>
+</div>
+</div>
+<div class="p-md bg-surface-container-high/50">
+<div class="flex justify-between items-start mb-2">
+<div>
+<h3 class="font-title-md text-title-md text-on-surface-variant font-bold">Lê Lợi</h3>
+<p class="font-label-sm text-label-sm text-on-surface-variant/70">Triều Lê Sơ</p>
+</div>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant/70 text-sm line-clamp-2">Bình Định Vương, người lãnh đạo khởi nghĩa Lam Sơn ròng rã 10 năm.</p>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

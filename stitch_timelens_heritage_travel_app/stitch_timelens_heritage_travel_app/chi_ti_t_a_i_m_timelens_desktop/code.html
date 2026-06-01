@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Hoàng Thành Thăng Long - TimeLens</title>
+<!-- Google Fonts: Be Vietnam Pro & Material Symbols -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Configuration -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-variant": "#33343d",
+                        "on-primary-fixed": "#261900",
+                        "primary-container": "#d4a437",
+                        "surface-bright": "#383941",
+                        "on-error": "#690005",
+                        "tertiary-container": "#ff8a7b",
+                        "secondary-fixed-dim": "#44dbd5",
+                        "inverse-surface": "#e3e1ed",
+                        "on-tertiary-fixed": "#410001",
+                        "tertiary": "#ffb4aa",
+                        "surface-tint": "#f2bf50",
+                        "primary-fixed-dim": "#f2bf50",
+                        "on-surface": "#e3e1ed",
+                        "error-container": "#93000a",
+                        "surface-container-highest": "#33343d",
+                        "inverse-on-surface": "#2f3038",
+                        "surface-dim": "#12131b",
+                        "primary": "#f2bf50",
+                        "on-secondary": "#003735",
+                        "surface-container-lowest": "#0d0e15",
+                        "on-primary": "#402d00",
+                        "surface-container-high": "#292932",
+                        "on-primary-fixed-variant": "#5c4300",
+                        "surface-container": "#1e1f27",
+                        "on-tertiary-fixed-variant": "#8f100d",
+                        "on-background": "#e3e1ed",
+                        "secondary-container": "#00bcb6",
+                        "on-tertiary": "#690003",
+                        "secondary": "#44dbd5",
+                        "on-tertiary-container": "#840507",
+                        "surface-container-low": "#1a1b23",
+                        "secondary-fixed": "#68f8f1",
+                        "outline": "#9b8f7c",
+                        "on-secondary-fixed-variant": "#00504d",
+                        "primary-fixed": "#ffdea1",
+                        "surface": "#12131b",
+                        "on-secondary-container": "#004543",
+                        "on-error-container": "#ffdad6",
+                        "on-primary-container": "#533c00",
+                        "outline-variant": "#4f4636",
+                        "tertiary-fixed-dim": "#ffb4aa",
+                        "tertiary-fixed": "#ffdad5",
+                        "on-surface-variant": "#d2c5b0",
+                        "inverse-primary": "#7a5900",
+                        "on-secondary-fixed": "#00201f",
+                        "error": "#ffb4ab",
+                        "background": "#12131b"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "lg": "24px",
+                        "safe-area-inset": "20px",
+                        "sm": "12px",
+                        "xs": "8px",
+                        "xl": "32px",
+                        "md": "16px",
+                        "base": "4px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Be Vietnam Pro"],
+                        "title-md": ["Be Vietnam Pro"],
+                        "headline-lg-mobile": ["Be Vietnam Pro"],
+                        "headline-lg": ["Be Vietnam Pro"],
+                        "label-sm": ["Be Vietnam Pro"],
+                        "display-lg": ["Be Vietnam Pro"],
+                        "body-lg": ["Be Vietnam Pro"]
+                    },
+                    "fontSize": {
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "title-md": ["18px", { "lineHeight": "24px", "fontWeight": "600" }],
+                        "headline-lg-mobile": ["22px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+                        "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+                        "label-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                        "display-lg": ["34px", { "lineHeight": "42px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        /* Custom Scrollbar for dark theme */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #12131b; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #33343d; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4f4636; 
+        }
+        
+        /* Subtle Dong Son drum pattern overlay */
+        .dong-son-pattern {
+            background-image: radial-gradient(circle at center, rgba(155, 143, 124, 0.03) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md h-screen w-full flex overflow-hidden selection:bg-primary/30 selection:text-primary">
+<!-- SideNavBar (from JSON) -->
+<nav class="h-screen w-64 fixed left-0 top-0 bg-surface border-r border-outline-variant/30 flex flex-col py-lg px-md gap-md z-50">
+<!-- Brand Header -->
+<div class="px-sm pb-lg mb-md border-b border-outline-variant/20">
+<h1 class="font-headline-lg text-headline-lg text-primary tracking-tight">TimeLens</h1>
+<p class="font-label-sm text-label-sm text-on-surface-variant opacity-80 mt-1">Di sản Việt Nam</p>
+</div>
+<!-- Navigation Tabs -->
+<ul class="flex flex-col gap-sm flex-1">
+<!-- Inactive Tab -->
+<li class="flex items-center gap-md px-sm py-sm rounded-lg cursor-pointer transition-all duration-300 text-on-surface-variant opacity-70 hover:text-primary hover:bg-surface-variant/50">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">home</span>
+<span class="font-title-md text-title-md">Trang chủ</span>
+</li>
+<!-- Active Tab (Location Details falls under Explore/Khám phá) -->
+<li class="flex items-center gap-md px-sm py-sm rounded-lg cursor-pointer transition-all duration-300 text-secondary font-bold relative after:content-[''] after:absolute after:right-0 after:h-4 after:w-1 after:bg-secondary after:shadow-[0_0_8px_#44dbd5]">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">explore</span>
+<span class="font-title-md text-title-md">Khám phá</span>
+</li>
+<!-- Inactive Tab -->
+<li class="flex items-center gap-md px-sm py-sm rounded-lg cursor-pointer transition-all duration-300 text-on-surface-variant opacity-70 hover:text-primary hover:bg-surface-variant/50">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">military_tech</span>
+<span class="font-title-md text-title-md">Nhiệm vụ</span>
+</li>
+<!-- Inactive Tab -->
+<li class="flex items-center gap-md px-sm py-sm rounded-lg cursor-pointer transition-all duration-300 text-on-surface-variant opacity-70 hover:text-primary hover:bg-surface-variant/50">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">account_circle</span>
+<span class="font-title-md text-title-md">Hồ sơ</span>
+</li>
+<!-- Inactive Tab -->
+<li class="flex items-center gap-md px-sm py-sm rounded-lg cursor-pointer transition-all duration-300 text-on-surface-variant opacity-70 hover:text-primary hover:bg-surface-variant/50">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">leaderboard</span>
+<span class="font-title-md text-title-md">Bảng xếp hạng</span>
+</li>
+</ul>
+<!-- Bottom Action (Optional placeholder to fill space) -->
+<div class="mt-auto px-sm">
+<button class="w-full flex items-center justify-center gap-sm py-sm rounded-lg border border-outline-variant/50 text-on-surface-variant hover:text-primary hover:border-primary/50 transition-colors">
+<span class="material-symbols-outlined text-[20px]">logout</span>
+<span class="font-body-md text-body-md">Đăng xuất</span>
+</button>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="flex-1 ml-64 h-screen overflow-y-auto relative bg-background dong-son-pattern">
+<!-- Top App Bar (Simplified for contextual back action) -->
+<header class="sticky top-0 z-40 w-full h-16 bg-surface/70 backdrop-blur-xl border-b border-outline-variant/20 flex items-center justify-between px-lg">
+<button class="flex items-center gap-sm text-on-surface-variant hover:text-primary transition-colors group">
+<span class="material-symbols-outlined group-hover:-translate-x-1 transition-transform">arrow_back</span>
+<span class="font-label-sm text-label-sm uppercase tracking-widest">Quay lại Khám phá</span>
+</button>
+<div class="flex items-center gap-md">
+<button class="w-10 h-10 rounded-full flex items-center justify-center bg-surface-variant/50 hover:bg-surface-variant text-on-surface transition-colors">
+<span class="material-symbols-outlined">bookmark</span>
+</button>
+<button class="w-10 h-10 rounded-full flex items-center justify-center bg-surface-variant/50 hover:bg-surface-variant text-on-surface transition-colors">
+<span class="material-symbols-outlined">share</span>
+</button>
+</div>
+</header>
+<div class="p-xl max-w-[1440px] mx-auto flex flex-col gap-xl">
+<!-- Hero Section -->
+<section class="relative w-full h-[500px] rounded-xl overflow-hidden group shadow-2xl">
+<!-- Background Image -->
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105" data-alt="A wide, sweeping, cinematic drone shot of the Imperial Citadel of Thang Long (Hoàng Thành Thăng Long) in Hanoi at dusk. The ancient stone archways and traditional tiered roofs are bathed in dramatic, warm golden-hour lighting. The sky is a deep twilight blue, contrasting with the glowing yellow lanterns illuminating the historic pathways. The image embodies a 'Neo-Heritage' aesthetic, blending rich historical weight with a crisp, modern photographic clarity." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuD-SepIqB0TqT6qOPAiOh8BVIIdokfYe4Yk0pCGLUWoN88iwS_bSDM75w6079zifUEtoiImerbj3NwOLUUP_ld3nx5eauFaq5o5aeoU2gpyihzyQDu-Z1wuNtNw9xnZj2o1jLN1mwcu2ewzC55z6uA_TbpsUanGbEr7V_2ACDk6GbQL-0gcThflRJnO8DEZ4ZWBzUAex5uSAoR8K7GW822dSNqh85pvx6Ow6WRUstnrHZVicPYdVCdLV4zGvrJsfqXhCkiYZu9kfqg5');">
+</div>
+<!-- Gradient Overlay -->
+<div class="absolute inset-0 bg-gradient-to-t from-[#0d0e15] via-[#0d0e15]/60 to-transparent"></div>
+<div class="absolute inset-0 bg-gradient-to-r from-[#0d0e15]/80 via-transparent to-transparent"></div>
+<!-- Hero Content -->
+<div class="absolute bottom-0 left-0 w-full p-xl flex flex-col justify-end">
+<div class="max-w-3xl">
+<!-- Tags -->
+<div class="flex flex-wrap gap-sm mb-md">
+<span class="px-sm py-1 rounded-full border border-secondary text-secondary font-label-sm text-label-sm flex items-center gap-1 bg-secondary/10 backdrop-blur-md">
+<span class="material-symbols-outlined text-[14px]">public</span>
+                                UNESCO World Heritage
+                            </span>
+<span class="px-sm py-1 rounded-full border border-primary text-primary font-label-sm text-label-sm flex items-center gap-1 bg-primary/10 backdrop-blur-md">
+<span class="material-symbols-outlined text-[14px]">history</span>
+                                Lê Dynasty
+                            </span>
+<span class="px-sm py-1 rounded-full border border-outline text-on-surface-variant font-label-sm text-label-sm bg-surface/30 backdrop-blur-md">
+                                Hà Nội
+                            </span>
+</div>
+<h1 class="font-display-lg text-display-lg text-on-surface mb-sm drop-shadow-lg">
+                            Hoàng Thành Thăng Long
+                        </h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl text-balance drop-shadow-md">
+                            Trung tâm quyền lực chính trị kéo dài hơn 13 thế kỷ của các triều đại phong kiến Việt Nam. Khám phá những tầng lớp lịch sử ẩn sâu dưới lòng đất thủ đô qua lăng kính thực tế ảo và công nghệ AI.
+                        </p>
+</div>
+</div>
+</section>
+<!-- Main Content Layout (Grid) -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-lg">
+<!-- Left Column: Actions Bento Grid (8 cols) -->
+<div class="col-span-1 md:col-span-8 grid grid-cols-2 gap-md auto-rows-[200px]">
+<!-- Time Portal (Primary Action - Large spanning card) -->
+<div class="col-span-2 relative rounded-xl overflow-hidden group cursor-pointer border border-primary/30 hover:border-primary transition-all duration-500 shadow-[0_0_15px_rgba(242,191,80,0.1)] hover:shadow-[0_0_30px_rgba(242,191,80,0.3)]">
+<div class="absolute inset-0 bg-cover bg-center opacity-40 group-hover:opacity-60 transition-opacity duration-500" data-alt="An abstract, high-tech conceptual visualization of a 'Time Portal'. Glowing concentric rings of bright gold and neon cyan float within a dark, cavernous space that resembles an ancient stone corridor. Ethereal light particles and subtle motion blur suggest travel through time. The style is cinematic science fiction mixed with ancient historical elements, emphasizing a mysterious and energetic 'Neo-Heritage' mood." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDSxHkFNh17g8pst6TFu_mj5V-N0MImn3aJx_PoPsJtH8QlMhIDxAdf_RjAnn1SLd00Uq7l-MhbiM9Qx1e-jd9qk3rxc5lnfRROnGDOy0rVVzik90gNv31e-e0-pwAxJYzDxN1iAw2tlCHZeo80u3VWdOa4FYJ6f7EM-T0m5ZeoRtzwoKCFRZ0ObLq_kfmIjcl37u_WZceqIwCxr9iti-_gz-XJJUY5o8TrD9fZK-NLP1SmYux1KxSxpe6m1E6KgCvxk523hhSMKilX');">
+</div>
+<div class="absolute inset-0 bg-gradient-to-r from-surface-container via-surface-container/80 to-transparent"></div>
+<div class="relative h-full w-full p-lg flex flex-col justify-between z-10">
+<div class="flex justify-between items-start">
+<div>
+<div class="flex items-center gap-xs text-primary mb-1">
+<span class="material-symbols-outlined text-[18px] animate-pulse">camera_indoor</span>
+<span class="font-label-sm text-label-sm tracking-widest uppercase">Trải nghiệm chính</span>
+</div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Time Portal: Triều Lê Sơ</h2>
+</div>
+<div class="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-on-primary shadow-[0_0_20px_rgba(242,191,80,0.5)] group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-[24px]">play_arrow</span>
+</div>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-md">
+                                Xuyên không về thế kỷ 15, chứng kiến cung điện nguy nga và cuộc sống vương triều dưới góc nhìn AR/VR chân thực nhất.
+                            </p>
+</div>
+</div>
+<!-- 360 Tour Card -->
+<div class="col-span-1 bg-surface-container-low border border-outline-variant/20 rounded-xl p-md flex flex-col justify-between hover:bg-surface-variant/30 transition-colors group cursor-pointer relative overflow-hidden">
+<!-- Glass shine effect -->
+<div class="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+<div class="w-10 h-10 rounded-lg bg-secondary/10 flex items-center justify-center text-secondary mb-md">
+<span class="material-symbols-outlined">360</span>
+</div>
+<div>
+<h3 class="font-title-md text-title-md text-on-surface mb-1 group-hover:text-secondary transition-colors">360° Virtual Tour</h3>
+<p class="font-body-md text-body-md text-on-surface-variant opacity-80 line-clamp-2">Khám phá khuôn viên hiện tại qua các góc nhìn toàn cảnh.</p>
+</div>
+</div>
+<!-- Quests Card -->
+<div class="col-span-1 bg-surface-container-low border border-outline-variant/20 rounded-xl p-md flex flex-col justify-between hover:bg-surface-variant/30 transition-colors group cursor-pointer relative overflow-hidden">
+<div class="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full blur-2xl -mr-10 -mt-10 group-hover:bg-primary/10 transition-colors"></div>
+<div class="flex justify-between items-start mb-md">
+<div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">swords</span>
+</div>
+<span class="bg-surface border border-outline-variant px-2 py-1 rounded-md font-label-sm text-label-sm text-on-surface flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+                                3 Hiện có
+                            </span>
+</div>
+<div>
+<h3 class="font-title-md text-title-md text-on-surface mb-1 group-hover:text-primary transition-colors">Nhiệm vụ địa phương</h3>
+<p class="font-body-md text-body-md text-on-surface-variant opacity-80 line-clamp-2">Tìm kiếm cổ vật ẩn giấu để nhận huy hiệu Hoàng gia.</p>
+</div>
+</div>
+<!-- AI Chatbot Card -->
+<div class="col-span-2 md:col-span-1 bg-surface-container-low border border-outline-variant/20 rounded-xl p-md flex flex-row items-center justify-between hover:bg-surface-variant/30 transition-colors group cursor-pointer">
+<div class="flex items-center gap-md">
+<div class="w-12 h-12 rounded-full bg-gradient-to-br from-secondary/20 to-primary/20 border border-secondary/30 flex items-center justify-center text-on-surface">
+<span class="material-symbols-outlined">robot_2</span>
+</div>
+<div>
+<h3 class="font-title-md text-title-md text-on-surface">Hỏi đáp cùng Sử Gia AI</h3>
+<p class="font-label-sm text-label-sm text-on-surface-variant mt-1">Giải đáp mọi thắc mắc 24/7</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline-variant group-hover:text-on-surface group-hover:translate-x-1 transition-all">arrow_forward</span>
+</div>
+<!-- Artifacts Gallery snippet -->
+<div class="col-span-2 md:col-span-1 bg-surface-container-low border border-outline-variant/20 rounded-xl p-md flex flex-row items-center justify-between hover:bg-surface-variant/30 transition-colors group cursor-pointer">
+<div class="flex items-center gap-md">
+<div class="w-12 h-12 rounded-lg bg-surface-variant flex items-center justify-center text-on-surface overflow-hidden">
+<img alt="Artifact" class="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity" data-alt="A close-up photograph of an ancient, weathered ceramic vase resting on a dark velvet surface in a museum setting. The vase features intricate, faded blue motifs indicative of early Asian dynasties. The lighting is soft and highly focused, creating deep shadows that emphasize the texture and historical age of the artifact against a pitch-black background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDQj2PLOKcxxTyAFOaAylftelMNdhnEea7kXXIUTP5wEp-AuXxM7ik4YTnHpzuE-06co-9niuygjNYq2Q9xmvEgOmujjpKsy9Y7yOgAAEtP8pDAd4zrA-kfuZpH8tiO5iZLEfOQ0pH0g-FpOR3KABiH8lrwV4vrbgQyPwuLCdV4xcmckh1Hu465-PhqOmV73gSyv3ap7Jztxqf9ehhdElbbrmBR2FXHQo7oDtjILVxfISjYKczqL5GmPdB6a8-D9IEdsaE_Y4gAgO8W"/>
+</div>
+<div>
+<h3 class="font-title-md text-title-md text-on-surface">Bộ sưu tập Cổ vật</h3>
+<p class="font-label-sm text-label-sm text-on-surface-variant mt-1">120+ hiện vật được scan 3D</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline-variant group-hover:text-on-surface group-hover:translate-x-1 transition-all">arrow_forward</span>
+</div>
+</div>
+<!-- Right Column: About Section (4 cols) -->
+<div class="col-span-1 md:col-span-4 flex flex-col gap-md">
+<div class="bg-surface-container border border-outline-variant/30 rounded-xl p-lg sticky top-24 h-fit">
+<div class="flex items-center gap-sm mb-md pb-sm border-b border-outline-variant/20">
+<span class="material-symbols-outlined text-primary">menu_book</span>
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">Về di tích này</h2>
+</div>
+<div class="prose prose-invert prose-p:text-on-surface-variant prose-p:font-body-md prose-p:leading-relaxed prose-strong:text-on-surface prose-a:text-secondary">
+<p>
+<strong>Hoàng thành Thăng Long</strong> là quần thể di tích gắn với lịch sử kinh thành Thăng Long - Đông Kinh và tỉnh thành Hà Nội bắt đầu từ thời kì tiền Thăng Long (An Nam đô hộ phủ thế kỷ VII) qua thời Đinh - Tiền Lê, phát triển mạnh dưới thời Lý, Trần, Lê sơ.
+                            </p>
+<p>
+                                Đây là công trình kiến trúc đồ sộ, được các triều vua xây dựng trong nhiều giai đoạn lịch sử và trở thành di tích quan trọng bậc nhất trong hệ thống các di tích Việt Nam.
+                            </p>
+</div>
+<div class="mt-lg pt-md border-t border-outline-variant/20 flex flex-col gap-sm">
+<div class="flex items-center justify-between text-body-md text-on-surface-variant">
+<span class="flex items-center gap-xs"><span class="material-symbols-outlined text-[18px]">location_on</span> Vị trí</span>
+<span class="text-on-surface text-right max-w-[150px] truncate">19C Hoàng Diệu, Ba Đình</span>
+</div>
+<div class="flex items-center justify-between text-body-md text-on-surface-variant">
+<span class="flex items-center gap-xs"><span class="material-symbols-outlined text-[18px]">schedule</span> Giờ mở cửa</span>
+<span class="text-on-surface">08:00 - 17:00</span>
+</div>
+<div class="flex items-center justify-between text-body-md text-on-surface-variant">
+<span class="flex items-center gap-xs"><span class="material-symbols-outlined text-[18px]">confirmation_number</span> Vé vào cửa</span>
+<span class="text-on-surface">30,000 VND</span>
+</div>
+</div>
+<button class="w-full mt-lg py-sm rounded-lg border border-secondary text-secondary hover:bg-secondary/10 font-title-md transition-colors flex items-center justify-center gap-xs">
+<span class="material-symbols-outlined">map</span>
+                            Mở Bản Đồ
+                        </button>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer spacing -->
+<div class="h-xl w-full"></div>
+</main>
+</body></html>

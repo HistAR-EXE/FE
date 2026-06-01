@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>TimeLens - Hồ sơ</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "secondary-container": "#00bcb6",
+                      "on-surface": "#e3e1ed",
+                      "surface-variant": "#33343d",
+                      "outline-variant": "#4f4636",
+                      "on-secondary-fixed-variant": "#00504d",
+                      "surface-tint": "#f2bf50",
+                      "on-primary-fixed": "#261900",
+                      "surface-container-low": "#1a1b23",
+                      "on-tertiary-fixed-variant": "#8f100d",
+                      "tertiary-container": "#ff8a7b",
+                      "on-secondary": "#003735",
+                      "on-background": "#e3e1ed",
+                      "on-primary-container": "#533c00",
+                      "secondary": "#44dbd5",
+                      "on-tertiary-fixed": "#410001",
+                      "surface": "#12131b",
+                      "inverse-surface": "#e3e1ed",
+                      "surface-container-highest": "#33343d",
+                      "tertiary": "#ffb4aa",
+                      "on-error": "#690005",
+                      "surface-container": "#1e1f27",
+                      "secondary-fixed-dim": "#44dbd5",
+                      "error": "#ffb4ab",
+                      "background": "#12131b",
+                      "surface-container-high": "#292932",
+                      "on-tertiary-container": "#840507",
+                      "on-secondary-container": "#004543",
+                      "error-container": "#93000a",
+                      "primary": "#f2bf50",
+                      "on-primary": "#402d00",
+                      "surface-container-lowest": "#0d0e15",
+                      "on-primary-fixed-variant": "#5c4300",
+                      "primary-container": "#d4a437",
+                      "tertiary-fixed": "#ffdad5",
+                      "surface-dim": "#12131b",
+                      "inverse-on-surface": "#2f3038",
+                      "surface-bright": "#383941",
+                      "on-error-container": "#ffdad6",
+                      "inverse-primary": "#7a5900",
+                      "primary-fixed": "#ffdea1",
+                      "on-surface-variant": "#d2c5b0",
+                      "outline": "#9b8f7c",
+                      "on-tertiary": "#690003",
+                      "primary-fixed-dim": "#f2bf50",
+                      "secondary-fixed": "#68f8f1",
+                      "tertiary-fixed-dim": "#ffb4aa",
+                      "on-secondary-fixed": "#00201f"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "sm": "12px",
+                      "base": "4px",
+                      "xl": "32px",
+                      "xs": "8px",
+                      "lg": "24px",
+                      "safe-area-inset": "20px",
+                      "md": "16px"
+              },
+              "fontFamily": {
+                      "title-md": [
+                              "Be Vietnam Pro"
+                      ],
+                      "label-sm": [
+                              "Be Vietnam Pro"
+                      ],
+                      "body-md": [
+                              "Be Vietnam Pro"
+                      ],
+                      "display-lg": [
+                              "Be Vietnam Pro"
+                      ],
+                      "body-lg": [
+                              "Be Vietnam Pro"
+                      ],
+                      "headline-lg-mobile": [
+                              "Be Vietnam Pro"
+                      ],
+                      "headline-lg": [
+                              "Be Vietnam Pro"
+                      ]
+              },
+              "fontSize": {
+                      "title-md": [
+                              "18px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "label-sm": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "body-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "display-lg": [
+                              "34px",
+                              {
+                                      "lineHeight": "42px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-lg": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-lg-mobile": [
+                              "22px",
+                              {
+                                      "lineHeight": "28px",
+                                      "letterSpacing": "-0.01em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "headline-lg": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "letterSpacing": "-0.01em",
+                                      "fontWeight": "700"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+      </script>
+<style>
+        body { font-family: 'Be Vietnam Pro', sans-serif; }
+        .glass-panel {
+            background: rgba(27, 28, 36, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(46, 47, 56, 1);
+        }
+        .glow-active {
+            box-shadow: 0 0 15px rgba(68, 219, 213, 0.2);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex">
+<!-- SideNavBar -->
+<nav class="hidden md:flex bg-surface dark:bg-surface fixed left-0 top-0 h-screen w-64 border-r border-outline-variant bg-surface-container-low shadow-md flex-col py-lg z-50">
+<div class="px-md mb-xl flex items-center gap-sm">
+<div class="w-10 h-10 rounded-full overflow-hidden border-2 border-primary">
+<img alt="User Profile Avatar" class="w-full h-full object-cover" data-alt="A cinematic portrait of a young Vietnamese woman with subtle neon cyan lighting reflecting on her face, in a Neo-Heritage dark mode aesthetic setting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCYjl866JLwRva7-0CX9LZseDQMDB6mWn120vyid5zLOw6IdzPaeXdosSWrVN_DkimmIQKcRQ56OzIXisWuDDplLYa50vRvuRScNDe3jLVeOmwMdYhH6IK0YLCV6ko2sstP39IVnOh8OZZYIGDIykrQl-X9aVqPtD_RLMpL_L8rXEGDhPKmx3UZily2p7HUGKRzEeQncZk9lYIbDDpEieKCJzpBE6cPrGTGM5VATXfveSDEVDLizcqzStCNoAa-KZxKi78sO32M-Z2G"/>
+</div>
+<div>
+<h1 class="font-headline-lg text-headline-lg text-primary uppercase tracking-widest">TimeLens</h1>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Nhà du hành di sản</p>
+</div>
+</div>
+<div class="flex flex-col gap-sm px-sm flex-grow">
+<!-- Inactive -->
+<a class="flex items-center gap-md text-on-surface-variant hover:text-on-surface px-4 py-3 transition-colors hover:bg-surface-variant/50 transition-all duration-300 rounded-lg group" href="#">
+<span class="material-symbols-outlined text-[24px]">home</span>
+<span class="font-title-md text-title-md">Trang chủ</span>
+</a>
+<!-- Inactive -->
+<a class="flex items-center gap-md text-on-surface-variant hover:text-on-surface px-4 py-3 transition-colors hover:bg-surface-variant/50 transition-all duration-300 rounded-lg group" href="#">
+<span class="material-symbols-outlined text-[24px]">explore</span>
+<span class="font-title-md text-title-md">Khám phá</span>
+</a>
+<!-- Inactive -->
+<a class="flex items-center gap-md text-on-surface-variant hover:text-on-surface px-4 py-3 transition-colors hover:bg-surface-variant/50 transition-all duration-300 rounded-lg group" href="#">
+<span class="material-symbols-outlined text-[24px]">assignment</span>
+<span class="font-title-md text-title-md">Nhiệm vụ</span>
+</a>
+<!-- Active: Hồ sơ -->
+<a class="flex items-center gap-md text-secondary font-bold border-l-4 border-secondary bg-secondary-container/10 px-4 py-3 rounded-r-lg glow-active" href="#">
+<span class="material-symbols-outlined text-[24px]" style="font-variation-settings: 'FILL' 1;">person</span>
+<span class="font-title-md text-title-md">Hồ sơ</span>
+</a>
+<!-- Inactive -->
+<a class="flex items-center gap-md text-on-surface-variant hover:text-on-surface px-4 py-3 transition-colors hover:bg-surface-variant/50 transition-all duration-300 rounded-lg group" href="#">
+<span class="material-symbols-outlined text-[24px]">leaderboard</span>
+<span class="font-title-md text-title-md">Bảng xếp hạng</span>
+</a>
+</div>
+<div class="px-md mt-auto">
+<button class="w-full bg-primary text-on-primary font-title-md text-title-md py-3 rounded-lg hover:bg-primary-container transition-colors shadow-[0_0_15px_rgba(242,191,80,0.3)]">
+                Bắt đầu hành trình
+             </button>
+</div>
+</nav>
+<!-- TopNavBar -->
+<header class="hidden md:flex bg-surface/70 dark:bg-surface/70 backdrop-blur-xl fixed top-0 right-0 left-64 h-16 border-b border-outline-variant flex justify-between items-center px-lg z-40">
+<div></div> <!-- Spacer for Left side if no search -->
+<div class="flex items-center gap-md">
+<button class="text-on-surface-variant hover:bg-surface-container-high rounded-full p-2 transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="text-on-surface-variant hover:bg-surface-container-high rounded-full p-2 transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</button>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-1 ml-0 md:ml-64 pt-20 px-safe-area-inset pb-xl min-h-screen relative overflow-hidden">
+<!-- Ambient Background Pattern -->
+<div class="absolute inset-0 pointer-events-none opacity-5 z-0" style="background-image: radial-gradient(circle at 50% 0%, #44dbd5 0%, transparent 50%);"></div>
+<div class="max-w-4xl mx-auto relative z-10 grid grid-cols-1 md:grid-cols-4 gap-md">
+<!-- Top Section: Profile Hero -->
+<section class="col-span-1 md:col-span-4 glass-panel rounded-xl p-lg flex flex-col md:flex-row items-center md:items-start gap-lg mb-md">
+<div class="relative w-32 h-32 md:w-40 md:h-40 flex-shrink-0">
+<div class="absolute inset-0 rounded-full border-4 border-primary shadow-[0_0_20px_rgba(242,191,80,0.4)] animate-pulse"></div>
+<img alt="Minh Profile Avatar" class="w-full h-full object-cover rounded-full p-1" data-alt="A high-quality portrait of an adventurous young Vietnamese man wearing tech-wear, glowing neo-heritage gold ring framing his face, deep cinematic dark background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAAOqomZud8yyeMf4gemA_rkAUZlh8wdRiTSr0ML4tKbqZKA-akuGgqGjNMtL_er8hJvSKmN-DkKOUDYpEF3oN8MBEoon7Mm3wvodNisapiRzw9EtwDrryVUkQIa-KnQTPpS675k3N51mISQq-oToMqcVThNQDVKVogN80RHG2f9U0nAoaJCE8kg1n_utoxK7F7u-iGoEPH7FdFC5xNqsWdR6Npj56YsE2haqJJXBOQkKnTAdc3l558DDLT8ZdenGnBrTpoukP1ObGr"/>
+</div>
+<div class="flex-1 text-center md:text-left flex flex-col justify-center h-full">
+<h2 class="font-display-lg text-display-lg text-on-surface mb-xs">Minh</h2>
+<div class="flex items-center justify-center md:justify-start gap-2 mb-md">
+<span class="material-symbols-outlined text-secondary text-sm">military_tech</span>
+<span class="font-title-md text-title-md text-secondary">History Hunter</span>
+</div>
+<button class="md:hidden w-full border border-secondary text-secondary font-title-md text-title-md py-2 rounded-lg hover:bg-secondary/10 transition-colors mb-4 glow-active">
+                        Bảng xếp hạng
+                    </button>
+</div>
+<div class="hidden md:flex flex-col justify-center items-end h-full min-w-[200px]">
+<button class="border border-secondary text-secondary font-title-md text-title-md py-2 px-6 rounded-lg hover:bg-secondary/10 transition-colors glow-active flex items-center gap-2">
+<span class="material-symbols-outlined">leaderboard</span>
+                        Bảng xếp hạng
+                    </button>
+</div>
+</section>
+<!-- Stats Bento -->
+<section class="col-span-1 md:col-span-4 grid grid-cols-3 gap-md mb-lg">
+<div class="glass-panel rounded-xl p-md flex flex-col items-center justify-center text-center">
+<span class="material-symbols-outlined text-primary text-3xl mb-2">star</span>
+<span class="font-display-lg text-display-lg text-on-surface">4.2k</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">XP</span>
+</div>
+<div class="glass-panel rounded-xl p-md flex flex-col items-center justify-center text-center">
+<span class="material-symbols-outlined text-secondary text-3xl mb-2">map</span>
+<span class="font-display-lg text-display-lg text-on-surface">28</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Quests</span>
+</div>
+<div class="glass-panel rounded-xl p-md flex flex-col items-center justify-center text-center">
+<span class="material-symbols-outlined text-tertiary text-3xl mb-2">location_on</span>
+<span class="font-display-lg text-display-lg text-on-surface">15</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Sites</span>
+</div>
+</section>
+<!-- Bottom Section: Badge Collection -->
+<section class="col-span-1 md:col-span-4">
+<h3 class="font-headline-lg text-headline-lg text-on-surface mb-md flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">workspace_premium</span>
+                    Bộ sưu tập Huy hiệu
+                </h3>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-md">
+<!-- Badge 1 -->
+<div class="glass-panel rounded-xl p-md flex flex-col items-center group cursor-pointer hover:bg-surface-variant/30 transition-all">
+<div class="w-16 h-16 rounded-full bg-surface-container-high border border-outline flex items-center justify-center mb-sm group-hover:scale-110 transition-transform shadow-[0_0_10px_rgba(242,191,80,0.2)]">
+<span class="material-symbols-outlined text-primary text-3xl" style="font-variation-settings: 'FILL' 1;">diamond</span>
+</div>
+<span class="font-title-md text-title-md text-on-surface">Cổ Vật</span>
+</div>
+<!-- Badge 2 -->
+<div class="glass-panel rounded-xl p-md flex flex-col items-center group cursor-pointer hover:bg-surface-variant/30 transition-all">
+<div class="w-16 h-16 rounded-full bg-surface-container-high border border-outline flex items-center justify-center mb-sm group-hover:scale-110 transition-transform shadow-[0_0_10px_rgba(68,219,213,0.2)]">
+<span class="material-symbols-outlined text-secondary text-3xl" style="font-variation-settings: 'FILL' 1;">explore</span>
+</div>
+<span class="font-title-md text-title-md text-on-surface">Thám Hiểm</span>
+</div>
+<!-- Badge 3 -->
+<div class="glass-panel rounded-xl p-md flex flex-col items-center group cursor-pointer hover:bg-surface-variant/30 transition-all">
+<div class="w-16 h-16 rounded-full bg-surface-container-high border border-outline flex items-center justify-center mb-sm group-hover:scale-110 transition-transform shadow-[0_0_10px_rgba(255,138,123,0.2)]">
+<span class="material-symbols-outlined text-tertiary-container text-3xl" style="font-variation-settings: 'FILL' 1;">account_balance</span>
+</div>
+<span class="font-title-md text-title-md text-on-surface">Triều Nguyễn</span>
+</div>
+<!-- Badge 4 (Locked) -->
+<div class="glass-panel rounded-xl p-md flex flex-col items-center opacity-50 grayscale">
+<div class="w-16 h-16 rounded-full bg-surface-container-lowest border border-surface-variant flex items-center justify-center mb-sm">
+<span class="material-symbols-outlined text-on-surface-variant text-3xl">lock</span>
+</div>
+<span class="font-title-md text-title-md text-on-surface-variant">Bí ẩn</span>
+</div>
+</div>
+</section>
+</div>
+</main>
+</body></html>

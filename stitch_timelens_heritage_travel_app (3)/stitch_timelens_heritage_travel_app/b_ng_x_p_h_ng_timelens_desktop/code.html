@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Bảng xếp hạng - TimeLens</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "secondary-container": "#00bcb6",
+                        "on-surface": "#e3e1ed",
+                        "surface-variant": "#33343d",
+                        "outline-variant": "#4f4636",
+                        "on-secondary-fixed-variant": "#00504d",
+                        "surface-tint": "#f2bf50",
+                        "on-primary-fixed": "#261900",
+                        "surface-container-low": "#1a1b23",
+                        "on-tertiary-fixed-variant": "#8f100d",
+                        "tertiary-container": "#ff8a7b",
+                        "on-secondary": "#003735",
+                        "on-background": "#e3e1ed",
+                        "on-primary-container": "#533c00",
+                        "secondary": "#44dbd5",
+                        "on-tertiary-fixed": "#410001",
+                        "surface": "#12131b",
+                        "inverse-surface": "#e3e1ed",
+                        "surface-container-highest": "#33343d",
+                        "tertiary": "#ffb4aa",
+                        "on-error": "#690005",
+                        "surface-container": "#1e1f27",
+                        "secondary-fixed-dim": "#44dbd5",
+                        "error": "#ffb4ab",
+                        "background": "#12131b",
+                        "surface-container-high": "#292932",
+                        "on-tertiary-container": "#840507",
+                        "on-secondary-container": "#004543",
+                        "error-container": "#93000a",
+                        "primary": "#f2bf50",
+                        "on-primary": "#402d00",
+                        "surface-container-lowest": "#0d0e15",
+                        "on-primary-fixed-variant": "#5c4300",
+                        "primary-container": "#d4a437",
+                        "tertiary-fixed": "#ffdad5",
+                        "surface-dim": "#12131b",
+                        "inverse-on-surface": "#2f3038",
+                        "surface-bright": "#383941",
+                        "on-error-container": "#ffdad6",
+                        "inverse-primary": "#7a5900",
+                        "primary-fixed": "#ffdea1",
+                        "on-surface-variant": "#d2c5b0",
+                        "outline": "#9b8f7c",
+                        "on-tertiary": "#690003",
+                        "primary-fixed-dim": "#f2bf50",
+                        "secondary-fixed": "#68f8f1",
+                        "tertiary-fixed-dim": "#ffb4aa",
+                        "on-secondary-fixed": "#00201f"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    spacing: {
+                        "sm": "12px",
+                        "base": "4px",
+                        "xl": "32px",
+                        "xs": "8px",
+                        "lg": "24px",
+                        "safe-area-inset": "20px",
+                        "md": "16px"
+                    },
+                    fontFamily: {
+                        "title-md": ["Be Vietnam Pro"],
+                        "label-sm": ["Be Vietnam Pro"],
+                        "body-md": ["Be Vietnam Pro"],
+                        "display-lg": ["Be Vietnam Pro"],
+                        "body-lg": ["Be Vietnam Pro"],
+                        "headline-lg-mobile": ["Be Vietnam Pro"],
+                        "headline-lg": ["Be Vietnam Pro"]
+                    },
+                    fontSize: {
+                        "title-md": ["18px", { lineHeight: "24px", fontWeight: "600" }],
+                        "label-sm": ["12px", { lineHeight: "16px", letterSpacing: "0.05em", fontWeight: "500" }],
+                        "body-md": ["14px", { lineHeight: "20px", fontWeight: "400" }],
+                        "display-lg": ["34px", { lineHeight: "42px", letterSpacing: "-0.02em", fontWeight: "700" }],
+                        "body-lg": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+                        "headline-lg-mobile": ["22px", { lineHeight: "28px", letterSpacing: "-0.01em", fontWeight: "700" }],
+                        "headline-lg": ["24px", { lineHeight: "32px", letterSpacing: "-0.01em", fontWeight: "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Be Vietnam Pro', sans-serif; background-color: #12131b; color: #e3e1ed; }
+        .glass-panel { background: rgba(27, 28, 36, 0.7); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid #2e2f38; }
+        .glow-effect { box-shadow: 0 0 15px rgba(242, 191, 80, 0.2); }
+        .glow-effect-secondary { box-shadow: 0 0 15px rgba(68, 219, 213, 0.2); }
+        .podium-gradient-1 { background: linear-gradient(180deg, rgba(242, 191, 80, 0.2) 0%, rgba(27, 28, 36, 0) 100%); }
+        .podium-gradient-2 { background: linear-gradient(180deg, rgba(227, 225, 237, 0.1) 0%, rgba(27, 28, 36, 0) 100%); }
+        .podium-gradient-3 { background: linear-gradient(180deg, rgba(212, 164, 55, 0.1) 0%, rgba(27, 28, 36, 0) 100%); }
+        .current-user-row { background: linear-gradient(90deg, rgba(68, 219, 213, 0.1) 0%, rgba(27, 28, 36, 0.8) 100%); border-left: 4px solid #44dbd5; }
+        /* Background pattern simulating Trống Đồng lines */
+        .bg-pattern {
+            background-image: radial-gradient(rgba(242, 191, 80, 0.05) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex antialiased bg-pattern">
+<!-- SideNavBar (Desktop Only) -->
+<nav class="hidden md:flex fixed left-0 top-0 h-screen w-64 border-r border-outline-variant bg-surface-container-low shadow-md flex-col py-lg z-50">
+<div class="px-md mb-xl flex flex-col items-center">
+<img alt="User Profile Avatar" class="w-16 h-16 rounded-full border-2 border-primary mb-sm object-cover" data-alt="A striking digital installation art piece featuring glowing, generative geometric shapes suspended in a vast, minimalist gallery space. The room is illuminated by high-key, soft white lighting that creates a bright, modern light-mode aesthetic. The artwork relies on a sophisticated palette of deep blacks and pristine whites, punctuated by intense accents of vibrant red. The mood is serene yet technologically advanced." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCRpa43-2qyNuu8_dXl-LVGxfZMn0B3DGMcX8XoCzHE9wJdTlrRaxAhyXQIAJF-Nip2w0SCPnVmzy6PyH8y7YbNWAgX39CWc0qebZMqJP6i7tsOhpcC6Zp0rS6Rr4N_o3Q1vDSnMtuMc3CQ03dgI_e0DNRZHj3cPgmX8YudW-9NDjPv53dW56URQCSimgaCT_ZDJoQCsejIUOMD97GsuR8d6KZBtnPUrWd9iPRHWkd7MtIV619xO-JS2gNG2sAGI8LoeaLRwkbbFWss"/>
+<h1 class="font-headline-lg text-headline-lg text-primary uppercase tracking-widest text-center">TimeLens</h1>
+<p class="font-body-md text-body-md text-on-surface-variant mt-base">Nhà du hành di sản</p>
+</div>
+<div class="flex flex-col flex-grow w-full px-xs space-y-sm">
+<a class="text-on-surface-variant hover:text-on-surface px-4 py-3 transition-colors hover:bg-surface-variant/50 duration-300 rounded-lg flex items-center gap-sm font-title-md text-title-md" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">home</span>
+<span>Trang chủ</span>
+</a>
+<a class="text-on-surface-variant hover:text-on-surface px-4 py-3 transition-colors hover:bg-surface-variant/50 duration-300 rounded-lg flex items-center gap-sm font-title-md text-title-md" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">explore</span>
+<span>Khám phá</span>
+</a>
+<a class="text-on-surface-variant hover:text-on-surface px-4 py-3 transition-colors hover:bg-surface-variant/50 duration-300 rounded-lg flex items-center gap-sm font-title-md text-title-md" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">assignment</span>
+<span>Nhiệm vụ</span>
+</a>
+<a class="text-on-surface-variant hover:text-on-surface px-4 py-3 transition-colors hover:bg-surface-variant/50 duration-300 rounded-lg flex items-center gap-sm font-title-md text-title-md" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">person</span>
+<span>Hồ sơ</span>
+</a>
+<!-- Active State -->
+<a class="text-secondary font-bold border-l-4 border-secondary bg-secondary-container/10 px-4 py-3 rounded-r-lg flex items-center gap-sm font-title-md text-title-md scale-95 transition-transform duration-150" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">leaderboard</span>
+<span>Bảng xếp hạng</span>
+</a>
+</div>
+<div class="px-md mt-auto">
+<button class="w-full bg-primary text-on-primary font-title-md text-title-md py-sm rounded-lg hover:bg-primary-container transition-colors shadow-lg shadow-primary/20">
+                Bắt đầu hành trình
+            </button>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="flex-grow ml-0 md:ml-64 relative min-h-screen flex flex-col">
+<!-- TopNavBar (Desktop Only) -->
+<header class="hidden md:flex fixed top-0 right-0 left-64 h-16 bg-surface/70 backdrop-blur-xl border-b border-outline-variant justify-between items-center px-lg z-40 transition-opacity">
+<div class="flex-1">
+<!-- Search bar placeholder -->
+<div class="relative w-64">
+<span class="material-symbols-outlined absolute left-3 top-1/2 transform -translate-y-1/2 text-on-surface-variant">search</span>
+<input class="w-full bg-surface-container-high border border-outline-variant rounded-full py-2 pl-10 pr-4 font-body-md text-body-md text-on-surface focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary transition-all" placeholder="Tìm kiếm..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-md">
+<button class="text-on-surface-variant hover:bg-surface-container-high rounded-full p-2 transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="text-on-surface-variant hover:bg-surface-container-high rounded-full p-2 transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<img alt="User Profile Avatar" class="w-8 h-8 rounded-full border border-primary object-cover" data-alt="A striking digital installation art piece featuring glowing, generative geometric shapes suspended in a vast, minimalist gallery space. The room is illuminated by high-key, soft white lighting that creates a bright, modern light-mode aesthetic. The artwork relies on a sophisticated palette of deep blacks and pristine whites, punctuated by intense accents of vibrant red. The mood is serene yet technologically advanced." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBISGK1OVpiFB5GDG704HtmflXFXPLqR7creTo-c5yVGxsA1mJe4_-fbarpf64eTiQA9XuQPs1IwTXYGErH5Ubj9Ar5nBSHGbzEUaIf4xT80JREGTZP573KVxjbj0HpPbEmb8D1ZBVyRWwpY0MyFKGr_t-04vGYd9BOEUqL8bNKKiPEcHNFFmMUnjizFQHvdG4PT0s1iwy7stWy623xDJqbHlX9qT90o3kaQP6I-Sl8WN8yEa94EC7BCMvhN7shCmD0WcxWcAthTH4R"/>
+</div>
+</header>
+<!-- Content Canvas -->
+<div class="flex-1 pt-16 md:pt-24 px-safe-area-inset pb-safe-area-inset max-w-5xl mx-auto w-full">
+<!-- Page Header -->
+<div class="mb-xl flex flex-col items-center md:items-start text-center md:text-left">
+<h2 class="font-display-lg text-display-lg text-primary uppercase tracking-widest mb-xs">Bảng vinh danh</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant">Những nhà du hành xuất sắc nhất trong kỷ nguyên Neo-Heritage.</p>
+</div>
+<!-- Tabs -->
+<div class="flex justify-center md:justify-start mb-xl space-x-sm border-b border-surface-container-high pb-xs">
+<button class="font-title-md text-title-md text-on-surface-variant px-md py-sm hover:text-on-surface transition-colors relative group">
+                    Thành phố
+                    <div class="absolute bottom-[-1px] left-0 w-full h-0.5 bg-secondary opacity-0 group-hover:opacity-100 transition-opacity"></div>
+</button>
+<button class="font-title-md text-title-md text-secondary px-md py-sm relative group">
+                    Tuần này
+                    <div class="absolute bottom-[-1px] left-0 w-full h-1 bg-secondary glow-effect-secondary rounded-t-sm"></div>
+</button>
+<button class="font-title-md text-title-md text-on-surface-variant px-md py-sm hover:text-on-surface transition-colors relative group">
+                    Mọi lúc
+                    <div class="absolute bottom-[-1px] left-0 w-full h-0.5 bg-secondary opacity-0 group-hover:opacity-100 transition-opacity"></div>
+</button>
+</div>
+<!-- Podium (Top 3) -->
+<div class="flex justify-center items-end gap-xs md:gap-lg mb-xl h-64 mt-xl">
+<!-- Rank 2: Hải Đăng -->
+<div class="flex flex-col items-center relative w-1/3 max-w-[120px]">
+<div class="absolute -top-12 z-10 flex flex-col items-center">
+<div class="relative">
+<img class="w-16 h-16 rounded-full border-2 border-on-surface object-cover z-20 relative" data-alt="A futuristic portrait of an Asian male in his early 20s, wearing high-tech streetwear with subtle traditional Vietnamese motifs. The lighting is cinematic and moody, with neon cyan highlights reflecting on his cheek. The background is a dark, abstract texture resembling ancient lacquer ware. He looks determined and focused." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC6LsvxRVozGBRJUjEmsLSnnO5prBt7-PXCLd6wjc6UDQiHigaSYn5XZ4KA2ootaku52ecSLuRuMueUXxsAFY8P0j-OOunRVpQcHvhvDH2NV8bXFIbMxxkG9D9HqNR6pAdiihCT47MP9jDb-GLKQOcWwp0Rx0f5z7MtmRuN54NQ_nZkc7OO6ODkcwEiUeNFY3P58hwhPTRtuj74eUyFEN1hZes38YXp5L-LicdTkdC2isqeZjq-NyBQMqhdwzIT-wtdW3nU5JEfijkE"/>
+<div class="absolute -bottom-3 left-1/2 transform -translate-x-1/2 bg-surface-container-high text-on-surface font-label-sm text-label-sm w-6 h-6 rounded-full flex items-center justify-center border border-outline-variant z-30">2</div>
+</div>
+<span class="font-title-md text-title-md text-on-surface mt-xs truncate w-full text-center">Hải Đăng</span>
+<span class="font-label-sm text-label-sm text-secondary">8,450 XP</span>
+</div>
+<div class="w-full h-32 glass-panel rounded-t-xl podium-gradient-2 flex items-end justify-center pb-sm border-b-0">
+<span class="material-symbols-outlined text-on-surface/20 text-4xl">emoji_events</span>
+</div>
+</div>
+<!-- Rank 1: Minh Anh -->
+<div class="flex flex-col items-center relative w-1/3 max-w-[140px] z-20">
+<div class="absolute -top-16 z-10 flex flex-col items-center">
+<div class="relative">
+<div class="absolute inset-0 rounded-full glow-effect animate-pulse"></div>
+<img class="w-20 h-20 rounded-full border-4 border-primary object-cover z-20 relative" data-alt="A striking portrait of an Asian female in her 20s, blending cybernetic enhancements with traditional Ao Dai elements. She stands against a deep, near-black canvas with a faint golden geometric drum pattern. Intense, dramatic lighting casts a golden glow on her face, emphasizing a powerful, triumphant expression." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAcuiRLdDNvIZGicHcE0yV0yLDA-YWIrm6LaCd9Tt6c-6MgM1rxIIxjReTqHmjObpam0VnWywIdsglDGQ1iz7zA_NVZ7xmusf0QFVSjoB7or_Y-bkvdBhELGfZKSEk8Ebvc0wv_7Z3MC7WPwFTmcoKhDZzmU_FLmfI_AxyDYHpJaHk8vTBilQj9Mm8yGDWN-L9Q4yATTLigQdyyxu4W1RsT5ynMkmzseKVnWCHqUz73TBkmyNK1u3u3tA-fJYtJ80BT5n4MrLGDhtEy"/>
+<div class="absolute -bottom-3 left-1/2 transform -translate-x-1/2 bg-primary text-on-primary font-title-md text-title-md w-8 h-8 rounded-full flex items-center justify-center border-2 border-surface z-30 shadow-lg">1</div>
+<!-- Crown Icon -->
+<span class="material-symbols-outlined absolute -top-5 left-1/2 transform -translate-x-1/2 text-primary text-3xl" style="font-variation-settings: 'FILL' 1;">crown</span>
+</div>
+<span class="font-title-md text-title-md text-primary mt-sm font-bold truncate w-full text-center">Minh Anh</span>
+<span class="font-label-sm text-label-sm text-secondary font-bold">10,200 XP</span>
+</div>
+<div class="w-full h-40 glass-panel rounded-t-xl podium-gradient-1 flex items-end justify-center pb-sm border-b-0 border-primary/30 shadow-[0_-10px_30px_rgba(242,191,80,0.15)]">
+<span class="material-symbols-outlined text-primary/30 text-5xl">trophy</span>
+</div>
+</div>
+<!-- Rank 3: Lan Khuê -->
+<div class="flex flex-col items-center relative w-1/3 max-w-[120px]">
+<div class="absolute -top-12 z-10 flex flex-col items-center">
+<div class="relative">
+<img class="w-16 h-16 rounded-full border-2 border-outline object-cover z-20 relative" data-alt="A mysterious portrait of a young Vietnamese woman illuminated by neon cyan backlighting. She wears a modern, minimalist jacket with subtle ancient script embroidered on the collar. The background is a deep, immersive black void. Her expression is calm and enigmatic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCsvQwy01rUccEu6yQ2MuXSXZlMAqHXi29wysEvbkp77n7LU9HHfxj9Kmwk3gD-xPvScpwiQtk1HW9c_YGz0ywaPW8RhepbGpB20xEQjAr2nu1lG79etrOHku4nLWZ_ngYdZRjsGQESmDqRcYTFSJT1Tll5fV26eRMZQPrqVqcGN8Hn4oiYpPhZiC1voB7nG9PSbMzV6j1nPH3wKGSEQeZBleB3aVUOs_IkdtiSP7qQUmKRw4g-IJZmW76THpqMvEJg9x-7Ooj6_gB_"/>
+<div class="absolute -bottom-3 left-1/2 transform -translate-x-1/2 bg-surface-container-high text-on-surface font-label-sm text-label-sm w-6 h-6 rounded-full flex items-center justify-center border border-outline z-30">3</div>
+</div>
+<span class="font-title-md text-title-md text-on-surface mt-xs truncate w-full text-center">Lan Khuê</span>
+<span class="font-label-sm text-label-sm text-secondary">7,900 XP</span>
+</div>
+<div class="w-full h-24 glass-panel rounded-t-xl podium-gradient-3 flex items-end justify-center pb-sm border-b-0">
+<span class="material-symbols-outlined text-outline/30 text-3xl">military_tech</span>
+</div>
+</div>
+</div>
+<!-- List Ranks 4-6 & Current User -->
+<div class="flex flex-col space-y-sm w-full max-w-3xl mx-auto pb-24 md:pb-0">
+<!-- Rank 4 -->
+<div class="glass-panel rounded-xl p-md flex items-center justify-between hover:bg-surface-variant/30 transition-colors cursor-pointer group">
+<div class="flex items-center gap-md">
+<span class="font-title-md text-title-md text-on-surface-variant w-6 text-center">4</span>
+<img class="w-10 h-10 rounded-full object-cover border border-outline-variant" data-alt="A small avatar image of a male user in a dark, atmospheric setting. He is wearing modern street clothes, lit by a soft, diffused rim light that separates him from the pitch-black background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBS3-SwitDjKavrp0vpyHEJTgHkzueNco5GD6EWuBEBhQARrB-mTJL5z0NamN0XSBm1RpGBxg__SdOpYwLDdKXi0N6_kXmEWiBoGlEw4mAH9q28g8rbrE8DocDBF9KYrVy8RnbmM8-86gSMXq_WmBaXXkGb5E6rt4L-ZKCieF-ZsVz57k1CGs8fwYXzEQNM77dH_S_tqrWz1hKVhmRRYgHUiANiWmvovVwQ79LT8HIgxxosHZ9G66GLRH6ySpdCfHF7Mq1hToDYR0LY"/>
+<span class="font-body-md text-body-md text-on-surface group-hover:text-primary transition-colors">Tuấn Kiệt</span>
+</div>
+<div class="flex items-center gap-xs">
+<span class="font-label-sm text-label-sm text-on-surface-variant">7,150</span>
+<span class="font-label-sm text-label-sm text-secondary">XP</span>
+</div>
+</div>
+<!-- Rank 5 -->
+<div class="glass-panel rounded-xl p-md flex items-center justify-between hover:bg-surface-variant/30 transition-colors cursor-pointer group">
+<div class="flex items-center gap-md">
+<span class="font-title-md text-title-md text-on-surface-variant w-6 text-center">5</span>
+<img class="w-10 h-10 rounded-full object-cover border border-outline-variant" data-alt="A small avatar image of a female user looking thoughtful. The image has a low-key lighting setup with a subtle magenta accent light, suggesting a creative, modern vibe within a dark environment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC51QdSHy-En2tYAbETQcp5A8vxtncHhTwx9iAO9sKJYVWVpeFeMW7X2b6cqwTgo31sgPfCsofaCZ5TWh5g0Q-HukHrkKj7Tth9lJJ7fiiz2Oo_RFqGqemC8GPFro5edAFP-FnkRWT0OLvGooh7dXD2cgV5XV-WFKyR9OINZjrB4PseC3CXje-f_74-l67eqIkHhdPKEFiXaNJHUvsZgkWLK6lxIRq1_tU64GTKRJZ567dhjrzmlQh_LJvkcNHVNd_zjWAo5omnz56S"/>
+<span class="font-body-md text-body-md text-on-surface group-hover:text-primary transition-colors">Thảo My</span>
+</div>
+<div class="flex items-center gap-xs">
+<span class="font-label-sm text-label-sm text-on-surface-variant">6,800</span>
+<span class="font-label-sm text-label-sm text-secondary">XP</span>
+</div>
+</div>
+<!-- Rank 6 -->
+<div class="glass-panel rounded-xl p-md flex items-center justify-between hover:bg-surface-variant/30 transition-colors cursor-pointer group mb-md">
+<div class="flex items-center gap-md">
+<span class="font-title-md text-title-md text-on-surface-variant w-6 text-center">6</span>
+<img class="w-10 h-10 rounded-full object-cover border border-outline-variant" data-alt="A small avatar image of a male user in an urban night setting. The blurred background features out-of-focus city lights, while the subject is lit clearly, maintaining the dark, neo-heritage aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCR6z_4cziHTiVkrDzo9bXogFbO3hWKPg4v7BX8-XTRAhzc5WPZ9YhkC3yz5ee7qwr7Z-idmnFLWqwfY28JumKDpCeOncQTGuijdvc1GKuL9M17e_3evFeMz2MYXUe6jabfJoaNwl_QbXJhAXQBnB30o3Ui9ZwQRYfci2gO7RTBWgZDcYYkiPgogJ8A1RuamW78W3U9pA95aBuINevtyhSD5XqKdPSHt25og9MGrA-wwZ_W-Ox3R3DcwpB4TvSE3VYMR-z8EObdJ12r"/>
+<span class="font-body-md text-body-md text-on-surface group-hover:text-primary transition-colors">Bảo Trọng</span>
+</div>
+<div class="flex items-center gap-xs">
+<span class="font-label-sm text-label-sm text-on-surface-variant">6,420</span>
+<span class="font-label-sm text-label-sm text-secondary">XP</span>
+</div>
+</div>
+<!-- Current User Row (Sticky on Mobile, normal on Desktop) -->
+<div class="mt-xl relative">
+<div class="absolute -inset-1 bg-secondary rounded-xl blur opacity-20"></div>
+<div class="relative glass-panel rounded-xl p-md flex items-center justify-between current-user-row shadow-[0_0_20px_rgba(68,219,213,0.15)] border border-secondary/30">
+<div class="flex items-center gap-md">
+<span class="font-title-md text-title-md text-secondary w-6 text-center">42</span>
+<div class="relative">
+<img class="w-10 h-10 rounded-full object-cover border border-secondary" data-alt="A striking digital installation art piece featuring glowing, generative geometric shapes suspended in a vast, minimalist gallery space. The room is illuminated by high-key, soft white lighting that creates a bright, modern light-mode aesthetic. The artwork relies on a sophisticated palette of deep blacks and pristine whites, punctuated by intense accents of vibrant red. The mood is serene yet technologically advanced." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBq1rz5RjCj3V9LTAN3uSLPUMQOe4GRH0cann-SjEjvk_V8CqBZDkHMriIJb0Yhzu8wq38strlTSEle02y-afuhH3X4Fy7-WUYrGvxbYecgoRvTS4Th7Hw7ak31bv5MX0SITYKnHmnUvK1-cUb86v_qU7hWdN4VFiT22ZIcV3FxcjDtqhknTtdzskWJoqYNrcAxd6QxOC5ctyr5exlvve-DFQ1XpTfSIIfWiAVC0VhtWy3Qv1ja1sVVSg1MdmmxLHfuwt27DKaKjSlh"/>
+<div class="absolute -bottom-1 -right-1 w-3 h-3 bg-secondary rounded-full border-2 border-surface"></div>
+</div>
+<span class="font-title-md text-title-md text-secondary font-bold">Bạn</span>
+</div>
+<div class="flex items-center gap-xs">
+<span class="font-title-md text-title-md text-on-surface">3,100</span>
+<span class="font-label-sm text-label-sm text-secondary">XP</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Time Portal - Hoàng Thành Thăng Long</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        /* Custom styles for the slider and particles to keep HTML somewhat clean */
+        .split-view-container {
+            position: relative;
+            width: 100%;
+            height: calc(100vh - 64px); /* Adjust for TopNavBar */
+            overflow: hidden;
+        }
+
+        .view-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .view-past {
+            z-index: 10;
+            /* The past view will be clipped by JavaScript based on slider position */
+            clip-path: polygon(0 0, 50% 0, 50% 100%, 0 100%);
+            /* Example sepia filter for the past, though the image itself should ideally be styled */
+            filter: sepia(0.6) contrast(1.1) brightness(0.9);
+        }
+
+        .view-present {
+            z-index: 5;
+        }
+
+        .slider-handle {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            width: 4px;
+            background: linear-gradient(to bottom, transparent, #f2bf50, transparent);
+            z-index: 20;
+            transform: translateX(-50%);
+            cursor: ew-resize;
+            box-shadow: 0 0 15px #f2bf50, 0 0 30px #f2bf5080;
+        }
+
+        .slider-button {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 48px;
+            height: 48px;
+            background-color: #1b1c24;
+            border: 2px solid #f2bf50;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 20px #f2bf5080;
+            cursor: pointer;
+            z-index: 21;
+        }
+
+        /* Ambient Particles - Basic CSS implementation */
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: 0;
+            animation: float-up 5s linear infinite;
+        }
+
+        .particle-gold { background-color: #f2bf50; box-shadow: 0 0 5px #f2bf50; z-index: 15; }
+        .particle-cyan { background-color: #44dbd5; box-shadow: 0 0 5px #44dbd5; z-index: 6; }
+
+        @keyframes float-up {
+            0% { transform: translateY(100vh) scale(0.5); opacity: 0; }
+            20% { opacity: 0.8; }
+            80% { opacity: 0.6; }
+            100% { transform: translateY(-20vh) scale(1.5); opacity: 0; }
+        }
+
+        .era-tab-active {
+            position: relative;
+        }
+        .era-tab-active::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: #44dbd5;
+            box-shadow: 0 0 10px #44dbd5, 0 0 20px #44dbd5;
+        }
+
+        /* Dong Son drum pattern overlay (simulated with CSS gradients for simplicity, ideally an SVG pattern) */
+        .pattern-overlay {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background-image: repeating-radial-gradient( circle at 0 0, transparent 0, #12131b 10px ), repeating-linear-gradient( #2E2F3855, #2E2F3855 );
+            opacity: 0.05;
+            z-index: 1;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-fixed": "#ffdea1",
+                        "on-tertiary-fixed": "#410001",
+                        "tertiary": "#ffb4aa",
+                        "secondary": "#44dbd5",
+                        "surface-container-high": "#292932",
+                        "error": "#ffb4ab",
+                        "on-primary": "#402d00",
+                        "on-tertiary-fixed-variant": "#8f100d",
+                        "on-surface-variant": "#d2c5b0",
+                        "inverse-on-surface": "#2f3038",
+                        "background": "#12131b",
+                        "on-error-container": "#ffdad6",
+                        "primary-container": "#d4a437",
+                        "surface-container-lowest": "#0d0e15",
+                        "on-primary-fixed": "#261900",
+                        "secondary-fixed-dim": "#44dbd5",
+                        "surface": "#12131b",
+                        "on-tertiary-container": "#840507",
+                        "on-tertiary": "#690003",
+                        "outline": "#9b8f7c",
+                        "surface-variant": "#33343d",
+                        "tertiary-fixed-dim": "#ffb4aa",
+                        "surface-container-low": "#1a1b23",
+                        "on-primary-fixed-variant": "#5c4300",
+                        "tertiary-container": "#ff8a7b",
+                        "surface-container": "#1e1f27",
+                        "surface-tint": "#f2bf50",
+                        "secondary-fixed": "#68f8f1",
+                        "inverse-surface": "#e3e1ed",
+                        "error-container": "#93000a",
+                        "on-background": "#e3e1ed",
+                        "outline-variant": "#4f4636",
+                        "on-secondary-container": "#004543",
+                        "primary-fixed-dim": "#f2bf50",
+                        "secondary-container": "#00bcb6",
+                        "surface-bright": "#383941",
+                        "inverse-primary": "#7a5900",
+                        "on-secondary-fixed-variant": "#00504d",
+                        "tertiary-fixed": "#ffdad5",
+                        "on-error": "#690005",
+                        "on-primary-container": "#533c00",
+                        "on-surface": "#e3e1ed",
+                        "on-secondary-fixed": "#00201f",
+                        "on-secondary": "#003735",
+                        "surface-dim": "#12131b",
+                        "surface-container-highest": "#33343d",
+                        "primary": "#f2bf50"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "md": "16px",
+                        "safe-area-inset": "20px",
+                        "xs": "8px",
+                        "xl": "32px",
+                        "sm": "12px",
+                        "lg": "24px",
+                        "base": "4px"
+                    },
+                    "fontFamily": {
+                        "label-sm": ["Be Vietnam Pro"],
+                        "headline-lg": ["Be Vietnam Pro"],
+                        "body-md": ["Be Vietnam Pro"],
+                        "headline-lg-mobile": ["Be Vietnam Pro"],
+                        "title-md": ["Be Vietnam Pro"],
+                        "display-lg": ["Be Vietnam Pro"],
+                        "body-lg": ["Be Vietnam Pro"]
+                    },
+                    "fontSize": {
+                        "label-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                        "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "headline-lg-mobile": ["22px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+                        "title-md": ["18px", { "lineHeight": "24px", "fontWeight": "600" }],
+                        "display-lg": ["34px", { "lineHeight": "42px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background text-on-surface font-body-md min-h-screen overflow-hidden antialiased flex selection:bg-primary selection:text-on-primary">
+<!-- SideNavBar (Hidden on md as per prompt instructions, assuming Desktop view means it should be visible based on "Includes SideNavBar and TopNavBar" but standard rule says hidden on mobile. Will render visible for desktop) -->
+<nav class="hidden md:flex h-screen w-64 fixed left-0 top-0 bg-surface-container border-r border-outline-variant flex-col p-lg z-50">
+<!-- Brand Header -->
+<div class="flex items-center gap-sm mb-xl">
+<div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center border border-primary">
+<span class="material-symbols-outlined text-on-primary-container" data-icon="history_toggle_off">history_toggle_off</span>
+</div>
+<div>
+<h1 class="font-display-lg text-display-lg font-bold text-primary tracking-tight leading-none">TimeLens</h1>
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest mt-1">Nhà du hành di sản</p>
+</div>
+</div>
+<!-- Navigation Links -->
+<ul class="flex flex-col gap-sm flex-grow">
+<li>
+<a class="text-on-surface-variant flex items-center gap-md p-md hover:bg-surface-variant/50 hover:text-secondary transition-colors rounded-lg font-title-md text-title-md" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span>Trang chủ</span>
+</a>
+</li>
+<li>
+<!-- Active State -->
+<a class="text-secondary font-bold flex items-center gap-md p-md bg-secondary-container/10 rounded-lg transition-colors font-title-md text-title-md relative" href="#">
+<div class="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-2/3 bg-secondary rounded-r-full shadow-[0_0_8px_#44dbd5]"></div>
+<span class="material-symbols-outlined" data-icon="explore">explore</span>
+<span>Khám phá</span>
+</a>
+</li>
+<li>
+<a class="text-on-surface-variant flex items-center gap-md p-md hover:bg-surface-variant/50 hover:text-secondary transition-colors rounded-lg font-title-md text-title-md" href="#">
+<span class="material-symbols-outlined" data-icon="military_tech">military_tech</span>
+<span>Nhiệm vụ</span>
+</a>
+</li>
+<li>
+<a class="text-on-surface-variant flex items-center gap-md p-md hover:bg-surface-variant/50 hover:text-secondary transition-colors rounded-lg font-title-md text-title-md" href="#">
+<span class="material-symbols-outlined" data-icon="history_edu">history_edu</span>
+<span>Cổ vật</span>
+</a>
+</li>
+<li>
+<a class="text-on-surface-variant flex items-center gap-md p-md hover:bg-surface-variant/50 hover:text-secondary transition-colors rounded-lg font-title-md text-title-md" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span>Hồ sơ</span>
+</a>
+</li>
+</ul>
+<!-- CTA -->
+<div class="mt-auto">
+<button class="w-full bg-primary hover:bg-primary-fixed text-on-primary font-title-md text-title-md py-sm px-md rounded-lg flex items-center justify-center gap-xs transition-colors shadow-[0_0_15px_#f2bf5040]">
+<span class="material-symbols-outlined" data-icon="play_arrow">play_arrow</span>
+                Bắt đầu hành trình
+            </button>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="flex-1 ml-0 md:ml-64 flex flex-col h-screen relative">
+<!-- TopNavBar -->
+<header class="docked full-width top-0 sticky bg-surface/70 backdrop-blur-xl border-b border-outline-variant flex justify-between items-center h-16 px-xl z-40">
+<!-- Brand (Visible on mobile if side nav hidden, otherwise redundant but following spec) -->
+<div class="md:hidden">
+<span class="font-headline-lg text-headline-lg font-bold text-primary">TimeLens</span>
+</div>
+<div class="hidden md:flex flex-col justify-center">
+<h2 class="font-headline-lg text-headline-lg font-bold text-on-surface tracking-tight">Cổng thời gian</h2>
+</div>
+<!-- Search & Actions -->
+<div class="flex items-center gap-md ml-auto">
+<button class="text-on-surface-variant hover:text-secondary transition-colors active:opacity-80 duration-150 p-xs rounded-full hover:bg-surface-variant/50">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="text-on-surface-variant hover:text-secondary transition-colors active:opacity-80 duration-150 p-xs rounded-full hover:bg-surface-variant/50">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+<div class="w-8 h-8 rounded-full border border-outline overflow-hidden ml-sm cursor-pointer hover:border-primary transition-colors">
+<img alt="User Profile Avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCnsPDRI8Kqd3D9MGiyONt2kHkEgjmtFPcDQ3JJ0BIl8Ycb7riVkF8nBmkE0ROzC66b5lUCBeEnaYQ1_VBUc6bTdPCN_mGT9kG60BZBppwT1-zwIuEkNnfVCv25cvOcfpEQvj3xrVj6yELIDWoO4H21A7_EhnSh9HwhVjKzJOVJ7wBwfthDZB7mZTKDetkzEj9t9NkwoRdnUNBFUZdMGp_HrJOW0UsY24-bvRCAPGM-7FVzRsv4nVW8ZVO95-4UylUrXEdTQq9errZH"/>
+</div>
+</div>
+</header>
+<!-- The Interactive Canvas -->
+<div class="split-view-container flex-1 bg-surface-container-lowest" id="split-view-container">
+<div class="pattern-overlay"></div>
+<!-- Left Side: Past (1900s) -->
+<!-- Prompts specify: sepia-toned 1900s historical view of 'Hoàng Thành Thăng Long' with historical ghost silhouettes. Neo-Heritage style. -->
+<div class="view-layer view-past" data-alt="A wide, sweeping, sepia-toned architectural photograph of the ancient Imperial Citadel of Thang Long in Hanoi during the early 1900s. The scene is enveloped in a mysterious, cinematic atmosphere with soft, high-contrast dramatic lighting piercing through a thick, moody mist. Translucent, ghostly silhouettes of imperial guards and courtiers in traditional attire faintly populate the grand courtyard. The aesthetic is 'Neo-Heritage', blending deep, near-black shadowy areas with glowing, subtle Imperial Gold accents that trace the intricate architectural details of the massive stone gates. Fine, ethereal golden dust particles float gently in the hazy air." id="view-past" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAUsk8_gOmPss8ZBj8fB276C8SQUHAaGuYtuAgM6cEMsaXnEayZxu_t2YpQ-1bfv81s8i0e6qZX462KiU9NefpjR0ReJrytgcvQfXck5lg7yGcYlulUkmgWQjv1Dt5nUCrunjaXmRSA8Tb6EFqBQS1RFnvoZy5rLQyyE8LBlGgVBy7orret7JBxz8uCAmgCCKqYWmMS0lHI4XZ53N5jR2MUqHTAZp1hXrpQjQSswyNcn7deI-j9pBByejddJv19XyynM9XA93WvjTKq');">
+<!-- Title Overlay (Left side specifically as requested) -->
+<div class="absolute top-xl left-xl z-20 max-w-md pointer-events-none drop-shadow-2xl">
+<h2 class="font-display-lg text-display-lg font-bold text-primary mb-1 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">Hoàng Thành Thăng Long</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] flex items-center gap-xs">
+<span class="material-symbols-outlined text-primary text-sm" data-icon="location_on">location_on</span>
+                        Hà Nội, Việt Nam
+                    </p>
+</div>
+</div>
+<!-- Right Side: Present -->
+<!-- Prompts specify: modern vibrant view. Neo-Heritage style. -->
+<div class="view-layer view-present" data-alt="A modern, high-definition, vibrant twilight photograph of the restored Imperial Citadel of Thang Long in Hanoi. The scene is illuminated by dramatic, architectural up-lighting that casts a deep Neo-Heritage aesthetic, contrasting the ancient brickwork against a deep, near-black evening sky. The modern setting is dynamic and energetic, featuring subtle, glowing Neon Cyan accents that highlight contemporary pathways and subtle glassmorphic information displays integrated into the environment. Faint, high-tech cyan energy particles drift upward in the crisp evening air, symbolizing the intersection of ancient history and modern technology." id="view-present" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuC9KNnxBrhUYhnrlnxNXnUrI_KQbzfbBuZU-QN_U2v2YmHbV2wQ7Rxwz7q43tshmWSoW9ZtMKYRIPJYIS3Al6WVPGC7vjmR-osIjuybFTjVs3vC93uAPCHAxWUqpaTamH1TBzQ8loRGJSd6pLa4eBkQBSm52JBfPxpEJ_fvikQaNT8lFm7ZpsUlJjPNo27z4F49b45brRFppU6WfGzNYm2JQtTi2fZqqzUzZPV2eD_NGyc-LKwEt8-aL4RsNCzOQD750BH1ZHFlgoi1');">
+</div>
+<!-- The Slider -->
+<div class="slider-handle" id="slider">
+<div class="slider-button">
+<span class="material-symbols-outlined text-primary" data-icon="compare_arrows">compare_arrows</span>
+</div>
+</div>
+<!-- Era Selection Bottom Bar (Glassmorphic) -->
+<div class="absolute bottom-xl left-1/2 -translate-x-1/2 z-30 bg-surface/70 backdrop-blur-xl border border-outline-variant/50 rounded-full px-lg py-sm flex gap-xl shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
+<button class="font-title-md text-title-md text-primary era-tab-active hover:text-primary-fixed transition-colors">1900</button>
+<button class="font-title-md text-title-md text-on-surface-variant hover:text-on-surface transition-colors">1954</button>
+<button class="font-title-md text-title-md text-on-surface-variant hover:text-on-surface transition-colors">1975</button>
+<button class="font-title-md text-title-md text-secondary hover:text-secondary-fixed transition-colors">Hiện tại</button>
+</div>
+<!-- Particle Containers -->
+<div class="absolute inset-0 pointer-events-none z-15 overflow-hidden w-1/2" id="particles-left"></div>
+<div class="absolute inset-0 left-1/2 pointer-events-none z-6 overflow-hidden w-1/2" id="particles-right"></div>
+</div>
+</main>
+<script>
+        // Interactive Slider Logic
+        const container = document.getElementById('split-view-container');
+        const slider = document.getElementById('slider');
+        const pastView = document.getElementById('view-past');
+        const particlesLeft = document.getElementById('particles-left');
+
+        let isDragging = false;
+
+        slider.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            document.body.style.cursor = 'ew-resize';
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDragging = false;
+            document.body.style.cursor = 'default';
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+
+            const rect = container.getBoundingClientRect();
+            let x = e.clientX - rect.left;
+
+            // Constrain
+            if (x < 0) x = 0;
+            if (x > rect.width) x = rect.width;
+
+            const percentage = (x / rect.width) * 100;
+
+            // Update positions
+            slider.style.left = `${percentage}%`;
+            pastView.style.clipPath = `polygon(0 0, ${percentage}% 0, ${percentage}% 100%, 0 100%)`;
+            
+            // Adjust particle container width
+            particlesLeft.style.width = `${percentage}%`;
+        });
+
+        // Basic Particle System Generator
+        function createParticles(containerId, count, typeClass) {
+            const container = document.getElementById(containerId);
+            for (let i = 0; i < count; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle', typeClass);
+                
+                // Random properties
+                const size = Math.random() * 4 + 2; // 2px to 6px
+                const left = Math.random() * 100; // 0% to 100%
+                const duration = Math.random() * 5 + 3; // 3s to 8s
+                const delay = Math.random() * 5; // 0s to 5s
+
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                particle.style.left = `${left}%`;
+                particle.style.animationDuration = `${duration}s`;
+                particle.style.animationDelay = `${delay}s`;
+
+                container.appendChild(particle);
+            }
+        }
+
+        // Initialize particles
+        createParticles('particles-left', 30, 'particle-gold');
+        createParticles('particles-right', 30, 'particle-cyan');
+    </script>
+</body></html>

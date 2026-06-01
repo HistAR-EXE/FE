@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Khám phá - TimeLens</title>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-bright": "#383941",
+                        "inverse-surface": "#e3e1ed",
+                        "primary": "#f2bf50",
+                        "on-error-container": "#ffdad6",
+                        "on-surface": "#e3e1ed",
+                        "on-secondary-fixed": "#00201f",
+                        "background": "#12131b",
+                        "surface-container-high": "#292932",
+                        "surface-variant": "#33343d",
+                        "primary-fixed-dim": "#f2bf50",
+                        "on-tertiary-fixed-variant": "#8f100d",
+                        "on-primary-container": "#533c00",
+                        "on-error": "#690005",
+                        "inverse-primary": "#7a5900",
+                        "secondary-fixed-dim": "#44dbd5",
+                        "error": "#ffb4ab",
+                        "surface": "#12131b",
+                        "surface-container": "#1e1f27",
+                        "tertiary": "#ffb4aa",
+                        "on-secondary": "#003735",
+                        "surface-tint": "#f2bf50",
+                        "secondary": "#44dbd5",
+                        "outline-variant": "#4f4636",
+                        "error-container": "#93000a",
+                        "outline": "#9b8f7c",
+                        "surface-container-lowest": "#0d0e15",
+                        "on-surface-variant": "#d2c5b0",
+                        "tertiary-container": "#ff8a7b",
+                        "on-tertiary": "#690003",
+                        "on-background": "#e3e1ed",
+                        "on-secondary-fixed-variant": "#00504d",
+                        "secondary-fixed": "#68f8f1",
+                        "on-primary-fixed": "#261900",
+                        "inverse-on-surface": "#2f3038",
+                        "on-tertiary-container": "#840507",
+                        "secondary-container": "#00bcb6",
+                        "on-primary": "#402d00",
+                        "on-tertiary-fixed": "#410001",
+                        "tertiary-fixed-dim": "#ffb4aa",
+                        "tertiary-fixed": "#ffdad5",
+                        "surface-dim": "#12131b",
+                        "on-primary-fixed-variant": "#5c4300",
+                        "primary-container": "#d4a437",
+                        "surface-container-low": "#1a1b23",
+                        "primary-fixed": "#ffdea1",
+                        "on-secondary-container": "#004543",
+                        "surface-container-highest": "#33343d"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "sm": "12px",
+                        "md": "16px",
+                        "xl": "32px",
+                        "safe-area-inset": "20px",
+                        "xs": "8px",
+                        "lg": "24px",
+                        "base": "4px"
+                    },
+                    "fontFamily": {
+                        "label-sm": ["Be Vietnam Pro"],
+                        "headline-lg-mobile": ["Be Vietnam Pro"],
+                        "display-lg": ["Be Vietnam Pro"],
+                        "headline-lg": ["Be Vietnam Pro"],
+                        "body-lg": ["Be Vietnam Pro"],
+                        "title-md": ["Be Vietnam Pro"],
+                        "body-md": ["Be Vietnam Pro"]
+                    },
+                    "fontSize": {
+                        "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                        "headline-lg-mobile": ["22px", {"lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                        "display-lg": ["34px", {"lineHeight": "42px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "headline-lg": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "title-md": ["18px", {"lineHeight": "24px", "fontWeight": "600"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        /* Custom scrollbar for panel */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #4f4636;
+            border-radius: 4px;
+        }
+        
+        /* Map Marker Glow Animation */
+        @keyframes pulse-ring {
+            0% { transform: scale(0.8); opacity: 0.5; }
+            100% { transform: scale(2.5); opacity: 0; }
+        }
+        .marker-glow::before {
+            content: '';
+            position: absolute;
+            inset: -8px;
+            border-radius: 50%;
+            background-color: #44dbd5; /* secondary */
+            animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+            z-index: -1;
+        }
+        .bg-dongson-pattern {
+            background-image: radial-gradient(rgba(242, 191, 80, 0.05) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md h-screen overflow-hidden flex">
+<!-- SideNavBar (Shared Component) -->
+<aside class="h-screen w-64 fixed left-0 top-0 border-r border-outline-variant bg-surface-container-low flex flex-col py-lg px-md z-50">
+<div class="mb-xl flex items-center gap-sm px-sm">
+<div class="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center border border-primary/50">
+<span class="material-symbols-outlined text-primary">hourglass_empty</span>
+</div>
+<div>
+<h1 class="font-headline-lg text-headline-lg font-bold text-primary">TimeLens</h1>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Neo-Heritage</p>
+</div>
+</div>
+<nav class="flex flex-col gap-sm">
+<!-- Trang chủ -->
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/50 transition-colors" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-title-md text-title-md">Trang chủ</span>
+</a>
+<!-- Khám phá (ACTIVE) -->
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-secondary font-bold border-r-4 border-secondary bg-secondary-container/10 active:scale-[0.98] transition-transform duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">explore</span>
+<span class="font-title-md text-title-md">Khám phá</span>
+</a>
+<!-- Nhiệm vụ -->
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/50 transition-colors" href="#">
+<span class="material-symbols-outlined">assignment</span>
+<span class="font-title-md text-title-md">Nhiệm vụ</span>
+</a>
+<!-- Hồ sơ -->
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/50 transition-colors" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-title-md text-title-md">Hồ sơ</span>
+</a>
+<!-- Bảng xếp hạng -->
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/50 transition-colors" href="#">
+<span class="material-symbols-outlined">leaderboard</span>
+<span class="font-title-md text-title-md">Bảng xếp hạng</span>
+</a>
+</nav>
+<div class="mt-auto mt-xl">
+<div class="p-md rounded-xl bg-surface-variant/30 border border-outline-variant/50 relative overflow-hidden">
+<div class="absolute inset-0 bg-dongson-pattern opacity-50"></div>
+<div class="relative z-10 flex flex-col gap-sm">
+<span class="font-title-md text-title-md text-primary">Bảo vật Hoàng cung</span>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Sự kiện độc quyền đang diễn ra</p>
+<button class="mt-2 w-full py-2 bg-primary text-on-primary font-title-md text-title-md rounded-md hover:bg-primary/90 transition-colors shadow-[0_0_15px_rgba(242,191,80,0.3)]">Tham gia</button>
+</div>
+</div>
+</div>
+</aside>
+<!-- TopNavBar (Shared Component) -->
+<nav class="fixed top-0 right-0 w-[calc(100%-16rem)] z-40 backdrop-blur-xl border-b border-outline-variant bg-surface/70 flex justify-between items-center h-16 px-xl tap-highlight-none">
+<!-- Search Bar -->
+<div class="relative w-96">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+<input class="w-full bg-surface-container border border-outline-variant rounded-full py-2 pl-10 pr-4 font-body-md text-on-surface focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary/50 transition-all placeholder:text-on-surface-variant/70" placeholder="Tìm kiếm di tích, triều đại..." type="text"/>
+</div>
+<!-- Trailing Actions -->
+<div class="flex items-center gap-md">
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-secondary hover:bg-surface-variant/50 transition-all">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-secondary hover:bg-surface-variant/50 transition-all">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<div class="w-10 h-10 rounded-full bg-surface-variant border-2 border-outline border-primary/50 overflow-hidden ml-2 cursor-pointer hover:shadow-[0_0_10px_rgba(242,191,80,0.4)] transition-all">
+<img alt="User Avatar" class="w-full h-full object-cover" data-alt="A cinematic close up portrait of a young vietnamese gen z user set against a dark neo-heritage background. Subtle cyan and gold rim lighting highlights their features. The aesthetic is modern corporate fused with mystical historical energy. High quality, detailed." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDZgoCkVBkaxwCSsVwukkaPdgjvNWqeXXJSe16SlWzeB5YGtgPRrgZUSBItPKHMC_YPlihdjET86syqZ0gJmsOaEZDzYP4yOOOPj1X4xy2CH6DtArOaaQJ5XjPo4dwMdlyXPr4HDT7T6dibfjrN7KxxfhjrF2pFYiaQOd0uPOecYeqRahD6AwBQYLYG0AChqdzAKkZWaLyqzTHNNrMvGrdXfI7ifkIZveVNgy0YXFEzCK69DYAUWD63FUuvujXBIA2xvztIClP_rQLc"/>
+</div>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="ml-64 mt-16 w-full h-[calc(100vh-4rem)] p-lg flex gap-lg relative">
+<!-- Left Panel: Filters & Highlights -->
+<section class="w-[400px] h-full flex flex-col gap-lg z-10">
+<!-- Filter Glass Panel -->
+<div class="bg-surface/80 backdrop-blur-xl border border-outline-variant rounded-xl p-md shadow-lg flex flex-col gap-md">
+<div class="flex items-center justify-between">
+<h2 class="font-title-md text-title-md text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">filter_list</span>
+                        Bộ lọc bản đồ
+                    </h2>
+<button class="font-label-sm text-label-sm text-secondary hover:underline">Xóa bộ lọc</button>
+</div>
+<div class="flex flex-wrap gap-sm">
+<button class="px-4 py-2 rounded-full border border-secondary bg-secondary/10 text-secondary font-label-sm text-label-sm flex items-center gap-1 hover:bg-secondary/20 transition-colors shadow-[0_0_10px_rgba(68,219,213,0.15)]">
+<span class="material-symbols-outlined text-[16px]">my_location</span>
+                        Gần tôi
+                    </button>
+<button class="px-4 py-2 rounded-full border border-outline-variant bg-surface-container text-on-surface-variant font-label-sm text-label-sm flex items-center gap-1 hover:text-on-surface hover:border-outline transition-colors">
+<span class="material-symbols-outlined text-[16px]">view_in_ar</span>
+                        Tham quan từ xa
+                    </button>
+<button class="px-4 py-2 rounded-full border border-outline-variant bg-surface-container text-on-surface-variant font-label-sm text-label-sm flex items-center gap-1 hover:text-on-surface hover:border-outline transition-colors">
+<span class="material-symbols-outlined text-[16px]">history_edu</span>
+                        Triều Nguyễn
+                    </button>
+<button class="px-4 py-2 rounded-full border border-outline-variant bg-surface-container text-on-surface-variant font-label-sm text-label-sm flex items-center gap-1 hover:text-on-surface hover:border-outline transition-colors">
+<span class="material-symbols-outlined text-[16px]">temple_buddhist</span>
+                        Tôn giáo
+                    </button>
+</div>
+</div>
+<!-- Highlighted List -->
+<div class="flex-1 overflow-y-auto custom-scrollbar pr-2 flex flex-col gap-md pb-md">
+<h3 class="font-title-md text-title-md text-on-surface-variant px-1">Di tích nổi bật</h3>
+<!-- Card 1 -->
+<article class="group bg-surface-container-low border border-outline-variant rounded-xl overflow-hidden hover:border-primary/50 transition-all cursor-pointer hover:bg-surface-container">
+<div class="h-32 relative">
+<img alt="Hoàng thành Huế" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A wide panoramic shot of the Hue Imperial Citadel in Vietnam at twilight. The sky is a moody dark blue, while the ancient palace buildings are illuminated by warm, high-tech golden uplighting that contrasts with subtle neon cyan accents on the pathways. The aesthetic is cinematic, mystical, and perfectly blends deep historical lacquer textures with futuristic digital elements." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAc8mKVcLTVTDnMzvyQGag3DjLMzJtLi8a8xMlmLzyHao_nUe9-Eaahie-NgxUG3lpPwGksZdwsHz733qOUi107c1JXCnwQWJwlAjPg2bIR3m-_aucswEu33aBeO1v7U_9nEGlA2mmPcOBGb16TyqEqdQniS4Pb8DrvcoG3MoMpFTpkxvVuvPw_buU1rNHdPq4CnFuFX5WZugGfWIXW-l9wd7dUoVwD8QnJRFFhjt4wtuwt0-krlGuqFH_-VCPHyDeqCIItEJA5XhEn"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent"></div>
+<div class="absolute bottom-2 left-3 flex gap-1">
+<span class="px-2 py-0.5 rounded-full bg-surface/80 backdrop-blur-sm border border-outline-variant text-[10px] font-label-sm text-primary">Triều Nguyễn</span>
+<span class="px-2 py-0.5 rounded-full bg-surface/80 backdrop-blur-sm border border-outline-variant text-[10px] font-label-sm text-secondary">Có AR</span>
+</div>
+</div>
+<div class="p-md">
+<h4 class="font-title-md text-title-md text-on-surface group-hover:text-primary transition-colors">Đại Nội Huế</h4>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1 line-clamp-2">Khu di tích lịch sử vĩ đại nhất của triều đại nhà Nguyễn, mở khóa trải nghiệm thực tế ảo.</p>
+<div class="mt-3 flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">location_on</span> 2.4 km</span>
+<span class="flex items-center gap-1 text-primary"><span class="material-symbols-outlined text-[14px]">star</span> 4.9</span>
+</div>
+</div>
+</article>
+<!-- Card 2 -->
+<article class="group bg-surface-container-low border border-outline-variant rounded-xl overflow-hidden hover:border-primary/50 transition-all cursor-pointer hover:bg-surface-container">
+<div class="h-32 relative">
+<img alt="Chùa Thiên Mụ" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A cinematic night view of Thien Mu Pagoda in Vietnam. The towering octagonal structure is silhouetted against a deep, starless black sky. Subtle, glowing neon cyan lines trace the architectural edges, suggesting a hidden digital frequency within the ancient stonework. The overall mood is mysterious, neo-heritage, and heavily reliant on deep shadows and vibrant technological accents." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBO-UNu_GKC60dQ4L1bJxsTQ90dO4MWtIEvZAwYM3Qg171BbOAO5xzCrk6SzxGfQpnA9TRFor3k7Xe-KU8v1RqEl2kW-uteDhKe5lCaSpJ8abetRUKpfJ1CfYG821e_xg6nHyIPler32hZPF58fO1nZKU0YAM1CMSqME3ZF7nzA7jYYJFA8xdc_PV-nvsvvcS9PqP2ptuYh-an4GG1Oi6dONhDfS72A-wmFhhopt-PuSM3BE3NYJJlrVEoPwtOXJMUiIafde493Kzuy"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent"></div>
+<div class="absolute bottom-2 left-3 flex gap-1">
+<span class="px-2 py-0.5 rounded-full bg-surface/80 backdrop-blur-sm border border-outline-variant text-[10px] font-label-sm text-on-surface">Tôn giáo</span>
+</div>
+</div>
+<div class="p-md">
+<h4 class="font-title-md text-title-md text-on-surface group-hover:text-primary transition-colors">Chùa Thiên Mụ</h4>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1 line-clamp-2">Ngôi chùa cổ kính nằm bên bờ sông Hương, biểu tượng tâm linh của cố đô.</p>
+<div class="mt-3 flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">location_on</span> 5.1 km</span>
+<span class="flex items-center gap-1 text-primary"><span class="material-symbols-outlined text-[14px]">star</span> 4.8</span>
+</div>
+</div>
+</article>
+</div>
+</section>
+<!-- Full Canvas Map Area -->
+<section class="flex-1 h-full rounded-2xl overflow-hidden border border-outline-variant relative bg-surface-container-lowest shadow-inner">
+<!-- Map Background Image Placeholder -->
+<div class="absolute inset-0 bg-cover bg-center opacity-80" data-alt="A highly stylized, top-down satellite view of a geographic map, customized for a dark neo-heritage UI. The terrain is rendered in deep blacks and dark grays, resembling ancient lacquer. Roads and waterways are highlighted with faint, glowing neon cyan lines, reminiscent of futuristic circuitry overlapping an ancient scroll. The lighting is dark and moody, focusing entirely on the glowing UI elements." data-location="Hue, Vietnam" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuB4fuwcZuDZB9WL2zN5qLyjCfJjhuhn6ceFOcPYPq-iQkQ4JheFivFKFw4EAveLhD7n3SpzMea0PJtOVygS-jwiGp4-sM_Vzx_qEmsaRDMuJ8__Nb-IV8hBct7HAkKoJv8rYnYUDle3Hd2pgz5eSve70kGDknUGBzlZMnh6KTxwsJaoogH-S4apN6WeMuCby5hpkfx1SchJL_QstRMk7KxTBi1PArd2pbz8Au76CYYQqhAuwy4DNGmWfdoKKY5-N5HK2tLe0c0f5OW7'); filter: grayscale(80%) sepia(20%) hue-rotate(180deg) brightness(40%) contrast(120%);"></div>
+<!-- Map Overlay Pattern -->
+<div class="absolute inset-0 bg-dongson-pattern opacity-20 pointer-events-none"></div>
+<!-- UI Controls on Map -->
+<div class="absolute right-md bottom-md flex flex-col gap-sm">
+<button class="w-10 h-10 bg-surface/80 backdrop-blur-md border border-outline-variant rounded-full flex items-center justify-center text-on-surface hover:text-primary hover:border-primary transition-colors shadow-lg">
+<span class="material-symbols-outlined">add</span>
+</button>
+<button class="w-10 h-10 bg-surface/80 backdrop-blur-md border border-outline-variant rounded-full flex items-center justify-center text-on-surface hover:text-primary hover:border-primary transition-colors shadow-lg">
+<span class="material-symbols-outlined">remove</span>
+</button>
+<button class="w-10 h-10 mt-2 bg-secondary/20 backdrop-blur-md border border-secondary rounded-full flex items-center justify-center text-secondary hover:bg-secondary/40 transition-colors shadow-[0_0_15px_rgba(68,219,213,0.3)]">
+<span class="material-symbols-outlined">near_me</span>
+</button>
+</div>
+<!-- Map Markers -->
+<!-- Marker 1 (Active/Highlighted) -->
+<div class="absolute top-1/2 left-1/3 -translate-x-1/2 -translate-y-1/2 group cursor-pointer">
+<div class="relative flex items-center justify-center">
+<div class="w-4 h-4 rounded-full bg-secondary marker-glow shadow-[0_0_15px_rgba(68,219,213,1)] border-2 border-background z-10"></div>
+<div class="absolute -top-12 opacity-0 group-hover:opacity-100 transition-opacity duration-300 w-max bg-surface/90 backdrop-blur-md border border-secondary px-3 py-1.5 rounded-lg shadow-lg flex flex-col items-center">
+<span class="font-title-md text-[14px] text-on-surface">Đại Nội Huế</span>
+<div class="absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-secondary"></div>
+</div>
+</div>
+</div>
+<!-- Marker 2 (Inactive) -->
+<div class="absolute top-[30%] left-[60%] -translate-x-1/2 -translate-y-1/2 group cursor-pointer">
+<div class="relative flex items-center justify-center">
+<div class="w-3 h-3 rounded-full bg-primary/70 border border-primary z-10 group-hover:scale-125 transition-transform"></div>
+<div class="absolute -top-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 w-max bg-surface-container border border-outline-variant px-2 py-1 rounded-md shadow-lg">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Lăng Tự Đức</span>
+</div>
+</div>
+</div>
+<!-- Marker 3 (Inactive) -->
+<div class="absolute top-[70%] left-[45%] -translate-x-1/2 -translate-y-1/2 group cursor-pointer">
+<div class="relative flex items-center justify-center">
+<div class="w-3 h-3 rounded-full bg-primary/70 border border-primary z-10 group-hover:scale-125 transition-transform"></div>
+<div class="absolute -top-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 w-max bg-surface-container border border-outline-variant px-2 py-1 rounded-md shadow-lg">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Đàn Nam Giao</span>
+</div>
+</div>
+</div>
+<!-- Contextual Overlay Status -->
+<div class="absolute top-md left-md bg-surface-container-high/80 backdrop-blur-sm border border-outline-variant px-4 py-2 rounded-full flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-secondary shadow-[0_0_8px_rgba(68,219,213,0.8)] animate-pulse"></div>
+<span class="font-label-sm text-label-sm text-on-surface">Đang quét khu vực...</span>
+</div>
+</section>
+</main>
+</body></html>

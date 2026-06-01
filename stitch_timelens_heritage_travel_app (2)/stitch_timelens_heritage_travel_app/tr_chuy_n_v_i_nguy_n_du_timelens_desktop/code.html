@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>TimeLens - Chat với Nguyễn Du</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-fixed": "#ffdea1",
+                        "on-tertiary-fixed": "#410001",
+                        "tertiary": "#ffb4aa",
+                        "secondary": "#44dbd5",
+                        "surface-container-high": "#292932",
+                        "error": "#ffb4ab",
+                        "on-primary": "#402d00",
+                        "on-tertiary-fixed-variant": "#8f100d",
+                        "on-surface-variant": "#d2c5b0",
+                        "inverse-on-surface": "#2f3038",
+                        "background": "#12131b",
+                        "on-error-container": "#ffdad6",
+                        "primary-container": "#d4a437",
+                        "surface-container-lowest": "#0d0e15",
+                        "on-primary-fixed": "#261900",
+                        "secondary-fixed-dim": "#44dbd5",
+                        "surface": "#12131b",
+                        "on-tertiary-container": "#840507",
+                        "on-tertiary": "#690003",
+                        "outline": "#9b8f7c",
+                        "surface-variant": "#33343d",
+                        "tertiary-fixed-dim": "#ffb4aa",
+                        "surface-container-low": "#1a1b23",
+                        "on-primary-fixed-variant": "#5c4300",
+                        "tertiary-container": "#ff8a7b",
+                        "surface-container": "#1e1f27",
+                        "surface-tint": "#f2bf50",
+                        "secondary-fixed": "#68f8f1",
+                        "inverse-surface": "#e3e1ed",
+                        "error-container": "#93000a",
+                        "on-background": "#e3e1ed",
+                        "outline-variant": "#4f4636",
+                        "on-secondary-container": "#004543",
+                        "primary-fixed-dim": "#f2bf50",
+                        "secondary-container": "#00bcb6",
+                        "surface-bright": "#383941",
+                        "inverse-primary": "#7a5900",
+                        "on-secondary-fixed-variant": "#00504d",
+                        "tertiary-fixed": "#ffdad5",
+                        "on-error": "#690005",
+                        "on-primary-container": "#533c00",
+                        "on-surface": "#e3e1ed",
+                        "on-secondary-fixed": "#00201f",
+                        "on-secondary": "#003735",
+                        "surface-dim": "#12131b",
+                        "surface-container-highest": "#33343d",
+                        "primary": "#f2bf50"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "md": "16px",
+                        "safe-area-inset": "20px",
+                        "xs": "8px",
+                        "xl": "32px",
+                        "sm": "12px",
+                        "lg": "24px",
+                        "base": "4px"
+                    },
+                    "fontFamily": {
+                        "label-sm": ["Be Vietnam Pro"],
+                        "headline-lg": ["Be Vietnam Pro"],
+                        "body-md": ["Be Vietnam Pro"],
+                        "headline-lg-mobile": ["Be Vietnam Pro"],
+                        "title-md": ["Be Vietnam Pro"],
+                        "display-lg": ["Be Vietnam Pro"],
+                        "body-lg": ["Be Vietnam Pro"]
+                    },
+                    "fontSize": {
+                        "label-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                        "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "headline-lg-mobile": ["22px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+                        "title-md": ["18px", { "lineHeight": "24px", "fontWeight": "600" }],
+                        "display-lg": ["34px", { "lineHeight": "42px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            background-color: theme('colors.background');
+            color: theme('colors.on-background');
+            background-image: radial-gradient(circle at 50% 50%, rgba(242, 191, 80, 0.03) 0%, transparent 100%);
+        }
+        
+        /* Subtle Bronze Drum Pattern Overlay */
+        .dong-son-pattern {
+            background-image: url('data:image/svg+xml;utf8,<svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><path d="M20 0L40 20L20 40L0 20L20 0ZM20 2L38 20L20 38L2 20L20 2Z" fill="rgba(242, 191, 80, 0.05)"/></svg>');
+            background-repeat: repeat;
+        }
+
+        /* Glow effects */
+        .glow-primary {
+            box-shadow: 0 0 15px 2px rgba(242, 191, 80, 0.2);
+        }
+        .glow-secondary {
+            box-shadow: 0 0 15px 2px rgba(68, 219, 213, 0.2);
+        }
+        
+        .chat-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .chat-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .chat-scroll::-webkit-scrollbar-thumb {
+            background-color: theme('colors.surface-variant');
+            border-radius: theme('borderRadius.full');
+        }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden antialiased">
+<!-- SideNavBar (Hidden on Mobile, Visible on Desktop) -->
+<nav class="hidden md:flex flex-col bg-surface-container dark:bg-surface-container h-screen w-64 fixed left-0 top-0 border-r border-outline-variant p-lg z-50">
+<!-- Brand / Header -->
+<div class="mb-xl">
+<h1 class="font-display-lg text-display-lg font-bold text-primary mb-base">TimeLens</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Nhà du hành di sản</p>
+</div>
+<!-- Navigation Links -->
+<ul class="flex flex-col gap-sm flex-1">
+<li>
+<a class="text-on-surface-variant flex items-center gap-md p-md rounded-lg hover:bg-surface-variant/50 hover:text-secondary transition-colors active:scale-95 duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">home</span>
+<span class="font-title-md text-title-md">Trang chủ</span>
+</a>
+</li>
+<li>
+<!-- Active State matches "Khám phá" as we are interacting with a historical figure (exploration) -->
+<a class="text-secondary font-bold flex items-center gap-md p-md bg-secondary-container/10 rounded-lg active:scale-95 duration-200 glow-secondary border border-secondary/20" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">explore</span>
+<span class="font-title-md text-title-md">Khám phá</span>
+</a>
+</li>
+<li>
+<a class="text-on-surface-variant flex items-center gap-md p-md rounded-lg hover:bg-surface-variant/50 hover:text-secondary transition-colors active:scale-95 duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">military_tech</span>
+<span class="font-title-md text-title-md">Nhiệm vụ</span>
+</a>
+</li>
+<li>
+<a class="text-on-surface-variant flex items-center gap-md p-md rounded-lg hover:bg-surface-variant/50 hover:text-secondary transition-colors active:scale-95 duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">history_edu</span>
+<span class="font-title-md text-title-md">Cổ vật</span>
+</a>
+</li>
+<li>
+<a class="text-on-surface-variant flex items-center gap-md p-md rounded-lg hover:bg-surface-variant/50 hover:text-secondary transition-colors active:scale-95 duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">person</span>
+<span class="font-title-md text-title-md">Hồ sơ</span>
+</a>
+</li>
+</ul>
+<!-- CTA -->
+<button class="mt-auto w-full bg-primary text-on-primary font-title-md text-title-md py-sm px-md rounded-lg flex items-center justify-center gap-sm hover:bg-primary-fixed-dim transition-colors active:scale-95 duration-200 glow-primary">
+<span>Bắt đầu hành trình</span>
+<span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</nav>
+<!-- Main Content Area -->
+<div class="flex-1 flex flex-col ml-0 md:ml-64 relative dong-son-pattern">
+<!-- TopNavBar (Desktop & Mobile) -->
+<header class="bg-surface/70 dark:bg-surface/70 backdrop-blur-xl docked full-width top-0 sticky flex justify-between items-center h-16 px-xl z-40">
+<!-- Left side (Mobile Brand / Desktop spacer) -->
+<div class="md:hidden flex items-center gap-sm">
+<span class="font-headline-lg-mobile text-headline-lg-mobile font-bold text-primary">TimeLens</span>
+</div>
+<div class="hidden md:block">
+<!-- Breadcrumb style context -->
+<div class="flex items-center gap-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-sm">explore</span>
+<span class="font-label-sm text-label-sm">/ Nhâm Tuất 1765</span>
+</div>
+</div>
+<!-- Right side Actions -->
+<div class="flex items-center gap-lg">
+<!-- Search (Placeholder style based on JSON) -->
+<div class="hidden sm:flex items-center bg-surface-container-high rounded-full px-sm py-xs border border-outline-variant focus-within:border-secondary transition-colors w-64">
+<span class="material-symbols-outlined text-on-surface-variant mr-xs text-sm">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-body-md font-body-md text-on-surface w-full placeholder-on-surface-variant p-0 h-6" placeholder="Tìm kiếm di sản..." type="text"/>
+</div>
+<div class="flex items-center gap-sm">
+<button class="text-on-surface-variant hover:text-secondary transition-colors active:opacity-80 duration-150 p-xs">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="text-on-surface-variant hover:text-secondary transition-colors active:opacity-80 duration-150 p-xs">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<!-- User Avatar -->
+<div class="w-8 h-8 rounded-full border border-primary/50 overflow-hidden ml-sm cursor-pointer glow-primary">
+<img alt="User Profile Avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAUNwD4SH53tdBFPYHyzwK2Ldk4v5BPlXYp6fGSobXWx2tYwPYUw0A2Jg4k_5WxFjNQ2YHqcB7z_n8hOtzO0QL-x1d_Fb-hooAOTB3385l0mdrQnXnF4ykiOkZNLLLQB6Uah4W2-sU6vHk3zq3LISNODddn5Ct4V0nyQIbQMnFTSTT0eccA8GBAVRUo-eEc_nxVvweXkf6KSdhZqIy_PBfrfCXkO_qQ1cX-22gzKWirZ9LWthvdu70PodFQy_6WDb8nkZHvwJRbTKqH"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Dual Pane Layout Container -->
+<main class="flex-1 flex flex-col lg:flex-row overflow-hidden p-md lg:p-lg gap-md lg:gap-lg max-w-[1600px] mx-auto w-full">
+<!-- Left Pane: Historical Figure Context (Glassmorphism Card) -->
+<section class="hidden lg:flex w-1/3 min-w-[360px] max-w-[480px] bg-surface-container-low/80 backdrop-blur-md rounded-xl border border-outline-variant flex-col overflow-hidden relative group">
+<!-- Glowing accent line at top -->
+<div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-secondary opacity-80"></div>
+<!-- Portrait Image -->
+<div class="h-[45%] w-full relative">
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-low via-transparent to-transparent z-10"></div>
+<img alt="A highly detailed, cinematic digital painting of a Vietnamese scholar from the 18th century, representing Nguyen Du. He is wearing traditional dark silk robes with subtle gold embroidery. The lighting is moody and dramatic, with warm candlelight illuminating his face against a dark, historical study background filled with ancient scrolls and bamboo brushes. The style blends historical realism with a touch of modern digital art polish, utilizing deep blacks, rich golds, and subtle warm tones to fit a neo-heritage UI aesthetic." class="w-full h-full object-cover object-top filter contrast-125 brightness-90" data-alt="A highly detailed, cinematic digital painting of a Vietnamese scholar from the 18th century, representing Nguyen Du. He is wearing traditional dark silk robes with subtle gold embroidery. The lighting is moody and dramatic, with warm candlelight illuminating his face against a dark, historical study background filled with ancient scrolls and bamboo brushes. The style blends historical realism with a touch of modern digital art polish, utilizing deep blacks, rich golds, and subtle warm tones to fit a neo-heritage UI aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDZ1XrnxaVd6MlYF8X6FcDwueirDL0uiHe0C8ABycnBeoonNMlAXsloXpQvWBsY3p92Qy6oPoifxTDGAaimpe4LKaAqN9X9DOn0v-W5DEhqUxRtftQwrflICiSW1lT-DPzYlZWn9BeEOrVPEt0fErBkHV1aePAzcSnutLJQ2HdqeFsxGZY-gggTL9gJ_2ytBH2V7UXNx7U-aZgh090ulN3DwlsX20jFa_dH03z5Sri-PalkZLA9kcpvWGVFk85ivdfZ04m6gZQomDlI"/>
+<!-- Floating Identity Tag -->
+<div class="absolute bottom-md left-md z-20">
+<div class="inline-flex items-center gap-xs bg-surface-variant/90 backdrop-blur-sm border border-outline-variant rounded-full px-sm py-xs mb-sm">
+<span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+<span class="font-label-sm text-label-sm text-on-surface uppercase tracking-wider">Đang kết nối tâm thức</span>
+</div>
+<h2 class="font-display-lg text-display-lg font-bold text-on-surface">Nguyễn Du</h2>
+<p class="font-body-lg text-body-lg text-primary-fixed-dim">Đại thi hào dân tộc (1765 - 1820)</p>
+</div>
+</div>
+<!-- Bio & Context Data -->
+<div class="p-lg flex-1 overflow-y-auto chat-scroll flex flex-col gap-md">
+<!-- Chips -->
+<div class="flex flex-wrap gap-xs">
+<span class="px-sm py-xs bg-surface-variant rounded-full border border-outline-variant font-label-sm text-label-sm text-on-surface-variant">Triều Lê - Trịnh</span>
+<span class="px-sm py-xs bg-surface-variant rounded-full border border-outline-variant font-label-sm text-label-sm text-on-surface-variant">Văn học trung đại</span>
+<span class="px-sm py-xs bg-surface-variant rounded-full border border-outline-variant font-label-sm text-label-sm text-on-surface-variant">Hà Tĩnh</span>
+</div>
+<!-- Short Bio -->
+<div class="text-on-surface font-body-md text-body-md leading-relaxed">
+                        Tố Như tử, một nhà thơ kiệt xuất, danh nhân văn hóa thế giới. Ông là người có con mắt trông thấu sáu cõi, tấm lòng nghĩ suốt nghìn đời. 
+                        Đại diện tiêu biểu nhất cho trào lưu nhân đạo chủ nghĩa trong văn học Việt Nam nửa cuối thế kỷ XVIII - nửa đầu thế kỷ XIX.
+                    </div>
+<!-- Knowledge Pillars (Bento-ish stats) -->
+<div class="grid grid-cols-2 gap-sm mt-auto">
+<div class="bg-surface-container p-sm rounded-lg border border-outline-variant/50 flex flex-col gap-xs">
+<span class="material-symbols-outlined text-secondary text-lg">menu_book</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Tác phẩm tiêu biểu</span>
+<span class="font-title-md text-title-md text-on-surface truncate">Truyện Kiều</span>
+</div>
+<div class="bg-surface-container p-sm rounded-lg border border-outline-variant/50 flex flex-col gap-xs">
+<span class="material-symbols-outlined text-primary text-lg">translate</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Ngôn ngữ</span>
+<span class="font-title-md text-title-md text-on-surface">Chữ Nôm, Hán</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Right Pane: Chat Interface -->
+<section class="flex-1 bg-surface-container-low/90 backdrop-blur-md rounded-xl border border-outline-variant flex flex-col overflow-hidden relative shadow-2xl">
+<!-- Chat Header (Visible mainly on mobile where left pane is hidden) -->
+<div class="lg:hidden flex items-center p-md border-b border-outline-variant bg-surface-container-high/50">
+<div class="w-10 h-10 rounded-full overflow-hidden mr-sm border border-primary/50">
+<img alt="Nguyen Du Thumbnail" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBNfLFU-KnTGC36E3A8ZmMKPnq9f6EKyHLyJGne644V7fyTKw_YT0brpXfAMhHaaViHzMb62U-JjBJtlvHVE_fyRqaL-zJzKXPommlKjEk0sIq55PtXggvmc-GmwcmHjV3buggQupLWNseVxE2f4KJ-O4LikFBda71jw9pC9tELJecW5knml7LMCEJXytOlhiJ4HftuUUXtbUJSZoasNfDN2Jd3qFF_QjdHz544Je7kVb2YGQAJsOjO9T4jHuGOZgd_X4ZRolWBV-p3"/>
+</div>
+<div>
+<h2 class="font-title-md text-title-md font-bold text-on-surface">Nguyễn Du</h2>
+<p class="font-label-sm text-label-sm text-secondary flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-secondary inline-block"></span> Đang trực tuyến
+                        </p>
+</div>
+</div>
+<!-- Chat Canvas / Messages Area -->
+<div class="flex-1 p-md lg:p-lg overflow-y-auto chat-scroll flex flex-col gap-lg">
+<!-- Date Separator -->
+<div class="flex justify-center">
+<span class="bg-surface-variant/50 px-sm py-xs rounded-full font-label-sm text-label-sm text-on-surface-variant border border-outline-variant/50 backdrop-blur-sm">
+                            Phiên liên kết: Năm Gia Long thứ 19 (1820)
+                        </span>
+</div>
+<!-- AI Message (Nguyen Du) -->
+<div class="flex gap-sm max-w-[85%]">
+<div class="w-8 h-8 rounded-full overflow-hidden border border-primary/30 flex-shrink-0 hidden sm:block">
+<img alt="Nguyen Du Avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuANkNM9j1eNb9bVDj1seUQBd_qf31iAc2MfQRkP7WVuiAiMqtmGJ287ilC_IZ1Az38MVh_j7Xbj0hCxIrWKX8neWnRP2mBEAq_uHbfKpie5n5mf0IeTOh37WjfQHlSf2d5LaWxsNORGwm5MotYvAdZFvYSFcUdTrzpwCRFBhvLbVnf7-rO8Nto63fjD9MuJwkeiWxRuAQTb5zVe2TilAGRIi0TC4WN1Aq5Nh5FuRIvjgix-vzkY2xEiEx4_Sytd4DZKRBhxj9Cq_g70"/>
+</div>
+<div class="bg-surface-container p-md rounded-2xl rounded-tl-sm border border-outline-variant shadow-lg relative group">
+<!-- Decorative corner -->
+<div class="absolute -top-[1px] -left-[1px] w-4 h-4 border-t border-l border-primary rounded-tl-sm opacity-50"></div>
+<p class="font-body-lg text-body-lg text-on-surface leading-relaxed">
+                                Hữu duyên thiên lý năng tương ngộ... Kẻ hèn này là Nguyễn Du, tự Tố Như. Nghe nói khách từ tương lai cách hàng trăm năm vọng về tìm gặp. Không biết khách muốn đàm đạo chuyện chi? Thế thái nhân tình hay chuyện văn chương chữ nghĩa?
+                            </p>
+<span class="font-label-sm text-label-sm text-on-surface-variant mt-xs block text-right">10:05 AM</span>
+</div>
+</div>
+<!-- User Message -->
+<div class="flex gap-sm max-w-[85%] self-end flex-row-reverse">
+<div class="w-8 h-8 rounded-full overflow-hidden border border-secondary/30 flex-shrink-0 hidden sm:block">
+<img alt="User Avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBHvpql3LvaBy2mSfboISyEN0oRFg6PA88Xksfo1lI8MGIggsnC0WcexBUrX3XKysWmS26xr_VDoqv0o_GHCBQ3qbfW-ZnNZvtdYrgb0k--U4jfQYhb4VFgRi9drfA7-Kl788m9V9TLbJt5tUd0JYvnVFOdvRq6ryUpyXTil_tHL4_5kndqfwsGy_adJrq4sVLxh1ALD2kbG1h_7oI0obo6tauprdmkACJVI6s8Z1pJuPCGaNIG1wuq0h6_LigJE2oIJCSEpyjpmXsI"/>
+</div>
+<div class="bg-inverse-surface/10 p-md rounded-2xl rounded-tr-sm border border-secondary/30 shadow-[0_0_15px_rgba(68,219,213,0.1)] relative">
+<div class="absolute -top-[1px] -right-[1px] w-4 h-4 border-t border-r border-secondary rounded-tr-sm opacity-50"></div>
+<p class="font-body-lg text-body-lg text-on-surface leading-relaxed">
+                                Chào cụ Tố Như, hậu bối rất ngưỡng mộ cụ. Cụ có thể kể đôi chút về hoàn cảnh sáng tác Truyện Kiều không ạ?
+                            </p>
+<span class="font-label-sm text-label-sm text-secondary mt-xs block text-left">10:07 AM</span>
+</div>
+</div>
+<!-- Typing Indicator -->
+<div class="flex gap-sm max-w-[85%] items-end opacity-70">
+<div class="w-8 h-8 rounded-full overflow-hidden border border-primary/30 flex-shrink-0 hidden sm:block">
+<img alt="Nguyen Du Avatar" class="w-full h-full object-cover grayscale" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCTFO9TDQrji38DixkM0Vk2poM7dfF7csSUw45gUwKFlpKodSf_p-zw8oOo52pUcDPUmyCwGj16w3fxJH5XtdFu2Q-szrRowkuHpKhLgdGBTWbcxKUDBGxUSusVRFFNmh5JTWFV8P1cOiUBgSwd3D2feon4ac82WLhy9tJn13nTDmFpho1On_7Mb1izj_zLFIIYSnwsSptxO0owxx9HKjYPJR97S3qpkKPtdKkek5j6DM2Iqp4F9KKhQTr_R-g8_D28DJditjF08FYJ"/>
+</div>
+<div class="bg-surface-container px-md py-sm rounded-2xl rounded-tl-sm border border-outline-variant flex items-center gap-1 h-10">
+<span class="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style="animation-delay: 0ms"></span>
+<span class="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style="animation-delay: 150ms"></span>
+<span class="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style="animation-delay: 300ms"></span>
+</div>
+</div>
+</div>
+<!-- Input Area (Fixed at bottom of right pane) -->
+<div class="p-md lg:p-lg border-t border-outline-variant bg-surface-container-high/80 backdrop-blur-lg">
+<!-- Quick Replies Carousel (Horizontal Scroll) -->
+<div class="flex overflow-x-auto chat-scroll gap-sm pb-md hide-scrollbar">
+<button class="flex-shrink-0 px-sm py-xs border border-secondary/50 rounded-full font-label-sm text-label-sm text-secondary hover:bg-secondary/10 transition-colors whitespace-nowrap glow-secondary">
+                            Kể về mười năm gió bụi
+                        </button>
+<button class="flex-shrink-0 px-sm py-xs border border-outline-variant rounded-full font-label-sm text-label-sm text-on-surface-variant hover:border-primary hover:text-primary transition-colors whitespace-nowrap">
+                            Quan niệm về Tài - Mệnh
+                        </button>
+<button class="flex-shrink-0 px-sm py-xs border border-outline-variant rounded-full font-label-sm text-label-sm text-on-surface-variant hover:border-primary hover:text-primary transition-colors whitespace-nowrap">
+                            Đọc thử một đoạn Kiều
+                        </button>
+</div>
+<!-- Input Field Complex -->
+<div class="relative flex items-center bg-surface rounded-xl border border-outline-variant focus-within:border-secondary focus-within:ring-1 focus-within:ring-secondary/50 transition-all p-xs pl-sm">
+<!-- Attachments/Tools -->
+<button class="text-on-surface-variant hover:text-primary p-sm transition-colors rounded-lg">
+<span class="material-symbols-outlined text-lg">add_circle</span>
+</button>
+<!-- Text Input -->
+<input class="flex-1 bg-transparent border-none focus:ring-0 font-body-lg text-body-lg text-on-surface placeholder-on-surface-variant/50 px-sm" placeholder="Hỏi cụ Nguyễn Du..." type="text"/>
+<!-- Voice / Send Actions -->
+<div class="flex items-center gap-xs pr-xs">
+<button class="text-on-surface-variant hover:text-secondary p-sm transition-colors rounded-lg">
+<span class="material-symbols-outlined text-lg">mic</span>
+</button>
+<button class="bg-primary text-on-primary p-sm rounded-lg hover:bg-primary-fixed-dim transition-colors glow-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-lg">send</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+</main>
+</div>
+<!-- Setup structural logic script -->
+<script>
+        // Simple script to hide scrollbar structurally for quick replies
+        document.querySelectorAll('.hide-scrollbar').forEach(el => {
+            el.style.scrollbarWidth = 'none';
+            el.style.msOverflowStyle = 'none';
+        });
+    </script>
+</body></html>
