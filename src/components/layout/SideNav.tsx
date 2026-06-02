@@ -37,10 +37,10 @@ export function SideNav({
   return (
     <nav className="hidden md:flex h-screen w-[16rem] min-w-[16rem] fixed left-0 top-0 border-r border-outline-variant bg-surface-container-low flex-col py-lg px-md z-40">
       <div className="mb-xl flex items-center gap-md min-w-0">
-        <MaterialIcon name="timelapse" className="text-primary text-[32px] shrink-0" />
+        <img src="/brand/icon-192.png" alt="Team Logo" className="w-10 h-10 rounded-full border border-primary/40 object-cover shrink-0" />
         <div className="flex flex-col min-w-0">
           <span className="font-headline-lg text-headline-lg font-bold text-primary truncate">TimeLens</span>
-          <span className="font-label-sm text-label-sm text-on-surface-variant truncate">Neo-Heritage</span>
+          <span className="font-label-sm text-label-sm text-on-surface-variant truncate">Nhà du hành di sản</span>
         </div>
       </div>
 

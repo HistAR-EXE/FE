@@ -1,13 +1,14 @@
 export const colors = {
-  surface: '#12131b',
-  background: '#12131b',
-  primary: '#f2bf50',
-  secondary: '#44dbd5',
-  tertiary: '#ffb4aa',
-  onSurface: '#e3e1ed',
-  onSurfaceVariant: '#d2c5b0',
-  outline: '#9b8f7c',
-  outlineVariant: '#4f4636',
+  surface: '#f7f9fc',
+  background: '#ffffff',
+  primary: '#1a79e5',
+  secondary: '#388cf1',
+  tertiary: '#fe951c',
+  accent: '#fdb438',
+  onSurface: '#0f172a',
+  onSurfaceVariant: '#475569',
+  outline: '#cbd5e1',
+  outlineVariant: '#e2e8f0',
 } as const
 
 export const typography = {

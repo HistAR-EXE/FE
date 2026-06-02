@@ -14,9 +14,11 @@ import { ProfilePage } from '../pages/ProfilePage'
 import { QuestDetailPage } from '../pages/QuestDetailPage'
 import { QuestsPage } from '../pages/QuestsPage'
 import { ScanPage } from '../pages/ScanPage'
+import { SecretStoryPage } from '../pages/SecretStoryPage'
 import { SharePage } from '../pages/SharePage'
 import { TimePortalPage } from '../pages/TimePortalPage'
 import { Tour360Page } from '../pages/Tour360Page'
+import { ProtectedRoute } from '../shared/router/ProtectedRoute'
 
 export function AppRoutes() {
   return (
@@ -24,22 +26,25 @@ export function AppRoutes() {
       <Routes>
         <Route path="/" element={<OnboardingPage />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/character-select" element={<CharacterSelectPage />} />
-        <Route path="/home" element={<HomePage />} />
         <Route path="/explore" element={<ExplorePage />} />
-        <Route path="/characters" element={<CharacterExplorePage />} />
-        <Route path="/artifacts" element={<ArtifactsPage />} />
-        <Route path="/explore/:slug" element={<HeritageDetailPage />} />
+        <Route path="/explore/:locationId" element={<HeritageDetailPage />} />
+        <Route path="/time-portal/:locationId?" element={<TimePortalPage />} />
+        <Route path="/tour/360/:locationId?" element={<Tour360Page />} />
         <Route path="/quests" element={<QuestsPage />} />
-        <Route path="/quests/:slug" element={<QuestDetailPage />} />
-        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/quests/:questId" element={<QuestDetailPage />} />
         <Route path="/leaderboard" element={<LeaderboardPage />} />
-        <Route path="/share" element={<SharePage />} />
-        <Route path="/photo-frame" element={<PhotoFramePage />} />
-        <Route path="/time-portal/:slug?" element={<TimePortalPage />} />
-        <Route path="/tour/360/:slug?" element={<Tour360Page />} />
-        <Route path="/scan" element={<ScanPage />} />
-        <Route path="/chat/nguyen-du" element={<ChatPage />} />
+        <Route element={<ProtectedRoute />}>
+          <Route path="/character-select" element={<CharacterSelectPage />} />
+          <Route path="/home" element={<HomePage />} />
+          <Route path="/characters" element={<CharacterExplorePage />} />
+          <Route path="/artifacts" element={<ArtifactsPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/share" element={<SharePage />} />
+          <Route path="/photo-frame" element={<PhotoFramePage />} />
+          <Route path="/scan" element={<ScanPage />} />
+          <Route path="/chat/nguyen-du" element={<ChatPage />} />
+          <Route path="/secret/:locationId" element={<SecretStoryPage />} />
+        </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

@@ -65,7 +65,8 @@ type DetailTopNavProps = {
 export function DetailTopNav({ avatarSrc = images.avatarDetailV3 }: DetailTopNavProps) {
   return (
     <nav className="fixed top-0 right-0 left-0 md:left-[16rem] z-50 backdrop-blur-xl border-b border-outline-variant bg-surface/70 flex justify-between items-center h-16 px-xl hidden md:flex">
-      <Link to="/" className="font-display-lg text-display-lg font-bold text-primary tracking-tight">
+      <Link to="/" className="inline-flex items-center gap-2 font-display-lg text-display-lg font-bold text-primary tracking-tight">
+        <img src="/brand/icon-192.png" alt="Team Logo" className="w-8 h-8 rounded-full border border-primary/40 object-cover" />
         TimeLens
       </Link>
       <div className="flex items-center gap-md">

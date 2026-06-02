@@ -1,95 +1,123 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { SimpleTopNav } from '../components/layout/TopNav'
+import { viralApi, type LeaderboardResponse } from '../features/viral/api'
+import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
+import { useToast } from '../shared/ui/toast/useToast'
+import { images } from '../assets/images'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
-import { leaderboardEntries, leaderboardStats } from '../data/mock/leaderboard'
-
-const tabs = ['Thành phố', 'Tuần', 'Mọi lúc'] as const
 
 export function LeaderboardPage() {
-  const [activeTab, setActiveTab] = useState<(typeof tabs)[number]>('Mọi lúc')
-  const top3 = leaderboardEntries.slice(0, 3)
-  const rest = leaderboardEntries.slice(3)
+  const [scope, setScope] = useState<'all' | 'city' | 'week'>('all')
+  const [city, setCity] = useState('TP.HCM')
+  const [data, setData] = useState<LeaderboardResponse | null>(null)
+  const { showToast } = useToast()
+  const podium = data?.entries.slice(0, 3) ?? []
+  const others = data?.entries.slice(3) ?? []
+  const currentUserEntry = data?.entries.find((entry) => entry.currentUser) ?? null
+
+  useEffect(() => {
+    if (scope === 'city' && !city.trim()) {
+      return
+    }
+    viralApi
+      .leaderboard(scope, scope === 'city' ? city.trim() : undefined)
+      .then((res) => setData(res))
+      .catch((e) => showToast({ message: getFriendlyErrorMessage(e, 'leaderboard'), type: 'error' }))
+  }, [scope, city, showToast])
 
   return (
-    <AppLayout activeBorder="left" topNav={<SimpleTopNav title="Bảng xếp hạng" />}>
-      <main className="mt-16 flex-1 p-lg max-w-4xl mx-auto w-full">
-        <div className="text-center mb-lg">
-          <h1 className="font-display-lg text-display-lg text-primary bloom-glow">Bảng xếp hạng</h1>
-          <p className="font-body-md text-body-md text-on-surface-variant mt-sm">
-            {leaderboardStats.totalPlayers.toLocaleString()} nhà du hành • Hạng của bạn: #{leaderboardStats.yourRank}
-          </p>
-        </div>
+    <AppLayout activeBorder="left" topNav={<SimpleTopNav showSearch />}>
+      <main className="mt-16 p-lg max-w-5xl mx-auto w-full">
+        <Link to="/home" className="inline-flex items-center gap-1 text-secondary mb-sm">
+          <MaterialIcon name="arrow_back" className="text-sm" />
+          Quay về trang chủ
+        </Link>
+        <h1 className="font-display-lg text-primary mb-xs uppercase tracking-wider">Bảng Vinh Danh</h1>
+        <p className="text-on-surface-variant mb-md">Những nhà du hành xuất sắc nhất trong kỷ nguyên Neo-Heritage.</p>
 
-        <div className="flex justify-center gap-md mb-xl border-b border-outline-variant pb-sm">
-          {tabs.map((tab) => (
+        <div className="flex items-center gap-lg border-b border-outline-variant/50 mb-lg">
+          {(['all', 'city', 'week'] as const).map((s) => (
             <button
-              key={tab}
-              type="button"
-              onClick={() => setActiveTab(tab)}
-              className={`font-title-md text-title-md pb-1 px-3 transition-colors ${
-                activeTab === tab
-                  ? 'text-secondary border-b-2 border-secondary'
-                  : 'text-on-surface-variant hover:text-on-surface'
+              key={s}
+              onClick={() => setScope(s)}
+              className={`pb-sm font-title-md transition-colors border-b-2 ${
+                scope === s ? 'text-secondary border-secondary' : 'text-on-surface-variant border-transparent hover:text-on-surface'
               }`}
             >
-              {tab}
+              {s === 'city' ? 'Thành phố' : s === 'week' ? 'Tuần này' : 'Mọi lúc'}
             </button>
           ))}
         </div>
+        {scope === 'city' && (
+          <>
+            <input value={city} onChange={(e) => setCity(e.target.value)} className="neo-input rounded px-sm py-xs mb-xs" />
+            {!city.trim() && <p className="text-xs text-red-400 mb-md">Vui lòng nhập city khi chọn scope=city.</p>}
+          </>
+        )}
 
-        <div className="flex items-end justify-center gap-md mb-xl">
-          {[top3[1], top3[0], top3[2]].map((entry, i) => {
-            const heights = ['h-32', 'h-40', 'h-24']
-            const gradients = ['podium-gradient-2', 'podium-gradient-1', 'podium-gradient-3']
-            const medals = ['🥈', '🥇', '🥉']
-            return (
-              <div key={entry.rank} className="flex flex-col items-center">
-                <div className="w-16 h-16 rounded-full border-2 border-primary overflow-hidden mb-sm">
-                  <img alt={entry.name} className="w-full h-full object-cover" src={entry.avatar} />
-                </div>
-                <p className="font-title-md text-title-md text-on-surface text-sm">{entry.name}</p>
-                <p className="font-label-sm text-label-sm text-primary">{entry.xp.toLocaleString()} XP</p>
+        {podium.length > 0 && (
+          <div className="flex items-end justify-center gap-md mb-lg">
+            {[podium[1], podium[0], podium[2]].filter(Boolean).map((entry) => {
+              const isTop1 = entry.rank === 1
+              return (
                 <div
-                  className={`w-24 ${heights[i]} ${gradients[i]} rounded-t-lg mt-sm flex items-start justify-center pt-sm border border-outline-variant/30`}
+                  key={entry.userId}
+                  className={`relative rounded-t-xl border bg-surface-container px-md pb-md pt-lg text-center ${
+                    isTop1
+                      ? 'h-52 w-44 border-primary shadow-[0_0_20px_rgba(242,191,80,0.25)]'
+                      : 'h-44 w-40 border-outline-variant'
+                  }`}
                 >
-                  <span className="text-2xl">{medals[i]}</span>
+                  <img
+                    src={entry.avatarUrl || (entry.rank === 1 ? images.leaderboardRank1 : entry.rank === 2 ? images.leaderboardRank2 : images.leaderboardRank3)}
+                    alt={entry.displayName}
+                    className={`w-16 h-16 rounded-full object-cover border-2 mx-auto -mt-10 mb-xs ${isTop1 ? 'border-primary' : 'border-secondary/60'}`}
+                  />
+                  {isTop1 && (
+                    <span className="absolute top-2 left-1/2 -translate-x-1/2 text-primary">
+                      <MaterialIcon name="crown" />
+                    </span>
+                  )}
+                  <p className={`font-title-md ${isTop1 ? 'text-primary' : 'text-on-surface'}`}>#{entry.rank}</p>
+                  <p className="font-title-md">{entry.displayName}</p>
+                  <p className={`text-sm ${isTop1 ? 'text-primary' : 'text-secondary'}`}>{entry.totalPoints.toLocaleString()} XP</p>
                 </div>
-              </div>
-            )
-          })}
-        </div>
+              )
+            })}
+          </div>
+        )}
 
-        <div className="flex flex-col gap-xs">
-          {rest.map((entry) => (
+        <div className="space-y-sm">
+          {others.map((entry) => (
             <div
-              key={entry.rank}
-              className={`flex items-center gap-md p-md rounded-lg border border-outline-variant ${
-                entry.isCurrentUser ? 'current-user-row border-secondary/50' : 'bg-surface-container'
+              key={entry.userId}
+              className={`p-md border rounded-xl bg-surface-container flex items-center justify-between ${
+                entry.currentUser ? 'border-secondary bg-secondary/10 shadow-[0_0_20px_rgba(68,219,213,0.2)]' : 'border-outline-variant'
               }`}
             >
-              <span className="font-title-md text-title-md text-on-surface-variant w-8 text-center">
-                #{entry.rank}
-              </span>
-              <div className="w-10 h-10 rounded-full overflow-hidden border border-outline-variant">
-                <img alt={entry.name} className="w-full h-full object-cover" src={entry.avatar} />
+              <div className="flex items-center gap-sm">
+                <span className={`font-title-md w-8 ${entry.currentUser ? 'text-secondary' : 'text-on-surface'}`}>{entry.rank}</span>
+                <img
+                  src={entry.avatarUrl || images.leaderboardRank3}
+                  alt={entry.displayName}
+                  className="w-8 h-8 rounded-full object-cover border border-outline-variant"
+                />
+                <p className={`font-title-md ${entry.currentUser ? 'text-secondary' : 'text-on-surface'}`}>{entry.currentUser ? 'Bạn' : entry.displayName}</p>
               </div>
-              <div className="flex-1">
-                <p className="font-title-md text-title-md text-on-surface">
-                  {entry.name}
-                  {entry.isCurrentUser && (
-                    <span className="ml-sm text-secondary font-label-sm text-label-sm">(Bạn)</span>
-                  )}
-                </p>
-              </div>
-              <div className="flex items-center gap-xs text-primary">
-                <MaterialIcon name="stars" className="text-sm" />
-                <span className="font-title-md text-title-md">{entry.xp.toLocaleString()}</span>
-              </div>
+              <p className={`font-title-md ${entry.currentUser ? 'text-secondary' : 'text-on-surface'}`}>{entry.totalPoints.toLocaleString()} XP</p>
             </div>
           ))}
+          {!others.length && currentUserEntry && (
+            <div className="p-md border border-secondary rounded-xl bg-secondary/10 shadow-[0_0_20px_rgba(68,219,213,0.2)] flex items-center justify-between">
+              <p className="font-title-md text-secondary">{currentUserEntry.rank}. Bạn</p>
+              <p className="font-title-md text-secondary">{currentUserEntry.totalPoints.toLocaleString()} XP</p>
+            </div>
+          )}
         </div>
       </main>
     </AppLayout>
   )
 }
+

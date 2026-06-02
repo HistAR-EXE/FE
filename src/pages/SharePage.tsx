@@ -1,100 +1,106 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { AppLayout } from '../components/layout/AppLayout'
+import { SimpleTopNav } from '../components/layout/TopNav'
+import { viralApi } from '../features/viral/api'
+import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
+import { useToast } from '../shared/ui/toast/useToast'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { images } from '../assets/images'
-import { profile } from '../data/mock/profile'
-
-const socialTargets = [
-  { id: 'facebook', label: 'Facebook', icon: 'public' },
-  { id: 'instagram', label: 'Instagram', icon: 'photo_camera' },
-  { id: 'twitter', label: 'X', icon: 'tag' },
-  { id: 'copy', label: 'Sao chép', icon: 'content_copy' },
-] as const
 
 export function SharePage() {
-  const [caption, setCaption] = useState(
-    'Vừa hoàn thành nhiệm vụ tại Hoàng Thành Thăng Long trên TimeLens! 🏛️ #TimeLens #DiSan'
-  )
+  const [params] = useSearchParams()
+  const creationId = params.get('creationId') ?? ''
+  const outputUrl = params.get('outputUrl') ? decodeURIComponent(params.get('outputUrl') as string) : ''
+  const [caption, setCaption] = useState('Khám phá di sản Việt cùng TimeLens!')
+  const { showToast } = useToast()
+
+  useEffect(() => {
+    viralApi.sharePrefill().then((data) => setCaption(data.caption))
+  }, [])
+
+  const onShare = async () => {
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: 'TimeLens', text: caption, url: outputUrl || window.location.href })
+      }
+      if (creationId) {
+        const tracked = await viralApi.recordShare(creationId)
+        showToast({
+          message: tracked.bonusPointsAwarded > 0 ? `Đã cộng ${tracked.bonusPointsAwarded} điểm chia sẻ.` : 'Lượt chia sẻ này đã được ghi nhận trước đó.',
+          type: 'success',
+        })
+      } else {
+        showToast({ message: 'Chia sẻ thành công.', type: 'success' })
+      }
+    } catch {
+      showToast({ message: 'Không thể share trực tiếp, hãy tải ảnh rồi đăng thủ công.', type: 'info' })
+    }
+  }
+
+  const markSharedManually = async () => {
+    if (!creationId) {
+      showToast({ message: 'Không có creationId để ghi nhận share.', type: 'error' })
+      return
+    }
+    try {
+      const tracked = await viralApi.recordShare(creationId)
+      showToast({
+        message: tracked.bonusPointsAwarded > 0 ? `Đã cộng ${tracked.bonusPointsAwarded} điểm chia sẻ.` : 'Lượt chia sẻ này đã được ghi nhận trước đó.',
+        type: 'success',
+      })
+    } catch (e) {
+      showToast({ message: getFriendlyErrorMessage(e, 'upload'), type: 'error' })
+    }
+  }
 
   return (
-    <div className="min-h-screen bg-background/95 flex flex-col fixed inset-0 z-50">
-      <div className="dong-son-bg fixed inset-0 pointer-events-none" />
-
-      <header className="relative z-10 flex justify-between items-center h-16 px-xl border-b border-outline-variant bg-surface/70 backdrop-blur-xl">
-        <Link to="/profile" className="flex items-center gap-sm text-on-surface-variant hover:text-secondary">
-          <MaterialIcon name="close" />
-          <span className="font-title-md text-title-md">Đóng</span>
-        </Link>
-        <h2 className="font-headline-lg text-headline-lg text-on-surface">Chia sẻ thành tích</h2>
-        <div className="w-20" />
-      </header>
-
-      <main className="relative z-10 flex-1 flex flex-col items-center justify-center p-lg overflow-y-auto">
-        <div className="relative w-full max-w-md aspect-[4/5] rounded-xl overflow-hidden border-2 border-primary glow-primary mb-lg">
-          <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-transparent to-background" />
-          <img
-            alt="Character"
-            className="absolute inset-0 w-full h-full object-cover opacity-60"
-            src={images.shareCharacter}
-          />
-          <div className="relative z-10 p-xl h-full flex flex-col justify-between">
-            <div>
-              <p className="font-label-sm text-label-sm text-secondary uppercase tracking-widest">TimeLens</p>
-              <h1 className="font-display-lg text-display-lg text-primary mt-sm">{profile.name}</h1>
-              <p className="font-title-md text-title-md text-on-surface-variant">{profile.title}</p>
-            </div>
-            <div className="bg-surface-container/80 backdrop-blur-md rounded-lg p-md border border-outline-variant">
-              <div className="flex justify-between items-center mb-sm">
-                <span className="font-label-sm text-label-sm text-on-surface-variant">Cấp độ</span>
-                <span className="font-title-md text-title-md text-secondary">{profile.level}</span>
-              </div>
-              <div className="flex justify-between items-center mb-sm">
-                <span className="font-label-sm text-label-sm text-on-surface-variant">Di tích</span>
-                <span className="font-title-md text-title-md text-on-surface">{profile.stats.sitesVisited}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="font-label-sm text-label-sm text-on-surface-variant">Nhiệm vụ</span>
-                <span className="font-title-md text-title-md text-primary">{profile.stats.questsCompleted}</span>
+    <AppLayout activeBorder="left" topNav={<SimpleTopNav title="Chia sẻ" />}>
+      <main className="bg-background text-on-background min-h-screen flex items-center justify-center p-md lg:p-xl relative overflow-hidden mt-16">
+        <div className="relative z-10 w-full max-w-[1200px] bg-surface-container/60 backdrop-blur-2xl border border-outline-variant/30 rounded-[24px] overflow-hidden shadow-2xl flex flex-col md:flex-row h-auto md:h-[700px]">
+          <div className="w-full md:w-3/5 h-[400px] md:h-full relative overflow-hidden group">
+            <img alt="Generated Heritage Character" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" src={outputUrl || images.shareCharacter} />
+            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
+            <div className="absolute bottom-lg left-lg flex items-center gap-sm">
+              <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center"><MaterialIcon name="timelapse" className="text-on-primary" /></div>
+              <div>
+                <h2 className="font-headline-lg text-primary tracking-widest uppercase">TimeLens</h2>
+                <p className="font-label-sm text-on-surface-variant">Hành trình di sản</p>
               </div>
             </div>
           </div>
+          <div className="w-full md:w-2/5 flex flex-col p-lg md:p-xl h-full overflow-y-auto">
+            <div className="flex justify-between items-center mb-xl">
+              <h1 className="font-headline-lg text-on-surface">Chia sẻ</h1>
+            </div>
+            <div className="flex-1 flex flex-col gap-xl justify-center">
+              <div className="space-y-sm">
+                <label className="font-label-sm text-on-surface-variant uppercase tracking-wider">Thông điệp</label>
+                <textarea value={caption} onChange={(e) => setCaption(e.target.value)} className="w-full bg-surface-container-low border border-outline-variant rounded-xl p-md text-on-surface focus:border-secondary outline-none resize-none" rows={4} />
+              </div>
+              <div className="grid grid-cols-4 gap-md">
+                {['music_note', 'photo_camera', 'public', 'link'].map((icon) => (
+                  <button key={icon} type="button" className="flex flex-col items-center gap-sm group">
+                    <div className="w-14 h-14 rounded-2xl bg-surface-container-high border border-outline-variant/30 flex items-center justify-center group-hover:bg-surface-variant transition-all">
+                      <MaterialIcon name={icon} className="text-[28px] text-on-surface" />
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="mt-xl pt-lg border-t border-outline-variant/30 flex gap-sm">
+              <button onClick={onShare} className="flex-1 bg-primary hover:bg-primary-container text-on-primary font-title-md py-md px-lg rounded-xl flex justify-center items-center gap-sm">
+                <MaterialIcon name="share" />
+                Chia sẻ ngay
+              </button>
+              <button onClick={markSharedManually} className="border border-outline-variant px-md py-sm rounded-xl">
+                Đã share
+              </button>
+            </div>
+          </div>
         </div>
-
-        <div className="w-full max-w-md mb-lg">
-          <label htmlFor="share-caption" className="font-label-sm text-label-sm text-on-surface-variant mb-sm block">
-            Chú thích ({caption.length}/200)
-          </label>
-          <textarea
-            id="share-caption"
-            maxLength={200}
-            rows={3}
-            value={caption}
-            onChange={(e) => setCaption(e.target.value)}
-            className="w-full bg-surface-container border border-outline-variant rounded-lg p-md font-body-md text-body-md text-on-surface resize-none focus:outline-none focus:border-secondary"
-          />
-        </div>
-
-        <div className="grid grid-cols-4 gap-md w-full max-w-md mb-lg">
-          {socialTargets.map((target) => (
-            <button
-              key={target.id}
-              type="button"
-              className="flex flex-col items-center gap-sm p-md rounded-lg border border-outline-variant bg-surface-container hover:border-secondary transition-colors"
-            >
-              <MaterialIcon name={target.icon} className="text-secondary" />
-              <span className="font-label-sm text-label-sm text-on-surface-variant">{target.label}</span>
-            </button>
-          ))}
-        </div>
-
-        <button
-          type="button"
-          className="w-full max-w-md py-sm px-md rounded-lg bg-primary text-on-primary font-title-md flex items-center justify-center gap-xs glow-primary"
-        >
-          <MaterialIcon name="download" />
-          Tải ảnh
-        </button>
       </main>
-    </div>
+    </AppLayout>
   )
 }
+

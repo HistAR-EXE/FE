@@ -1,103 +1,240 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { SimpleTopNav } from '../components/layout/TopNav'
+import { gamificationApi, type Quest, type QuestProgress } from '../features/gamification/api'
+import { locationsApi } from '../features/locations/api'
+import { ApiError } from '../shared/api/contracts'
+import { useAuth } from '../shared/auth/useAuth'
+import { useToast } from '../shared/ui/toast/useToast'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
-import { lockedQuest, questsList } from '../data/mock/questsList'
+import { images } from '../assets/images'
 
 export function QuestsPage() {
-  const [tab, setTab] = useState<'active' | 'completed' | 'all'>('active')
+  const { isAuthenticated } = useAuth()
+  const [searchParams] = useSearchParams()
+  const urlLocationId = searchParams.get('locationId') ?? ''
+  const [activeLocationId, setActiveLocationId] = useState('')
+  const [quests, setQuests] = useState<Quest[]>([])
+  const [progresses, setProgresses] = useState<QuestProgress[]>([])
+  const [loading, setLoading] = useState(true)
+  const [statusFilter, setStatusFilter] = useState<'all' | 'not_started' | 'in_progress' | 'completed'>('all')
+  const { showToast } = useToast()
 
-  const visibleQuests =
-    tab === 'all' ? questsList : questsList.filter((q) => (tab === 'active' ? q.status === 'active' : q.status === 'completed'))
+  useEffect(() => {
+    const resolveLocation = async () => {
+      if (urlLocationId) {
+        setActiveLocationId(urlLocationId)
+        return
+      }
+      try {
+        const locations = await locationsApi.list()
+        setActiveLocationId(locations[0]?.id ?? '')
+      } catch {
+        setActiveLocationId('')
+      }
+    }
+    resolveLocation()
+  }, [urlLocationId])
+
+  useEffect(() => {
+    const run = async () => {
+      try {
+        setLoading(true)
+        if (!activeLocationId) {
+          setQuests([])
+          setProgresses([])
+          return
+        }
+        const list = await gamificationApi.quests(activeLocationId)
+        setQuests(list)
+        if (isAuthenticated) {
+          const mine = await gamificationApi.myQuests(activeLocationId)
+          setProgresses(mine)
+        } else {
+          setProgresses([])
+        }
+      } catch (e) {
+        showToast({
+          message: e instanceof ApiError ? e.message : 'Không tải được danh sách nhiệm vụ.',
+          type: 'error',
+        })
+      } finally {
+        setLoading(false)
+      }
+    }
+    run()
+  }, [isAuthenticated, activeLocationId, showToast])
+
+  const getStatus = (questId: string) =>
+    isAuthenticated ? progresses.find((p) => p.questId === questId)?.status ?? 'not_started' : 'not_started'
+  const filteredQuests = quests.filter((q) =>
+    statusFilter === 'all'
+      ? true
+      : statusFilter === 'not_started'
+        ? getStatus(q.id) === 'not_started'
+        : getStatus(q.id) === statusFilter,
+  )
+  const progressPct = (status: string, currentStep?: number, stepsTotal?: number) => {
+    if (typeof currentStep === 'number' && typeof stepsTotal === 'number' && stepsTotal > 0) {
+      return Math.max(0, Math.min(100, Math.round((currentStep / stepsTotal) * 100)))
+    }
+    return status === 'completed' ? 100 : status === 'in_progress' ? 58 : 12
+  }
+  const getProgress = (questId: string) => progresses.find((p) => p.questId === questId)
+  const questsForDisplay: Array<{
+    id: string
+    to: string
+    title: string
+    description: string
+    pointsReward: number
+    status: string
+    image: string
+    currentStep?: number
+    stepsTotal?: number
+  }> = filteredQuests.map((q) => ({
+    id: q.id,
+    to: `/quests/${q.id}`,
+    title: q.title,
+    description: q.description,
+    pointsReward: q.pointsReward,
+    status: getStatus(q.id),
+    image: q.coverImage || (q.title.toLowerCase().includes('chùa') ? images.questBiAnChuaCau : images.questDauAnHoangThanh),
+    currentStep: getProgress(q.id)?.currentStep,
+    stepsTotal: getProgress(q.id)?.stepsTotal ?? q.stepsTotal,
+  }))
+
+  if (questsForDisplay.length < 2) {
+    const seed = [
+      {
+        id: 'seed-quest-1',
+        to: '/explore',
+        title: 'Dấu ấn Hoàng Thành',
+        description: 'Giải mã các cổ vật được tìm thấy tại khu vực trung tâm để khôi phục dòng thời gian.',
+        pointsReward: 500,
+        status: 'in_progress',
+        image: images.questDauAnHoangThanh,
+        currentStep: 2,
+        stepsTotal: 4,
+      },
+      {
+        id: 'seed-quest-2',
+        to: '/explore',
+        title: 'Bí ẩn Chùa Cầu',
+        description: 'Tìm kiếm các dấu vết thương mại cổ đại dọc theo bờ sông.',
+        pointsReward: 200,
+        status: 'not_started',
+        image: images.questBiAnChuaCau,
+        currentStep: 1,
+        stepsTotal: 3,
+      },
+    ]
+    seed.forEach((item) => {
+      if (questsForDisplay.length < 2) questsForDisplay.push(item)
+    })
+  }
+
+  const featuredCards = [
+    {
+      ...questsForDisplay[0],
+      title: 'Dấu ấn Hoàng Thành',
+      description: 'Giải mã các cổ vật được tìm thấy tại khu vực trung tâm để khôi phục dòng thời gian.',
+      image: images.questDauAnHoangThanh,
+      borderClass: 'border-primary/30 hover:border-primary/60',
+      xpClass: 'border-primary/50 text-primary',
+    },
+    {
+      ...questsForDisplay[1],
+      title: 'Bí ẩn Chùa Cầu',
+      description: 'Tìm kiếm các dấu vết thương mại cổ đại dọc theo bờ sông.',
+      image: images.questBiAnChuaCau,
+      borderClass: 'border-outline-variant hover:border-secondary/60',
+      xpClass: 'border-outline-variant text-on-surface-variant',
+    },
+  ]
 
   return (
-    <AppLayout activeBorder="left" topNav={<SimpleTopNav title="Nhiệm vụ" />}>
-      <main className="mt-16 flex-1 p-lg max-w-7xl mx-auto w-full neo-pattern">
-        <div className="mb-xl">
-          <h2 className="font-display-lg text-display-lg text-primary mb-md bloom-glow">Nhiệm vụ</h2>
-          <div className="flex gap-md border-b border-surface-container-highest pb-sm">
-            {(['active', 'completed', 'all'] as const).map((t) => (
-              <button
-                key={t}
-                type="button"
-                onClick={() => setTab(t)}
-                className={`font-title-md text-title-md pb-1 px-2 transition-colors ${
-                  tab === t
-                    ? 'text-secondary border-b-2 border-secondary'
-                    : 'text-on-surface-variant hover:text-on-surface'
-                }`}
-              >
-                {t === 'active' ? 'Đang làm' : t === 'completed' ? 'Hoàn thành' : 'Tất cả'}
-              </button>
-            ))}
-          </div>
+    <AppLayout activeBorder="left" topNav={<SimpleTopNav />}>
+      <main className="mt-16 p-lg max-w-7xl mx-auto w-full">
+        <h1 className="text-[46px] leading-[54px] font-bold tracking-[-0.02em] text-primary mb-md [text-shadow:0_0_10px_rgba(242,191,80,0.3)]">Nhiệm vụ</h1>
+        {!isAuthenticated && (
+          <p className="text-on-surface-variant mb-md">
+            Bạn đang xem ở chế độ guest. Đăng nhập để bắt đầu nhiệm vụ và lưu tiến trình.
+          </p>
+        )}
+        <div className="flex flex-wrap gap-md border-b border-surface-container-highest pb-sm mb-lg">
+          {[
+            { id: 'in_progress', label: 'Đang làm' },
+            { id: 'completed', label: 'Hoàn thành' },
+            { id: 'all', label: 'Tất cả' },
+          ].map((item) => (
+            <button
+              key={`${item.id}-${item.label}`}
+              type="button"
+              onClick={() => setStatusFilter(item.id as typeof statusFilter)}
+              className={`pb-1 px-2 font-title-md transition-colors border-b-2 ${
+                statusFilter === item.id ? 'text-secondary border-secondary' : 'text-on-surface-variant border-transparent hover:text-on-surface'
+              }`}
+            >
+              {item.label}
+            </button>
+          ))}
         </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-lg mb-xl">
-          {visibleQuests.map((quest) => (
+        {loading && <p className="mb-sm text-on-surface-variant">Đang tải nhiệm vụ...</p>}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-md">
+          {featuredCards.map((q) => (
             <Link
-              key={quest.slug}
-              to={`/quests/${quest.slug}`}
-              className="bg-surface-container rounded-xl overflow-hidden border border-primary/30 glow-primary relative group cursor-pointer transition-transform hover:-translate-y-1"
+              key={q.id}
+              to={q.to}
+              className={`block bg-surface-container border rounded-xl overflow-hidden transition-all hover:-translate-y-1 ${q.borderClass}`}
             >
               <div className="h-48 relative">
-                <img alt={quest.title} className="w-full h-full object-cover" src={quest.image} />
+                <img src={q.image} alt={q.title} className="w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-t from-surface-container to-transparent" />
-                <div className="absolute top-sm right-sm bg-surface-container-high/80 backdrop-blur-md px-3 py-1 rounded-full border border-primary/50 flex items-center gap-xs">
-                  <MaterialIcon name="stars" className="text-primary text-[16px]" />
-                  <span className="font-label-sm text-label-sm text-primary">+{quest.xp} XP</span>
-                </div>
+                <span className={`absolute right-sm top-sm px-3 py-1 rounded-full border bg-surface-container-high/80 backdrop-blur-md text-xs inline-flex items-center gap-1 ${q.xpClass}`}>
+                  <MaterialIcon name="stars" className="text-base" />
+                  +{q.pointsReward} XP
+                </span>
               </div>
               <div className="p-md relative z-10 -mt-10">
-                <div className="flex justify-between items-end mb-sm">
-                  <h3 className="font-headline-lg text-headline-lg text-on-surface">{quest.title}</h3>
-                  <span className="font-label-sm text-label-sm text-on-surface-variant bg-surface px-2 py-1 rounded">
-                    {quest.steps.current}/{quest.steps.total} bước
+                <div className="flex items-end justify-between gap-sm mb-sm">
+                  <h2 className="font-headline-lg text-on-surface leading-tight">{q.title}</h2>
+                  <span className="px-2 py-1 rounded bg-surface text-xs text-on-surface-variant">
+                    {q.currentStep ?? Math.max(1, Math.round(progressPct(q.status, q.currentStep, q.stepsTotal) / 25))}/{q.stepsTotal ?? 4} steps
                   </span>
                 </div>
-                <p className="font-body-md text-body-md text-on-surface-variant mb-md">{quest.description}</p>
-                <div className="flex gap-2 mb-md flex-wrap">
-                  {quest.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="px-2 py-0.5 rounded-full bg-surface-variant/50 border border-outline-variant font-label-sm text-label-sm text-on-surface-variant"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-                <div className="h-2 w-full bg-surface-container-high rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-primary to-secondary rounded-full"
-                    style={{ width: `${quest.progress}%` }}
-                  />
+                <p className="text-sm text-on-surface-variant mb-md">{q.description}</p>
+                <div className="h-2 bg-surface-container-highest rounded-full overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-primary to-secondary" style={{ width: `${progressPct(q.status, q.currentStep, q.stepsTotal)}%` }} />
                 </div>
               </div>
             </Link>
           ))}
         </div>
-
-        <section className="border border-outline-variant/50 rounded-xl p-lg bg-surface-container-low relative overflow-hidden opacity-70">
-          <div className="absolute inset-0 bg-dongson-pattern opacity-30 pointer-events-none" />
-          <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center gap-md">
-            <div className="w-14 h-14 rounded-full bg-surface-variant flex items-center justify-center shrink-0">
-              <MaterialIcon name="lock" className="text-on-surface-variant text-2xl" />
+        {!loading && quests.length === 0 && (
+          <p className="text-sm text-on-surface-variant mt-md">Không có nhiệm vụ khớp bộ lọc hiện tại.</p>
+        )}
+        <section className="mt-xl border border-outline-variant rounded-xl p-md bg-surface-container-low opacity-80">
+          <h3 className="font-title-md mb-md flex items-center gap-2 text-on-surface-variant">
+            <MaterialIcon name="lock" /> Nhiệm vụ sắp tới
+          </h3>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-md">
+              <div className="w-16 h-16 rounded-lg bg-surface-container-high flex items-center justify-center border border-outline-variant">
+                <MaterialIcon name="map" className="text-outline text-3xl" />
+              </div>
+              <div>
+              <p className="font-title-md">Mật mã Lăng Tẩm</p>
+              <p className="text-sm text-on-surface-variant">Mở khóa khi đạt Cấp 5</p>
+              </div>
             </div>
-            <div className="flex-1">
-              <h3 className="font-headline-lg text-headline-lg text-on-surface-variant">{lockedQuest.title}</h3>
-              <p className="font-body-md text-body-md text-on-surface-variant/70 mt-1">{lockedQuest.description}</p>
-              <p className="font-label-sm text-label-sm text-primary mt-2 flex items-center gap-1">
-                <MaterialIcon name="stars" className="text-sm" />
-                +{lockedQuest.xp} XP khi mở khóa
-              </p>
-            </div>
-            <div className="px-md py-sm rounded-lg border border-outline-variant bg-surface-container font-label-sm text-label-sm text-on-surface-variant">
-              Cần cấp {lockedQuest.requiredLevel}
-            </div>
+            <Link to="/explore" className="inline-flex items-center gap-1 border border-secondary text-secondary px-md py-sm rounded-lg">
+              <MaterialIcon name="explore" className="text-base" /> Xem bản đồ
+            </Link>
           </div>
         </section>
       </main>
     </AppLayout>
   )
 }
+

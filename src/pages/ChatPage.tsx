@@ -1,264 +1,221 @@
-import { useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
+import { SimpleTopNav } from '../components/layout/TopNav'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { images } from '../assets/images'
-
-type Message = {
-  id: string
-  role: 'user' | 'assistant'
-  text: string
-  time: string
-}
-
-const initialMessages: Message[] = [
-  {
-    id: '1',
-    role: 'assistant',
-    text: 'Hữu duyên thiên lý năng tương ngộ... Kẻ hèn này là Nguyễn Du, tự Tố Như. Nghe nói khách từ tương lai cách hàng trăm năm vọng về tìm gặp. Không biết khách muốn đàm đạo chuyện chi? Thế thái nhân tình hay chuyện văn chương chữ nghĩa?',
-    time: '10:05 AM',
-  },
-  {
-    id: '2',
-    role: 'user',
-    text: 'Chào cụ Tố Như, hậu bối rất ngưỡng mộ cụ. Cụ có thể kể đôi chút về hoàn cảnh sáng tác Truyện Kiều không ạ?',
-    time: '10:07 AM',
-  },
-]
-
-const quickReplies = [
-  'Kể về mười năm gió bụi',
-  'Quan niệm về Tài - Mệnh',
-  'Đọc thử một đoạn Kiều',
-]
+import { chatApi, type ChatMessage } from '../features/chat/api'
+import { locationsApi, type Character } from '../features/locations/api'
+import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
+import { useToast } from '../shared/ui/toast/useToast'
 
 export function ChatPage() {
-  const [messages, setMessages] = useState<Message[]>(initialMessages)
+  const [params] = useSearchParams()
+  const locationId = params.get('locationId') ?? ''
+  const initialCharacterId = params.get('characterId') ?? ''
+
+  const [characters, setCharacters] = useState<Character[]>([])
+  const [characterId, setCharacterId] = useState(initialCharacterId)
+  const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState('')
-  const [isTyping, setIsTyping] = useState(false)
-  const nextId = useRef(3)
+  const [conversationId, setConversationId] = useState<string | null>(null)
+  const [loadingMessages, setLoadingMessages] = useState(false)
+  const [sending, setSending] = useState(false)
+  const { showToast } = useToast()
+  const quickReplies = [
+    'Kể về mười năm gió bụi',
+    'Quan niệm về Tài - Mệnh',
+    'Đọc thử một đoạn Kiều',
+  ]
 
-  const sendMessage = (text: string) => {
-    if (!text.trim()) return
-    const userMsg: Message = {
-      id: String(nextId.current++),
-      role: 'user',
-      text,
-      time: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
-    }
-    setMessages((prev) => [...prev, userMsg])
-    setInput('')
-    setIsTyping(true)
+  useEffect(() => {
+    if (!locationId) return
+    locationsApi
+      .getCharacters(locationId)
+      .then((data) => {
+        setCharacters(data)
+        if (!characterId && data[0]) {
+          setCharacterId(data[0].id)
+        }
+      })
+      .catch(() => showToast({ message: 'Không tải được danh sách nhân vật.', type: 'error' }))
+  }, [locationId, characterId, showToast])
 
-    setTimeout(() => {
-      const reply: Message = {
-        id: String(nextId.current++),
-        role: 'assistant',
-        text: 'Truyện Kiều được sáng tác trong bối cảnh đất nước đa phương, lòng người đa sự. Ta lấy cảnh Thanh Tâm đài làm khung, dệt nên câu chuyện Thúy Kiều — một minh họa sâu sắc về số phận con người.',
-        time: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setConversationId(null)
+    setMessages([])
+  }, [characterId])
+
+  useEffect(() => {
+    if (!conversationId) return
+    const run = async () => {
+      try {
+        setLoadingMessages(true)
+        setMessages(await chatApi.getMessages(conversationId))
+      } catch {
+        showToast({ message: 'Không tải được lịch sử hội thoại.', type: 'error' })
+      } finally {
+        setLoadingMessages(false)
       }
-      setMessages((prev) => [...prev, reply])
-      setIsTyping(false)
-    }, 1200)
+    }
+    run()
+  }, [conversationId, showToast])
+
+  const selected = useMemo(() => characters.find((c) => c.id === characterId), [characters, characterId])
+
+  const send = async () => {
+    if (!characterId || !input.trim() || sending) return
+    const userText = input.trim()
+    setInput('')
+    const optimistic: ChatMessage = {
+      id: `local-${Date.now()}`,
+      role: 'user',
+      content: userText,
+      createdAt: new Date().toISOString(),
+    }
+    setMessages((prev) => [...prev, optimistic])
+    try {
+      setSending(true)
+      const reply = await chatApi.send({ characterId, message: userText, conversationId })
+      setConversationId(reply.conversationId)
+      setMessages((prev) => [
+        ...prev.filter((m) => m.id !== optimistic.id),
+        { ...optimistic, id: `user-${Date.now()}` },
+        {
+          id: `assistant-${Date.now()}`,
+          role: 'assistant',
+          content: reply.reply,
+          createdAt: new Date().toISOString(),
+        },
+      ])
+    } catch (e) {
+      setMessages((prev) => prev.filter((m) => m.id !== optimistic.id))
+      showToast({ message: getFriendlyErrorMessage(e, 'chat'), type: 'error' })
+    } finally {
+      setSending(false)
+    }
   }
 
   return (
-    <AppLayout activeBorder="right" className="dong-son-pattern">
-      <header className="fixed top-0 right-0 left-0 md:left-[16rem] z-50 backdrop-blur-xl border-b border-outline-variant bg-surface/70 flex justify-between items-center h-16 px-xl">
-        <div className="hidden md:flex items-center gap-sm text-on-surface-variant">
-          <MaterialIcon name="explore" className="text-sm" />
-          <span className="font-label-sm text-label-sm">/ Nhâm Tuất 1765</span>
-        </div>
-        <div className="md:hidden flex items-center gap-sm">
-          <Link to="/explore" className="text-on-surface-variant hover:text-secondary p-2">
-            <MaterialIcon name="arrow_back" />
-          </Link>
-          <span className="font-headline-lg-mobile text-headline-lg-mobile font-bold text-primary">TimeLens</span>
-        </div>
-        <div className="flex items-center gap-lg">
-          <div className="hidden sm:flex items-center bg-surface-container-high rounded-full px-sm py-xs border border-outline-variant focus-within:border-secondary transition-colors w-64">
-            <MaterialIcon name="search" className="text-on-surface-variant mr-xs text-sm" />
-            <input
-              className="bg-transparent border-none focus:ring-0 font-body-md text-body-md text-on-surface w-full placeholder:text-on-surface-variant p-0 h-6"
-              placeholder="Tìm kiếm di sản..."
-              type="text"
-            />
-          </div>
-          <button type="button" className="text-on-surface-variant hover:text-secondary transition-colors p-xs">
-            <MaterialIcon name="notifications" />
-          </button>
-          <button type="button" className="text-on-surface-variant hover:text-secondary transition-colors p-xs">
-            <MaterialIcon name="settings" />
-          </button>
-          <div className="w-8 h-8 rounded-full border border-primary/50 overflow-hidden ml-sm cursor-pointer glow-primary">
-            <img alt="User Avatar" className="w-full h-full object-cover" src={images.avatarExploreV3} />
-          </div>
-        </div>
-      </header>
-
-      <main className="mt-16 h-[calc(100vh-4rem)] flex flex-col lg:flex-row overflow-hidden p-md lg:p-lg gap-md lg:gap-lg max-w-[1600px] mx-auto w-full min-h-0">
-        <section className="hidden lg:flex w-1/3 min-w-[360px] max-w-[480px] bg-surface-container-low/80 backdrop-blur-md rounded-xl border border-outline-variant flex-col overflow-hidden relative shrink-0">
+    <AppLayout activeBorder="left" topNav={<SimpleTopNav title="Chat với nhân vật" showSearch />}>
+      <main className="flex-1 flex flex-col lg:flex-row overflow-hidden p-md lg:p-lg gap-md lg:gap-lg max-w-[1600px] mx-auto w-full mt-16">
+        <section className="hidden lg:flex w-1/3 min-w-[360px] max-w-[480px] bg-surface-container-low/80 rounded-xl border border-outline-variant flex-col overflow-hidden relative">
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-secondary opacity-80" />
-          <div className="h-[45%] w-full relative shrink-0">
+          <div className="h-[45%] w-full relative">
             <div className="absolute inset-0 bg-gradient-to-t from-surface-container-low via-transparent to-transparent z-10" />
-            <img
-              alt="Nguyễn Du"
-              className="w-full h-full object-cover object-top contrast-125 brightness-90"
-              src={images.nguyenDuPortrait}
-            />
+            <img alt={selected?.name ?? 'Nhân vật'} className="w-full h-full object-cover object-top" src={selected?.portraitUrl || images.nguyenDuPortrait} />
             <div className="absolute bottom-md left-md z-20">
-              <div className="inline-flex items-center gap-xs bg-surface-variant/90 backdrop-blur-sm border border-outline-variant rounded-full px-sm py-xs mb-sm">
+              <div className="inline-flex items-center gap-xs bg-surface-variant/90 border border-outline-variant rounded-full px-sm py-xs mb-sm">
                 <span className="w-2 h-2 rounded-full bg-secondary animate-pulse" />
-                <span className="font-label-sm text-label-sm text-on-surface uppercase tracking-wider">
-                  Đang kết nối tâm thức
-                </span>
+                <span className="font-label-sm text-label-sm text-on-surface uppercase tracking-wider">Đang kết nối</span>
               </div>
-              <h2 className="font-display-lg text-display-lg font-bold text-on-surface">Nguyễn Du</h2>
-              <p className="font-body-lg text-body-lg text-primary-fixed-dim">Đại thi hào dân tộc (1765 - 1820)</p>
+              <h2 className="font-display-lg text-display-lg font-bold text-on-surface">{selected?.name ?? 'Nhà sử học AI'}</h2>
+              <p className="font-body-lg text-body-lg text-primary-fixed-dim">{selected?.era ?? 'Lịch sử Việt Nam'}</p>
             </div>
           </div>
-          <div className="p-lg flex-1 overflow-y-auto chat-scroll flex flex-col gap-md min-h-0">
+          <div className="p-lg flex-1 overflow-y-auto flex flex-col gap-md">
             <div className="flex flex-wrap gap-xs">
-              {['Triều Lê - Trịnh', 'Văn học trung đại', 'Hà Tĩnh'].map((chip) => (
-                <span
-                  key={chip}
-                  className="px-sm py-xs bg-surface-variant rounded-full border border-outline-variant font-label-sm text-label-sm text-on-surface-variant"
-                >
-                  {chip}
-                </span>
-              ))}
+              <span className="px-sm py-xs bg-surface-variant rounded-full border border-outline-variant text-xs text-on-surface-variant">Văn hóa</span>
+              <span className="px-sm py-xs bg-surface-variant rounded-full border border-outline-variant text-xs text-on-surface-variant">Lịch sử</span>
+              <span className="px-sm py-xs bg-surface-variant rounded-full border border-outline-variant text-xs text-on-surface-variant">Di sản</span>
             </div>
-            <p className="text-on-surface font-body-md text-body-md leading-relaxed">
-              Tố Như tử, một nhà thơ kiệt xuất, danh nhân văn hóa thế giới. Ông là người có con mắt trông thấu sáu
-              cõi, tấm lòng nghĩ suốt nghìn đời. Đại diện tiêu biểu nhất cho trào lưu nhân đạo chủ nghĩa trong văn
-              học Việt Nam nửa cuối thế kỷ XVIII - nửa đầu thế kỷ XIX.
-            </p>
-            <div className="grid grid-cols-2 gap-sm mt-auto">
-              <div className="bg-surface-container p-sm rounded-lg border border-outline-variant/50 flex flex-col gap-xs">
-                <MaterialIcon name="menu_book" className="text-secondary text-lg" />
-                <span className="font-label-sm text-label-sm text-on-surface-variant">Tác phẩm tiêu biểu</span>
-                <span className="font-title-md text-title-md text-on-surface truncate">Truyện Kiều</span>
-              </div>
-              <div className="bg-surface-container p-sm rounded-lg border border-outline-variant/50 flex flex-col gap-xs">
-                <MaterialIcon name="translate" className="text-primary text-lg" />
-                <span className="font-label-sm text-label-sm text-on-surface-variant">Ngôn ngữ</span>
-                <span className="font-title-md text-title-md text-on-surface">Chữ Nôm, Hán</span>
-              </div>
+            <div className="text-on-surface font-body-md text-body-md leading-relaxed">
+              Trò chuyện theo ngữ cảnh địa điểm để khai mở các câu chuyện lịch sử sâu hơn.
+            </div>
+            <div className="mt-auto">
+              <label className="text-sm text-on-surface-variant">Nhân vật</label>
+              <select
+                value={characterId}
+                onChange={(e) => setCharacterId(e.target.value)}
+                className="block mt-xs w-full bg-surface-container border border-outline-variant rounded px-sm py-xs"
+              >
+                {characters.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
         </section>
 
-        <section className="flex-1 min-h-0 bg-surface-container-low/90 backdrop-blur-md rounded-xl border border-outline-variant flex flex-col overflow-hidden relative shadow-2xl">
-          <div className="lg:hidden flex items-center p-md border-b border-outline-variant bg-surface-container-high/50 shrink-0">
-            <div className="w-10 h-10 rounded-full overflow-hidden mr-sm border border-primary/50">
-              <img alt="Nguyễn Du" className="w-full h-full object-cover" src={images.nguyenDuPortrait} />
-            </div>
-            <div>
-              <h2 className="font-title-md text-title-md font-bold text-on-surface">Nguyễn Du</h2>
-              <p className="font-label-sm text-label-sm text-secondary flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-secondary inline-block" />
-                Đang trực tuyến
-              </p>
-            </div>
-          </div>
-
-          <div className="flex-1 p-md lg:p-lg overflow-y-auto chat-scroll flex flex-col gap-lg min-h-0">
-            <div className="flex justify-center shrink-0">
-              <span className="bg-surface-variant/50 px-sm py-xs rounded-full font-label-sm text-label-sm text-on-surface-variant border border-outline-variant/50 backdrop-blur-sm">
-                Phiên liên kết: Năm Gia Long thứ 19 (1820)
+        <section className="flex-1 bg-surface-container-low/90 rounded-xl border border-outline-variant flex flex-col overflow-hidden relative shadow-2xl">
+          {!locationId && <p className="text-sm text-on-surface-variant p-md border-b border-outline-variant">Mở từ màn chi tiết địa điểm để nạp nhân vật lịch sử.</p>}
+          <div className="flex-1 p-md lg:p-lg overflow-y-auto flex flex-col gap-lg">
+            <div className="flex justify-center">
+              <span className="bg-surface-variant/50 px-sm py-xs rounded-full font-label-sm text-label-sm text-on-surface-variant border border-outline-variant/50">
+                Phiên hội thoại
               </span>
             </div>
-
-            {messages.map((msg) => (
-              <div
-                key={msg.id}
-                className={`flex gap-sm max-w-[85%] ${msg.role === 'user' ? 'self-end flex-row-reverse' : ''}`}
-              >
-                <div className="w-8 h-8 rounded-full overflow-hidden border border-primary/30 shrink-0 hidden sm:block">
-                  <img
-                    alt={msg.role === 'user' ? 'User' : 'Nguyễn Du'}
-                    className="w-full h-full object-cover"
-                    src={msg.role === 'user' ? images.chatUserAvatar : images.chatNguyenDuAvatar}
-                  />
+            {loadingMessages && <p className="text-sm text-on-surface-variant">Đang tải lịch sử hội thoại...</p>}
+            {messages.length === 0 && !loadingMessages && (
+              <div className="max-w-[85%] bg-surface-container p-md rounded-2xl rounded-tl-sm border border-outline-variant">
+                <p className="font-body-lg text-body-lg text-on-surface leading-relaxed">
+                  Xin chào, ta là {selected?.name ?? 'nhà sử học AI'}. Bạn muốn tìm hiểu câu chuyện nào?
+                </p>
+              </div>
+            )}
+            {messages.map((m) => (
+              <div key={m.id} className={`flex gap-sm max-w-[85%] ${m.role === 'user' ? 'self-end flex-row-reverse' : ''}`}>
+                <div className={`w-8 h-8 rounded-full overflow-hidden border flex-shrink-0 hidden sm:block ${m.role === 'user' ? 'border-secondary/30' : 'border-primary/30'}`}>
+                  <img alt={m.role} className="w-full h-full object-cover" src={m.role === 'user' ? images.chatUserAvatar : images.chatNguyenDuAvatar} />
                 </div>
-                <div
-                  className={`p-md rounded-2xl shadow-lg relative ${
-                    msg.role === 'user'
-                      ? 'rounded-tr-sm bg-inverse-surface/10 border border-secondary/30 shadow-[0_0_15px_rgba(68,219,213,0.1)]'
-                      : 'rounded-tl-sm bg-surface-container border border-outline-variant'
-                  }`}
-                >
-                  <div
-                    className={`absolute -top-px w-4 h-4 opacity-50 ${
-                      msg.role === 'user'
-                        ? '-right-px border-t border-r border-secondary rounded-tr-sm'
-                        : '-left-px border-t border-l border-primary rounded-tl-sm'
-                    }`}
-                  />
-                  <p className="font-body-lg text-body-lg text-on-surface leading-relaxed">{msg.text}</p>
-                  <span
-                    className={`font-label-sm text-label-sm mt-xs block ${
-                      msg.role === 'user' ? 'text-secondary text-left' : 'text-on-surface-variant text-right'
-                    }`}
-                  >
-                    {msg.time}
+                <div className={`p-md rounded-2xl border relative ${m.role === 'user' ? 'bg-inverse-surface/10 border-secondary/30 rounded-tr-sm' : 'bg-surface-container border-outline-variant rounded-tl-sm'}`}>
+                  <p className="font-body-lg text-body-lg text-on-surface leading-relaxed">{m.content}</p>
+                  <span className="font-label-sm text-label-sm text-on-surface-variant mt-xs block text-right">
+                    {new Date(m.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>
               </div>
             ))}
-
-            {isTyping && (
+            {sending && (
               <div className="flex gap-sm max-w-[85%] items-end opacity-70">
-                <div className="w-8 h-8 rounded-full overflow-hidden border border-primary/30 shrink-0 hidden sm:block">
-                  <img alt="Nguyễn Du" className="w-full h-full object-cover grayscale" src={images.chatNguyenDuAvatar} />
+                <div className="w-8 h-8 rounded-full overflow-hidden border border-primary/30 hidden sm:block">
+                  <img alt="ai" className="w-full h-full object-cover grayscale" src={images.chatNguyenDuAvatar} />
                 </div>
                 <div className="bg-surface-container px-md py-sm rounded-2xl rounded-tl-sm border border-outline-variant flex items-center gap-1 h-10">
-                  <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                  <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                  <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                  <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" />
+                  <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce [animation-delay:150ms]" />
+                  <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce [animation-delay:300ms]" />
                 </div>
               </div>
             )}
           </div>
-
-          <div className="p-md lg:p-lg border-t border-outline-variant bg-surface-container-high/80 backdrop-blur-lg shrink-0">
-            <div className="flex overflow-x-auto chat-scroll gap-sm pb-md">
-              {quickReplies.map((reply, index) => (
+          <div className="p-md lg:p-lg border-t border-outline-variant bg-surface-container-high/80">
+            <div className="flex overflow-x-auto gap-sm pb-md">
+              {quickReplies.map((item) => (
                 <button
-                  key={reply}
+                  key={item}
                   type="button"
-                  onClick={() => sendMessage(reply)}
-                  className={`flex-shrink-0 px-sm py-xs rounded-full font-label-sm text-label-sm whitespace-nowrap transition-colors ${
-                    index === 0
-                      ? 'border border-secondary/50 text-secondary hover:bg-secondary/10 glow-secondary'
-                      : 'border border-outline-variant text-on-surface-variant hover:border-primary hover:text-primary'
-                  }`}
+                  onClick={() => setInput(item)}
+                  className="flex-shrink-0 px-sm py-xs border border-outline-variant rounded-full text-xs text-on-surface-variant hover:border-primary hover:text-primary transition-colors whitespace-nowrap"
                 >
-                  {reply}
+                  {item}
                 </button>
               ))}
             </div>
-            <div className="relative flex items-center bg-surface rounded-xl border border-outline-variant focus-within:border-secondary focus-within:ring-1 focus-within:ring-secondary/50 transition-all p-xs pl-sm">
+            <div className="relative flex items-center bg-surface rounded-xl border border-outline-variant focus-within:border-secondary transition-all p-xs pl-sm">
               <button type="button" className="text-on-surface-variant hover:text-primary p-sm transition-colors rounded-lg">
                 <MaterialIcon name="add_circle" className="text-lg" />
               </button>
               <input
-                className="flex-1 bg-transparent border-none focus:ring-0 font-body-lg text-body-lg text-on-surface placeholder:text-on-surface-variant/50 px-sm"
-                placeholder="Hỏi cụ Nguyễn Du..."
-                type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && sendMessage(input)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    send().catch(() => undefined)
+                  }
+                }}
+                className="flex-1 bg-transparent border-none focus:ring-0 font-body-lg text-body-lg text-on-surface placeholder:text-on-surface-variant/50 px-sm"
+                placeholder={`Hỏi ${selected?.name ?? 'nhân vật'}...`}
               />
               <div className="flex items-center gap-xs pr-xs">
                 <button type="button" className="text-on-surface-variant hover:text-secondary p-sm transition-colors rounded-lg">
                   <MaterialIcon name="mic" className="text-lg" />
                 </button>
-                <button
-                  type="button"
-                  onClick={() => sendMessage(input)}
-                  className="bg-primary text-on-primary p-sm rounded-lg hover:bg-primary-fixed-dim transition-colors glow-primary flex items-center justify-center"
-                >
+                <button onClick={() => send()} type="button" disabled={sending} className="bg-primary text-on-primary p-sm rounded-lg hover:bg-primary-fixed-dim transition-colors disabled:opacity-60">
                   <MaterialIcon name="send" className="text-lg" />
                 </button>
               </div>
@@ -269,3 +226,4 @@ export function ChatPage() {
     </AppLayout>
   )
 }
+

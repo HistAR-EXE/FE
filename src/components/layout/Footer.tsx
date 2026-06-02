@@ -7,7 +7,8 @@ export function Footer({ variant = 'default' }: FooterProps) {
     return (
       <footer className="w-full py-md mt-auto bg-surface-container-lowest border-t border-outline-variant/20 relative z-10">
         <div className="flex flex-col md:flex-row justify-between items-center px-safe-area-inset md:px-xl py-lg w-full max-w-[1440px] mx-auto">
-          <div className="font-title-md text-title-md text-on-surface mb-sm md:mb-0">
+          <div className="inline-flex items-center gap-2 font-title-md text-title-md text-on-surface mb-sm md:mb-0">
+            <img src="/brand/icon-192.png" alt="Team Logo" className="w-7 h-7 rounded-full border border-primary/40 object-cover" />
             TimeLens
           </div>
           <div className="font-label-sm text-label-sm text-secondary mb-sm md:mb-0">
@@ -41,7 +42,8 @@ export function Footer({ variant = 'default' }: FooterProps) {
   return (
     <footer className="bg-surface-container-lowest w-full py-md mt-auto border-t border-outline-variant/20 relative z-20">
       <div className="flex flex-col md:flex-row justify-between items-center px-xl py-lg w-full max-w-[1440px] mx-auto">
-        <div className="font-title-md text-title-md text-on-surface mb-md md:mb-0">
+        <div className="inline-flex items-center gap-2 font-title-md text-title-md text-on-surface mb-md md:mb-0">
+          <img src="/brand/icon-192.png" alt="Team Logo" className="w-7 h-7 rounded-full border border-primary/40 object-cover" />
           TimeLens
         </div>
         <div className="font-label-sm text-label-sm text-on-surface-variant text-center md:text-left mb-md md:mb-0">

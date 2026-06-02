@@ -1,104 +1,116 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { SimpleTopNav } from '../components/layout/TopNav'
+import { viralApi, type PhotoFrame } from '../features/viral/api'
+import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
+import { useToast } from '../shared/ui/toast/useToast'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { images } from '../assets/images'
 
-const frameStyles = [
-  { id: 'heritage', label: 'Di sản', border: 'border-primary' },
-  { id: 'dynasty', label: 'Triều đại', border: 'border-secondary' },
-  { id: 'gold', label: 'Hoàng kim', border: 'border-tertiary' },
-  { id: 'minimal', label: 'Tối giản', border: 'border-outline-variant' },
-] as const
-
 export function PhotoFramePage() {
-  const [activeStyle, setActiveStyle] = useState<(typeof frameStyles)[number]['id']>('heritage')
-  const [activeTab, setActiveTab] = useState<'camera' | 'gallery'>('camera')
+  const navigate = useNavigate()
+  const [frames, setFrames] = useState<PhotoFrame[]>([])
+  const [frameId, setFrameId] = useState('')
+  const [variant, setVariant] = useState<'square' | 'story'>('square')
+  const [file, setFile] = useState<File | null>(null)
+  const [uploading, setUploading] = useState(false)
+  const { showToast } = useToast()
 
-  const selectedStyle = frameStyles.find((s) => s.id === activeStyle) ?? frameStyles[0]
+  useEffect(() => {
+    viralApi
+      .frames()
+      .then((data) => {
+        setFrames(data)
+        if (data[0]) setFrameId(data[0].id)
+      })
+      .catch((e) => showToast({ message: getFriendlyErrorMessage(e, 'upload'), type: 'error' }))
+  }, [showToast])
+
+  const selectedFrame = useMemo(() => frames.find((f) => f.id === frameId), [frames, frameId])
+  const previewUrl = useMemo(() => (file ? URL.createObjectURL(file) : null), [file])
+  useEffect(() => () => {
+    if (previewUrl) URL.revokeObjectURL(previewUrl)
+  }, [previewUrl])
+
+  const submit = async () => {
+    if (!file || !frameId) return
+    const maxBytes = 8 * 1024 * 1024
+    if (file.size > maxBytes) {
+      showToast({ message: 'Ảnh vượt quá 8MB. Vui lòng chọn ảnh nhỏ hơn.', type: 'error' })
+      return
+    }
+    const supportedTypes = ['image/jpeg', 'image/png', 'image/webp']
+    if (!supportedTypes.includes(file.type)) {
+      showToast({ message: 'Chỉ hỗ trợ JPEG, PNG hoặc WebP.', type: 'error' })
+      return
+    }
+    setUploading(true)
+    try {
+      const creation = await viralApi.uploadCreation({ file, frameId, variant })
+      navigate(`/share?creationId=${creation.id}&outputUrl=${encodeURIComponent(creation.outputUrl)}`)
+      showToast({ message: 'Tạo ảnh thành công.', type: 'success' })
+    } catch (e) {
+      showToast({ message: getFriendlyErrorMessage(e, 'upload'), type: 'error' })
+    } finally {
+      setUploading(false)
+    }
+  }
 
   return (
     <AppLayout activeBorder="left" topNav={<SimpleTopNav title="Khung ảnh di sản" />}>
-      <main className="mt-16 flex-1 p-lg max-w-2xl mx-auto w-full">
-        <div className={`relative rounded-xl overflow-hidden border-4 ${selectedStyle.border} aspect-square mb-lg glow-primary`}>
-          <div className="absolute inset-4 border-2 border-secondary/50 rounded-lg z-10 pointer-events-none" />
-          <div className="absolute top-2 left-2 w-8 h-8 border-t-2 border-l-2 border-primary z-20" />
-          <div className="absolute top-2 right-2 w-8 h-8 border-t-2 border-r-2 border-primary z-20" />
-          <div className="absolute bottom-2 left-2 w-8 h-8 border-b-2 border-l-2 border-primary z-20" />
-          <div className="absolute bottom-2 right-2 w-8 h-8 border-b-2 border-r-2 border-primary z-20" />
-          <div className="absolute top-4 left-4 right-4 flex justify-between z-20">
-            <span className="px-3 py-1 rounded-full bg-surface-container/80 backdrop-blur-md border border-primary text-primary font-label-sm text-label-sm">
-              TimeLens
-            </span>
-            <span className="px-3 py-1 rounded-full bg-surface-container/80 backdrop-blur-md border border-secondary text-secondary font-label-sm text-label-sm">
-              Hoàng Thành Thăng Long
-            </span>
+      <main className="flex-1 mt-16 p-safe-area-inset flex gap-lg overflow-hidden">
+        <section className="flex-1 bg-surface-container-low rounded-xl border border-surface-variant relative flex items-center justify-center overflow-hidden">
+          <Link to="/home" className="absolute top-md left-md z-20 inline-flex items-center gap-1 px-sm py-xs rounded-full border border-outline-variant bg-surface/80 text-on-surface-variant hover:text-secondary hover:border-secondary transition-colors">
+            <MaterialIcon name="arrow_back" className="text-sm" />
+            Trở về
+          </Link>
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background/80 pointer-events-none" />
+          <div className="relative z-10 w-full max-w-2xl aspect-[3/4] p-4 bg-surface rounded-lg border-2 border-outline-variant shadow-[0_0_40px_rgba(242,191,80,0.1)]">
+            <div className="w-full h-full border-4 border-primary rounded-sm p-2 relative overflow-hidden">
+              <div className="w-full h-full bg-surface-variant relative overflow-hidden">
+                <img
+                  alt={selectedFrame?.name ?? 'Frame preview'}
+                  src={previewUrl || selectedFrame?.imageUrl || images.photoFrameCharacter}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </div>
           </div>
-          <img alt="Heritage photo frame" className="w-full h-full object-cover" src={images.photoFrameCharacter} />
-          <div className="absolute bottom-0 left-0 right-0 p-lg bg-gradient-to-t from-background to-transparent z-20">
-            <p className="font-title-md text-title-md text-on-surface">Du hành thời gian tại di sản</p>
-            <p className="font-label-sm text-label-sm text-on-surface-variant">31/05/2026 • Hà Nội</p>
+        </section>
+
+        <aside className="w-[380px] bg-surface-container border border-outline-variant rounded-xl flex flex-col h-full shadow-lg">
+          <div className="p-lg border-b border-surface-variant">
+            <h2 className="font-headline-lg text-headline-lg text-on-surface">Khung Hình Di Sản</h2>
+            <p className="font-body-md text-body-md text-on-surface-variant mt-2">Hóa thân vào dòng chảy lịch sử qua ống kính công nghệ.</p>
           </div>
-        </div>
-
-        <h3 className="font-title-md text-title-md text-on-surface mb-md">Chọn khung</h3>
-        <div className="grid grid-cols-4 gap-sm mb-lg">
-          {frameStyles.map((style) => (
-            <button
-              key={style.id}
-              type="button"
-              onClick={() => setActiveStyle(style.id)}
-              className={`p-sm rounded-lg border text-center transition-colors ${
-                activeStyle === style.id
-                  ? `${style.border} bg-surface-container-high`
-                  : 'border-outline-variant bg-surface-container hover:border-outline'
-              }`}
-            >
-              <div className={`w-full aspect-square rounded border-2 ${style.border} mb-1`} />
-              <span className="font-label-sm text-label-sm text-on-surface-variant">{style.label}</span>
+          <div className="flex-1 overflow-y-auto p-lg flex flex-col gap-xl">
+            <div className="flex flex-col gap-md">
+              <h3 className="font-title-md">Nguồn ảnh</h3>
+              <input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="w-full text-sm" />
+            </div>
+            <div className="flex flex-col gap-md">
+              <h3 className="font-title-md">Khung</h3>
+              <select value={frameId} onChange={(e) => setFrameId(e.target.value)} className="bg-surface border border-outline-variant rounded-lg px-sm py-sm">
+                {frames.map((f) => (
+                  <option key={f.id} value={f.id}>{f.name} ({f.era})</option>
+                ))}
+              </select>
+              <div className="flex gap-sm">
+                <button type="button" className={`flex-1 border rounded-lg p-sm ${variant === 'square' ? 'border-primary text-primary bg-surface-variant' : 'border-outline-variant text-on-surface-variant'}`} onClick={() => setVariant('square')}>Square</button>
+                <button type="button" className={`flex-1 border rounded-lg p-sm ${variant === 'story' ? 'border-primary text-primary bg-surface-variant' : 'border-outline-variant text-on-surface-variant'}`} onClick={() => setVariant('story')}>Story</button>
+              </div>
+            </div>
+          </div>
+          <div className="p-lg border-t border-surface-variant mt-auto">
+            <button onClick={submit} disabled={uploading || !file} className="w-full bg-primary text-on-primary font-title-md py-4 rounded-lg disabled:opacity-60 flex items-center justify-center gap-2">
+              <MaterialIcon name="magic_button" />
+              {uploading ? 'Đang upload...' : 'Tạo & Chia sẻ'}
             </button>
-          ))}
-        </div>
-
-        <div className="flex gap-sm mb-lg border-b border-outline-variant pb-sm">
-          {(['camera', 'gallery'] as const).map((tab) => (
-            <button
-              key={tab}
-              type="button"
-              onClick={() => setActiveTab(tab)}
-              className={`font-title-md text-title-md pb-1 px-3 transition-colors ${
-                activeTab === tab
-                  ? 'text-secondary border-b-2 border-secondary'
-                  : 'text-on-surface-variant hover:text-on-surface'
-              }`}
-            >
-              {tab === 'camera' ? 'Camera' : 'Thư viện'}
-            </button>
-          ))}
-        </div>
-
-        <div className="flex gap-md">
-          <button
-            type="button"
-            className="flex-1 py-sm px-md rounded-lg bg-primary text-on-primary font-title-md flex items-center justify-center gap-xs"
-          >
-            <MaterialIcon name="photo_camera" />
-            Chụp ảnh
-          </button>
-          <button
-            type="button"
-            className="flex-1 py-sm px-md rounded-lg border border-secondary text-secondary font-title-md flex items-center justify-center gap-xs hover:bg-secondary/10"
-          >
-            <MaterialIcon name="download" />
-            Lưu khung
-          </button>
-        </div>
-
-        <Link to="/quests" className="block text-center mt-lg text-on-surface-variant hover:text-secondary">
-          ← Quay lại nhiệm vụ
-        </Link>
+          </div>
+        </aside>
       </main>
     </AppLayout>
   )
 }
+

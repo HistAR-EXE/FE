@@ -10,7 +10,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@photo-sphere-viewer/core": "^5.14.1",
+    "@photo-sphere-viewer/markers-plugin": "^5.14.1",
     "@tailwindcss/vite": "^4.3.0",
+    "axios": "^1.16.1",
+    "html5-qrcode": "^2.3.8",
+    "jsqr": "^1.4.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "react-router-dom": "^7.16.0",
