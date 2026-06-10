@@ -35,9 +35,13 @@ export function TimePortalPage() {
   }, [locationId, showToast])
 
   return (
-    <AppLayout activeBorder="left">
-      <main className="flex-1 flex flex-col h-[calc(100vh-4rem)] relative mt-16">
-        <header className="bg-surface/70 backdrop-blur-xl border-b border-outline-variant flex items-center h-16 px-xl z-40">
+    <AppLayout
+      activeBorder="left"
+      mobileBackTo={locationId ? `/explore/${locationId}` : '/explore'}
+      mobileTitle="Cổng thời gian"
+    >
+      <main className="flex-1 flex flex-col h-[calc(100dvh-3.5rem)] md:h-[calc(100vh-4rem)] relative mt-14 md:mt-16 pb-16 md:pb-0">
+        <header className="bg-surface/70 backdrop-blur-xl border-b border-outline-variant hidden md:flex items-center h-16 px-xl z-40 shrink-0">
           <Link to={locationId ? `/explore/${locationId}` : '/explore'} className="text-on-surface-variant hover:text-secondary flex items-center gap-xs">
             <MaterialIcon name="arrow_back" /> Quay lại
           </Link>
@@ -45,7 +49,12 @@ export function TimePortalPage() {
         </header>
         <section className="relative flex-1 bg-surface-container-lowest overflow-hidden">
           <div className="absolute inset-0 opacity-5 bg-[radial-gradient(circle_at_center,rgba(242,191,80,0.3),transparent_60%)]" />
-        {loading && <p>Đang tải ảnh lịch sử...</p>}
+        {loading && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-md p-lg">
+            <div className="w-full max-w-xl h-64 rounded-xl bg-surface-container animate-pulse border border-outline-variant" />
+            <p className="text-on-surface-variant text-sm">Đang tải ảnh lịch sử...</p>
+          </div>
+        )}
         {!locationId && <p className="p-lg text-on-surface-variant">Thiếu locationId. Hãy mở từ màn chi tiết địa điểm.</p>}
         {!pair && !loading && <p className="p-lg text-on-surface-variant">Không có ảnh lịch sử cho địa điểm này.</p>}
         {pair && (

@@ -1,38 +1,55 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { ExploreTopNav } from '../components/layout/TopNav'
 import { locationsApi, type Location } from '../features/locations/api'
 import { ApiError } from '../shared/api/contracts'
+import { useAppMode } from '../shared/context/useAppMode'
 import { useToast } from '../shared/ui/toast/useToast'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { images } from '../assets/images'
 
+const PAGE_SIZE = 20
+
 export function ExplorePage() {
   const [locations, setLocations] = useState<Location[]>([])
+  const [page, setPage] = useState(0)
+  const [totalPages, setTotalPages] = useState(1)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [activeFilter, setActiveFilter] = useState<'all' | 'near' | 'virtual' | 'dynasty'>('all')
   const [mapZoom, setMapZoom] = useState(1)
   const [loading, setLoading] = useState(true)
   const [failed, setFailed] = useState(false)
   const { showToast } = useToast()
+  const { mode } = useAppMode()
 
-  useEffect(() => {
-    const run = async () => {
+  const loadPage = useCallback(
+    async (pageIndex: number, append: boolean) => {
       try {
-        setFailed(false)
-        setLocations(await locationsApi.list())
+        if (append) setLoadingMore(true)
+        else setFailed(false)
+        const result = await locationsApi.listPage({ page: pageIndex, size: PAGE_SIZE, sort: 'createdAt,desc' })
+        setLocations((prev) => (append ? [...prev, ...result.items] : result.items))
+        setTotalPages(result.totalPages || 1)
+        setPage(pageIndex)
       } catch (e) {
-        setFailed(true)
+        if (!append) setFailed(true)
         showToast({
           message: e instanceof ApiError ? e.message : 'Không tải được danh sách địa điểm.',
           type: 'error',
         })
       } finally {
-        setLoading(false)
+        if (append) setLoadingMore(false)
+        else setLoading(false)
       }
-    }
-    run()
-  }, [showToast])
+    },
+    [showToast],
+  )
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadPage(0, false)
+  }, [loadPage])
 
   const filteredLocations = locations.filter((location) => {
     if (activeFilter === 'all') return true
@@ -47,7 +64,17 @@ export function ExplorePage() {
     }
     return true
   })
+  const [brokenCovers, setBrokenCovers] = useState<Record<string, true>>({})
   const stitchedCover = (idx: number) => (idx % 2 === 0 ? images.exploreDaiNoi : images.exploreChuaThienMu)
+  const coverSrc = (location: Location, index: number) => {
+    if (brokenCovers[location.id] || !location.coverImage?.trim()) {
+      return stitchedCover(index)
+    }
+    return location.coverImage
+  }
+  const onCoverError = (locationId: string) => () => {
+    setBrokenCovers((prev) => ({ ...prev, [locationId]: true }))
+  }
   const distanceLabel = (location: Location, index: number) => {
     if (typeof location.distanceKm === 'number') return `${location.distanceKm.toFixed(1)} km`
     return `${(2.4 + index * 2.7).toFixed(1)} km`
@@ -59,8 +86,8 @@ export function ExplorePage() {
 
   return (
     <AppLayout activeBorder="right" topNav={<ExploreTopNav />}>
-      <main className="w-full h-[calc(100vh-4rem)] mt-16 p-lg flex gap-lg relative min-h-0 overflow-hidden">
-        <section className="w-[400px] max-w-[400px] min-w-[320px] h-full flex flex-col gap-lg z-10 shrink-0 min-h-0">
+      <main className="w-full min-h-[calc(100dvh-7rem)] md:min-h-[calc(100vh-4rem)] mt-14 md:mt-16 p-md md:p-lg flex flex-col lg:flex-row gap-md lg:gap-lg relative min-h-0 overflow-hidden lg:h-[calc(100vh-4rem)]">
+        <section className="w-full lg:w-[400px] lg:max-w-[400px] lg:min-w-[320px] h-auto lg:h-full flex flex-col gap-md lg:gap-lg z-10 shrink-0 min-h-0 flex-1 lg:flex-none">
           <div className="bg-surface/80 backdrop-blur-xl border border-outline-variant rounded-xl p-md shadow-lg flex flex-col gap-md shrink-0">
             <div className="flex items-center justify-between">
               <h2 className="font-title-md text-title-md text-on-surface flex items-center gap-2">
@@ -121,7 +148,8 @@ export function ExplorePage() {
                           <img
                             alt={location.name || 'Di tích lịch sử'}
                             className="w-full h-32 object-cover group-hover:scale-105 transition-transform duration-500"
-                            src={location.coverImage || stitchedCover(index)}
+                            src={coverSrc(location, index)}
+                            onError={onCoverError(location.id)}
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
                           <div className="absolute bottom-2 left-3 flex flex-wrap gap-1">
@@ -154,14 +182,42 @@ export function ExplorePage() {
                           </div>
                         </div>
                       </Link>
+                      {mode === 'online' && (
+                        <div className="px-md pb-md flex flex-wrap gap-2 -mt-1">
+                          <Link
+                            to={`/tour/360/${location.id}`}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border border-secondary/50 bg-secondary/10 text-secondary text-xs font-label-sm hover:bg-secondary/20"
+                          >
+                            <MaterialIcon name="view_in_ar" className="text-sm" />
+                            Tham quan 360°
+                          </Link>
+                          <Link
+                            to={`/chat/nguyen-du?locationId=${location.id}`}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border border-primary/50 bg-primary/10 text-primary text-xs font-label-sm hover:bg-primary/20"
+                          >
+                            <MaterialIcon name="chat_bubble" className="text-sm" />
+                            Trò chuyện AI
+                          </Link>
+                        </div>
+                      )}
                     </article>
                   ))}
               </div>
+              {!loading && !failed && page + 1 < totalPages && (
+                <button
+                  type="button"
+                  disabled={loadingMore}
+                  onClick={() => loadPage(page + 1, true)}
+                  className="shrink-0 mt-md w-full py-2 rounded-lg border border-outline-variant bg-surface-container text-on-surface-variant hover:border-secondary hover:text-secondary transition-colors disabled:opacity-60"
+                >
+                  {loadingMore ? 'Đang tải thêm...' : 'Xem thêm di tích'}
+                </button>
+              )}
             </div>
           </div>
         </section>
 
-        <section className="flex-1 h-full min-h-0 rounded-2xl overflow-hidden border border-outline-variant relative bg-surface-container-lowest shadow-inner">
+        <section className="flex-1 h-64 lg:h-full min-h-[16rem] lg:min-h-0 rounded-2xl overflow-hidden border border-outline-variant relative bg-surface-container-lowest shadow-inner order-last lg:order-none">
           <div className="absolute inset-0 bg-cover bg-center opacity-80 transition-transform duration-300" style={{ backgroundImage: `url('${images.exploreMapBg}')`, filter: 'grayscale(80%) sepia(20%) hue-rotate(180deg) brightness(40%) contrast(120%)', transform: `scale(${mapZoom})` }} />
           <div className="absolute inset-0 bg-dongson-pattern opacity-20 pointer-events-none" />
           <div className="absolute right-md bottom-md flex flex-col gap-sm z-20">

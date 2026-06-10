@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { SimpleTopNav } from '../components/layout/TopNav'
+import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { gamificationApi, type SecretStory } from '../features/gamification/api'
 import { useToast } from '../shared/ui/toast/useToast'
 
@@ -10,6 +11,7 @@ export function SecretStoryPage() {
   const targetLocationId = locationId ?? ''
   const [story, setStory] = useState<SecretStory | null>(null)
   const [loading, setLoading] = useState(true)
+  const [unlocked, setUnlocked] = useState(false)
   const { showToast } = useToast()
 
   const loadStory = useCallback(async () => {
@@ -22,6 +24,9 @@ export function SecretStoryPage() {
       setLoading(true)
       const response = await gamificationApi.secretStory(targetLocationId)
       setStory(response)
+      if (!response.locked) {
+        setUnlocked(true)
+      }
     } catch {
       showToast({ message: 'Không tải được Secret Story.', type: 'error' })
     } finally {
@@ -35,26 +40,47 @@ export function SecretStoryPage() {
   }, [loadStory])
 
   return (
-    <AppLayout activeBorder="left" topNav={<SimpleTopNav title="Secret Story" />}>
-      <main className="mt-16 p-lg max-w-3xl mx-auto">
+    <AppLayout
+      activeBorder="left"
+      topNav={<SimpleTopNav title="Câu chuyện bí mật" />}
+      mobileBackTo={targetLocationId ? `/explore/${targetLocationId}` : '/quests'}
+      mobileTitle="Câu chuyện bí mật"
+    >
+      <main className="mt-14 md:mt-16 p-md md:p-lg max-w-3xl mx-auto">
         {!targetLocationId && (
-          <p className="text-on-surface-variant">Thiếu locationId. Hãy vào màn hình địa điểm và mở Secret Story từ đó.</p>
+          <p className="text-on-surface-variant">Hãy mở câu chuyện bí mật từ trang chi tiết di tích hoặc sau khi hoàn thành nhiệm vụ.</p>
         )}
-        {loading && <p>Đang tải câu chuyện bí mật...</p>}
+        {loading && (
+          <div className="space-y-md">
+            <div className="h-32 rounded-xl bg-surface-container animate-pulse border border-outline-variant" />
+            <p className="text-on-surface-variant text-sm">Đang tải câu chuyện bí mật...</p>
+          </div>
+        )}
+        {!loading && !story && targetLocationId && (
+          <p className="text-on-surface-variant">Không tải được nội dung. Hãy thử lại sau.</p>
+        )}
         {story && (
-          <section className="bg-surface-container border border-outline-variant rounded-lg p-md">
+          <section className={`bg-surface-container border border-outline-variant rounded-lg p-md relative overflow-hidden transition-all duration-700 ${story.locked ? 'opacity-90' : ''}`}>
             <h1 className="font-display-lg text-primary mb-sm">{story.title}</h1>
             {story.locked ? (
-              <>
-                <p className="text-on-surface-variant mb-md">
-                  Câu chuyện vẫn đang khóa. Bạn cần hoàn thành quest và quét secret QR để mở khóa.
-                </p>
-                <Link to={`/scan?locationId=${targetLocationId}`} className="text-secondary underline">
-                  Đi tới màn hình quét QR
-                </Link>
-              </>
+              <div className="relative">
+                <div className="blur-sm select-none pointer-events-none opacity-60 whitespace-pre-wrap text-on-surface">
+                  {story.story || 'Nội dung bí mật đang được bảo vệ...'}
+                </div>
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-md bg-background/40 rounded-lg">
+                  <MaterialIcon name="lock" className="text-5xl text-on-surface-variant" />
+                  <p className="text-on-surface-variant text-center max-w-sm px-md">
+                    Câu chuyện vẫn đang khóa. Hoàn thành nhiệm vụ và check-in tại di tích để mở khóa.
+                  </p>
+                  <Link to={`/scan?locationId=${targetLocationId}`} className="inline-flex items-center gap-1 text-secondary underline">
+                    Đi tới quét mã <MaterialIcon name="qr_code_scanner" className="text-sm" />
+                  </Link>
+                </div>
+              </div>
             ) : (
-              <p className="whitespace-pre-wrap text-on-surface">{story.story}</p>
+              <p className={`whitespace-pre-wrap text-on-surface transition-all duration-700 ${unlocked ? 'animate-[fadeIn_0.6s_ease-out]' : ''}`}>
+                {story.story}
+              </p>
             )}
             <button type="button" onClick={loadStory} className="mt-md px-md py-sm border border-outline-variant rounded hover:border-secondary">
               Tải lại trạng thái

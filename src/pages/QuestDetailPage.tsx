@@ -41,8 +41,13 @@ export function QuestDetailPage() {
   }
 
   return (
-    <AppLayout activeBorder="left" topNav={<SimpleTopNav title="Chi tiết nhiệm vụ" />}>
-      <main className="mt-16 max-w-7xl mx-auto w-full">
+    <AppLayout
+      activeBorder="left"
+      topNav={<SimpleTopNav title="Chi tiết nhiệm vụ" />}
+      mobileBackTo="/quests"
+      mobileTitle="Nhiệm vụ"
+    >
+      <main className="mt-14 md:mt-16 max-w-7xl mx-auto w-full pb-20 md:pb-0">
         <div className="h-60 relative overflow-hidden rounded-b-xl border-b border-outline-variant">
           <img src={images.questDetailHero} alt="Quest detail" className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-transparent" />

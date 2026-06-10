@@ -1,4 +1,4 @@
-import { getData, getListData, httpClient } from '../../shared/api/httpClient'
+import { getData, getListData, getPageData, httpClient } from '../../shared/api/httpClient'
 
 export type Location = {
   id: string
@@ -44,6 +44,17 @@ export const locationsApi = {
     maxDistanceKm?: number
     tags?: string
   }) => getListData<Location>(httpClient.get('/api/locations', { params })),
+  listPage: (params?: {
+    page?: number
+    size?: number
+    sort?: string
+    city?: string
+    search?: string
+    nearLat?: number
+    nearLng?: number
+    maxDistanceKm?: number
+    tags?: string
+  }) => getPageData<Location>(httpClient.get('/api/locations', { params })),
   getById: (id: string) => getData<Location>(httpClient.get(`/api/locations/${id}`)),
   getCharacters: (locationId: string) =>
     getListData<Character>(httpClient.get(`/api/characters/by-location/${locationId}`)),

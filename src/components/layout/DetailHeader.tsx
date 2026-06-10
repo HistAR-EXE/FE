@@ -8,7 +8,7 @@ type DetailHeaderProps = {
 
 export function DetailHeader({ backTo = '/explore', backLabel = 'Quay lại Khám phá' }: DetailHeaderProps) {
   return (
-    <header className="fixed top-0 right-0 left-0 md:left-[16rem] z-50 backdrop-blur-xl border-b border-outline-variant bg-surface/70 flex justify-between items-center h-16 px-xl">
+    <header className="fixed top-0 right-0 left-0 md:left-16 lg:left-[16rem] z-50 backdrop-blur-xl border-b border-outline-variant bg-surface/70 hidden md:flex justify-between items-center h-16 px-xl">
       <Link
         to={backTo}
         className="flex items-center gap-sm text-on-surface-variant hover:text-secondary transition-colors font-title-md text-title-md"

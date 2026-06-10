@@ -7,6 +7,7 @@ import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
 import { useToast } from '../shared/ui/toast/useToast'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { images } from '../assets/images'
+import { resizeImageForUpload } from '../shared/utils/resizeImage'
 
 export function PhotoFramePage() {
   const navigate = useNavigate()
@@ -15,6 +16,7 @@ export function PhotoFramePage() {
   const [variant, setVariant] = useState<'square' | 'story'>('square')
   const [file, setFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
+  const [framesLoading, setFramesLoading] = useState(true)
   const { showToast } = useToast()
 
   useEffect(() => {
@@ -25,6 +27,7 @@ export function PhotoFramePage() {
         if (data[0]) setFrameId(data[0].id)
       })
       .catch((e) => showToast({ message: getFriendlyErrorMessage(e, 'upload'), type: 'error' }))
+      .finally(() => setFramesLoading(false))
   }, [showToast])
 
   const selectedFrame = useMemo(() => frames.find((f) => f.id === frameId), [frames, frameId])
@@ -47,7 +50,8 @@ export function PhotoFramePage() {
     }
     setUploading(true)
     try {
-      const creation = await viralApi.uploadCreation({ file, frameId, variant })
+      const resized = await resizeImageForUpload(file)
+      const creation = await viralApi.uploadCreation({ file: resized, frameId, variant })
       navigate(`/share?creationId=${creation.id}&outputUrl=${encodeURIComponent(creation.outputUrl)}`)
       showToast({ message: 'Tạo ảnh thành công.', type: 'success' })
     } catch (e) {
@@ -58,9 +62,14 @@ export function PhotoFramePage() {
   }
 
   return (
-    <AppLayout activeBorder="left" topNav={<SimpleTopNav title="Khung ảnh di sản" />}>
-      <main className="flex-1 mt-16 p-safe-area-inset flex gap-lg overflow-hidden">
-        <section className="flex-1 bg-surface-container-low rounded-xl border border-surface-variant relative flex items-center justify-center overflow-hidden">
+    <AppLayout
+      activeBorder="left"
+      topNav={<SimpleTopNav title="Khung ảnh di sản" />}
+      mobileBackTo="/scan"
+      mobileTitle="Khung ảnh"
+    >
+      <main className="flex-1 mt-14 md:mt-16 p-md md:p-safe-area-inset flex flex-col lg:flex-row gap-md lg:gap-lg overflow-hidden min-h-0">
+        <section className="flex-1 min-h-[280px] lg:min-h-0 bg-surface-container-low rounded-xl border border-surface-variant relative flex items-center justify-center overflow-hidden">
           <Link to="/home" className="absolute top-md left-md z-20 inline-flex items-center gap-1 px-sm py-xs rounded-full border border-outline-variant bg-surface/80 text-on-surface-variant hover:text-secondary hover:border-secondary transition-colors">
             <MaterialIcon name="arrow_back" className="text-sm" />
             Trở về
@@ -72,6 +81,7 @@ export function PhotoFramePage() {
                 <img
                   alt={selectedFrame?.name ?? 'Frame preview'}
                   src={previewUrl || selectedFrame?.imageUrl || images.photoFrameCharacter}
+                  crossOrigin="anonymous"
                   className="w-full h-full object-cover"
                 />
               </div>
@@ -79,12 +89,16 @@ export function PhotoFramePage() {
           </div>
         </section>
 
-        <aside className="w-[380px] bg-surface-container border border-outline-variant rounded-xl flex flex-col h-full shadow-lg">
+        <aside className="w-full lg:w-[380px] bg-surface-container border border-outline-variant rounded-xl flex flex-col lg:h-full shadow-lg shrink-0">
           <div className="p-lg border-b border-surface-variant">
             <h2 className="font-headline-lg text-headline-lg text-on-surface">Khung Hình Di Sản</h2>
             <p className="font-body-md text-body-md text-on-surface-variant mt-2">Hóa thân vào dòng chảy lịch sử qua ống kính công nghệ.</p>
           </div>
           <div className="flex-1 overflow-y-auto p-lg flex flex-col gap-xl">
+            {framesLoading && <p className="text-sm text-on-surface-variant">Đang tải khung ảnh...</p>}
+            {!framesLoading && frames.length === 0 && (
+              <p className="text-sm text-on-surface-variant">Chưa có khung ảnh. Thử lại sau.</p>
+            )}
             <div className="flex flex-col gap-md">
               <h3 className="font-title-md">Nguồn ảnh</h3>
               <input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="w-full text-sm" />
@@ -97,8 +111,8 @@ export function PhotoFramePage() {
                 ))}
               </select>
               <div className="flex gap-sm">
-                <button type="button" className={`flex-1 border rounded-lg p-sm ${variant === 'square' ? 'border-primary text-primary bg-surface-variant' : 'border-outline-variant text-on-surface-variant'}`} onClick={() => setVariant('square')}>Square</button>
-                <button type="button" className={`flex-1 border rounded-lg p-sm ${variant === 'story' ? 'border-primary text-primary bg-surface-variant' : 'border-outline-variant text-on-surface-variant'}`} onClick={() => setVariant('story')}>Story</button>
+                <button type="button" className={`flex-1 border rounded-lg p-sm ${variant === 'square' ? 'border-primary text-primary bg-surface-variant' : 'border-outline-variant text-on-surface-variant'}`} onClick={() => setVariant('square')}>Vuông 1080×1080</button>
+                <button type="button" className={`flex-1 border rounded-lg p-sm ${variant === 'story' ? 'border-primary text-primary bg-surface-variant' : 'border-outline-variant text-on-surface-variant'}`} onClick={() => setVariant('story')}>Dọc 1080×1920</button>
               </div>
             </div>
           </div>

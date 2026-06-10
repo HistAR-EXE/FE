@@ -7,6 +7,7 @@ import { images } from '../assets/images'
 import { chatApi, type ChatMessage } from '../features/chat/api'
 import { locationsApi, type Character } from '../features/locations/api'
 import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
+import { ChatMessageContent } from '../shared/ui/ChatMessageContent'
 import { useToast } from '../shared/ui/toast/useToast'
 
 export function ChatPage() {
@@ -23,9 +24,10 @@ export function ChatPage() {
   const [sending, setSending] = useState(false)
   const { showToast } = useToast()
   const quickReplies = [
-    'Kể về mười năm gió bụi',
-    'Quan niệm về Tài - Mệnh',
-    'Đọc thử một đoạn Kiều',
+    'Cuộc sống trong địa đạo thế nào?',
+    'Kể về chiến thuật đào hầm',
+    'Ai là những anh hùng tiêu biểu?',
+    'Địa đạo Củ Chi có bao nhiêu tầng?',
   ]
 
   useEffect(() => {
@@ -98,8 +100,13 @@ export function ChatPage() {
   }
 
   return (
-    <AppLayout activeBorder="left" topNav={<SimpleTopNav title="Chat với nhân vật" showSearch />}>
-      <main className="flex-1 flex flex-col lg:flex-row overflow-hidden p-md lg:p-lg gap-md lg:gap-lg max-w-[1600px] mx-auto w-full mt-16">
+    <AppLayout
+      activeBorder="left"
+      topNav={<SimpleTopNav title="Chat với nhân vật" showSearch />}
+      mobileBackTo={locationId ? `/explore/${locationId}` : '/explore'}
+      mobileTitle="Trò chuyện AI"
+    >
+      <main className="flex-1 flex flex-col lg:flex-row overflow-hidden p-md lg:p-lg gap-md lg:gap-lg max-w-[1600px] mx-auto w-full mt-14 md:mt-16 min-h-0">
         <section className="hidden lg:flex w-1/3 min-w-[360px] max-w-[480px] bg-surface-container-low/80 rounded-xl border border-outline-variant flex-col overflow-hidden relative">
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-secondary opacity-80" />
           <div className="h-[45%] w-full relative">
@@ -150,10 +157,26 @@ export function ChatPage() {
             </div>
             {loadingMessages && <p className="text-sm text-on-surface-variant">Đang tải lịch sử hội thoại...</p>}
             {messages.length === 0 && !loadingMessages && (
-              <div className="max-w-[85%] bg-surface-container p-md rounded-2xl rounded-tl-sm border border-outline-variant">
-                <p className="font-body-lg text-body-lg text-on-surface leading-relaxed">
-                  Xin chào, ta là {selected?.name ?? 'nhà sử học AI'}. Bạn muốn tìm hiểu câu chuyện nào?
-                </p>
+              <div className="flex flex-col gap-md max-w-[85%]">
+                <div className="bg-surface-container p-md rounded-2xl rounded-tl-sm border border-outline-variant">
+                  <p className="font-body-lg text-body-lg text-on-surface leading-relaxed">
+                    Xin chào, ta là {selected?.name ?? 'nhà sử học AI'}. Bạn muốn tìm hiểu câu chuyện nào?
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-sm">
+                  {quickReplies.map((item) => (
+                    <button
+                      key={item}
+                      type="button"
+                      onClick={() => {
+                        setInput(item)
+                      }}
+                      className="px-sm py-xs border border-outline-variant rounded-full text-xs text-on-surface-variant hover:border-primary hover:text-primary transition-colors"
+                    >
+                      {item}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
             {messages.map((m) => (
@@ -162,7 +185,7 @@ export function ChatPage() {
                   <img alt={m.role} className="w-full h-full object-cover" src={m.role === 'user' ? images.chatUserAvatar : images.chatNguyenDuAvatar} />
                 </div>
                 <div className={`p-md rounded-2xl border relative ${m.role === 'user' ? 'bg-inverse-surface/10 border-secondary/30 rounded-tr-sm' : 'bg-surface-container border-outline-variant rounded-tl-sm'}`}>
-                  <p className="font-body-lg text-body-lg text-on-surface leading-relaxed">{m.content}</p>
+                  <ChatMessageContent content={m.content} />
                   <span className="font-label-sm text-label-sm text-on-surface-variant mt-xs block text-right">
                     {new Date(m.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
                   </span>

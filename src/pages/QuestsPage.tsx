@@ -9,6 +9,7 @@ import { useAuth } from '../shared/auth/useAuth'
 import { useToast } from '../shared/ui/toast/useToast'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { images } from '../assets/images'
+import { appEnv } from '../shared/config/env'
 
 export function QuestsPage() {
   const { isAuthenticated } = useAuth()
@@ -104,7 +105,7 @@ export function QuestsPage() {
     stepsTotal: getProgress(q.id)?.stepsTotal ?? q.stepsTotal,
   }))
 
-  if (questsForDisplay.length < 2) {
+  if (appEnv.demoMode && questsForDisplay.length < 2) {
     const seed = [
       {
         id: 'seed-quest-1',
@@ -134,35 +135,22 @@ export function QuestsPage() {
     })
   }
 
-  const featuredCards = [
-    {
-      ...questsForDisplay[0],
-      title: 'Dấu ấn Hoàng Thành',
-      description: 'Giải mã các cổ vật được tìm thấy tại khu vực trung tâm để khôi phục dòng thời gian.',
-      image: images.questDauAnHoangThanh,
-      borderClass: 'border-primary/30 hover:border-primary/60',
-      xpClass: 'border-primary/50 text-primary',
-    },
-    {
-      ...questsForDisplay[1],
-      title: 'Bí ẩn Chùa Cầu',
-      description: 'Tìm kiếm các dấu vết thương mại cổ đại dọc theo bờ sông.',
-      image: images.questBiAnChuaCau,
-      borderClass: 'border-outline-variant hover:border-secondary/60',
-      xpClass: 'border-outline-variant text-on-surface-variant',
-    },
-  ]
+  const displayCards = questsForDisplay.map((q, index) => ({
+    ...q,
+    borderClass: index === 0 ? 'border-primary/30 hover:border-primary/60' : 'border-outline-variant hover:border-secondary/60',
+    xpClass: index === 0 ? 'border-primary/50 text-primary' : 'border-outline-variant text-on-surface-variant',
+  }))
 
   return (
     <AppLayout activeBorder="left" topNav={<SimpleTopNav />}>
-      <main className="mt-16 p-lg max-w-7xl mx-auto w-full">
+      <main className="mt-14 md:mt-16 p-md md:p-lg max-w-7xl mx-auto w-full">
         <h1 className="text-[46px] leading-[54px] font-bold tracking-[-0.02em] text-primary mb-md [text-shadow:0_0_10px_rgba(242,191,80,0.3)]">Nhiệm vụ</h1>
         {!isAuthenticated && (
           <p className="text-on-surface-variant mb-md">
             Bạn đang xem ở chế độ guest. Đăng nhập để bắt đầu nhiệm vụ và lưu tiến trình.
           </p>
         )}
-        <div className="flex flex-wrap gap-md border-b border-surface-container-highest pb-sm mb-lg">
+        <div className="flex flex-wrap gap-md border-b border-surface-container-highest pb-sm mb-lg overflow-x-auto">
           {[
             { id: 'in_progress', label: 'Đang làm' },
             { id: 'completed', label: 'Hoàn thành' },
@@ -182,7 +170,7 @@ export function QuestsPage() {
         </div>
         {loading && <p className="mb-sm text-on-surface-variant">Đang tải nhiệm vụ...</p>}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-md">
-          {featuredCards.map((q) => (
+          {displayCards.map((q) => (
             <Link
               key={q.id}
               to={q.to}
@@ -200,7 +188,7 @@ export function QuestsPage() {
                 <div className="flex items-end justify-between gap-sm mb-sm">
                   <h2 className="font-headline-lg text-on-surface leading-tight">{q.title}</h2>
                   <span className="px-2 py-1 rounded bg-surface text-xs text-on-surface-variant">
-                    {q.currentStep ?? Math.max(1, Math.round(progressPct(q.status, q.currentStep, q.stepsTotal) / 25))}/{q.stepsTotal ?? 4} steps
+                    {q.currentStep ?? Math.max(1, Math.round(progressPct(q.status, q.currentStep, q.stepsTotal) / 25))}/{q.stepsTotal ?? 4} bước
                   </span>
                 </div>
                 <p className="text-sm text-on-surface-variant mb-md">{q.description}</p>
@@ -211,8 +199,14 @@ export function QuestsPage() {
             </Link>
           ))}
         </div>
-        {!loading && quests.length === 0 && (
-          <p className="text-sm text-on-surface-variant mt-md">Không có nhiệm vụ khớp bộ lọc hiện tại.</p>
+        {!loading && questsForDisplay.length === 0 && (
+          <div className="mt-md text-center py-xl border border-dashed border-outline-variant rounded-xl">
+            <MaterialIcon name="assignment" className="text-4xl text-on-surface-variant mb-sm" />
+            <p className="text-on-surface-variant">Chưa có nhiệm vụ. Hãy check-in tại di tích để mở nhiệm vụ mới.</p>
+            <Link to="/scan" className="inline-flex items-center gap-1 mt-md text-secondary underline">
+              Đi tới quét mã <MaterialIcon name="qr_code_scanner" className="text-sm" />
+            </Link>
+          </div>
         )}
         <section className="mt-xl border border-outline-variant rounded-xl p-md bg-surface-container-low opacity-80">
           <h3 className="font-title-md mb-md flex items-center gap-2 text-on-surface-variant">

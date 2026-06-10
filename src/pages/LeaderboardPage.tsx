@@ -29,7 +29,7 @@ export function LeaderboardPage() {
 
   return (
     <AppLayout activeBorder="left" topNav={<SimpleTopNav showSearch />}>
-      <main className="mt-16 p-lg max-w-5xl mx-auto w-full">
+      <main className="mt-14 md:mt-16 p-md md:p-lg max-w-5xl mx-auto w-full">
         <Link to="/home" className="inline-flex items-center gap-1 text-secondary mb-sm">
           <MaterialIcon name="arrow_back" className="text-sm" />
           Quay về trang chủ
@@ -37,7 +37,7 @@ export function LeaderboardPage() {
         <h1 className="font-display-lg text-primary mb-xs uppercase tracking-wider">Bảng Vinh Danh</h1>
         <p className="text-on-surface-variant mb-md">Những nhà du hành xuất sắc nhất trong kỷ nguyên Neo-Heritage.</p>
 
-        <div className="flex items-center gap-lg border-b border-outline-variant/50 mb-lg">
+        <div className="flex items-center gap-lg border-b border-outline-variant/50 mb-lg overflow-x-auto">
           {(['all', 'city', 'week'] as const).map((s) => (
             <button
               key={s}
@@ -55,6 +55,14 @@ export function LeaderboardPage() {
             <input value={city} onChange={(e) => setCity(e.target.value)} className="neo-input rounded px-sm py-xs mb-xs" />
             {!city.trim() && <p className="text-xs text-red-400 mb-md">Vui lòng nhập city khi chọn scope=city.</p>}
           </>
+        )}
+
+        {data && data.entries.length === 0 && (
+          <div className="text-center py-xl border border-dashed border-outline-variant rounded-xl mb-lg">
+            <MaterialIcon name="leaderboard" className="text-4xl text-on-surface-variant mb-sm" />
+            <p className="text-on-surface-variant">Chưa có dữ liệu xếp hạng. Hãy check-in và hoàn thành nhiệm vụ.</p>
+            <Link to="/scan" className="inline-block mt-sm text-secondary underline">Đi tới quét mã</Link>
+          </div>
         )}
 
         {podium.length > 0 && (

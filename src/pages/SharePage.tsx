@@ -19,6 +19,20 @@ export function SharePage() {
     viralApi.sharePrefill().then((data) => setCaption(data.caption))
   }, [])
 
+  const onDownload = () => {
+    if (!outputUrl) {
+      showToast({ message: 'Chưa có ảnh để tải xuống.', type: 'error' })
+      return
+    }
+    const link = document.createElement('a')
+    link.href = outputUrl
+    link.download = 'timelens-heritage.jpg'
+    link.target = '_blank'
+    link.rel = 'noopener noreferrer'
+    link.click()
+    showToast({ message: 'Đang tải ảnh...', type: 'info' })
+  }
+
   const onShare = async () => {
     try {
       if (navigator.share) {
@@ -55,8 +69,13 @@ export function SharePage() {
   }
 
   return (
-    <AppLayout activeBorder="left" topNav={<SimpleTopNav title="Chia sẻ" />}>
-      <main className="bg-background text-on-background min-h-screen flex items-center justify-center p-md lg:p-xl relative overflow-hidden mt-16">
+    <AppLayout
+      activeBorder="left"
+      topNav={<SimpleTopNav title="Chia sẻ" />}
+      mobileBackTo="/photo-frame"
+      mobileTitle="Chia sẻ"
+    >
+      <main className="bg-background text-on-background min-h-screen flex items-center justify-center p-md lg:p-xl relative overflow-hidden mt-14 md:mt-16 pb-20 md:pb-0">
         <div className="relative z-10 w-full max-w-[1200px] bg-surface-container/60 backdrop-blur-2xl border border-outline-variant/30 rounded-[24px] overflow-hidden shadow-2xl flex flex-col md:flex-row h-auto md:h-[700px]">
           <div className="w-full md:w-3/5 h-[400px] md:h-full relative overflow-hidden group">
             <img alt="Generated Heritage Character" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" src={outputUrl || images.shareCharacter} />
@@ -88,13 +107,17 @@ export function SharePage() {
                 ))}
               </div>
             </div>
-            <div className="mt-xl pt-lg border-t border-outline-variant/30 flex gap-sm">
-              <button onClick={onShare} className="flex-1 bg-primary hover:bg-primary-container text-on-primary font-title-md py-md px-lg rounded-xl flex justify-center items-center gap-sm">
+            <div className="mt-xl pt-lg border-t border-outline-variant/30 flex flex-wrap gap-sm">
+              <button onClick={onShare} className="flex-1 min-w-[140px] bg-primary hover:bg-primary-container text-on-primary font-title-md py-md px-lg rounded-xl flex justify-center items-center gap-sm">
                 <MaterialIcon name="share" />
                 Chia sẻ ngay
               </button>
-              <button onClick={markSharedManually} className="border border-outline-variant px-md py-sm rounded-xl">
-                Đã share
+              <button onClick={onDownload} type="button" className="border border-outline-variant px-md py-sm rounded-xl inline-flex items-center gap-1">
+                <MaterialIcon name="download" className="text-sm" />
+                Tải ảnh
+              </button>
+              <button onClick={markSharedManually} type="button" className="border border-outline-variant px-md py-sm rounded-xl">
+                Đã chia sẻ
               </button>
             </div>
           </div>

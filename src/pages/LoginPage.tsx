@@ -2,6 +2,7 @@ import { useMemo, useState, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { AuthLayout } from '../components/layout/AuthLayout'
 import { useAuth } from '../shared/auth/useAuth'
+import { useAppMode } from '../shared/context/useAppMode'
 import { ApiError } from '../shared/api/contracts'
 import { useToast } from '../shared/ui/toast/useToast'
 import { Footer } from '../components/layout/Footer'
@@ -12,14 +13,21 @@ export function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const { login, register } = useAuth()
+  const { mode: appMode } = useAppMode()
   const [mode, setMode] = useState<'login' | 'register'>('login')
   const [loading, setLoading] = useState(false)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const { showToast } = useToast()
-  const redirectPath = useMemo(() => {
+  const pendingFrom = useMemo(() => {
     const from = (location.state as { from?: string } | null)?.from
-    return from && from.startsWith('/') ? from : '/home'
+    return from && from.startsWith('/') && from !== '/mode-select' ? from : null
   }, [location.state])
+
+  const redirectPath = useMemo(() => {
+    if (pendingFrom && appMode !== null) return pendingFrom
+    if (appMode === null) return '/mode-select'
+    return appMode === 'offline' ? '/scan' : '/explore'
+  }, [pendingFrom, appMode])
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -38,7 +46,10 @@ export function LoginPage() {
       } else {
         await register({ email, password, displayName })
       }
-      navigate(redirectPath, { replace: true })
+      navigate(redirectPath, {
+        replace: true,
+        state: redirectPath === '/mode-select' && pendingFrom ? { from: pendingFrom } : undefined,
+      })
     } catch (e) {
       if (e instanceof ApiError && e.code === 'VALIDATION_ERROR' && e.fieldErrors) {
         setFieldErrors(e.fieldErrors)

@@ -12,6 +12,7 @@
   "dependencies": {
     "@photo-sphere-viewer/core": "^5.14.1",
     "@photo-sphere-viewer/markers-plugin": "^5.14.1",
+    "@photo-sphere-viewer/virtual-tour-plugin": "^5.14.1",
     "@tailwindcss/vite": "^4.3.0",
     "axios": "^1.16.1",
     "html5-qrcode": "^2.3.8",

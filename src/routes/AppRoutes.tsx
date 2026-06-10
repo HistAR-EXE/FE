@@ -17,7 +17,9 @@ import { ScanPage } from '../pages/ScanPage'
 import { SecretStoryPage } from '../pages/SecretStoryPage'
 import { SharePage } from '../pages/SharePage'
 import { TimePortalPage } from '../pages/TimePortalPage'
+import { ModeSelectPage } from '../pages/ModeSelectPage'
 import { Tour360Page } from '../pages/Tour360Page'
+import { ModeGuardRoute } from '../shared/router/ModeGuardRoute'
 import { ProtectedRoute } from '../shared/router/ProtectedRoute'
 
 export function AppRoutes() {
@@ -34,16 +36,19 @@ export function AppRoutes() {
         <Route path="/quests/:questId" element={<QuestDetailPage />} />
         <Route path="/leaderboard" element={<LeaderboardPage />} />
         <Route element={<ProtectedRoute />}>
-          <Route path="/character-select" element={<CharacterSelectPage />} />
-          <Route path="/home" element={<HomePage />} />
-          <Route path="/characters" element={<CharacterExplorePage />} />
-          <Route path="/artifacts" element={<ArtifactsPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/share" element={<SharePage />} />
-          <Route path="/photo-frame" element={<PhotoFramePage />} />
-          <Route path="/scan" element={<ScanPage />} />
-          <Route path="/chat/nguyen-du" element={<ChatPage />} />
-          <Route path="/secret/:locationId" element={<SecretStoryPage />} />
+          <Route path="/mode-select" element={<ModeSelectPage />} />
+          <Route element={<ModeGuardRoute />}>
+            <Route path="/character-select" element={<CharacterSelectPage />} />
+            <Route path="/home" element={<HomePage />} />
+            <Route path="/characters" element={<CharacterExplorePage />} />
+            <Route path="/artifacts" element={<ArtifactsPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/share" element={<SharePage />} />
+            <Route path="/photo-frame" element={<PhotoFramePage />} />
+            <Route path="/scan" element={<ScanPage />} />
+            <Route path="/chat/nguyen-du" element={<ChatPage />} />
+            <Route path="/secret/:locationId" element={<SecretStoryPage />} />
+          </Route>
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

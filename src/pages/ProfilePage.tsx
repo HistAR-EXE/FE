@@ -22,8 +22,13 @@ export function ProfilePage() {
 
   return (
     <AppLayout activeBorder="left" topNav={<SimpleTopNav title="Hồ sơ" />}>
-      <main className="mt-16 p-lg max-w-5xl mx-auto w-full">
-        {!profile && <p>Đang tải hồ sơ...</p>}
+      <main className="mt-14 md:mt-16 p-md md:p-lg max-w-5xl mx-auto w-full">
+        {!profile && (
+          <div className="space-y-md">
+            <div className="h-40 rounded-xl bg-surface-container animate-pulse border border-outline-variant" />
+            <p className="text-on-surface-variant text-sm">Đang tải hồ sơ...</p>
+          </div>
+        )}
         {profile && (
           <section className="bg-surface-container border border-outline-variant rounded-xl p-lg relative overflow-hidden">
             <div className="absolute -top-20 -right-10 h-48 w-48 bg-primary/10 rounded-full blur-3xl" />
@@ -49,7 +54,25 @@ export function ProfilePage() {
               </div>
             </div>
 
-            <div className="mt-md grid grid-cols-1 md:grid-cols-3 gap-sm">
+            {typeof profile.levelProgressPercent === 'number' && (
+              <div className="mt-md">
+                <div className="flex justify-between text-xs text-on-surface-variant mb-1">
+                  <span>Tiến độ cấp độ</span>
+                  <span>
+                    {profile.totalPoints} XP
+                    {typeof profile.pointsToNextLevel === 'number' ? ` · còn ${profile.pointsToNextLevel} XP` : ''}
+                  </span>
+                </div>
+                <div className="h-2 bg-surface-container-highest rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-primary to-secondary"
+                    style={{ width: `${Math.min(100, profile.levelProgressPercent)}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="mt-md grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-sm">
               <div className="bg-surface-container-high rounded-lg p-md border border-outline-variant text-center">
                 <MaterialIcon name="star" className="text-primary mx-auto mb-xs" />
                 <p className="text-[36px] leading-tight font-bold">{(profile.totalPoints / 1000).toFixed(1)}k</p>
@@ -77,7 +100,14 @@ export function ProfilePage() {
         )}
         <section className="mt-md">
           <h2 className="font-title-md mb-sm">Huy hiệu</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-sm">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-sm">
+            {badges.length === 0 && (
+              <div className="col-span-full text-center py-xl border border-dashed border-outline-variant rounded-xl">
+                <MaterialIcon name="workspace_premium" className="text-4xl text-on-surface-variant mb-sm" />
+                <p className="text-on-surface-variant">Hoàn thành nhiệm vụ để nhận huy hiệu đầu tiên.</p>
+                <Link to="/quests" className="inline-block mt-sm text-secondary underline">Xem nhiệm vụ</Link>
+              </div>
+            )}
             {badges.map((b) => (
               <div
                 key={b.id}

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import jsQR from 'jsqr'
 import { Link, useSearchParams } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
@@ -33,6 +33,8 @@ export function ScanPage() {
   const decodeFrameRef = useRef<number | null>(null)
   const lastDecodedRef = useRef<string>('')
   const lastDecodedAtRef = useRef<number>(0)
+  const autoCheckinTimerRef = useRef<number | null>(null)
+  const lastAutoCheckinRef = useRef<string>('')
   const { showToast } = useToast()
   const parsedLocationId = useMemo(() => parseQrPayload(qrCode), [qrCode])
   const filteredHistory = useMemo(() => {
@@ -40,6 +42,50 @@ export function ScanPage() {
     if (!q) return scanHistory
     return scanHistory.filter((item) => item.label.toLowerCase().includes(q) || item.id.toLowerCase().includes(q) || item.payload.toLowerCase().includes(q))
   }, [scanHistory, historySearch])
+
+  const performCheckin = useCallback(
+    async (payload: string) => {
+      try {
+        setChecking(true)
+        const locationId = parseQrPayload(payload)
+        if (!locationId) {
+          showToast({ message: 'Mã chưa hợp lệ. Hãy quét lại hoặc nhập mã tại điểm tham quan.', type: 'error' })
+          return
+        }
+        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 10000 })
+        }).catch(() => null)
+        if (!position) {
+          setGeoError('Không lấy được vị trí. Hãy bật quyền định vị trên trình duyệt hoặc điện thoại.')
+          showToast({ message: 'Không lấy được vị trí. Hãy bật GPS và thử lại.', type: 'error' })
+          return
+        }
+        setGeoError(null)
+        const res = await gamificationApi.checkin({
+          locationId,
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          qrCode: payload,
+        })
+        setResult(res)
+        setScanHistory((prev) => [
+          {
+            id: locationId,
+            label: `Di tích ${locationId.slice(0, 6).toUpperCase()}`,
+            time: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+            payload,
+          },
+          ...prev.slice(0, 9),
+        ])
+        showToast({ message: 'Check-in thành công.', type: 'success' })
+      } catch (e) {
+        showToast({ message: getFriendlyErrorMessage(e, 'checkin'), type: 'error' })
+      } finally {
+        setChecking(false)
+      }
+    },
+    [showToast],
+  )
 
   useEffect(() => {
     const startCamera = async () => {
@@ -91,7 +137,16 @@ export function ScanPage() {
                 ...prev.filter((x) => !(x.id === locationId && x.payload === result.data)).slice(0, 9),
               ])
             }
-            showToast({ message: 'Đã nhận diện QR từ camera.', type: 'success' })
+            showToast({ message: 'Đã nhận diện mã QR. Sẽ tự động check-in sau giây lát...', type: 'success' })
+            if (locationId && lastAutoCheckinRef.current !== locationId) {
+              if (autoCheckinTimerRef.current !== null) {
+                window.clearTimeout(autoCheckinTimerRef.current)
+              }
+              autoCheckinTimerRef.current = window.setTimeout(() => {
+                lastAutoCheckinRef.current = locationId
+                void performCheckin(result.data)
+              }, 1000)
+            }
           }
         }
       }
@@ -107,51 +162,16 @@ export function ScanPage() {
         window.cancelAnimationFrame(decodeFrameRef.current)
         decodeFrameRef.current = null
       }
+      if (autoCheckinTimerRef.current !== null) {
+        window.clearTimeout(autoCheckinTimerRef.current)
+        autoCheckinTimerRef.current = null
+      }
       streamRef.current?.getTracks().forEach((track) => track.stop())
       streamRef.current = null
     }
-  }, [cameraEnabled, showToast])
+  }, [cameraEnabled, performCheckin, showToast])
 
-  const submitCheckin = async () => {
-    try {
-      setChecking(true)
-      const locationId = parseQrPayload(qrCode)
-      if (!locationId) {
-        showToast({ message: 'Thiếu locationId. Vui lòng mở check-in từ màn chi tiết địa điểm.', type: 'error' })
-        return
-      }
-      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 10000 })
-      }).catch(() => null)
-      if (!position) {
-        setGeoError('Không lấy được GPS hiện tại. Hãy bật quyền vị trí và thử lại.')
-        showToast({ message: 'Không lấy được GPS hiện tại.', type: 'error' })
-        return
-      }
-      setGeoError(null)
-      const res = await gamificationApi.checkin({
-        locationId,
-        latitude: position.coords.latitude,
-        longitude: position.coords.longitude,
-        qrCode,
-      })
-      setResult(res)
-      setScanHistory((prev) => [
-        {
-          id: locationId,
-          label: `Di tích ${locationId.slice(0, 6).toUpperCase()}`,
-          time: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
-          payload: qrCode,
-        },
-        ...prev.slice(0, 9),
-      ])
-      showToast({ message: 'Check-in thành công.', type: 'success' })
-    } catch (e) {
-      showToast({ message: getFriendlyErrorMessage(e, 'checkin'), type: 'error' })
-    } finally {
-      setChecking(false)
-    }
-  }
+  const submitCheckin = () => performCheckin(qrCode)
 
   const submitDemoCheckin = async () => {
     if (!appEnv.demoEnabled || !appEnv.demoSecret) return
@@ -164,9 +184,9 @@ export function ScanPage() {
   }
 
   return (
-    <AppLayout activeBorder="right" topNav={<ScanTopNav />}>
-      <main className="mt-16 p-lg max-w-6xl mx-auto w-full">
-        <div className="grid lg:grid-cols-12 gap-lg min-h-[650px]">
+    <AppLayout activeBorder="right" topNav={<ScanTopNav />} mobileTitle="Quét mã">
+      <main className="mt-14 md:mt-16 p-md md:p-lg max-w-6xl mx-auto w-full">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-md lg:gap-lg min-h-0 lg:min-h-[650px]">
           <aside className="lg:col-span-4 bg-surface-container border border-outline-variant rounded-xl flex flex-col">
             <div className="p-lg border-b border-outline-variant">
               <h2 className="font-headline-lg text-primary mb-xs">Nhập Mã Di Sản</h2>
@@ -234,7 +254,7 @@ export function ScanPage() {
             </div>
           </aside>
 
-          <section className="lg:col-span-8 relative rounded-xl overflow-hidden border border-outline-variant bg-surface-container-low min-h-[620px]">
+          <section className="lg:col-span-8 relative rounded-xl overflow-hidden border border-outline-variant bg-surface-container-low min-h-[280px] aspect-[4/3] md:aspect-video lg:min-h-[620px] lg:aspect-auto">
             {cameraEnabled ? (
               <video ref={videoRef} autoPlay muted playsInline className="absolute inset-0 w-full h-full object-cover opacity-70" />
             ) : (

@@ -4,6 +4,7 @@ import { AppLayout } from '../components/layout/AppLayout'
 import { DetailHeader } from '../components/layout/DetailHeader'
 import { locationsApi, type Character, type Location } from '../features/locations/api'
 import { ApiError } from '../shared/api/contracts'
+import { useAppMode } from '../shared/context/useAppMode'
 import { useToast } from '../shared/ui/toast/useToast'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 
@@ -13,6 +14,9 @@ export function HeritageDetailPage() {
   const [characters, setCharacters] = useState<Character[]>([])
   const [failed, setFailed] = useState(false)
   const { showToast } = useToast()
+  const { mode } = useAppMode()
+  const onlineHighlight = (active: boolean) =>
+    active && mode === 'online' ? 'ring-2 ring-secondary/60 border-secondary' : ''
 
   useEffect(() => {
     if (!locationId) return
@@ -38,8 +42,13 @@ export function HeritageDetailPage() {
   if (!locationId) return <Navigate to="/explore" replace />
 
   return (
-    <AppLayout activeBorder="right" topNav={<DetailHeader />}>
-      <main className="pt-20 pb-24 px-safe-area-inset md:px-lg max-w-7xl mx-auto">
+    <AppLayout
+      activeBorder="right"
+      topNav={<DetailHeader />}
+      mobileBackTo="/explore"
+      mobileTitle={location?.name ?? 'Chi tiết di tích'}
+    >
+      <main className="pt-16 md:pt-20 pb-24 px-safe-area-inset md:px-lg max-w-7xl mx-auto">
         {!location && !failed && <p>Đang tải chi tiết địa điểm...</p>}
         {!location && failed && <p>Không thể hiển thị chi tiết địa điểm.</p>}
         {location && (
@@ -60,7 +69,7 @@ export function HeritageDetailPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-md">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-md">
                   <div className="bg-surface-container p-md rounded-lg border border-outline-variant flex items-center gap-md">
                     <div className="w-10 h-10 rounded-full bg-primary-container/20 flex items-center justify-center text-primary"><MaterialIcon name="history" /></div>
                     <div><p className="font-label-sm text-label-sm text-on-surface-variant uppercase">Niên đại</p><p className="font-title-md text-title-md text-on-surface">Di sản</p></div>
@@ -77,21 +86,21 @@ export function HeritageDetailPage() {
               </div>
 
               <div className="lg:col-span-4 flex flex-col gap-md">
-                <Link to={`/time-portal/${location.id}`} className="group relative w-full h-[120px] rounded-xl overflow-hidden bg-surface-container border border-primary/50 hover:border-primary transition-colors flex items-center p-md gap-md">
+                <Link to={`/time-portal/${location.id}`} className={`group relative w-full h-[120px] rounded-xl overflow-hidden bg-surface-container border border-primary/50 hover:border-primary transition-colors flex items-center p-md gap-md ${onlineHighlight(true)}`}>
                   <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center text-primary z-10"><MaterialIcon name="motion_photos_on" className="text-4xl" /></div>
-                  <div className="z-10 text-left"><h3 className="font-title-md text-title-md text-primary mb-1">Cổng Thời Gian</h3><p className="font-body-md text-body-md text-on-surface-variant">Kích hoạt AR</p></div>
+                  <div className="z-10 text-left"><h3 className="font-title-md text-title-md text-primary mb-1">Cổng Thời Gian</h3><p className="font-body-md text-body-md text-on-surface-variant">Ảnh xưa và nay</p></div>
                 </Link>
-                <Link to={`/tour/360/${location.id}`} className="group relative w-full h-[100px] rounded-xl overflow-hidden bg-surface-container border border-secondary/30 hover:border-secondary transition-colors flex items-center p-md gap-md">
+                <Link to={`/tour/360/${location.id}`} className={`group relative w-full h-[100px] rounded-xl overflow-hidden bg-surface-container border border-secondary/30 hover:border-secondary transition-colors flex items-center p-md gap-md ${onlineHighlight(true)}`}>
                   <div className="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center text-secondary"><MaterialIcon name="view_in_ar" className="text-2xl" /></div>
                   <div className="text-left flex-1"><h3 className="font-title-md text-title-md text-on-surface mb-1">Tour 360°</h3><p className="font-label-sm text-label-sm text-on-surface-variant">Khám phá không gian</p></div>
                 </Link>
-                <Link to={`/quests?locationId=${location.id}`} className="group relative w-full h-[100px] rounded-xl overflow-hidden bg-surface-container border border-outline-variant hover:border-primary/50 transition-colors flex items-center p-md gap-md">
+                <Link to={`/quests?locationId=${location.id}`} className={`group relative w-full h-[100px] rounded-xl overflow-hidden bg-surface-container border border-outline-variant hover:border-primary/50 transition-colors flex items-center p-md gap-md ${onlineHighlight(false)}`}>
                   <div className="w-12 h-12 rounded-full bg-surface-variant flex items-center justify-center text-on-surface"><MaterialIcon name="assignment" className="text-2xl" /></div>
                   <div className="text-left flex-1"><h3 className="font-title-md text-title-md text-on-surface mb-1">Nhiệm vụ</h3><p className="font-label-sm text-label-sm text-on-surface-variant">Xem nhiệm vụ tại địa điểm</p></div>
                 </Link>
-                <Link to={`/chat/nguyen-du?locationId=${location.id}&characterId=${characters[0]?.id ?? ''}`} className="group relative w-full h-[100px] rounded-xl overflow-hidden bg-surface-container border border-outline-variant hover:border-secondary/50 transition-colors flex items-center p-md gap-md">
+                <Link to={`/chat/nguyen-du?locationId=${location.id}&characterId=${characters[0]?.id ?? ''}`} className={`group relative w-full h-[100px] rounded-xl overflow-hidden bg-surface-container border border-outline-variant hover:border-secondary/50 transition-colors flex items-center p-md gap-md ${onlineHighlight(true)}`}>
                   <div className="w-12 h-12 rounded-full bg-surface-variant flex items-center justify-center text-on-surface"><MaterialIcon name="chat_bubble" className="text-2xl" /></div>
-                  <div className="text-left flex-1"><h3 className="font-title-md text-title-md text-on-surface mb-1">Hỏi Đáp AI</h3><p className="font-label-sm text-label-sm text-on-surface-variant">Trò chuyện với nhân vật</p></div>
+                  <div className="text-left flex-1"><h3 className="font-title-md text-title-md text-on-surface mb-1">Trò chuyện AI</h3><p className="font-label-sm text-label-sm text-on-surface-variant">Hỏi đáp với nhân vật lịch sử</p></div>
                 </Link>
               </div>
             </div>
