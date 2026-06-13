@@ -4,6 +4,11 @@ const EXPIRES_IN_KEY = 'timelens_token_expires_in'
 const REFRESH_EXPIRES_IN_KEY = 'timelens_refresh_token_expires_in'
 const USER_ID_KEY = 'timelens_user_id'
 const DISPLAY_NAME_KEY = 'timelens_display_name'
+const EMAIL_KEY = 'timelens_email'
+const ROLE_KEY = 'timelens_role'
+const AVATAR_URL_KEY = 'timelens_avatar_url'
+
+export type UserRole = 'USER' | 'ADMIN'
 
 export type SessionData = {
   token: string
@@ -12,6 +17,17 @@ export type SessionData = {
   refreshExpiresIn?: number
   userId: string
   displayName: string
+  email?: string
+  role?: UserRole
+  avatarUrl?: string | null
+}
+
+export type AuthUser = {
+  id: string
+  displayName: string
+  email: string
+  role: UserRole
+  avatarUrl: string | null
 }
 
 export function saveSession(data: SessionData) {
@@ -27,6 +43,19 @@ export function saveSession(data: SessionData) {
   }
   localStorage.setItem(USER_ID_KEY, data.userId)
   localStorage.setItem(DISPLAY_NAME_KEY, data.displayName)
+  if (data.email) {
+    localStorage.setItem(EMAIL_KEY, data.email)
+  }
+  if (data.role) {
+    localStorage.setItem(ROLE_KEY, data.role)
+  }
+  if (data.avatarUrl !== undefined) {
+    if (data.avatarUrl) {
+      localStorage.setItem(AVATAR_URL_KEY, data.avatarUrl)
+    } else {
+      localStorage.removeItem(AVATAR_URL_KEY)
+    }
+  }
 }
 
 export function clearSession() {
@@ -36,6 +65,9 @@ export function clearSession() {
   localStorage.removeItem(REFRESH_EXPIRES_IN_KEY)
   localStorage.removeItem(USER_ID_KEY)
   localStorage.removeItem(DISPLAY_NAME_KEY)
+  localStorage.removeItem(EMAIL_KEY)
+  localStorage.removeItem(ROLE_KEY)
+  localStorage.removeItem(AVATAR_URL_KEY)
 }
 
 export function getToken() {
@@ -47,9 +79,25 @@ export function getRefreshToken() {
 }
 
 export function getSessionMeta() {
+  const role = localStorage.getItem(ROLE_KEY)
   return {
     userId: localStorage.getItem(USER_ID_KEY),
     displayName: localStorage.getItem(DISPLAY_NAME_KEY),
+    email: localStorage.getItem(EMAIL_KEY),
+    role: role === 'ADMIN' || role === 'USER' ? role : null,
+    avatarUrl: localStorage.getItem(AVATAR_URL_KEY),
   }
 }
 
+export function readStoredUser(): AuthUser | null {
+  const token = getToken()
+  const meta = getSessionMeta()
+  if (!token || !meta.userId || !meta.displayName) return null
+  return {
+    id: meta.userId,
+    displayName: meta.displayName,
+    email: meta.email ?? '',
+    role: (meta.role ?? 'USER') as UserRole,
+    avatarUrl: meta.avatarUrl,
+  }
+}

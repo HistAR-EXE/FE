@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, type MouseEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { SimpleTopNav } from '../components/layout/TopNav'
 import { gamificationApi, type Quest, type QuestProgress } from '../features/gamification/api'
+import { DISCOVERY_RECORDED_EVENT } from '../features/gamification/discoveryRouting'
+import { isReadyToStart } from '../features/gamification/questProgress'
 import { locationsApi } from '../features/locations/api'
 import { ApiError } from '../shared/api/contracts'
 import { useAuth } from '../shared/auth/useAuth'
@@ -38,34 +40,44 @@ export function QuestsPage() {
     resolveLocation()
   }, [urlLocationId])
 
-  useEffect(() => {
-    const run = async () => {
-      try {
-        setLoading(true)
-        if (!activeLocationId) {
-          setQuests([])
-          setProgresses([])
-          return
-        }
-        const list = await gamificationApi.quests(activeLocationId)
-        setQuests(list)
-        if (isAuthenticated) {
-          const mine = await gamificationApi.myQuests(activeLocationId)
-          setProgresses(mine)
-        } else {
-          setProgresses([])
-        }
-      } catch (e) {
-        showToast({
-          message: e instanceof ApiError ? e.message : 'Không tải được danh sách nhiệm vụ.',
-          type: 'error',
-        })
-      } finally {
-        setLoading(false)
+  const refetchQuests = useCallback(async () => {
+    try {
+      setLoading(true)
+      if (!activeLocationId) {
+        setQuests([])
+        setProgresses([])
+        return
       }
+      const list = await gamificationApi.quests(activeLocationId)
+      setQuests(list)
+      if (isAuthenticated) {
+        const mine = await gamificationApi.myQuests(activeLocationId)
+        setProgresses(mine)
+      } else {
+        setProgresses([])
+      }
+    } catch (e) {
+      showToast({
+        message: e instanceof ApiError ? e.message : 'Không tải được danh sách nhiệm vụ.',
+        type: 'error',
+      })
+    } finally {
+      setLoading(false)
     }
-    run()
   }, [isAuthenticated, activeLocationId, showToast])
+
+  useEffect(() => {
+    void refetchQuests()
+  }, [refetchQuests])
+
+  useEffect(() => {
+    if (!isAuthenticated || !activeLocationId) return
+    const onDiscoveryRecorded = () => {
+      void refetchQuests()
+    }
+    window.addEventListener(DISCOVERY_RECORDED_EVENT, onDiscoveryRecorded)
+    return () => window.removeEventListener(DISCOVERY_RECORDED_EVENT, onDiscoveryRecorded)
+  }, [isAuthenticated, activeLocationId, refetchQuests])
 
   const getStatus = (questId: string) =>
     isAuthenticated ? progresses.find((p) => p.questId === questId)?.status ?? 'not_started' : 'not_started'
@@ -83,6 +95,26 @@ export function QuestsPage() {
     return status === 'completed' ? 100 : status === 'in_progress' ? 58 : 12
   }
   const getProgress = (questId: string) => progresses.find((p) => p.questId === questId)
+
+  const handleStartQuest = async (questId: string, e: MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!isAuthenticated) return
+    try {
+      const started = await gamificationApi.startQuest(questId)
+      setProgresses((prev) => {
+        const rest = prev.filter((p) => p.questId !== questId)
+        return [...rest, started]
+      })
+      showToast({ message: 'Bắt đầu nhiệm vụ thành công.', type: 'success' })
+    } catch (err) {
+      showToast({
+        message: err instanceof ApiError ? err.message : 'Không thể bắt đầu nhiệm vụ.',
+        type: 'error',
+      })
+    }
+  }
+
   const questsForDisplay: Array<{
     id: string
     to: string
@@ -93,6 +125,7 @@ export function QuestsPage() {
     image: string
     currentStep?: number
     stepsTotal?: number
+    readyToStart?: boolean
   }> = filteredQuests.map((q) => ({
     id: q.id,
     to: `/quests/${q.id}`,
@@ -103,6 +136,10 @@ export function QuestsPage() {
     image: q.coverImage || (q.title.toLowerCase().includes('chùa') ? images.questBiAnChuaCau : images.questDauAnHoangThanh),
     currentStep: getProgress(q.id)?.currentStep,
     stepsTotal: getProgress(q.id)?.stepsTotal ?? q.stepsTotal,
+    readyToStart: (() => {
+      const progress = getProgress(q.id)
+      return progress ? isReadyToStart(progress) : false
+    })(),
   }))
 
   if (appEnv.demoMode && questsForDisplay.length < 2) {
@@ -192,6 +229,24 @@ export function QuestsPage() {
                   </span>
                 </div>
                 <p className="text-sm text-on-surface-variant mb-md">{q.description}</p>
+                {q.status === 'not_started' && q.readyToStart && (
+                  <div className="mb-md rounded-lg border border-secondary/40 bg-secondary/10 p-sm">
+                    <p className="text-sm text-on-surface mb-sm">
+                      {getProgress(q.id)?.hasCheckinAtLocation
+                        ? 'Nhiệm vụ sẵn sàng hoàn thành'
+                        : 'Bắt đầu nhiệm vụ và check-in để nhận thưởng'}
+                    </p>
+                    {isAuthenticated && (
+                      <button
+                        type="button"
+                        onClick={(e) => void handleStartQuest(q.id, e)}
+                        className="bg-primary text-on-primary px-sm py-xs rounded-lg text-sm"
+                      >
+                        Bắt đầu ngay
+                      </button>
+                    )}
+                  </div>
+                )}
                 <div className="h-2 bg-surface-container-highest rounded-full overflow-hidden">
                   <div className="h-full bg-gradient-to-r from-primary to-secondary" style={{ width: `${progressPct(q.status, q.currentStep, q.stepsTotal)}%` }} />
                 </div>

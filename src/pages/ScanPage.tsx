@@ -10,6 +10,9 @@ import { appEnv } from '../shared/config/env'
 import { demoApi } from '../features/demo/api'
 import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
 import { useToast } from '../shared/ui/toast/useToast'
+import { useAuth } from '../shared/auth/useAuth'
+import { CU_CHI_LOCATION_ID } from '../shared/config/constants'
+import { useVisitSessionForLocation } from '../features/visit/VisitSessionProvider'
 
 function parseQrPayload(value: string) {
   if (/^[0-9a-fA-F-]{36}$/.test(value)) return value
@@ -18,8 +21,11 @@ function parseQrPayload(value: string) {
 }
 
 export function ScanPage() {
+  const { isAuthenticated } = useAuth()
   const [params] = useSearchParams()
   const targetLocationId = params.get('locationId') ?? ''
+  const sessionLocationId = targetLocationId || CU_CHI_LOCATION_ID
+  useVisitSessionForLocation(sessionLocationId, isAuthenticated)
   const [qrCode, setQrCode] = useState(targetLocationId ? `timelens:location:${targetLocationId}` : '')
   const [result, setResult] = useState<CheckinResult | null>(null)
   const [geoError, setGeoError] = useState<string | null>(null)

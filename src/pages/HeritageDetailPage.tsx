@@ -7,6 +7,7 @@ import { ApiError } from '../shared/api/contracts'
 import { useAppMode } from '../shared/context/useAppMode'
 import { useToast } from '../shared/ui/toast/useToast'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
+import { ProgressSummaryCard } from '../features/gamification/ProgressSummaryCard'
 
 export function HeritageDetailPage() {
   const { locationId } = useParams<{ locationId: string }>()
@@ -53,6 +54,10 @@ export function HeritageDetailPage() {
         {!location && failed && <p>Không thể hiển thị chi tiết địa điểm.</p>}
         {location && (
           <>
+            <div className="mb-md">
+              <ProgressSummaryCard locationId={location.id} />
+            </div>
+
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-lg mb-xl">
               <div className="lg:col-span-8 flex flex-col gap-md">
                 <div className="relative w-full h-[400px] rounded-xl overflow-hidden border border-outline-variant shadow-lg group">

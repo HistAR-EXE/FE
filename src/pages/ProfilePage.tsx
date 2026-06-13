@@ -3,14 +3,16 @@ import { Link } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { SimpleTopNav } from '../components/layout/TopNav'
 import { profileApi, type MyBadge, type ProfileMe } from '../features/profile/api'
+import { ProfileEditForm } from '../features/profile/ProfileEditForm'
 import { useAuth } from '../shared/auth/useAuth'
 import { useToast } from '../shared/ui/toast/useToast'
 import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { images } from '../assets/images'
+import { ProgressSummaryCard } from '../features/gamification/ProgressSummaryCard'
 
 export function ProfilePage() {
-  const { logout } = useAuth()
+  const { logout, user } = useAuth()
   const [profile, setProfile] = useState<ProfileMe | null>(null)
   const [badges, setBadges] = useState<MyBadge[]>([])
   const { showToast } = useToast()
@@ -42,9 +44,14 @@ export function ProfilePage() {
                 <div>
                   <h1 className="font-display-lg text-on-surface leading-none">{profile.displayName}</h1>
                   <p className="text-on-surface-variant">{profile.email}</p>
-                  <span className="inline-flex mt-xs px-xs py-[2px] text-xs rounded-full border border-secondary/40 text-secondary">
-                    Level {profile.level} {profile.levelName ? `· ${profile.levelName}` : ''}
-                  </span>
+                  <div className="flex flex-wrap gap-xs mt-xs">
+                    <span className="inline-flex px-xs py-[2px] text-xs rounded-full border border-secondary/40 text-secondary">
+                      Level {profile.level} {profile.levelName ? `· ${profile.levelName}` : ''}
+                    </span>
+                    <span className="inline-flex px-xs py-[2px] text-xs rounded-full border border-outline-variant text-on-surface-variant">
+                      {profile.role === 'ADMIN' ? 'Quản trị' : 'Thành viên'}
+                    </span>
+                  </div>
                 </div>
               </div>
               <div className="md:justify-self-end">
@@ -52,6 +59,10 @@ export function ProfilePage() {
                   <MaterialIcon name="leaderboard" className="text-sm" /> Bảng xếp hạng
                 </Link>
               </div>
+            </div>
+
+            <div className="mt-md">
+              <ProgressSummaryCard />
             </div>
 
             {typeof profile.levelProgressPercent === 'number' && (
@@ -90,12 +101,23 @@ export function ProfilePage() {
               </div>
             </div>
 
-            <div className="mt-md flex gap-sm">
+            <div className="mt-md flex flex-wrap gap-sm">
               <Link to="/artifacts" className="inline-flex items-center gap-1 px-md py-sm border border-outline-variant rounded-lg hover:border-secondary">
                 <MaterialIcon name="history_edu" className="text-sm" /> Bộ sưu tập
               </Link>
+              {user?.role === 'ADMIN' && (
+                <>
+                  <Link to="/admin/users" className="inline-flex items-center gap-1 px-md py-sm border border-primary/40 text-primary rounded-lg hover:bg-primary/10">
+                    <MaterialIcon name="admin_panel_settings" className="text-sm" /> Người dùng
+                  </Link>
+                  <Link to="/admin/content" className="inline-flex items-center gap-1 px-md py-sm border border-primary/40 text-primary rounded-lg hover:bg-primary/10">
+                    <MaterialIcon name="inventory_2" className="text-sm" /> Nội dung
+                  </Link>
+                </>
+              )}
               <button onClick={logout} className="px-md py-sm border border-error text-error rounded-lg">Đăng xuất</button>
             </div>
+            <ProfileEditForm profile={profile} onSaved={setProfile} />
           </section>
         )}
         <section className="mt-md">

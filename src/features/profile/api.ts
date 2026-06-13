@@ -5,6 +5,7 @@ export type ProfileMe = {
   email: string
   displayName: string
   avatarUrl: string | null
+  role: 'USER' | 'ADMIN'
   level: number
   totalPoints: number
   city: string | null

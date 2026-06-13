@@ -4,7 +4,7 @@ import { ApiError, isApiResponse, isPageResponse, type ApiErrorPayload, type Pag
 import { appEnv } from '../config/env'
 
 export const httpClient = axios.create({
-  baseURL: appEnv.apiUrl,
+  baseURL: appEnv.apiUrl || '',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -27,12 +27,16 @@ async function tryRefreshToken() {
   if (!isRefreshing) {
     isRefreshing = true
     refreshPromise = axios
-      .post(`${appEnv.apiUrl}/api/auth/refresh`, { refreshToken }, { headers: { 'Content-Type': 'application/json' } })
+      .post(`${appEnv.apiUrl || ''}/api/auth/refresh`, { refreshToken }, { headers: { 'Content-Type': 'application/json' } })
       .then((res) => {
         const payload = isApiResponse(res.data) ? (res.data.data as Record<string, unknown>) : (res.data as Record<string, unknown>)
         const nextAccessToken = (payload.accessToken as string | undefined) ?? (payload.token as string | undefined)
         const userId = localStorage.getItem('timelens_user_id') ?? ''
         const displayName = localStorage.getItem('timelens_display_name') ?? ''
+        const email = localStorage.getItem('timelens_email') ?? undefined
+        const roleRaw = localStorage.getItem('timelens_role')
+        const role = roleRaw === 'ADMIN' || roleRaw === 'USER' ? roleRaw : undefined
+        const avatarUrl = localStorage.getItem('timelens_avatar_url')
         if (!nextAccessToken || !userId || !displayName) return null
         saveSession({
           token: nextAccessToken,
@@ -41,6 +45,9 @@ async function tryRefreshToken() {
           refreshExpiresIn: typeof payload.refreshExpiresIn === 'number' ? payload.refreshExpiresIn : undefined,
           userId,
           displayName,
+          email,
+          role,
+          avatarUrl,
         })
         return nextAccessToken
       })

@@ -8,12 +8,12 @@ import { ToastProvider } from './shared/ui/toast/ToastProvider'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <AuthProvider>
-      <AppModeProvider>
+    <AppModeProvider>
+      <AuthProvider>
         <ToastProvider>
           <App />
         </ToastProvider>
-      </AppModeProvider>
-    </AuthProvider>
+      </AuthProvider>
+    </AppModeProvider>
   </StrictMode>,
 )

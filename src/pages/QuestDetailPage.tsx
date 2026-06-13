@@ -4,6 +4,7 @@ import { AppLayout } from '../components/layout/AppLayout'
 import { SimpleTopNav } from '../components/layout/TopNav'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { gamificationApi, type QuestProgress } from '../features/gamification/api'
+import { isReadyToStart } from '../features/gamification/questProgress'
 import { useAuth } from '../shared/auth/useAuth'
 import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
 import { useToast } from '../shared/ui/toast/useToast'
@@ -102,6 +103,25 @@ export function QuestDetailPage() {
             </div>
           </aside>
         </div>
+        {isAuthenticated
+          && progress
+          && isReadyToStart(progress) && (
+          <div className="mx-lg mb-md rounded-xl border border-secondary/40 bg-secondary/10 p-md">
+            <p className="text-on-surface mb-sm">
+              {progress.hasCheckinAtLocation
+                ? 'Nhiệm vụ sẵn sàng hoàn thành'
+                : 'Bắt đầu nhiệm vụ và check-in để nhận thưởng'}
+            </p>
+            <button
+              type="button"
+              onClick={startQuest}
+              disabled={loading}
+              className="bg-primary text-on-primary px-md py-sm rounded-lg disabled:opacity-60"
+            >
+              {loading ? 'Đang xử lý...' : 'Bắt đầu ngay'}
+            </button>
+          </div>
+        )}
         {!isAuthenticated && (
           <div className="bg-surface-container border border-outline-variant rounded-lg p-md mb-md">
             <p className="text-on-surface-variant">
@@ -115,7 +135,7 @@ export function QuestDetailPage() {
         <div className="px-lg pb-xl flex flex-wrap gap-sm">
           <button
             onClick={startQuest}
-            disabled={loading || !isAuthenticated}
+            disabled={loading || !isAuthenticated || progress?.status === 'completed'}
             className="bg-primary text-on-primary px-md py-sm rounded-lg disabled:opacity-60"
           >
             {loading ? 'Đang xử lý...' : 'Bắt đầu nhiệm vụ'}

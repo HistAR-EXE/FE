@@ -15,6 +15,10 @@ export type Hotspot = {
   type: 'info' | 'scene'
   contentRef: string
   label: string
+  title?: string | null
+  description?: string | null
+  imageUrl?: string | null
+  unlockKey?: string | null
 }
 
 export const panoramaApi = {

@@ -3,7 +3,9 @@ import { MaterialIcon } from '../ui/MaterialIcon'
 import { images } from '../../assets/images'
 import { useAppMode } from '../../shared/context/useAppMode'
 import { modeBadgeLabel } from '../../shared/context/appModeUtils'
+import { OfflineSyncBadge } from './OfflineSyncBadge'
 import { useAuth } from '../../shared/auth/useAuth'
+import { useUserAvatar } from '../../shared/auth/useUserAvatar'
 
 export function ModeBadge({ className = '' }: { className?: string }) {
   const { mode } = useAppMode()
@@ -23,15 +25,18 @@ export function ModeBadge({ className = '' }: { className?: string }) {
   }
 
   return (
-    <button
-      type="button"
-      onClick={onBadgeClick}
-      className={`inline-flex items-center gap-1 px-3 py-1 rounded-full border border-secondary/40 bg-secondary/10 text-secondary font-label-sm text-label-sm hover:bg-secondary/20 transition-colors shrink-0 ${className}`}
-      title="Đổi chế độ khám phá"
-    >
-      <MaterialIcon name={mode === 'offline' ? 'location_on' : 'home'} className="text-[14px]" />
-      <span className="hidden sm:inline">{label}</span>
-    </button>
+    <div className="inline-flex items-center gap-1.5 shrink-0">
+      <OfflineSyncBadge />
+      <button
+        type="button"
+        onClick={onBadgeClick}
+        className={`inline-flex items-center gap-1 px-3 py-1 rounded-full border border-secondary/40 bg-secondary/10 text-secondary font-label-sm text-label-sm hover:bg-secondary/20 transition-colors shrink-0 ${className}`}
+        title="Đổi chế độ khám phá"
+      >
+        <MaterialIcon name={mode === 'offline' ? 'location_on' : 'home'} className="text-[14px]" />
+        <span className="hidden sm:inline">{label}</span>
+      </button>
+    </div>
   )
 }
 
@@ -66,7 +71,8 @@ type HomeTopNavProps = {
   avatarSrc?: string
 }
 
-export function HomeTopNav({ avatarSrc = images.avatarHomeV3 }: HomeTopNavProps) {
+export function HomeTopNav({ avatarSrc }: HomeTopNavProps) {
+  const resolvedAvatar = avatarSrc ?? useUserAvatar(images.avatarHomeV3)
   return (
     <header className="fixed top-0 right-0 left-0 md:left-16 lg:left-[16rem] z-50 backdrop-blur-xl border-b border-outline-variant bg-surface/70 flex justify-between items-center h-16 px-xl hidden md:flex">
       <div className="flex-1" />
@@ -79,7 +85,7 @@ export function HomeTopNav({ avatarSrc = images.avatarHomeV3 }: HomeTopNavProps)
           <MaterialIcon name="settings" />
         </button>
         <div className="w-10 h-10 rounded-full bg-surface-variant border-2 border-primary overflow-hidden ml-sm cursor-pointer">
-          <img alt="User Avatar" className="w-full h-full object-cover" src={avatarSrc} />
+          <img alt="User Avatar" className="w-full h-full object-cover" src={resolvedAvatar} />
         </div>
       </div>
     </header>
@@ -90,7 +96,8 @@ type ExploreTopNavProps = {
   avatarSrc?: string
 }
 
-export function ExploreTopNav({ avatarSrc = images.avatarExploreV3 }: ExploreTopNavProps) {
+export function ExploreTopNav({ avatarSrc }: ExploreTopNavProps) {
+  const resolvedAvatar = avatarSrc ?? useUserAvatar(images.avatarExploreV3)
   return (
     <header className="fixed top-0 right-0 left-0 md:left-16 lg:left-[16rem] z-50 backdrop-blur-xl border-b border-outline-variant bg-surface/70 hidden md:flex justify-between items-center h-16 px-xl">
       <div className="relative w-full max-w-sm md:max-w-md lg:max-w-[24rem]">
@@ -113,7 +120,7 @@ export function ExploreTopNav({ avatarSrc = images.avatarExploreV3 }: ExploreTop
           <MaterialIcon name="settings" />
         </button>
         <div className="w-10 h-10 rounded-full bg-surface-variant border-2 border-primary/50 overflow-hidden cursor-pointer hover:shadow-[0_0_10px_rgba(242,191,80,0.4)] transition-all">
-          <img alt="User Avatar" className="w-full h-full object-cover" src={avatarSrc} />
+          <img alt="User Avatar" className="w-full h-full object-cover" src={resolvedAvatar} />
         </div>
       </div>
     </header>
@@ -124,7 +131,8 @@ type DetailTopNavProps = {
   avatarSrc?: string
 }
 
-export function DetailTopNav({ avatarSrc = images.avatarDetailV3 }: DetailTopNavProps) {
+export function DetailTopNav({ avatarSrc }: DetailTopNavProps) {
+  const resolvedAvatar = avatarSrc ?? useUserAvatar(images.avatarDetailV3)
   return (
     <nav className="fixed top-0 right-0 left-0 md:left-16 lg:left-[16rem] z-50 backdrop-blur-xl border-b border-outline-variant bg-surface/70 flex justify-between items-center h-16 px-xl hidden md:flex">
       <Link to="/" className="inline-flex items-center gap-2 font-display-lg text-display-lg font-bold text-primary tracking-tight">
@@ -140,7 +148,7 @@ export function DetailTopNav({ avatarSrc = images.avatarDetailV3 }: DetailTopNav
           <MaterialIcon name="settings" />
         </button>
         <div className="w-8 h-8 rounded-full bg-surface-variant overflow-hidden border border-outline-variant">
-          <img alt="User Avatar" className="w-full h-full object-cover" src={avatarSrc} />
+          <img alt="User Avatar" className="w-full h-full object-cover" src={resolvedAvatar} />
         </div>
       </div>
     </nav>
@@ -153,7 +161,8 @@ type SimpleTopNavProps = {
   showSearch?: boolean
 }
 
-export function SimpleTopNav({ title, avatarSrc = images.avatarHomeV3, showSearch = false }: SimpleTopNavProps) {
+export function SimpleTopNav({ title, avatarSrc, showSearch = false }: SimpleTopNavProps) {
+  const resolvedAvatar = avatarSrc ?? useUserAvatar(images.avatarHomeV3)
   return (
     <header className="fixed top-0 right-0 left-0 md:left-16 lg:left-[16rem] z-50 backdrop-blur-xl border-b border-outline-variant bg-surface/70 flex justify-between items-center h-16 px-xl hidden md:flex">
       {title ? (
@@ -180,7 +189,7 @@ export function SimpleTopNav({ title, avatarSrc = images.avatarHomeV3, showSearc
           <MaterialIcon name="settings" />
         </button>
         <div className="w-8 h-8 rounded-full overflow-hidden border border-outline-variant">
-          <img alt="User Avatar" className="w-full h-full object-cover" src={avatarSrc} />
+          <img alt="User Avatar" className="w-full h-full object-cover" src={resolvedAvatar} />
         </div>
       </div>
     </header>
@@ -191,7 +200,8 @@ type ScanTopNavProps = {
   avatarSrc?: string
 }
 
-export function ScanTopNav({ avatarSrc = images.avatarExploreV3 }: ScanTopNavProps) {
+export function ScanTopNav({ avatarSrc }: ScanTopNavProps) {
+  const resolvedAvatar = avatarSrc ?? useUserAvatar(images.avatarExploreV3)
   return (
     <header className="fixed top-0 right-0 left-0 md:left-16 lg:left-[16rem] z-50 backdrop-blur-xl border-b border-outline-variant bg-surface/70 hidden md:flex justify-between items-center h-16 px-xl">
       <div className="flex items-center gap-sm min-w-0">
@@ -214,7 +224,7 @@ export function ScanTopNav({ avatarSrc = images.avatarExploreV3 }: ScanTopNavPro
           <MaterialIcon name="settings" />
         </button>
         <div className="w-8 h-8 rounded-full bg-surface-variant border border-primary/30 overflow-hidden ml-sm cursor-pointer">
-          <img alt="User Avatar" className="w-full h-full object-cover" src={avatarSrc} />
+          <img alt="User Avatar" className="w-full h-full object-cover" src={resolvedAvatar} />
         </div>
       </div>
     </header>

@@ -19,12 +19,19 @@ import { SharePage } from '../pages/SharePage'
 import { TimePortalPage } from '../pages/TimePortalPage'
 import { ModeSelectPage } from '../pages/ModeSelectPage'
 import { Tour360Page } from '../pages/Tour360Page'
+import { AdminAnalyticsPage } from '../pages/AdminAnalyticsPage'
+import { AdminContentPage } from '../pages/AdminContentPage'
+import { AdminOrganizationsPage } from '../pages/AdminOrganizationsPage'
+import { AdminUsersPage } from '../pages/AdminUsersPage'
+import { AdminRoute } from '../shared/router/AdminRoute'
 import { ModeGuardRoute } from '../shared/router/ModeGuardRoute'
 import { ProtectedRoute } from '../shared/router/ProtectedRoute'
+import { VisitSessionProvider } from '../features/visit/VisitSessionProvider'
 
 export function AppRoutes() {
   return (
     <BrowserRouter>
+      <VisitSessionProvider>
       <Routes>
         <Route path="/" element={<OnboardingPage />} />
         <Route path="/login" element={<LoginPage />} />
@@ -35,6 +42,12 @@ export function AppRoutes() {
         <Route path="/quests" element={<QuestsPage />} />
         <Route path="/quests/:questId" element={<QuestDetailPage />} />
         <Route path="/leaderboard" element={<LeaderboardPage />} />
+        <Route element={<AdminRoute />}>
+          <Route path="/admin/users" element={<AdminUsersPage />} />
+          <Route path="/admin/content" element={<AdminContentPage />} />
+          <Route path="/admin/analytics" element={<AdminAnalyticsPage />} />
+          <Route path="/admin/organizations" element={<AdminOrganizationsPage />} />
+        </Route>
         <Route element={<ProtectedRoute />}>
           <Route path="/mode-select" element={<ModeSelectPage />} />
           <Route element={<ModeGuardRoute />}>
@@ -52,6 +65,7 @@ export function AppRoutes() {
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </VisitSessionProvider>
     </BrowserRouter>
   )
 }

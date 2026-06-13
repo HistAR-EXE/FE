@@ -1,14 +1,24 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { SimpleTopNav } from '../components/layout/TopNav'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { images } from '../assets/images'
 import { chatApi, type ChatMessage } from '../features/chat/api'
+import { stopActiveRecorder, voiceChatStepwise, type VoicePhase } from '../features/chat/voice'
 import { locationsApi, type Character } from '../features/locations/api'
 import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
 import { ChatMessageContent } from '../shared/ui/ChatMessageContent'
 import { useToast } from '../shared/ui/toast/useToast'
+
+const VOICE_STATUS: Record<VoicePhase, string> = {
+  idle: '',
+  recording: 'Đang ghi âm… Nhấn mic lần nữa để gửi',
+  stt: 'Đang nhận diện giọng nói…',
+  chat: 'Đang suy nghĩ câu trả lời…',
+  tts: 'Đang tạo giọng đọc…',
+  playing: 'Đang phát câu trả lời…',
+}
 
 export function ChatPage() {
   const [params] = useSearchParams()
@@ -22,6 +32,9 @@ export function ChatPage() {
   const [conversationId, setConversationId] = useState<string | null>(null)
   const [loadingMessages, setLoadingMessages] = useState(false)
   const [sending, setSending] = useState(false)
+  const [voicePhase, setVoicePhase] = useState<VoicePhase>('idle')
+  const recorderRef = useRef<MediaRecorder | null>(null)
+  const recordPromiseRef = useRef<Promise<Blob> | null>(null)
   const { showToast } = useToast()
   const quickReplies = [
     'Cuộc sống trong địa đạo thế nào?',
@@ -29,6 +42,9 @@ export function ChatPage() {
     'Ai là những anh hùng tiêu biểu?',
     'Địa đạo Củ Chi có bao nhiêu tầng?',
   ]
+
+  const voiceBusy = voicePhase !== 'idle' && voicePhase !== 'recording'
+  const busy = sending || voiceBusy
 
   useEffect(() => {
     if (!locationId) return
@@ -44,7 +60,6 @@ export function ChatPage() {
   }, [locationId, characterId, showToast])
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setConversationId(null)
     setMessages([])
   }, [characterId])
@@ -66,8 +81,27 @@ export function ChatPage() {
 
   const selected = useMemo(() => characters.find((c) => c.id === characterId), [characters, characterId])
 
+  const appendExchange = (userText: string, reply: string, convId: string) => {
+    setConversationId(convId)
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: `user-${Date.now()}`,
+        role: 'user',
+        content: userText,
+        createdAt: new Date().toISOString(),
+      },
+      {
+        id: `assistant-${Date.now()}`,
+        role: 'assistant',
+        content: reply,
+        createdAt: new Date().toISOString(),
+      },
+    ])
+  }
+
   const send = async () => {
-    if (!characterId || !input.trim() || sending) return
+    if (!characterId || !input.trim() || busy) return
     const userText = input.trim()
     setInput('')
     const optimistic: ChatMessage = {
@@ -77,15 +111,37 @@ export function ChatPage() {
       createdAt: new Date().toISOString(),
     }
     setMessages((prev) => [...prev, optimistic])
+    const assistantId = `assistant-${Date.now()}`
     try {
       setSending(true)
-      const reply = await chatApi.send({ characterId, message: userText, conversationId })
+      const reply = await chatApi.send({
+        characterId,
+        message: userText,
+        conversationId,
+        onStreamToken: (partial) => {
+          setMessages((prev) => {
+            const base = prev.filter((m) => m.id !== optimistic.id)
+            const userMsg = { ...optimistic, id: `user-${Date.now()}` }
+            const existing = base.find((m) => m.id === assistantId)
+            const assistantMsg: ChatMessage = {
+              id: assistantId,
+              role: 'assistant',
+              content: partial,
+              createdAt: new Date().toISOString(),
+            }
+            if (existing) {
+              return base.map((m) => (m.id === assistantId ? assistantMsg : m))
+            }
+            return [...base, userMsg, assistantMsg]
+          })
+        },
+      })
       setConversationId(reply.conversationId)
       setMessages((prev) => [
         ...prev.filter((m) => m.id !== optimistic.id),
         { ...optimistic, id: `user-${Date.now()}` },
         {
-          id: `assistant-${Date.now()}`,
+          id: assistantId,
           role: 'assistant',
           content: reply.reply,
           createdAt: new Date().toISOString(),
@@ -98,6 +154,68 @@ export function ChatPage() {
       setSending(false)
     }
   }
+
+  const toggleVoice = async () => {
+    if (!characterId) return
+
+    if (voicePhase === 'recording') {
+      stopActiveRecorder(recorderRef.current)
+      setVoicePhase('stt')
+      try {
+        const blob = await (recordPromiseRef.current ?? Promise.reject(new Error('No recording')))
+        setVoicePhase('chat')
+        const result = await voiceChatStepwise(
+          {
+            audio: blob,
+            characterId,
+            conversationId,
+            aiPayload: { message: '' },
+          },
+          {
+            onFirstAudio: () => setVoicePhase('playing'),
+          },
+        )
+        appendExchange(result.userText, result.reply, result.conversationId)
+        setVoicePhase('idle')
+      } catch (e) {
+        setVoicePhase('idle')
+        showToast({
+          message: `${getFriendlyErrorMessage(e, 'chat')} Bạn có thể gõ text thay thế.`,
+          type: 'error',
+        })
+      } finally {
+        recorderRef.current = null
+        recordPromiseRef.current = null
+      }
+      return
+    }
+
+    if (busy) return
+
+    try {
+      setVoicePhase('recording')
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const chunks: Blob[] = []
+      const recorder = new MediaRecorder(stream)
+      recorderRef.current = recorder
+      recordPromiseRef.current = new Promise((resolve, reject) => {
+        recorder.ondataavailable = (e) => {
+          if (e.data.size > 0) chunks.push(e.data)
+        }
+        recorder.onerror = () => reject(new Error('Ghi âm thất bại'))
+        recorder.onstop = () => {
+          stream.getTracks().forEach((t) => t.stop())
+          resolve(new Blob(chunks, { type: recorder.mimeType || 'audio/webm' }))
+        }
+      })
+      recorder.start()
+    } catch {
+      setVoicePhase('idle')
+      showToast({ message: 'Không truy cập được micro. Dùng chat text.', type: 'error' })
+    }
+  }
+
+  const voiceHint = VOICE_STATUS[voicePhase]
 
   return (
     <AppLayout
@@ -128,7 +246,7 @@ export function ChatPage() {
               <span className="px-sm py-xs bg-surface-variant rounded-full border border-outline-variant text-xs text-on-surface-variant">Di sản</span>
             </div>
             <div className="text-on-surface font-body-md text-body-md leading-relaxed">
-              Trò chuyện theo ngữ cảnh địa điểm để khai mở các câu chuyện lịch sử sâu hơn.
+              Trò chuyện bằng text hoặc giọng nói — AI trả lời theo ngữ cảnh địa điểm.
             </div>
             <div className="mt-auto">
               <label className="text-sm text-on-surface-variant">Nhân vật</label>
@@ -149,6 +267,12 @@ export function ChatPage() {
 
         <section className="flex-1 bg-surface-container-low/90 rounded-xl border border-outline-variant flex flex-col overflow-hidden relative shadow-2xl">
           {!locationId && <p className="text-sm text-on-surface-variant p-md border-b border-outline-variant">Mở từ màn chi tiết địa điểm để nạp nhân vật lịch sử.</p>}
+          {voiceHint && (
+            <div className="px-md py-sm border-b border-outline-variant bg-primary/10 text-sm text-primary flex items-center gap-sm">
+              <MaterialIcon name="graphic_eq" className="text-base animate-pulse" />
+              {voiceHint}
+            </div>
+          )}
           <div className="flex-1 p-md lg:p-lg overflow-y-auto flex flex-col gap-lg">
             <div className="flex justify-center">
               <span className="bg-surface-variant/50 px-sm py-xs rounded-full font-label-sm text-label-sm text-on-surface-variant border border-outline-variant/50">
@@ -168,9 +292,7 @@ export function ChatPage() {
                     <button
                       key={item}
                       type="button"
-                      onClick={() => {
-                        setInput(item)
-                      }}
+                      onClick={() => setInput(item)}
                       className="px-sm py-xs border border-outline-variant rounded-full text-xs text-on-surface-variant hover:border-primary hover:text-primary transition-colors"
                     >
                       {item}
@@ -212,14 +334,15 @@ export function ChatPage() {
                   key={item}
                   type="button"
                   onClick={() => setInput(item)}
-                  className="flex-shrink-0 px-sm py-xs border border-outline-variant rounded-full text-xs text-on-surface-variant hover:border-primary hover:text-primary transition-colors whitespace-nowrap"
+                  disabled={busy}
+                  className="flex-shrink-0 px-sm py-xs border border-outline-variant rounded-full text-xs text-on-surface-variant hover:border-primary hover:text-primary transition-colors whitespace-nowrap disabled:opacity-50"
                 >
                   {item}
                 </button>
               ))}
             </div>
             <div className="relative flex items-center bg-surface rounded-xl border border-outline-variant focus-within:border-secondary transition-all p-xs pl-sm">
-              <button type="button" className="text-on-surface-variant hover:text-primary p-sm transition-colors rounded-lg">
+              <button type="button" className="text-on-surface-variant hover:text-primary p-sm transition-colors rounded-lg" disabled={busy}>
                 <MaterialIcon name="add_circle" className="text-lg" />
               </button>
               <input
@@ -231,14 +354,21 @@ export function ChatPage() {
                     send().catch(() => undefined)
                   }
                 }}
-                className="flex-1 bg-transparent border-none focus:ring-0 font-body-lg text-body-lg text-on-surface placeholder:text-on-surface-variant/50 px-sm"
+                disabled={busy}
+                className="flex-1 bg-transparent border-none focus:ring-0 font-body-lg text-body-lg text-on-surface placeholder:text-on-surface-variant/50 px-sm disabled:opacity-60"
                 placeholder={`Hỏi ${selected?.name ?? 'nhân vật'}...`}
               />
               <div className="flex items-center gap-xs pr-xs">
-                <button type="button" className="text-on-surface-variant hover:text-secondary p-sm transition-colors rounded-lg">
-                  <MaterialIcon name="mic" className="text-lg" />
+                <button
+                  type="button"
+                  onClick={() => toggleVoice().catch(() => undefined)}
+                  disabled={!characterId || voiceBusy || sending}
+                  className={`p-sm transition-colors rounded-lg ${voicePhase === 'recording' ? 'text-error bg-error/10' : 'text-on-surface-variant hover:text-secondary'}`}
+                  title="Ghi âm giọng nói"
+                >
+                  <MaterialIcon name={voicePhase === 'recording' ? 'stop_circle' : 'mic'} className="text-lg" />
                 </button>
-                <button onClick={() => send()} type="button" disabled={sending} className="bg-primary text-on-primary p-sm rounded-lg hover:bg-primary-fixed-dim transition-colors disabled:opacity-60">
+                <button onClick={() => send()} type="button" disabled={busy} className="bg-primary text-on-primary p-sm rounded-lg hover:bg-primary-fixed-dim transition-colors disabled:opacity-60">
                   <MaterialIcon name="send" className="text-lg" />
                 </button>
               </div>
@@ -249,4 +379,3 @@ export function ChatPage() {
     </AppLayout>
   )
 }
-

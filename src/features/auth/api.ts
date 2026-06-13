@@ -19,6 +19,9 @@ export type AuthPayload = {
   token: string
   userId: string
   displayName: string
+  role?: 'USER' | 'ADMIN'
+  email?: string
+  avatarUrl?: string | null
 }
 
 export const authApi = {
