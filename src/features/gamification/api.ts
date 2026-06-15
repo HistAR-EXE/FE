@@ -5,10 +5,12 @@ export type Quest = {
   locationId: string
   title: string
   description: string
+  story?: string | null
   pointsReward: number
   stepsTotal?: number
   unlockLevel?: number
   coverImage?: string | null
+  completionTrigger?: string | null
 }
 
 export type QuestProgress = {
@@ -16,12 +18,14 @@ export type QuestProgress = {
   locationId: string
   title: string
   description: string
+  story?: string | null
   pointsReward: number
   status: string
   currentStep: number
   stepsTotal: number
   discoveryStepsComplete?: boolean
   hasCheckinAtLocation?: boolean
+  completionTrigger?: string | null
   startedAt?: string | null
   completedAt?: string | null
 }
@@ -38,6 +42,7 @@ export type CheckinResult = {
   questsCompleted: string[]
   badgesEarned: BadgeEarned[]
   secretUnlocked: boolean
+  bonusXpAwarded?: number
 }
 
 export type SecretStory = {
@@ -63,10 +68,22 @@ export type DiscoverySummary = {
 }
 
 export const gamificationApi = {
-  quests: (locationId: string) =>
-    getListData<Quest>(httpClient.get('/api/quests', { params: { locationId, size: 50 } })),
-  myQuests: (locationId: string) =>
-    getListData<QuestProgress>(httpClient.get('/api/me/quests', { params: { locationId, size: 50 } })),
+  quests: (locationId?: string) =>
+    getListData<Quest>(
+      httpClient.get('/api/quests', {
+        params: locationId ? { locationId, size: 50 } : { size: 50 },
+      }),
+    ),
+  questById: async (questId: string) => {
+    const all = await getListData<Quest>(httpClient.get('/api/quests', { params: { size: 50 } }))
+    return all.find((q) => q.id === questId) ?? null
+  },
+  myQuests: (locationId?: string) =>
+    getListData<QuestProgress>(
+      httpClient.get('/api/me/quests', {
+        params: locationId ? { locationId, size: 50 } : { size: 50 },
+      }),
+    ),
   startQuest: (questId: string) =>
     getData<QuestProgress>(httpClient.post(`/api/quests/${questId}/start`)),
   progress: (questId: string) =>

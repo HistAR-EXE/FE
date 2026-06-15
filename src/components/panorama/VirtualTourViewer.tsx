@@ -6,275 +6,190 @@ import type { Hotspot, Panorama } from '../../features/panorama/api'
 
 import { resolveSceneLinkNodeId } from '../../features/gamification/discoveryLayer'
 
+const CU_CHI_ENTRANCE_ID = '22222222-2222-2222-2222-222222222222'
 
-
-/** Tuần 3: ưu tiên imageUrl HTTPS từ BE/CDN; chỉ fallback assets khi placeholder. */
+/** DB lưu yaw/pitch theo radian; PSV nhận số = radian hoặc chuỗi có đơn vị. */
+function hotspotPosition(yaw: number, pitch: number) {
+  return { yaw, pitch }
+}
 
 function resolvePanoramaUrl(imageUrl: string | undefined): string {
-
   const trimmed = imageUrl?.trim()
-
   if (!trimmed || trimmed.includes('placeholder') || trimmed.endsWith('.txt')) {
-
     return images.tour360Panorama
-
   }
-
-  return trimmed
-
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    return trimmed
+  }
+  const path = trimmed.startsWith('/') ? trimmed : `/${trimmed}`
+  // Google export đôi khi là JPEG nhưng tên .png — chuẩn hóa sang .jpg
+  const normalized = path.replace(/\.png$/i, '.jpg')
+  return `${window.location.origin}${normalized}`
 }
-
-
 
 type VirtualTourViewerProps = {
-
   panoramas: Panorama[]
-
   hotspotsByPanorama: Record<string, Hotspot[]>
-
   initialPanoramaId?: string | null
-
+  activePanoramaId?: string | null
   onHotspotSelect?: (hotspot: Hotspot) => void
-
   onPanoramaEnter?: (panoramaId: string) => void
-
+  onLoadError?: (message: string) => void
   className?: string
-
 }
 
-
-
 export function VirtualTourViewer({
-
   panoramas,
-
   hotspotsByPanorama,
-
   initialPanoramaId,
-
+  activePanoramaId,
   onHotspotSelect,
-
   onPanoramaEnter,
-
+  onLoadError,
   className = '',
-
 }: VirtualTourViewerProps) {
-
   const containerRef = useRef<HTMLDivElement | null>(null)
-
   const viewerRef = useRef<{ destroy: () => void } | null>(null)
-
+  const tourPluginRef = useRef<{ setCurrentNode: (id: string) => Promise<boolean> } | null>(null)
+  const lastNodeRef = useRef<string | null>(null)
   const onPanoramaEnterRef = useRef(onPanoramaEnter)
-
+  const onHotspotSelectRef = useRef(onHotspotSelect)
+  const onLoadErrorRef = useRef(onLoadError)
   onPanoramaEnterRef.current = onPanoramaEnter
-
-
+  onHotspotSelectRef.current = onHotspotSelect
+  onLoadErrorRef.current = onLoadError
 
   useEffect(() => {
-
     if (!containerRef.current || panoramas.length === 0) return
-
-
 
     let cancelled = false
 
-
-
     const init = async () => {
-
-      const [{ Viewer }, { VirtualTourPlugin }, { MarkersPlugin }] = await Promise.all([
-
-        import('@photo-sphere-viewer/core'),
-
-        import('@photo-sphere-viewer/virtual-tour-plugin'),
-
-        import('@photo-sphere-viewer/markers-plugin'),
-
-      ])
-
-
+      const [{ Viewer, EquirectangularAdapter }, { VirtualTourPlugin }, { MarkersPlugin }] =
+        await Promise.all([
+          import('@photo-sphere-viewer/core'),
+          import('@photo-sphere-viewer/virtual-tour-plugin'),
+          import('@photo-sphere-viewer/markers-plugin'),
+        ])
 
       await Promise.all([
-
         import('@photo-sphere-viewer/core/index.css'),
-
         import('@photo-sphere-viewer/markers-plugin/index.css'),
-
         import('@photo-sphere-viewer/virtual-tour-plugin/index.css'),
-
       ])
-
-
 
       if (cancelled || !containerRef.current) return
 
-
-
       const panoramaIds = panoramas.map((p) => p.id)
 
-
-
       const nodes = panoramas.map((panorama) => {
-
         const hotspots = hotspotsByPanorama[panorama.id] ?? []
-
         const sceneLinks = hotspots
-
           .filter((h) => h.type === 'scene' && h.contentRef)
-
           .map((h) => ({
-
             nodeId: resolveSceneLinkNodeId(h.contentRef, panoramaIds),
-
-            position: { yaw: `${h.yaw}deg`, pitch: `${h.pitch}deg` },
-
+            position: hotspotPosition(h.yaw, h.pitch),
+            name: h.label?.trim() || undefined,
           }))
 
-
-
         return {
-
           id: panorama.id,
-
           panorama: resolvePanoramaUrl(panorama.imageUrl),
-
           name: panorama.title,
-
           links: sceneLinks,
-
           markers: hotspots
-
             .filter((h) => h.type === 'info')
-
             .map((h) => ({
-
               id: h.id,
-
-              position: { yaw: `${h.yaw}deg`, pitch: `${h.pitch}deg` },
-
-              html: `<div class="vt-info-marker">${h.label}</div>`,
-
+              position: hotspotPosition(h.yaw, h.pitch),
+              html: `<div class="vt-info-marker"><span>${h.label}</span></div>`,
               data: h,
-
             })),
-
         }
-
       })
-
-
 
       const startNodeId =
-
         initialPanoramaId && panoramas.some((p) => p.id === initialPanoramaId)
-
           ? initialPanoramaId
-
-          : panoramas[0]?.id
-
-
+          : (panoramas.find((p) => p.id === CU_CHI_ENTRANCE_ID)?.id ?? panoramas[0]?.id)
 
       const viewer = new Viewer({
-
         container: containerRef.current,
-
-        navbar: ['zoom', 'move', 'fullscreen'],
-
+        adapter: EquirectangularAdapter.withConfig({ resolution: 128, useXmpData: false }),
+        navbar: false,
         defaultYaw: 0,
-
+        defaultZoomLvl: 35,
+        minFov: 38,
+        maxFov: 90,
         touchmoveTwoFingers: true,
-
-        mousewheelCtrlKey: true,
-
+        mousewheelCtrlKey: false,
+        rendererParameters: { antialias: true, alpha: true, powerPreference: 'high-performance' },
         plugins: [
-
           [MarkersPlugin, { clickEventOnMarker: true }],
-
           [
-
             VirtualTourPlugin,
-
             {
-
               nodes,
-
               startNodeId,
-
+              showLinkTooltip: true,
               transitionOptions: { showLoader: true, speed: '20rpm' },
-
             },
-
           ],
-
         ],
-
       })
 
-
+      viewer.addEventListener('panorama-error', () => {
+        onLoadErrorRef.current?.('Không tải được ảnh panorama. Kiểm tra file media.')
+      })
 
       const markers = viewer.getPlugin(MarkersPlugin)
-
-      if (markers && onHotspotSelect) {
-
+      if (markers) {
         markers.addEventListener('select-marker', ({ marker }: { marker: { data?: Hotspot } }) => {
-
-          if (marker?.data) onHotspotSelect(marker.data)
-
+          if (marker?.data) onHotspotSelectRef.current?.(marker.data)
         })
-
       }
 
-
-
-      const tour = viewer.getPlugin(VirtualTourPlugin) as {
-
+      const tour = viewer.getPlugin(VirtualTourPlugin) as unknown as {
         addEventListener: (type: string, fn: (e: { node: { id: string } }) => void) => void
-
+        setCurrentNode: (id: string) => Promise<boolean>
       } | null
-
       if (tour) {
-
+        tourPluginRef.current = tour
         tour.addEventListener('node-changed', (event) => {
-
-          if (event?.node?.id) onPanoramaEnterRef.current?.(event.node.id)
-
+          if (event?.node?.id) {
+            lastNodeRef.current = event.node.id
+            onPanoramaEnterRef.current?.(event.node.id)
+          }
         })
-
-        if (startNodeId) onPanoramaEnterRef.current?.(startNodeId)
-
+        if (startNodeId) {
+          lastNodeRef.current = startNodeId
+          onPanoramaEnterRef.current?.(startNodeId)
+        }
       }
-
-
 
       viewerRef.current = viewer
-
     }
-
-
 
     init().catch(() => {
-
-      /* parent handles toast */
-
+      onLoadErrorRef.current?.('Không khởi tạo được trình xem 360°.')
     })
 
-
-
     return () => {
-
       cancelled = true
-
+      tourPluginRef.current = null
+      lastNodeRef.current = null
       viewerRef.current?.destroy()
-
       viewerRef.current = null
-
     }
+  }, [panoramas, hotspotsByPanorama, initialPanoramaId])
 
-  }, [panoramas, hotspotsByPanorama, initialPanoramaId, onHotspotSelect, onPanoramaEnter])
+  useEffect(() => {
+    if (!activePanoramaId || !tourPluginRef.current) return
+    if (lastNodeRef.current === activePanoramaId) return
+    void tourPluginRef.current.setCurrentNode(activePanoramaId).catch(() => {
+      onLoadErrorRef.current?.('Không chuyển được scene.')
+    })
+  }, [activePanoramaId])
 
-
-
-  return <div ref={containerRef} className={`w-full h-full ${className}`} />
-
+  return <div ref={containerRef} className={`tour360-viewer ${className}`} />
 }
-

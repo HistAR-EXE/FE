@@ -6,6 +6,7 @@ export type Artifact = {
   name: string
   imageUrl: string
   description: string
+  story?: string | null
   unlockKey: string
   reliability: string
   sortOrder: number

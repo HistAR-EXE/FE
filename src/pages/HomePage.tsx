@@ -4,7 +4,10 @@ import { AppLayout } from '../components/layout/AppLayout'
 import { HomeTopNav } from '../components/layout/TopNav'
 import { demoApi, type Ready } from '../features/demo/api'
 import { profileApi, type ProfileMe } from '../features/profile/api'
+import { CU_CHI_LOCATION_ID } from '../shared/config/constants'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
+
+const CU_CHI_HERO = '/media/cu-chi/map/hero.jpg'
 
 export function HomePage() {
   const [profile, setProfile] = useState<ProfileMe | null>(null)
@@ -52,20 +55,31 @@ export function HomePage() {
               </Link>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-md">
-              <Link to="/explore" className="group relative rounded-xl overflow-hidden h-64 cursor-pointer border border-outline-variant hover:border-secondary transition-all duration-300 glow-secondary">
+              <Link
+                to={`/explore/${CU_CHI_LOCATION_ID}`}
+                className="group relative rounded-xl overflow-hidden h-64 cursor-pointer border border-outline-variant hover:border-secondary transition-all duration-300 glow-secondary"
+              >
                 <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent z-10" />
-                <img src="https://images.unsplash.com/photo-1599708153386-62bf3f0b2bd6?auto=format&fit=crop&w=800&q=80" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                <img
+                  src={CU_CHI_HERO}
+                  alt="Địa đạo Củ Chi"
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  onError={(e) => {
+                    e.currentTarget.src = 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=800&q=80'
+                  }}
+                />
                 <div className="absolute bottom-0 left-0 w-full p-lg z-20 flex flex-col gap-sm">
-                  <h3 className="font-title-md text-title-md text-on-surface">Hoàng Thành Huế</h3>
-                  <p className="text-xs text-on-surface-variant">Tiếp tục tiến độ khám phá di sản</p>
+                  <h3 className="font-title-md text-title-md text-on-surface">Địa đạo Củ Chi</h3>
+                  <p className="text-xs text-on-surface-variant">Khu di tích lịch sử — MVP HistAR</p>
                 </div>
               </Link>
               <Link to="/quests" className="group relative rounded-xl overflow-hidden h-64 cursor-pointer border border-outline-variant hover:border-primary transition-all duration-300">
                 <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent z-10" />
-                <img src="https://images.unsplash.com/photo-1555921015-5532091f6026?auto=format&fit=crop&w=800&q=80" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                <img src="/media/cu-chi/scenes/bep-hoang-cam-2026.jpg" alt="" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-90" onError={(e) => { e.currentTarget.style.display = 'none' }} />
+                <div className="absolute inset-0 bg-surface-container/40" />
                 <div className="absolute bottom-0 left-0 w-full p-lg z-20 flex flex-col gap-sm">
-                  <h3 className="font-title-md text-title-md text-on-surface">Nhiệm vụ lịch sử</h3>
-                  <p className="text-xs text-on-surface-variant">Hoàn thành quest để nhận thêm điểm</p>
+                  <h3 className="font-title-md text-title-md text-on-surface">Hành trình dưới lòng đất</h3>
+                  <p className="text-xs text-on-surface-variant">Nhiệm vụ chính tại Củ Chi</p>
                 </div>
               </Link>
             </div>

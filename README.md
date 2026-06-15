@@ -22,3 +22,8 @@ npm run preview
 ```
 
 Docker image (nginx + proxy) build qua `docker-compose.yml` service `histar-fe`.
+
+## Tài liệu
+
+- [docs/README.md](../docs/README.md) — mục lục tài liệu dự án
+- [docs/03_features_&_functional_spec.md](../docs/03_features_&_functional_spec.md) — routes & tính năng FE

@@ -1,4 +1,5 @@
-import { getData, getListData, httpClient } from '../../shared/api/httpClient'
+import { getData, getListData, getPageData, httpClient } from '../../shared/api/httpClient'
+import type { PageResponse } from '../../shared/api/contracts'
 import { appEnv } from '../../shared/config/env'
 import {
   checkAiHealth,
@@ -60,6 +61,11 @@ export const chatApi = {
     getListData<ChatMessage>(
       httpClient.get(`/api/chat/conversations/${conversationId}/messages`, { params: { page, size, sort } }),
     ),
+
+  getMessagesPage: (conversationId: string, page = 0, size = 20, sort = 'createdAt,desc') =>
+    getPageData<ChatMessage>(
+      httpClient.get(`/api/chat/conversations/${conversationId}/messages`, { params: { page, size, sort } }),
+    ) as Promise<PageResponse<ChatMessage>>,
 
   sendOrchestrated: (payload: {
     characterId: string

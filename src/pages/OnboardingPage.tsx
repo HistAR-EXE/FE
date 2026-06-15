@@ -3,9 +3,15 @@ import { AuthLayout } from '../components/layout/AuthLayout'
 import { Footer } from '../components/layout/Footer'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { images } from '../assets/images'
+import { useAuth } from '../shared/auth/useAuth'
 
 export function OnboardingPage() {
   const navigate = useNavigate()
+  const { isAuthenticated } = useAuth()
+
+  const handleStart = () => {
+    navigate(isAuthenticated ? '/home' : '/explore')
+  }
 
   return (
     <AuthLayout>
@@ -48,7 +54,7 @@ export function OnboardingPage() {
           >
             <button
               type="button"
-              onClick={() => navigate('/character-select')}
+              onClick={handleStart}
               className="w-full sm:w-auto px-xl py-sm bg-primary text-on-primary font-title-md text-title-md rounded-full shadow-[0_0_15px_rgba(242,191,80,0.3)] hover:shadow-[0_0_25px_rgba(242,191,80,0.5)] transition-all duration-300 transform hover:-translate-y-1"
             >
               Bắt đầu

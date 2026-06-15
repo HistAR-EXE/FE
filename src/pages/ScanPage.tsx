@@ -83,7 +83,18 @@ export function ScanPage() {
           },
           ...prev.slice(0, 9),
         ])
-        showToast({ message: 'Check-in thành công.', type: 'success' })
+        const bonusXp = res.bonusXpAwarded ?? 0
+        const onsiteBadge = res.badgesEarned.find((b) => b.name.startsWith('Đã đến nơi'))
+        if (bonusXp > 0) {
+          showToast({
+            message: onsiteBadge
+              ? `Check-in thành công — +${bonusXp} XP onsite · ${onsiteBadge.name}`
+              : `Check-in thành công — +${bonusXp} XP thưởng onsite`,
+            type: 'success',
+          })
+        } else {
+          showToast({ message: 'Check-in thành công.', type: 'success' })
+        }
       } catch (e) {
         showToast({ message: getFriendlyErrorMessage(e, 'checkin'), type: 'error' })
       } finally {

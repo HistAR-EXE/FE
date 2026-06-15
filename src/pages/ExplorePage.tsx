@@ -12,17 +12,28 @@ import { useAppMode } from '../shared/context/useAppMode'
 import { useToast } from '../shared/ui/toast/useToast'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { ExploreMapPanel } from '../features/explore/ExploreMapPanel'
+import { normalizeHeritageName } from '../features/explore/vietnamMap'
 import { images } from '../assets/images'
 
 const PAGE_SIZE = 20
+
+function exploreCardDescription(description: string | undefined): string {
+  if (!description?.trim()) return 'Đang cập nhật mô tả di tích.'
+  const firstBlock = description.split('\n').find((line) => {
+    const t = line.trim()
+    return t && !t.startsWith('Vị trí:') && !/^\d+\.\s/.test(t)
+  })
+  const text = (firstBlock ?? description).replace(/\s+/g, ' ').trim()
+  return text.length > 220 ? `${text.slice(0, 217).trim()}…` : text
+}
 
 export function ExplorePage() {
   const [locations, setLocations] = useState<Location[]>([])
   const [page, setPage] = useState(0)
   const [totalPages, setTotalPages] = useState(1)
   const [loadingMore, setLoadingMore] = useState(false)
+  const [mapLocations, setMapLocations] = useState<Location[]>([])
   const [activeFilter, setActiveFilter] = useState<'all' | 'near' | 'virtual' | 'dynasty'>('all')
-  const [mapZoom, setMapZoom] = useState(1)
   const [loading, setLoading] = useState(true)
   const [failed, setFailed] = useState(false)
   const { showToast } = useToast()
@@ -57,6 +68,13 @@ export function ExplorePage() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadPage(0, false)
   }, [loadPage])
+
+  useEffect(() => {
+    locationsApi
+      .list({ size: 50, sort: 'name,asc' })
+      .then(setMapLocations)
+      .catch(() => undefined)
+  }, [])
 
   const filteredLocations = locations.filter((location) => {
     if (activeFilter === 'all') return true
@@ -174,10 +192,10 @@ export function ExplorePage() {
                         </div>
                         <div className="p-md">
                           <h4 className="font-title-md text-title-md text-on-surface group-hover:text-primary transition-colors">
-                            {location.name || 'Địa điểm chưa đặt tên'}
+                            {normalizeHeritageName(location.name || 'Địa điểm chưa đặt tên')}
                           </h4>
                           <p className="font-body-md text-body-md text-on-surface-variant mt-1 line-clamp-2">
-                            {location.description || 'Đang cập nhật mô tả di tích.'}
+                            {exploreCardDescription(location.description)}
                           </p>
                           <div className="mt-3 flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm">
                             <span className="flex items-center gap-1">
@@ -193,6 +211,13 @@ export function ExplorePage() {
                       </Link>
                       {mode === 'online' && (
                         <div className="px-md pb-md flex flex-wrap gap-2 -mt-1">
+                          <Link
+                            to={`/artifacts?locationId=${location.id}`}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border border-primary/50 bg-primary/10 text-primary text-xs font-label-sm hover:bg-primary/20"
+                          >
+                            <MaterialIcon name="history_edu" className="text-sm" />
+                            Cổ vật
+                          </Link>
                           <Link
                             to={`/tour/360/${location.id}`}
                             className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border border-secondary/50 bg-secondary/10 text-secondary text-xs font-label-sm hover:bg-secondary/20"
@@ -226,12 +251,7 @@ export function ExplorePage() {
           </div>
         </section>
 
-        <ExploreMapPanel
-          locations={filteredLocations}
-          mapZoom={mapZoom}
-          onZoomIn={() => setMapZoom((z) => Math.min(1.8, +(z + 0.1).toFixed(2)))}
-          onZoomOut={() => setMapZoom((z) => Math.max(1, +(z - 0.1).toFixed(2)))}
-        />
+        <ExploreMapPanel locations={mapLocations.length > 0 ? mapLocations : filteredLocations} />
       </main>
     </AppLayout>
   )

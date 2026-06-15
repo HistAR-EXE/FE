@@ -77,6 +77,7 @@ export function TimePortalPage() {
   const [searchParams] = useSearchParams()
 
   const discoverKeyParam = searchParams.get('discoverKey')
+  const questRecordParam = searchParams.get('questRecord')
 
   const sceneParam = searchParams.get('scene')
 
@@ -96,12 +97,12 @@ export function TimePortalPage() {
 
   const { showToast } = useToast()
 
-  const pendingDiscoverKey = useRef<string | null>(discoverKeyParam)
+  const pendingDiscoverKey = useRef<string | null>(discoverKeyParam ?? questRecordParam)
   const skipNextEraRecord = useRef(false)
 
   useEffect(() => {
-    pendingDiscoverKey.current = discoverKeyParam
-  }, [discoverKeyParam])
+    pendingDiscoverKey.current = discoverKeyParam ?? questRecordParam
+  }, [discoverKeyParam, questRecordParam])
 
 
 

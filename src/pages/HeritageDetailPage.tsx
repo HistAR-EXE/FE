@@ -1,23 +1,61 @@
-import { useEffect, useState } from 'react'
-import { Link, Navigate, useParams } from 'react-router-dom'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { DetailHeader } from '../components/layout/DetailHeader'
 import { locationsApi, type Character, type Location } from '../features/locations/api'
+import { questRecordFromSearch, recordQuestStepEngagement } from '../features/gamification/questEngagement'
+import { useAuth } from '../shared/auth/useAuth'
 import { ApiError } from '../shared/api/contracts'
 import { useAppMode } from '../shared/context/useAppMode'
 import { useToast } from '../shared/ui/toast/useToast'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { ProgressSummaryCard } from '../features/gamification/ProgressSummaryCard'
 
+const PREVIEW_CHAR_LIMIT = 480
+
+function splitParagraphs(text: string): string[] {
+  return text
+    .split(/\n\s*\n/)
+    .map((p) => p.trim())
+    .filter(Boolean)
+}
+
+function buildPreview(description: string): { preview: string; canExpand: boolean } {
+  const paragraphs = splitParagraphs(description)
+  if (paragraphs.length > 1) {
+    return { preview: paragraphs[0], canExpand: true }
+  }
+
+  const single = paragraphs[0] ?? description.trim()
+  if (single.length <= PREVIEW_CHAR_LIMIT) {
+    return { preview: single, canExpand: false }
+  }
+
+  const cut = single.slice(0, PREVIEW_CHAR_LIMIT)
+  const sentenceEnd = Math.max(cut.lastIndexOf('. '), cut.lastIndexOf('.\n'))
+  const preview = sentenceEnd > 200 ? cut.slice(0, sentenceEnd + 1).trim() : `${cut.trim()}…`
+  return { preview, canExpand: true }
+}
+
 export function HeritageDetailPage() {
   const { locationId } = useParams<{ locationId: string }>()
+  const [searchParams] = useSearchParams()
+  const questRecordKey = questRecordFromSearch(searchParams)
+  const { isAuthenticated } = useAuth()
+  const recordedRef = useRef(false)
   const [location, setLocation] = useState<Location | null>(null)
   const [characters, setCharacters] = useState<Character[]>([])
   const [failed, setFailed] = useState(false)
+  const [descriptionExpanded, setDescriptionExpanded] = useState(false)
   const { showToast } = useToast()
   const { mode } = useAppMode()
   const onlineHighlight = (active: boolean) =>
     active && mode === 'online' ? 'ring-2 ring-secondary/60 border-secondary' : ''
+
+  const descriptionMeta = useMemo(
+    () => (location ? buildPreview(location.description) : null),
+    [location],
+  )
 
   useEffect(() => {
     if (!locationId) return
@@ -29,6 +67,7 @@ export function HeritageDetailPage() {
         ])
         setLocation(loc)
         setCharacters(chars)
+        setDescriptionExpanded(false)
       } catch (e) {
         setFailed(true)
         showToast({
@@ -39,6 +78,23 @@ export function HeritageDetailPage() {
     }
     run()
   }, [locationId, showToast])
+
+  useEffect(() => {
+    if (!locationId || !questRecordKey || !isAuthenticated || recordedRef.current) return
+    const timer = window.setTimeout(() => {
+      recordedRef.current = true
+      void recordQuestStepEngagement(questRecordKey, locationId, 'map')
+    }, 5000)
+    return () => window.clearTimeout(timer)
+  }, [locationId, questRecordKey, isAuthenticated])
+
+  const onExpandDescription = () => {
+    setDescriptionExpanded(true)
+    if (locationId && questRecordKey && isAuthenticated && !recordedRef.current) {
+      recordedRef.current = true
+      void recordQuestStepEngagement(questRecordKey, locationId, 'map')
+    }
+  }
 
   if (!locationId) return <Navigate to="/explore" replace />
 
@@ -58,6 +114,15 @@ export function HeritageDetailPage() {
               <ProgressSummaryCard locationId={location.id} />
             </div>
 
+            {questRecordKey && (
+              <div className="mb-md rounded-xl border border-secondary/40 bg-secondary/10 p-md">
+                <p className="text-xs uppercase tracking-wide text-secondary mb-1">Nhiệm vụ · Chương Định vị</p>
+                <p className="text-sm text-on-surface">
+                  Đọc hồ sơ di tích (≥ 5 giây hoặc bấm &quot;Xem thêm&quot;) để hoàn thành chương này.
+                </p>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-lg mb-xl">
               <div className="lg:col-span-8 flex flex-col gap-md">
                 <div className="relative w-full h-[400px] rounded-xl overflow-hidden border border-outline-variant shadow-lg group">
@@ -70,9 +135,46 @@ export function HeritageDetailPage() {
                       </span>
                     </div>
                     <h1 className="font-display-lg text-display-lg text-primary mb-2 inline-block">{location.name}</h1>
-                    <p className="font-body-lg text-body-lg text-on-surface-variant max-w-2xl line-clamp-2">{location.description}</p>
                   </div>
                 </div>
+
+                <article className="bg-surface-container border border-outline-variant rounded-xl p-lg">
+                  <h2 className="font-title-md text-on-surface mb-md flex items-center gap-2">
+                    <MaterialIcon name="menu_book" className="text-primary" />
+                    Thông tin di tích
+                  </h2>
+                  <div className="text-sm text-on-surface-variant leading-relaxed whitespace-pre-line space-y-3">
+                    {descriptionExpanded ? (
+                      <>
+                        {location.description.split('\n').map((para, i) => (
+                          <p key={i}>{para}</p>
+                        ))}
+                        {descriptionMeta?.canExpand && (
+                          <button
+                            type="button"
+                            onClick={() => setDescriptionExpanded(false)}
+                            className="text-primary hover:text-primary-fixed-dim font-label-sm text-label-sm transition-colors"
+                          >
+                            Thu hồi
+                          </button>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <p>{descriptionMeta?.preview}</p>
+                        {descriptionMeta?.canExpand && (
+                          <button
+                            type="button"
+                            onClick={onExpandDescription}
+                            className="text-primary hover:text-primary-fixed-dim font-label-sm text-label-sm transition-colors"
+                          >
+                            Xem thêm
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </article>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-md">
                   <div className="bg-surface-container p-md rounded-lg border border-outline-variant flex items-center gap-md">
@@ -98,6 +200,10 @@ export function HeritageDetailPage() {
                 <Link to={`/tour/360/${location.id}`} className={`group relative w-full h-[100px] rounded-xl overflow-hidden bg-surface-container border border-secondary/30 hover:border-secondary transition-colors flex items-center p-md gap-md ${onlineHighlight(true)}`}>
                   <div className="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center text-secondary"><MaterialIcon name="view_in_ar" className="text-2xl" /></div>
                   <div className="text-left flex-1"><h3 className="font-title-md text-title-md text-on-surface mb-1">Tour 360°</h3><p className="font-label-sm text-label-sm text-on-surface-variant">Khám phá không gian</p></div>
+                </Link>
+                <Link to={`/artifacts?locationId=${location.id}`} className={`group relative w-full h-[100px] rounded-xl overflow-hidden bg-surface-container border border-primary/30 hover:border-primary transition-colors flex items-center p-md gap-md ${onlineHighlight(false)}`}>
+                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary"><MaterialIcon name="history_edu" className="text-2xl" /></div>
+                  <div className="text-left flex-1"><h3 className="font-title-md text-title-md text-on-surface mb-1">Cổ vật</h3><p className="font-label-sm text-label-sm text-on-surface-variant">Bộ sưu tập hiện vật di tích</p></div>
                 </Link>
                 <Link to={`/quests?locationId=${location.id}`} className={`group relative w-full h-[100px] rounded-xl overflow-hidden bg-surface-container border border-outline-variant hover:border-primary/50 transition-colors flex items-center p-md gap-md ${onlineHighlight(false)}`}>
                   <div className="w-12 h-12 rounded-full bg-surface-variant flex items-center justify-center text-on-surface"><MaterialIcon name="assignment" className="text-2xl" /></div>
@@ -129,4 +235,3 @@ export function HeritageDetailPage() {
     </AppLayout>
   )
 }
-
