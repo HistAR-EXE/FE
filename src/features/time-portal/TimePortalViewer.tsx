@@ -3,36 +3,59 @@ import type { PhotoPair } from '../locations/api'
 import type { PhotoScene } from '../photo-scenes/api'
 import { images } from '../../assets/images'
 import { MaterialIcon } from '../../components/ui/MaterialIcon'
-
-const ERAS = [1948, 1968, 2026] as const
-type Era = (typeof ERAS)[number]
+import { CompareLayerImage } from './CompareLayerImage'
+import {
+  ERA_VALUES,
+  eraCompareSideLabel,
+  eraHeadline,
+  eraTimelineLabel,
+  isPresentEra,
+  type EraValue,
+} from './eraLabels'
 
 type TimePortalViewerProps = {
   scenes?: PhotoScene[]
   pairs?: PhotoPair[]
   sceneIndex: number
   onSceneIndexChange: (index: number) => void
-  onEraChange?: (era: Era) => void
+  onEraChange?: (era: EraValue) => void
   onEngagement?: () => void
-  initialEra?: Era
+  initialEra?: EraValue
 }
 
-function layerForEra(scene: PhotoScene | undefined, era: Era, pair: PhotoPair | undefined) {
+type LayerData = { imageUrl: string; caption: string; era: EraValue }
+
+function layerForEra(scene: PhotoScene | undefined, era: EraValue, pair: PhotoPair | undefined): LayerData {
   if (scene?.layers?.length) {
-    const layer = scene.layers.find((l) => l.era === era) ?? scene.layers.find((l) => l.era === 1968)
+    const layer =
+      scene.layers.find((l) => l.era === era) ??
+      (era !== 1968 ? scene.layers.find((l) => l.era === 1968) : undefined) ??
+      scene.layers.find((l) => l.era !== 2026) ??
+      scene.layers[0]
     if (layer) {
-      return { imageUrl: layer.imageUrl, caption: layer.caption, era: layer.era }
+      return { imageUrl: layer.imageUrl, caption: layer.caption, era: layer.era as EraValue }
     }
   }
   if (pair) {
     const imageUrl = era === 2026 ? pair.currentImage : pair.historicalImage
-    return { imageUrl, caption: pair.caption, era: pair.year ?? 1968 }
+    return { imageUrl, caption: pair.caption, era: (pair.year ?? 1968) as EraValue }
   }
   return {
     imageUrl: era === 2026 ? images.timePortalPresent : images.timePortalPast,
     caption: '',
     era,
   }
+}
+
+function resolveCompareLayers(
+  scene: PhotoScene | undefined,
+  pair: PhotoPair | undefined,
+  selectedEra: EraValue,
+): { past: LayerData; present: LayerData; compareEra: EraValue } {
+  const present = layerForEra(scene, 2026, pair)
+  const compareEra: EraValue = isPresentEra(selectedEra) ? 1968 : selectedEra
+  const past = layerForEra(scene, compareEra, pair)
+  return { past, present, compareEra }
 }
 
 export function TimePortalViewer({
@@ -47,19 +70,28 @@ export function TimePortalViewer({
   const scene = scenes?.[sceneIndex]
   const pair = pairs?.[sceneIndex]
   const tabs = scenes?.length ? scenes : pairs ?? []
-  const [era, setEra] = useState<Era>(initialEra ?? 1968)
+  const [era, setEra] = useState<EraValue>(initialEra ?? 1968)
   const [sliderPct, setSliderPct] = useState(50)
   const [vortex, setVortex] = useState(false)
   const dragging = useRef(false)
   const containerRef = useRef<HTMLDivElement>(null)
 
-  const pastLayer = useMemo(() => layerForEra(scene, era === 2026 ? 1968 : era, pair), [scene, era, pair])
-  const presentLayer = useMemo(() => layerForEra(scene, 2026, pair), [scene, pair])
+  const { past, present, compareEra } = useMemo(
+    () => resolveCompareLayers(scene, pair, era),
+    [scene, pair, era],
+  )
+
+  const showCompare = !isPresentEra(era)
+
+  useEffect(() => {
+    if (initialEra) setEra(initialEra)
+  }, [initialEra])
 
   const triggerVortex = useCallback(
-    (nextEra: Era) => {
+    (nextEra: EraValue) => {
       setVortex(true)
       setEra(nextEra)
+      if (!isPresentEra(nextEra)) setSliderPct(50)
       onEngagement?.()
       onEraChange?.(nextEra)
       window.setTimeout(() => setVortex(false), 1400)
@@ -96,13 +128,12 @@ export function TimePortalViewer({
 
   if (!tabs.length) return null
 
+  const caption = isPresentEra(era) ? present.caption : past.caption || present.caption
+
   return (
-    <div ref={containerRef} className="relative h-full w-full overflow-hidden">
+    <div ref={containerRef} className="relative h-full w-full overflow-hidden bg-black">
       {vortex && (
-        <div
-          className="absolute inset-0 z-40 pointer-events-none flex items-center justify-center"
-          aria-hidden
-        >
+        <div className="absolute inset-0 z-40 pointer-events-none flex items-center justify-center" aria-hidden>
           <div
             className="w-[120%] h-[120%] rounded-full opacity-70 animate-spin"
             style={{
@@ -113,57 +144,84 @@ export function TimePortalViewer({
         </div>
       )}
 
-      <div
-        className="view-layer view-present"
-        style={{ backgroundImage: `url('${presentLayer.imageUrl || images.timePortalPresent}')` }}
-      />
-      <div
-        className="view-layer view-past"
-        style={{
-          clipPath: `inset(0 ${100 - sliderPct}% 0 0)`,
-          backgroundImage: `url('${pastLayer.imageUrl || images.timePortalPast}')`,
-        }}
+      {/* Hiện trạng — luôn là lớp nền (bên phải khi so sánh) */}
+      <CompareLayerImage
+        src={present.imageUrl}
+        fallback={images.timePortalPresent}
+        alt="Hiện nay"
+        className="absolute inset-0 w-full h-full object-cover"
       />
 
-      <div className="absolute top-xl left-xl z-20 max-w-md">
-        <h2 className="font-display-lg text-primary">{era}</h2>
-        <p className="text-on-surface-variant text-sm">{pastLayer.caption || presentLayer.caption}</p>
-      </div>
-
-      <div
-        className="slider-handle"
-        style={{ left: `${sliderPct}%` }}
-        onMouseDown={() => {
-          dragging.current = true
-          onEngagement?.()
-        }}
-        onTouchStart={() => {
-          dragging.current = true
-          onEngagement?.()
-        }}
-        role="slider"
-        aria-valuenow={sliderPct}
-        aria-label="So sánh xưa và nay"
-      >
-        <div className="slider-button">
-          <MaterialIcon name="compare_arrows" className="text-primary text-xl" />
+      {/* Ảnh xưa — lớp trên, cắt theo thanh trượt (bên trái) */}
+      {showCompare && (
+        <div
+          className="absolute inset-0 z-10 overflow-hidden"
+          style={{ clipPath: `inset(0 ${100 - sliderPct}% 0 0)` }}
+        >
+          <CompareLayerImage
+            src={past.imageUrl}
+            fallback={images.timePortalPast}
+            alt={`Tái hiện ${compareEra}`}
+            className="absolute inset-0 w-full h-full object-cover sepia-[0.6] contrast-[1.1] brightness-90"
+          />
         </div>
+      )}
+
+      <div className="absolute top-xl left-xl z-20 max-w-md pointer-events-none">
+        {showCompare ? (
+          <>
+            <p className="text-primary text-sm font-label-sm mb-1">{eraCompareSideLabel(compareEra)}</p>
+            {caption && <p className="text-on-surface-variant text-sm">{caption}</p>}
+          </>
+        ) : (
+          <>
+            <h2 className="font-display-lg text-primary">{eraHeadline(era)}</h2>
+            {caption && <p className="text-on-surface-variant text-sm mt-1">{caption}</p>}
+          </>
+        )}
       </div>
+
+      {showCompare && (
+        <>
+          <div className="absolute top-xl right-xl z-20 px-3 py-1 rounded-full bg-black/50 border border-secondary/40 text-xs text-secondary backdrop-blur-sm pointer-events-none">
+            Hiện nay
+          </div>
+          <div
+            className="slider-handle"
+            style={{ left: `${sliderPct}%` }}
+            onMouseDown={() => {
+              dragging.current = true
+              onEngagement?.()
+            }}
+            onTouchStart={() => {
+              dragging.current = true
+              onEngagement?.()
+            }}
+            role="slider"
+            aria-valuenow={sliderPct}
+            aria-label="So sánh xưa và nay"
+          >
+            <div className="slider-button">
+              <MaterialIcon name="compare_arrows" className="text-primary text-xl" />
+            </div>
+          </div>
+        </>
+      )}
 
       <div className="absolute bottom-xl left-1/2 -translate-x-1/2 z-30 flex flex-col items-center gap-sm">
         <div className="bg-surface/70 backdrop-blur-xl border border-outline-variant/50 rounded-full px-lg py-sm flex gap-md">
-          {ERAS.map((e) => (
+          {ERA_VALUES.map((e) => (
             <button
               key={e}
               type="button"
               onClick={() => triggerVortex(e)}
               className={`font-title-md ${e === era ? 'text-primary glow-primary' : 'text-on-surface-variant hover:text-on-surface'} transition-colors`}
             >
-              {e}
+              {eraTimelineLabel(e)}
             </button>
           ))}
         </div>
-        <div className="bg-surface/70 backdrop-blur-xl border border-outline-variant/50 rounded-full px-lg py-sm flex gap-xl">
+        <div className="bg-surface/70 backdrop-blur-xl border border-outline-variant/50 rounded-full px-lg py-sm flex gap-xl max-w-[95vw] overflow-x-auto hide-scrollbar">
           {tabs.map((tab, i) => {
             const label = 'name' in tab ? tab.name : `${(tab as PhotoPair).year ?? `Mốc ${i + 1}`}`
             return (
@@ -174,7 +232,7 @@ export function TimePortalViewer({
                   onEngagement?.()
                   onSceneIndexChange(i)
                 }}
-                className={`font-title-md ${i === sceneIndex ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface'} transition-colors`}
+                className={`font-title-md shrink-0 ${i === sceneIndex ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface'} transition-colors`}
               >
                 {label}
               </button>

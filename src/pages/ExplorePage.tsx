@@ -12,6 +12,7 @@ import { useAppMode } from '../shared/context/useAppMode'
 import { useToast } from '../shared/ui/toast/useToast'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { ExploreMapPanel } from '../features/explore/ExploreMapPanel'
+import { buildArUrl } from '../features/ar/arDeepLink'
 import { normalizeHeritageName } from '../features/explore/vietnamMap'
 import { images } from '../assets/images'
 
@@ -225,6 +226,15 @@ export function ExplorePage() {
                             <MaterialIcon name="view_in_ar" className="text-sm" />
                             Tham quan 360°
                           </Link>
+                          {location.id === CU_CHI_LOCATION_ID && (
+                            <Link
+                              to={buildArUrl({ locationId: location.id, mode: 'sim' })}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border border-primary/50 bg-primary/10 text-primary text-xs font-label-sm hover:bg-primary/20"
+                            >
+                              <MaterialIcon name="view_in_ar" className="text-sm" />
+                              Cổng AR
+                            </Link>
+                          )}
                           <Link
                             to={`/chat/nguyen-du?locationId=${location.id}`}
                             className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border border-primary/50 bg-primary/10 text-primary text-xs font-label-sm hover:bg-primary/20"

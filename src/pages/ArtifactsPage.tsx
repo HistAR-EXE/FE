@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { SimpleTopNav } from '../components/layout/TopNav'
 import { collectionApi, type Artifact } from '../features/collection/api'
@@ -11,6 +11,8 @@ import { useAuth } from '../shared/auth/useAuth'
 import { useToast } from '../shared/ui/toast/useToast'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { useVisitSessionForLocation } from '../features/visit/VisitSessionProvider'
+import { buildArUrl } from '../features/ar/arDeepLink'
+import { getArSceneByUnlockKey } from '../features/ar/cuChiArScenes'
 
 type TierFilter = 'all' | 1 | 2 | 3
 type StatusFilter = 'all' | 'unlocked' | 'locked'
@@ -591,6 +593,20 @@ export function ArtifactsPage() {
                     <p className="text-sm text-on-surface-variant leading-relaxed">
                       {selected.unlocked ? selected.description : 'Khám phá thêm để mở khóa cổ vật này.'}
                     </p>
+                    {isCuChi && selected.unlocked && getArSceneByUnlockKey(selected.unlockKey) && (
+                      <Link
+                        to={buildArUrl({
+                          locationId: CU_CHI_LOCATION_ID,
+                          mode: 'sim',
+                          scene: getArSceneByUnlockKey(selected.unlockKey)!.slug,
+                          discoverKey: selected.unlockKey,
+                        })}
+                        className="inline-flex items-center gap-1 mt-md text-secondary text-sm hover:underline"
+                      >
+                        <MaterialIcon name="view_in_ar" className="text-base" />
+                        Xem mô hình AR
+                      </Link>
+                    )}
                     {selected.unlocked && selected.story && (
                       <div className="mt-lg pt-lg border-t border-outline-variant/50">
                         <h3 className="font-title-md text-sm text-on-surface mb-3 flex items-center gap-2">

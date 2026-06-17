@@ -10,6 +10,7 @@ import { useAppMode } from '../shared/context/useAppMode'
 import { useToast } from '../shared/ui/toast/useToast'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { ProgressSummaryCard } from '../features/gamification/ProgressSummaryCard'
+import { CU_CHI_LOCATION_ID } from '../shared/config/constants'
 
 const PREVIEW_CHAR_LIMIT = 480
 
@@ -197,6 +198,23 @@ export function HeritageDetailPage() {
                   <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center text-primary z-10"><MaterialIcon name="motion_photos_on" className="text-4xl" /></div>
                   <div className="z-10 text-left"><h3 className="font-title-md text-title-md text-primary mb-1">Cổng Thời Gian</h3><p className="font-body-md text-body-md text-on-surface-variant">Ảnh xưa và nay</p></div>
                 </Link>
+                {location.id === CU_CHI_LOCATION_ID && (
+                  <Link
+                    to={`/time-portal/${location.id}?view=ar`}
+                    className={`group relative w-full h-[100px] rounded-xl overflow-hidden bg-surface-container border border-secondary/40 hover:border-secondary transition-colors flex items-center p-md gap-md ${onlineHighlight(true)}`}
+                  >
+                    <div className="w-12 h-12 rounded-full bg-secondary/15 flex items-center justify-center text-secondary">
+                      <MaterialIcon name="view_in_ar" className="text-2xl" />
+                    </div>
+                    <div className="text-left flex-1">
+                      <h3 className="font-title-md text-title-md text-on-surface mb-1 flex items-center gap-2">
+                        AR Cổng thời gian
+                        <span className="text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-primary/20 text-primary border border-primary/30">Mới</span>
+                      </h3>
+                      <p className="font-label-sm text-label-sm text-on-surface-variant">Mô hình 3D — demo laptop</p>
+                    </div>
+                  </Link>
+                )}
                 <Link to={`/tour/360/${location.id}`} className={`group relative w-full h-[100px] rounded-xl overflow-hidden bg-surface-container border border-secondary/30 hover:border-secondary transition-colors flex items-center p-md gap-md ${onlineHighlight(true)}`}>
                   <div className="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center text-secondary"><MaterialIcon name="view_in_ar" className="text-2xl" /></div>
                   <div className="text-left flex-1"><h3 className="font-title-md text-title-md text-on-surface mb-1">Tour 360°</h3><p className="font-label-sm text-label-sm text-on-surface-variant">Khám phá không gian</p></div>

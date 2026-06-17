@@ -19,7 +19,7 @@ async function loadImage(url: string): Promise<HTMLImageElement> {
   })
 }
 
-export function DualPhotoExport({ leftImageUrl, rightImageUrl, leftLabel = '1968', rightLabel = '2026' }: DualPhotoExportProps) {
+export function DualPhotoExport({ leftImageUrl, rightImageUrl, leftLabel = '1968', rightLabel = 'Hiện nay' }: DualPhotoExportProps) {
   const [busy, setBusy] = useState(false)
   const { showToast } = useToast()
 

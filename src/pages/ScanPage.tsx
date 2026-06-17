@@ -13,11 +13,41 @@ import { useToast } from '../shared/ui/toast/useToast'
 import { useAuth } from '../shared/auth/useAuth'
 import { CU_CHI_LOCATION_ID } from '../shared/config/constants'
 import { useVisitSessionForLocation } from '../features/visit/VisitSessionProvider'
+import { buildArUrl } from '../features/ar/arDeepLink'
 
-function parseQrPayload(value: string) {
-  if (/^[0-9a-fA-F-]{36}$/.test(value)) return value
-  const parts = value.split(':')
-  return parts[2] ?? ''
+const UUID_REGEX = /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}/
+
+function extractLocationIdFromQr(value: string): string {
+  const raw = value.trim()
+  if (!raw) return ''
+  if (UUID_REGEX.test(raw) && raw.length === 36) return raw
+
+  const lower = raw.toLowerCase()
+  if (lower.startsWith('timelens:location:') || lower.startsWith('timelens:secret:')) {
+    const id = raw.split(':').pop()?.trim() ?? ''
+    return UUID_REGEX.test(id) ? id : ''
+  }
+
+  try {
+    const url = new URL(raw)
+    const byParam = url.searchParams.get('locationId') || url.searchParams.get('location') || url.searchParams.get('id')
+    if (byParam && UUID_REGEX.test(byParam)) return byParam
+    const byPath = url.pathname.match(UUID_REGEX)
+    if (byPath?.[0]) return byPath[0]
+  } catch {
+    // Not an URL, continue with regex scan
+  }
+
+  const byRegex = raw.match(UUID_REGEX)
+  return byRegex?.[0] ?? ''
+}
+
+function normalizeQrPayload(value: string, locationId: string): string {
+  const raw = value.trim()
+  if (!raw || !locationId) return raw
+  const lower = raw.toLowerCase()
+  if (lower.startsWith('timelens:secret:')) return `timelens:secret:${locationId}`
+  return `timelens:location:${locationId}`
 }
 
 export function ScanPage() {
@@ -40,9 +70,8 @@ export function ScanPage() {
   const lastDecodedRef = useRef<string>('')
   const lastDecodedAtRef = useRef<number>(0)
   const autoCheckinTimerRef = useRef<number | null>(null)
-  const lastAutoCheckinRef = useRef<string>('')
   const { showToast } = useToast()
-  const parsedLocationId = useMemo(() => parseQrPayload(qrCode), [qrCode])
+  const parsedLocationId = useMemo(() => extractLocationIdFromQr(qrCode), [qrCode])
   const filteredHistory = useMemo(() => {
     const q = historySearch.trim().toLowerCase()
     if (!q) return scanHistory
@@ -53,11 +82,12 @@ export function ScanPage() {
     async (payload: string) => {
       try {
         setChecking(true)
-        const locationId = parseQrPayload(payload)
+        const locationId = extractLocationIdFromQr(payload)
         if (!locationId) {
-          showToast({ message: 'Mã chưa hợp lệ. Hãy quét lại hoặc nhập mã tại điểm tham quan.', type: 'error' })
+          showToast({ message: 'Mã chưa hợp lệ. Hãy quét mã chứa locationId dạng UUID.', type: 'error' })
           return
         }
+        const normalizedQr = normalizeQrPayload(payload, locationId)
         const position = await new Promise<GeolocationPosition>((resolve, reject) => {
           navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 10000 })
         }).catch(() => null)
@@ -71,15 +101,16 @@ export function ScanPage() {
           locationId,
           latitude: position.coords.latitude,
           longitude: position.coords.longitude,
-          qrCode: payload,
+          qrCode: normalizedQr,
         })
         setResult(res)
+        setQrCode(normalizedQr)
         setScanHistory((prev) => [
           {
             id: locationId,
             label: `Di tích ${locationId.slice(0, 6).toUpperCase()}`,
             time: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
-            payload,
+            payload: normalizedQr,
           },
           ...prev.slice(0, 9),
         ])
@@ -142,26 +173,29 @@ export function ScanPage() {
             lastDecodedRef.current = result.data
             lastDecodedAtRef.current = now
             setQrCode(result.data)
-            const locationId = parseQrPayload(result.data)
+            const locationId = extractLocationIdFromQr(result.data)
             if (locationId) {
+              const normalizedPayload = normalizeQrPayload(result.data, locationId)
               setScanHistory((prev) => [
                 {
                   id: locationId,
                   label: `Di tích ${locationId.slice(0, 6).toUpperCase()}`,
                   time: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
-                  payload: result.data,
+                  payload: normalizedPayload,
                 },
-                ...prev.filter((x) => !(x.id === locationId && x.payload === result.data)).slice(0, 9),
+                ...prev.filter((x) => !(x.id === locationId && x.payload === normalizedPayload)).slice(0, 9),
               ])
+              setQrCode(normalizedPayload)
+            } else {
+              setQrCode(result.data)
             }
             showToast({ message: 'Đã nhận diện mã QR. Sẽ tự động check-in sau giây lát...', type: 'success' })
-            if (locationId && lastAutoCheckinRef.current !== locationId) {
+            if (locationId) {
               if (autoCheckinTimerRef.current !== null) {
                 window.clearTimeout(autoCheckinTimerRef.current)
               }
               autoCheckinTimerRef.current = window.setTimeout(() => {
-                lastAutoCheckinRef.current = locationId
-                void performCheckin(result.data)
+                void performCheckin(normalizeQrPayload(result.data, locationId))
               }, 1000)
             }
           }
@@ -215,7 +249,7 @@ export function ScanPage() {
               <input
                 value={qrCode}
                 onChange={(e) => setQrCode(e.target.value)}
-                placeholder="VD: HUE-18 hoặc timelens:location:<ma-dia-diem>"
+                placeholder="VD: timelens:location:<uuid> hoặc URL chứa locationId"
                 className="w-full neo-input rounded-lg px-md py-sm"
               />
               <div className="grid grid-cols-2 gap-sm">
@@ -307,6 +341,14 @@ export function ScanPage() {
               <Link to={`/secret/${parsedLocationId}`} className="inline-flex items-center gap-1 mt-sm text-secondary underline">
                 Xem Secret Story <MaterialIcon name="arrow_forward" className="text-sm" />
               </Link>
+              {parsedLocationId === CU_CHI_LOCATION_ID && (
+                <Link
+                  to={buildArUrl({ locationId: CU_CHI_LOCATION_ID, mode: 'live' })}
+                  className="inline-flex items-center gap-1 mt-sm ml-md text-primary underline"
+                >
+                  Mở AR Cổng thời gian <MaterialIcon name="view_in_ar" className="text-sm" />
+                </Link>
+              )}
             </div>
           )}
         </div>

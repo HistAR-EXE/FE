@@ -94,6 +94,16 @@ export function HomePage() {
                 <span>Check-in QR/GPS</span>
                 <MaterialIcon name="arrow_forward" className="text-secondary" />
               </Link>
+              <Link
+                to={`/time-portal/${CU_CHI_LOCATION_ID}?view=ar`}
+                className="flex items-center justify-between p-md rounded-lg bg-surface-container-highest border border-secondary/30 hover:border-secondary"
+              >
+                <span className="flex items-center gap-2">
+                  AR Củ Chi (demo)
+                  <span className="text-[10px] uppercase px-1.5 py-0.5 rounded bg-primary/15 text-primary border border-primary/30">Mới</span>
+                </span>
+                <MaterialIcon name="view_in_ar" className="text-secondary" />
+              </Link>
               <Link to="/photo-frame" className="flex items-center justify-between p-md rounded-lg bg-surface-container-highest border border-outline-variant hover:border-primary">
                 <span>Tạo Photo Frame</span>
                 <MaterialIcon name="arrow_forward" className="text-primary" />

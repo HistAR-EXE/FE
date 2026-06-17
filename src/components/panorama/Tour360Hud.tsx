@@ -2,6 +2,8 @@ import { Link } from 'react-router-dom'
 
 import type { Hotspot, Panorama } from '../../features/panorama/api'
 import { CU_CHI_LOCATION_ID } from '../../shared/config/constants'
+import { buildArUrl } from '../../features/ar/arDeepLink'
+import { getArSceneByPanoramaId } from '../../features/ar/cuChiArScenes'
 import { MaterialIcon } from '../ui/MaterialIcon'
 
 type Tour360HudProps = {
@@ -57,6 +59,20 @@ export function Tour360Hud({
           <p className="tour360-hud-title">{activePanorama?.title ?? 'Tour 360°'}</p>
         )}
         <div className="flex items-center gap-1 shrink-0">
+          {isCuChi && viewMode === 'panorama' && activePanoramaId && getArSceneByPanoramaId(activePanoramaId) && (
+            <Link
+              to={buildArUrl({
+                locationId,
+                mode: 'sim',
+                scene: getArSceneByPanoramaId(activePanoramaId)!.slug,
+              })}
+              className="tour360-hud-btn"
+              aria-label="Xem AR"
+              title="Cổng AR"
+            >
+              <MaterialIcon name="view_in_ar" />
+            </Link>
+          )}
           {isCuChi && viewMode === 'panorama' && (
             <button
               type="button"

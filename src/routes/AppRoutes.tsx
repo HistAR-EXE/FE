@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { ArtifactsPage } from '../pages/ArtifactsPage'
 import { CharacterExplorePage } from '../pages/CharacterExplorePage'
@@ -27,6 +28,11 @@ import { AdminRoute } from '../shared/router/AdminRoute'
 import { ModeGuardRoute } from '../shared/router/ModeGuardRoute'
 import { ProtectedRoute } from '../shared/router/ProtectedRoute'
 import { VisitSessionProvider } from '../features/visit/VisitSessionProvider'
+import { ARLoadingFallback } from '../features/ar/ARHud'
+
+const TimePortalARPage = lazy(() =>
+  import('../pages/TimePortalARPage').then((m) => ({ default: m.TimePortalARPage })),
+)
 
 export function AppRoutes() {
   return (
@@ -38,6 +44,14 @@ export function AppRoutes() {
         <Route path="/explore" element={<ExplorePage />} />
         <Route path="/explore/:locationId" element={<HeritageDetailPage />} />
         <Route path="/time-portal/:locationId?" element={<TimePortalPage />} />
+        <Route
+          path="/time-portal/:locationId/ar"
+          element={
+            <Suspense fallback={<ARLoadingFallback />}>
+              <TimePortalARPage />
+            </Suspense>
+          }
+        />
         <Route path="/tour/360/:locationId?" element={<Tour360Page />} />
         <Route path="/quests" element={<QuestsPage />} />
         <Route path="/quests/:questId" element={<QuestDetailPage />} />

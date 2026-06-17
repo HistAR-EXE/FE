@@ -1,34 +1,23 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-
 import { Link, useParams, useSearchParams } from 'react-router-dom'
-
 import { AppLayout } from '../components/layout/AppLayout'
-
 import { locationsApi, type PhotoPair } from '../features/locations/api'
-
 import { photoScenesApi, type PhotoScene } from '../features/photo-scenes/api'
-
 import { eraDiscoveryKey, recordDiscoveryEngagement } from '../features/gamification/discoveryRouting'
-
 import { useAuth } from '../shared/auth/useAuth'
-
 import { DualPhotoExport } from '../features/time-portal/DualPhotoExport'
-
 import { TimePortalViewer } from '../features/time-portal/TimePortalViewer'
-
+import { ERA_VALUES, type EraValue } from '../features/time-portal/eraLabels'
 import { ApiError } from '../shared/api/contracts'
-
 import { useToast } from '../shared/ui/toast/useToast'
-
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { CU_CHI_LOCATION_ID } from '../shared/config/constants'
 import { useVisitSessionForLocation } from '../features/visit/VisitSessionProvider'
-
-
-
-const ERA_VALUES = [1948, 1968, 2026] as const
-
-type EraValue = (typeof ERA_VALUES)[number]
+import { isArEnabledLocation, sceneSlugFromIndex } from '../features/ar/arDeepLink'
+import { getArSceneBySlug, getArSceneBySceneId, isCuChiSceneSlug } from '../features/ar/cuChiArScenes'
+import { TimePortalArEmbed } from '../features/ar/TimePortalArEmbed'
+import type { CuChiSceneSlug } from '../features/ar/types'
+import { TimePortalViewSwitch, type PortalViewMode } from '../features/time-portal/TimePortalViewSwitch'
 
 
 
@@ -74,17 +63,20 @@ export function TimePortalPage() {
 
   const { locationId } = useParams<{ locationId?: string }>()
 
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
 
   const discoverKeyParam = searchParams.get('discoverKey')
   const questRecordParam = searchParams.get('questRecord')
 
   const sceneParam = searchParams.get('scene')
+  const viewParam = searchParams.get('view')
 
   const initialEra = parseEraParam(searchParams.get('era'))
+  const activeLocationId = locationId ?? CU_CHI_LOCATION_ID
+  const portalView: PortalViewMode = viewParam === 'ar' ? 'ar' : 'compare'
+  const arAvailable = isArEnabledLocation(activeLocationId)
 
   const { isAuthenticated } = useAuth()
-  const activeLocationId = locationId ?? CU_CHI_LOCATION_ID
   useVisitSessionForLocation(activeLocationId, isAuthenticated)
 
   const [scenes, setScenes] = useState<PhotoScene[]>([])
@@ -163,9 +155,15 @@ export function TimePortalPage() {
 
 
   const onEraChange = useCallback(
-
-    (era: number) => {
-
+    (era: EraValue) => {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev)
+          next.set('era', String(era))
+          return next
+        },
+        { replace: true },
+      )
       if (!isAuthenticated) return
       if (skipNextEraRecord.current) {
         skipNextEraRecord.current = false
@@ -175,8 +173,7 @@ export function TimePortalPage() {
       const key = eraDiscoveryKey(era)
       if (key) recordEngagement(key)
     },
-    [isAuthenticated, flushPendingDiscoverKey, recordEngagement],
-
+    [isAuthenticated, flushPendingDiscoverKey, recordEngagement, setSearchParams],
   )
 
 
@@ -297,6 +294,58 @@ export function TimePortalPage() {
 
   const hasContent = scenes.length > 0 || pairs.length > 0
 
+  const arSceneSlug = useMemo((): CuChiSceneSlug => {
+    const raw = searchParams.get('scene')
+    if (isCuChiSceneSlug(raw)) return raw
+    if (raw) {
+      const mapped = getArSceneBySceneId(raw)
+      if (mapped) return mapped.slug
+    }
+    return sceneSlugFromIndex(scenes[index]?.id, index)
+  }, [searchParams, scenes, index])
+
+  const arEra: EraValue = initialEra ?? 1968
+
+  const setPortalViewMode = useCallback(
+    (view: PortalViewMode) => {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev)
+          if (view === 'ar') next.set('view', 'ar')
+          else next.delete('view')
+          return next
+        },
+        { replace: true },
+      )
+    },
+    [setSearchParams],
+  )
+
+  const onArSceneSlugChange = useCallback(
+    (slug: CuChiSceneSlug) => {
+      const cfg = getArSceneBySlug(slug)
+      const idx = scenes.findIndex((s) => s.id === cfg.sceneId)
+      if (idx >= 0) setIndex(idx)
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev)
+          next.set('scene', slug)
+          next.set('view', 'ar')
+          return next
+        },
+        { replace: true },
+      )
+    },
+    [scenes, setSearchParams],
+  )
+
+  const onArEraChange = useCallback(
+    (era: EraValue) => {
+      onEraChange(era)
+    },
+    [onEraChange],
+  )
+
   const discoverBanner =
 
     discoverKeyParam && DISCOVER_KEY_LABELS[discoverKeyParam]
@@ -319,9 +368,19 @@ export function TimePortalPage() {
 
     >
 
-      <main className="flex-1 flex flex-col h-[calc(100dvh-3.5rem)] md:h-[calc(100vh-4rem)] relative mt-14 md:mt-16 pb-16 md:pb-0">
+      <main
+        className={`flex-1 flex flex-col relative mt-14 md:mt-0 ${
+          portalView === 'ar'
+            ? 'h-[calc(100dvh-3.5rem)] md:h-screen pb-0'
+            : 'h-[calc(100dvh-3.5rem)] md:h-[calc(100vh-4rem)] pb-16 md:pb-0'
+        }`}
+      >
 
-        <header className="bg-surface/70 backdrop-blur-xl border-b border-outline-variant hidden md:flex items-center justify-between h-16 px-xl z-40 shrink-0">
+        <header
+          className={`bg-surface/70 backdrop-blur-xl border-b border-outline-variant items-center justify-between h-14 md:h-16 px-xl z-40 shrink-0 ${
+            portalView === 'ar' ? 'hidden' : 'hidden md:flex'
+          }`}
+        >
 
           <div className="flex items-center gap-md min-w-0">
 
@@ -333,9 +392,11 @@ export function TimePortalPage() {
 
             <h1 className="font-headline-lg font-bold text-on-surface">Cổng thời gian</h1>
 
+            <TimePortalViewSwitch mode={portalView} onChange={setPortalViewMode} arAvailable={arAvailable} />
+
           </div>
 
-          {exportUrls.left && exportUrls.right && (
+          {exportUrls.left && exportUrls.right && portalView === 'compare' && (
 
             <DualPhotoExport leftImageUrl={exportUrls.left} rightImageUrl={exportUrls.right} />
 
@@ -347,7 +408,29 @@ export function TimePortalPage() {
 
           <div className="absolute inset-0 opacity-5 bg-[radial-gradient(circle_at_center,rgba(242,191,80,0.3),transparent_60%)]" />
 
-          {discoverKeyParam && isAuthenticated && !loading && (
+          {arAvailable && hasContent && !loading && (
+            <div
+              className={`absolute left-1/2 -translate-x-1/2 z-40 ${
+                portalView === 'ar' ? 'top-3 md:top-4' : 'top-3 md:hidden'
+              }`}
+            >
+              <TimePortalViewSwitch mode={portalView} onChange={setPortalViewMode} arAvailable={arAvailable} />
+            </div>
+          )}
+
+          {portalView === 'ar' && arAvailable && hasContent && !loading && (
+            <div className="absolute top-3 left-3 z-40 hidden md:block">
+              <Link
+                to={locationId ? `/explore/${locationId}` : '/explore'}
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-black/50 border border-white/15 text-on-surface/90 text-sm backdrop-blur-sm hover:border-secondary/40"
+              >
+                <MaterialIcon name="arrow_back" className="text-base" />
+                Quay lại
+              </Link>
+            </div>
+          )}
+
+          {discoverKeyParam && isAuthenticated && !loading && portalView === 'compare' && (
 
             <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 max-w-lg w-[92%] bg-surface/90 border border-secondary/40 rounded-xl px-4 py-2 text-sm text-secondary text-center">
 
@@ -379,7 +462,7 @@ export function TimePortalPage() {
 
           {!hasContent && !loading && <p className="p-lg text-on-surface-variant">Không có ảnh lịch sử cho địa điểm này.</p>}
 
-          {hasContent && !loading && (
+          {hasContent && !loading && portalView === 'compare' && (
 
             <TimePortalViewer
 
@@ -401,7 +484,18 @@ export function TimePortalPage() {
 
           )}
 
-          {exportUrls.left && exportUrls.right && (
+          {hasContent && !loading && portalView === 'ar' && arAvailable && (
+            <TimePortalArEmbed
+              locationId={activeLocationId}
+              sceneSlug={arSceneSlug}
+              era={arEra}
+              onSceneSlugChange={onArSceneSlugChange}
+              onEraChange={onArEraChange}
+              discoverKey={discoverKeyParam ?? questRecordParam}
+            />
+          )}
+
+          {exportUrls.left && exportUrls.right && portalView === 'compare' && (
 
             <div className="md:hidden absolute bottom-20 right-md z-30">
 

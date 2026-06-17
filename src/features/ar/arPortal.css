@@ -1,0 +1,126 @@
+.history-portal-root {
+  touch-action: none;
+}
+
+.history-portal-present {
+  transition: transform 0.35s ease-out, filter 0.5s ease;
+}
+
+.history-portal-dim {
+  background: radial-gradient(ellipse 85% 75% at 50% 45%, transparent 0%, rgba(0, 0, 0, 0.55) 100%);
+  transition: opacity 0.45s ease;
+}
+
+.history-portal-frame {
+  box-shadow:
+    0 0 0 1px rgba(242, 191, 80, 0.35),
+    0 0 40px rgba(242, 191, 80, 0.12),
+    0 24px 80px rgba(0, 0, 0, 0.65);
+  transition: transform 0.35s ease-out, opacity 0.6s ease;
+}
+
+.history-portal-frame__inner {
+  position: relative;
+  overflow: hidden;
+  border-radius: 2px;
+  background: #0a0a0a;
+}
+
+.history-portal-frame__inner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  box-shadow: inset 0 0 80px rgba(0, 0, 0, 0.45);
+  z-index: 2;
+}
+
+.history-portal-grain {
+  pointer-events: none;
+  opacity: 0.14;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+}
+
+.history-portal-scanline {
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.03) 2px,
+    rgba(0, 0, 0, 0.03) 4px
+  );
+  opacity: 0.35;
+}
+
+.history-portal-corner {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  border-color: rgba(242, 191, 80, 0.75);
+  border-style: solid;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.history-portal-corner--tl {
+  top: 12%;
+  left: 8%;
+  border-width: 2px 0 0 2px;
+}
+
+.history-portal-corner--tr {
+  top: 12%;
+  right: 8%;
+  border-width: 2px 2px 0 0;
+}
+
+.history-portal-corner--bl {
+  bottom: 22%;
+  left: 8%;
+  border-width: 0 0 2px 2px;
+}
+
+.history-portal-corner--br {
+  bottom: 22%;
+  right: 8%;
+  border-width: 0 2px 2px 0;
+}
+
+@keyframes portalReveal {
+  from {
+    opacity: 0;
+    transform: scale(0.94) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.history-portal-frame--enter {
+  animation: portalReveal 0.85s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.history-portal-badge {
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.history-portal-pulse {
+  animation: portalPulse 2s ease-in-out infinite;
+}
+
+@keyframes portalPulse {
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
