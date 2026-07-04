@@ -4,6 +4,7 @@ import { AppLayout } from '../components/layout/AppLayout'
 import { CU_CHI_LOCATION_ID } from '../shared/config/constants'
 import { useAuth } from '../shared/auth/useAuth'
 import { recordDiscoveryEngagement } from '../features/gamification/discoveryRouting'
+import { showDiscoveryRecordError } from '../features/gamification/discoveryEngagementToast'
 import { notifyEngagementOutcome } from '../features/gamification/handleEngagement'
 import { analyticsApi } from '../features/analytics/api'
 import { useUserProgress } from '../shared/context/UserProgressProvider'
@@ -33,7 +34,7 @@ export function TimePortalARPage() {
   const era = parseEra(searchParams.get('era'))
   const discoverKeyParam = searchParams.get('discoverKey')
 
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, user } = useAuth()
   useVisitSessionForLocation(activeLocationId, isAuthenticated)
   const { showToast } = useToast()
   const { applyEngagement } = useUserProgress()
@@ -78,10 +79,10 @@ export function TimePortalARPage() {
             source: 'time_portal_ar',
           })
         },
-        onError: () => showToast({ message: 'Không ghi được tiến độ khám phá.', type: 'error' }),
+        onError: () => showDiscoveryRecordError(showToast, { role: user?.role }),
       })
     },
-    [isAuthenticated, activeLocationId, showToast, applyEngagement],
+    [isAuthenticated, activeLocationId, showToast, applyEngagement, user?.role],
   )
 
   useEffect(() => {

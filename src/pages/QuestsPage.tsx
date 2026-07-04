@@ -14,9 +14,11 @@ import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { images } from '../assets/images'
 import { isLocationLocked } from '../features/explore/locationUnlock'
 import { appEnv } from '../shared/config/env'
+import { pickQuestCover, resolveLocationCoverFallback } from '../shared/media/resolveMedia'
+import { SmartImage } from '../shared/ui/SmartImage'
 
 export function QuestsPage() {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, user } = useAuth()
   const [searchParams] = useSearchParams()
   const urlLocationId = searchParams.get('locationId') ?? ''
   const [locations, setLocations] = useState<Location[]>([])
@@ -142,16 +144,18 @@ export function QuestsPage() {
     pointsReward: number
     status: string
     image: string
+    coverFallback: string
     currentStep?: number
     stepsTotal?: number
     readyToStart?: boolean
     completionTrigger?: string | null
     requireOnsiteCheckin?: boolean
     locationLocked?: boolean
-  }> = filteredQuests.map((q) => {
+  }> = filteredQuests.map((q, index) => {
     const meta = HERITAGE_QUEST_META[q.id]
     const progress = getProgress(q.id)
     const loc = locationById.get(q.locationId)
+    const coverLabel = loc?.name ?? q.title
     return {
       id: q.id,
       to: `/quests/${q.id}`,
@@ -163,7 +167,8 @@ export function QuestsPage() {
       estimatedMinutes: meta?.estimatedMinutes ?? 15,
       pointsReward: q.pointsReward,
       status: getStatus(q.id),
-      image: q.coverImage || images.questDauAnHoangThanh,
+      image: pickQuestCover(q.coverImage, loc?.coverImage, coverLabel, index),
+      coverFallback: resolveLocationCoverFallback(coverLabel, index),
       currentStep: progress?.currentStep,
       stepsTotal: progress?.stepsTotal ?? q.stepsTotal,
       readyToStart: (() => {
@@ -172,7 +177,7 @@ export function QuestsPage() {
       })(),
       completionTrigger: q.completionTrigger,
       requireOnsiteCheckin: progress?.requireOnsiteCheckin ?? q.requireOnsiteCheckin ?? q.completionTrigger === 'checkin',
-      locationLocked: loc ? isLocationLocked(loc) : false,
+      locationLocked: loc ? isLocationLocked(loc, user) : false,
     }
   })
 
@@ -190,6 +195,7 @@ export function QuestsPage() {
         pointsReward: 500,
         status: 'in_progress',
         image: images.questDauAnHoangThanh,
+        coverFallback: images.questDauAnHoangThanh,
         currentStep: 2,
         stepsTotal: 3,
       },
@@ -205,6 +211,7 @@ export function QuestsPage() {
         pointsReward: 200,
         status: 'not_started',
         image: images.questBiAnChuaCau,
+        coverFallback: images.questBiAnChuaCau,
         currentStep: 0,
         stepsTotal: 3,
       },
@@ -221,10 +228,19 @@ export function QuestsPage() {
   }))
 
   return (
-    <AppLayout activeBorder="left" topNav={<SimpleTopNav />}>
+    <AppLayout
+      activeBorder="left"
+      mobileBackTo="/explore"
+      mobileTitle="Nhiệm vụ"
+      topNav={<SimpleTopNav title="Nhiệm vụ" backTo="/explore" backLabel="Khám phá" />}
+    >
       <main className="mt-14 md:mt-16 p-md md:p-lg max-w-7xl mx-auto w-full">
-        <h1 className="text-[46px] leading-[54px] font-bold tracking-[-0.02em] text-primary mb-sm [text-shadow:0_0_10px_rgba(242,191,80,0.3)]">Nhiệm vụ</h1>
-        <p className="text-on-surface-variant mb-md max-w-2xl">
+        <Link to="/explore" className="inline-flex items-center gap-1 text-secondary text-sm mb-sm hover:underline md:hidden">
+          <MaterialIcon name="arrow_back" className="text-base" />
+          Quay lại Khám phá
+        </Link>
+        <h1 className="font-display-lg text-display-lg text-primary mb-sm">Nhiệm vụ</h1>
+        <p className="text-sm text-on-surface-variant leading-relaxed mb-lg max-w-2xl">
           Hành trình hybrid thị giác — online: hiện vật, Time Portal, tour 360°. Offline: check-in onsite nhận thưởng +25 XP.
         </p>
         {!isAuthenticated && (
@@ -283,8 +299,15 @@ export function QuestsPage() {
             </button>
           ))}
         </div>
-        {loading && <p className="mb-sm text-on-surface-variant">Đang tải nhiệm vụ...</p>}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-md">
+        {loading && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-md mb-sm">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="h-64 rounded-xl bg-surface-container animate-pulse border border-outline-variant" />
+            ))}
+          </div>
+        )}
+        {!loading && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-lg">
           {displayCards.map((q) =>
             q.locationLocked ? (
               <div
@@ -292,8 +315,8 @@ export function QuestsPage() {
                 className="block bg-surface-container border border-outline-variant rounded-xl overflow-hidden opacity-60 cursor-not-allowed"
                 title="Hoàn thành quest trước để mở khoá di tích này"
               >
-                <div className="h-48 relative grayscale">
-                  <img src={q.image} alt={q.title} className="w-full h-full object-cover" />
+                <div className="h-48 relative">
+                  <SmartImage src={q.image} fallback={q.coverFallback} alt={q.title} fill className="grayscale" />
                   <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-3xl">🔒</div>
                 </div>
                 <div className="p-md">
@@ -305,10 +328,16 @@ export function QuestsPage() {
             <Link
               key={q.id}
               to={q.to}
-              className={`block bg-surface-container border rounded-xl overflow-hidden transition-all hover:-translate-y-1 ${q.borderClass}`}
+              className={`block bg-surface-container border rounded-xl overflow-hidden card-interactive ${q.borderClass}`}
             >
               <div className="h-48 relative">
-                <img src={q.image} alt={q.title} className="w-full h-full object-cover" />
+                <SmartImage
+                  src={q.image}
+                  fallback={q.coverFallback}
+                  alt={q.title}
+                  fill
+                  placeholderIcon={<MaterialIcon name="assignment" className="text-4xl text-on-surface-variant/50" />}
+                />
                 <div className="absolute inset-0 bg-gradient-to-t from-surface-container to-transparent" />
                 <span className={`absolute right-sm top-sm px-3 py-1 rounded-full border bg-surface-container-high/80 backdrop-blur-md text-xs inline-flex items-center gap-1 ${q.xpClass}`}>
                   <MaterialIcon name="stars" className="text-base" />
@@ -342,7 +371,10 @@ export function QuestsPage() {
                   </span>
                 </div>
                 <p className="text-sm text-primary/90 mb-1 line-clamp-2">{q.missionHook}</p>
-                <p className="text-sm text-on-surface-variant mb-md line-clamp-2">{q.description}</p>
+                {q.missionHook !== q.description && (
+                  <p className="text-sm text-on-surface-variant mb-md line-clamp-2">{q.description}</p>
+                )}
+                {q.missionHook === q.description && <div className="mb-md" />}
                 {q.status === 'in_progress' && (
                   <p className="text-xs text-secondary mb-sm inline-flex items-center gap-1">
                     <MaterialIcon name="pending" className="text-sm" /> Đang thực hiện
@@ -381,6 +413,7 @@ export function QuestsPage() {
             ),
           )}
         </div>
+        )}
         {!loading && questsForDisplay.length === 0 && (
           <div className="mt-md text-center py-xl border border-dashed border-outline-variant rounded-xl">
             <MaterialIcon name="assignment" className="text-4xl text-on-surface-variant mb-sm" />

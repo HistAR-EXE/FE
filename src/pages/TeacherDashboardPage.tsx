@@ -32,10 +32,15 @@ export function TeacherDashboardPage() {
   const students = roster.filter((m) => m.orgRole !== 'teacher')
 
   return (
-    <AppLayout activeBorder="left" topNav={<SimpleTopNav title="Bảng giáo viên" />}>
+    <AppLayout activeBorder="left" topNav={<SimpleTopNav title="Bảng giáo viên (MVP)" />}>
       <main className="mt-14 md:mt-16 p-md md:p-lg max-w-5xl mx-auto w-full space-y-md">
         <div className="flex flex-wrap items-center gap-sm">
-          <h1 className="font-display-md text-on-surface flex-1">Dashboard lớp học</h1>
+          <div className="flex-1 min-w-0">
+            <h1 className="font-display-md text-on-surface">Dashboard lớp học</h1>
+            <p className="text-sm text-on-surface-variant mt-1">
+              Theo dõi lớp học — bản demo B2B; vận hành trường có Account Manager riêng.
+            </p>
+          </div>
           <Link to="/profile" className="text-sm text-secondary underline">
             Hồ sơ
           </Link>

@@ -1,14 +1,15 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { profileApi } from '../../features/profile/api'
 import { authApi, type AuthPayload, type LoginInput, type RegisterInput } from '../../features/auth/api'
-import { useAppMode } from '../context/useAppMode'
 import { AuthContext, type AuthContextValue } from './auth-context'
 import {
   clearSession,
   getRefreshToken,
   getToken,
+  isAccessTokenExpired,
   readStoredUser,
   saveSession,
+  SESSION_CLEARED_EVENT,
   type AuthUser,
   type UserRole,
   type UserTier,
@@ -54,13 +55,20 @@ function profileToUser(profile: {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const { clearMode } = useAppMode()
   const [user, setUser] = useState<AuthUser | null>(() => readStoredUser())
-  const [isLoading, setIsLoading] = useState(() => Boolean(getToken()))
+  const [isLoading, setIsLoading] = useState(() => Boolean(getToken()) && !isAccessTokenExpired())
+
+  useEffect(() => {
+    const onSessionCleared = () => setUser(null)
+    window.addEventListener(SESSION_CLEARED_EVENT, onSessionCleared)
+    return () => window.removeEventListener(SESSION_CLEARED_EVENT, onSessionCleared)
+  }, [])
 
   useEffect(() => {
     const token = getToken()
-    if (!token) {
+    if (!token || isAccessTokenExpired()) {
+      if (token && isAccessTokenExpired()) clearSession()
+      setUser(null)
       setIsLoading(false)
       return
     }
@@ -126,7 +134,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     authApi.logout(getRefreshToken()).catch(() => undefined)
     clearSession()
-    clearMode()
     setUser(null)
   }
 

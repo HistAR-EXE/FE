@@ -24,7 +24,8 @@ import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
 import { useAppMode } from '../shared/context/useAppMode'
 import { useToast } from '../shared/ui/toast/useToast'
 import { useVisitSession } from '../features/visit/VisitSessionProvider'
-import { images } from '../assets/images'
+import { pickQuestCover, resolveLocationCoverFallback } from '../shared/media/resolveMedia'
+import { SmartImage } from '../shared/ui/SmartImage'
 
 export function QuestDetailPage() {
   const { questId } = useParams<{ questId: string }>()
@@ -78,7 +79,8 @@ export function QuestDetailPage() {
   const status = progress?.status ?? 'not_started'
   const currentStep = progress?.currentStep ?? 0
   const stepsTotal = progress?.stepsTotal ?? quest?.stepsTotal ?? steps.length
-  const heroImage = quest?.coverImage || images.questDetailHero
+  const heroImage = pickQuestCover(quest?.coverImage, undefined, locationName || title, 0)
+  const heroFallback = resolveLocationCoverFallback(locationName || title, 0)
   const locationId = progress?.locationId ?? quest?.locationId ?? meta?.locationId ?? ''
   const requireOnsiteCheckin =
     progress?.requireOnsiteCheckin ?? quest?.requireOnsiteCheckin ?? quest?.completionTrigger === 'checkin'
@@ -168,7 +170,7 @@ export function QuestDetailPage() {
     >
       <main className="mt-14 md:mt-16 max-w-7xl mx-auto w-full pb-20 md:pb-0">
         <div className="h-60 relative overflow-hidden rounded-b-xl border-b border-outline-variant">
-          <img src={heroImage} alt={title} className="w-full h-full object-cover" />
+          <SmartImage src={heroImage} fallback={heroFallback} alt={title} fill />
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-transparent" />
           <div className="absolute top-sm left-lg">
             <Link to="/quests" className="inline-flex items-center gap-1 text-on-surface-variant hover:text-secondary">

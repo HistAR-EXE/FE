@@ -7,8 +7,10 @@ import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
 import { useToast } from '../shared/ui/toast/useToast'
 import { images } from '../assets/images'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
+import { useAppMode } from '../shared/context/useAppMode'
 
 export function LeaderboardPage() {
+  const { mode: appMode } = useAppMode()
   const [scope, setScope] = useState<'all' | 'city' | 'week'>('all')
   const [city, setCity] = useState('TP.HCM')
   const [data, setData] = useState<LeaderboardResponse | null>(null)
@@ -61,7 +63,9 @@ export function LeaderboardPage() {
           <div className="text-center py-xl border border-dashed border-outline-variant rounded-xl mb-lg">
             <MaterialIcon name="leaderboard" className="text-4xl text-on-surface-variant mb-sm" />
             <p className="text-on-surface-variant">Chưa có dữ liệu xếp hạng. Hãy check-in và hoàn thành nhiệm vụ.</p>
-            <Link to="/scan" className="inline-block mt-sm text-secondary underline">Đi tới quét mã</Link>
+            <Link to={appMode === 'offline' ? '/scan' : '/explore'} className="inline-block mt-sm text-secondary underline">
+              {appMode === 'offline' ? 'Đi tới quét mã' : 'Khám phá di tích'}
+            </Link>
           </div>
         )}
 

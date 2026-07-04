@@ -12,6 +12,9 @@ export type UserRole = 'USER' | 'ADMIN' | 'TEACHER'
 export type UserTier = 'FREE' | 'PREMIUM'
 
 const TIER_KEY = 'timelens_tier'
+const TOKEN_ISSUED_AT_KEY = 'timelens_token_issued_at'
+
+export const SESSION_CLEARED_EVENT = 'histar:session-cleared'
 
 export type SessionData = {
   token: string
@@ -42,6 +45,7 @@ export function saveSession(data: SessionData) {
   }
   if (typeof data.expiresIn === 'number') {
     localStorage.setItem(EXPIRES_IN_KEY, String(data.expiresIn))
+    localStorage.setItem(TOKEN_ISSUED_AT_KEY, String(Date.now()))
   }
   if (typeof data.refreshExpiresIn === 'number') {
     localStorage.setItem(REFRESH_EXPIRES_IN_KEY, String(data.refreshExpiresIn))
@@ -71,12 +75,16 @@ export function clearSession() {
   localStorage.removeItem(REFRESH_TOKEN_KEY)
   localStorage.removeItem(EXPIRES_IN_KEY)
   localStorage.removeItem(REFRESH_EXPIRES_IN_KEY)
+  localStorage.removeItem(TOKEN_ISSUED_AT_KEY)
   localStorage.removeItem(USER_ID_KEY)
   localStorage.removeItem(DISPLAY_NAME_KEY)
   localStorage.removeItem(EMAIL_KEY)
   localStorage.removeItem(ROLE_KEY)
   localStorage.removeItem(TIER_KEY)
   localStorage.removeItem(AVATAR_URL_KEY)
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(SESSION_CLEARED_EVENT))
+  }
 }
 
 export function getToken() {
@@ -100,8 +108,19 @@ export function getSessionMeta() {
   }
 }
 
+export function isAccessTokenExpired(): boolean {
+  const issuedRaw = localStorage.getItem(TOKEN_ISSUED_AT_KEY)
+  const expiresRaw = localStorage.getItem(EXPIRES_IN_KEY)
+  if (!issuedRaw || !expiresRaw) return false
+  const issuedAt = Number(issuedRaw)
+  const expiresInSec = Number(expiresRaw)
+  if (!Number.isFinite(issuedAt) || !Number.isFinite(expiresInSec) || expiresInSec <= 0) return false
+  return Date.now() >= issuedAt + expiresInSec * 1000
+}
+
 export function readStoredUser(): AuthUser | null {
   const token = getToken()
+  if (!token || isAccessTokenExpired()) return null
   const meta = getSessionMeta()
   if (!token || !meta.userId || !meta.displayName) return null
   return {

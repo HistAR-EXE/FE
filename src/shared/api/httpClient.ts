@@ -35,7 +35,9 @@ async function tryRefreshToken() {
         const displayName = localStorage.getItem('timelens_display_name') ?? ''
         const email = localStorage.getItem('timelens_email') ?? undefined
         const roleRaw = localStorage.getItem('timelens_role')
-        const role = roleRaw === 'ADMIN' || roleRaw === 'USER' ? roleRaw : undefined
+        const role = roleRaw === 'ADMIN' || roleRaw === 'USER' || roleRaw === 'TEACHER' ? roleRaw : undefined
+        const tierRaw = localStorage.getItem('timelens_tier')
+        const tier = tierRaw === 'PREMIUM' || tierRaw === 'FREE' ? tierRaw : undefined
         const avatarUrl = localStorage.getItem('timelens_avatar_url')
         if (!nextAccessToken || !userId || !displayName) return null
         saveSession({
@@ -47,6 +49,7 @@ async function tryRefreshToken() {
           displayName,
           email,
           role,
+          tier,
           avatarUrl,
         })
         return nextAccessToken

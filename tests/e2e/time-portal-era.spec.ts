@@ -15,7 +15,7 @@ test.describe('E2E · Time Portal', () => {
     await expect(page.locator('main')).toBeVisible({ timeout: 15_000 })
     // Viewer hoặc era panel trong main (tránh nav title bị truncate hidden)
     await expect(
-      page.locator('main').getByText(/1948|1965|2024|So sánh|Thời kỳ|era/i).first(),
+      page.locator('main').getByText(/1948|1968|2026|So sánh|Thời kỳ|era/i).first(),
     ).toBeVisible({ timeout: 25_000 })
   })
 })

@@ -40,9 +40,9 @@ export function ARHud({
   const trackingLabel = (): string => {
     if (mode === 'sim') return 'Di chuột nhẹ để lệch góc nhìn · ảnh lịch sử phủ lên hiện trạng'
     if (tracking === 'found') return 'Đã tái hiện — ảnh lịch sử ghép lên không gian'
-    if (tracking === 'scanning') return 'Đang nhận diện bối cảnh…'
-    if (tracking === 'lost') return 'Mất dấu — hãy căn lại poster hoặc ảnh mục tiêu'
-    return 'Hướng camera vào poster hoặc ảnh mục tiêu'
+    if (tracking === 'scanning') return 'Đang căn khung camera…'
+    if (tracking === 'lost') return 'Hãy căn lại góc camera'
+    return 'AR mô phỏng — ghép ảnh lịch sử lên không gian thực'
   }
 
   return (
@@ -58,7 +58,7 @@ export function ARHud({
           </Link>
           {mode === 'sim' && (
             <div className="px-3 py-1.5 rounded-lg bg-black/50 border border-white/10 text-on-surface/80 text-xs max-w-xs backdrop-blur-md">
-              Demo laptop — không cần camera
+              AR mô phỏng — lớp ảnh lịch sử trên camera, không nhận diện cổ vật tự động
             </div>
           )}
         </div>

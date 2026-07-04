@@ -4,6 +4,7 @@ import { AppLayout } from '../components/layout/AppLayout'
 import { SimpleTopNav } from '../components/layout/TopNav'
 import { collectionApi, type Artifact } from '../features/collection/api'
 import { recordDiscoveryEngagement } from '../features/gamification/discoveryRouting'
+import { showDiscoveryRecordError } from '../features/gamification/discoveryEngagementToast'
 import { notifyEngagementOutcome } from '../features/gamification/handleEngagement'
 import { analyticsApi } from '../features/analytics/api'
 import { useUserProgress } from '../shared/context/UserProgressProvider'
@@ -16,6 +17,12 @@ import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { useVisitSessionForLocation, useVisitSession } from '../features/visit/VisitSessionProvider'
 import { buildArUrl } from '../features/ar/arDeepLink'
 import { getArSceneByUnlockKey } from '../features/ar/cuChiArScenes'
+import { isAdminPreview } from '../shared/access/contentAccess'
+import {
+  resolveArtifactImageFallback,
+  resolveArtifactImageSrc,
+} from '../shared/media/resolveMedia'
+import { SmartImage } from '../shared/ui/SmartImage'
 
 type TierFilter = 'all' | 1 | 2 | 3
 type StatusFilter = 'all' | 'unlocked' | 'locked'
@@ -104,15 +111,8 @@ const ARTIFACT_ICON: Record<string, string> = {
   'artifact:nguy-trang': 'visibility_off',
 }
 
-const PLACEHOLDER_HINTS = ['/map/hero.jpg', 'placehold.co']
-
 function artifactTier(unlockKey: string): 1 | 2 | 3 {
   return ARTIFACT_TIER[unlockKey] ?? 2
-}
-
-function isPlaceholderImage(url: string | undefined): boolean {
-  if (!url?.trim()) return true
-  return PLACEHOLDER_HINTS.some((hint) => url.includes(hint))
 }
 
 function resolveArtifactIcon(unlockKey: string): string {
@@ -175,11 +175,11 @@ function ArtifactVisual({
 }) {
   const meta = TIER_META[tier]
   const icon = resolveArtifactIcon(artifact.unlockKey)
-  const showImage = artifact.unlocked && !isPlaceholderImage(artifact.imageUrl)
+  const imageFallback = resolveArtifactImageFallback(artifact.unlockKey)
 
   if (!artifact.unlocked) {
     return (
-      <div className={`relative w-full bg-gradient-to-br from-[#1a1410] to-[#0d0a08] flex items-center justify-center ${large ? 'h-56' : 'aspect-[4/5]'}`}>
+      <div className={`relative w-full bg-gradient-to-br from-[#1a1410] to-[#0d0a08] flex items-center justify-center ${large ? 'h-44' : 'aspect-[4/3]'}`}>
         <div className="text-center px-4">
           <div className="w-14 h-14 mx-auto rounded-full border border-outline-variant/50 bg-surface-container/50 flex items-center justify-center mb-3">
             <MaterialIcon name="lock" className="text-on-surface-variant text-2xl opacity-70" />
@@ -190,25 +190,22 @@ function ArtifactVisual({
     )
   }
 
-  if (showImage) {
-    return (
-      <div className={`relative w-full overflow-hidden ${large ? 'h-56 md:h-full md:min-h-[320px]' : 'aspect-[4/5]'}`}>
-        <img
-          src={artifact.imageUrl}
-          alt={artifact.name}
-          className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0a0806] via-[#0a0806]/20 to-transparent" />
-      </div>
-    )
-  }
-
   return (
-    <div
-      className={`relative w-full bg-gradient-to-br ${meta.accent} flex items-center justify-center ${large ? 'h-56 md:h-full md:min-h-[320px]' : 'aspect-[4/5]'}`}
-    >
-      <div className="absolute inset-0 opacity-30 dong-son-bg" />
-      <MaterialIcon name={icon} className={`${large ? 'text-6xl' : 'text-5xl'} ${meta.color} opacity-80`} />
+    <div className={`relative w-full overflow-hidden ${large ? 'h-44 md:h-full md:min-h-[280px]' : 'aspect-[4/3]'}`}>
+      <SmartImage
+        src={resolveArtifactImageSrc(artifact.imageUrl, artifact.unlockKey)}
+        fallback={imageFallback}
+        alt={artifact.name}
+        fill
+        className="transition-transform duration-500 group-hover:scale-105"
+        placeholderIcon={
+          <div className={`relative w-full h-full bg-gradient-to-br ${meta.accent} flex items-center justify-center`}>
+            <div className="absolute inset-0 opacity-30 dong-son-bg" />
+            <MaterialIcon name={icon} className={`${large ? 'text-6xl' : 'text-4xl'} ${meta.color} opacity-80`} />
+          </div>
+        }
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-[#0a0806] via-[#0a0806]/20 to-transparent pointer-events-none" />
     </div>
   )
 }
@@ -235,7 +232,7 @@ export function ArtifactsPage() {
   const [tierFilter, setTierFilter] = useState<TierFilter>('all')
   const [selected, setSelected] = useState<Artifact | null>(null)
 
-  const isAdminPreview = user?.role === 'ADMIN'
+  const isAdminPreviewUser = isAdminPreview(user?.role)
   const isCuChi = locationId === CU_CHI_LOCATION_ID
   const activeLocation = useMemo(
     () => locations.find((l) => l.id === locationId),
@@ -327,11 +324,7 @@ export function ArtifactsPage() {
             source: 'artifact',
           })
         },
-        onError: () =>
-          showToast({
-            message: 'Không ghi được tiến độ khám phá.',
-            type: 'error',
-          }),
+        onError: () => showDiscoveryRecordError(showToast, { role: user?.role }),
       })
     },
     [isAuthenticated, locationId, visitSessionId, showToast, applyEngagement],
@@ -376,8 +369,13 @@ export function ArtifactsPage() {
   }, [discoverKeyParam, artifacts, openArtifactDetail])
 
   return (
-    <AppLayout activeBorder="right" topNav={<SimpleTopNav title="Cổ vật" />}>
-      <main className="mt-16 pb-xl">
+    <AppLayout
+      activeBorder="right"
+      mobileBackTo="/explore"
+      mobileTitle="Cổ vật"
+      topNav={<SimpleTopNav title="Cổ vật" backTo="/explore" backLabel="Khám phá" />}
+    >
+      <main className="mt-14 md:mt-16 pb-xl">
         {/* Hero */}
         <section className="relative overflow-hidden border-b border-outline-variant/40">
           <div className="absolute inset-0 bg-gradient-to-br from-[#1a1510] via-[#12131b] to-[#0a0c12]" />
@@ -385,6 +383,13 @@ export function ArtifactsPage() {
           <div className="absolute top-0 right-0 w-72 h-72 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
           <div className="relative max-w-7xl mx-auto px-lg py-lg flex flex-wrap items-center justify-between gap-lg">
             <div className="min-w-0 flex-1">
+              <Link
+                to="/explore"
+                className="inline-flex items-center gap-1 text-secondary text-sm mb-2 hover:underline"
+              >
+                <MaterialIcon name="arrow_back" className="text-base" />
+                Quay lại Khám phá
+              </Link>
               <p className="text-xs uppercase tracking-[0.2em] text-on-surface-variant mb-1">{locationLabel}</p>
               <h1 className="font-display-lg text-primary">
                 {useBadgeFallback ? 'Bộ sưu tập huy hiệu' : 'Tủ sưu tập cổ vật'}
@@ -408,7 +413,7 @@ export function ArtifactsPage() {
               )}
             </div>
             {!useBadgeFallback && <CollectionProgress collected={collected} total={total} />}
-            {isAdminPreview && (
+            {isAdminPreviewUser && (
               <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs border border-primary/30 bg-primary/10 text-primary">
                 <MaterialIcon name="verified" className="text-sm" />
                 Admin · xem tất cả
@@ -490,7 +495,7 @@ export function ArtifactsPage() {
                   <p>Không có cổ vật phù hợp bộ lọc.</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-md">
+                <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-md pb-lg">
                   {filteredArtifacts.map((artifact) => {
                     const tier = artifactTier(artifact.unlockKey)
                     const meta = TIER_META[tier]
@@ -620,7 +625,7 @@ export function ArtifactsPage() {
                         className="inline-flex items-center gap-1 mt-md text-secondary text-sm hover:underline"
                       >
                         <MaterialIcon name="view_in_ar" className="text-base" />
-                        Xem mô hình AR
+                        Xem AR Cổng thời gian
                       </Link>
                     )}
                     {selected.unlocked && selected.story && (

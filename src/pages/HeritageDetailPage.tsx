@@ -12,6 +12,7 @@ import { useAppMode } from '../shared/context/useAppMode'
 import { useToast } from '../shared/ui/toast/useToast'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { ProgressSummaryCard } from '../features/gamification/ProgressSummaryCard'
+import { isAdminPreview } from '../shared/access/contentAccess'
 import { CU_CHI_LOCATION_ID } from '../shared/config/constants'
 
 const PREVIEW_CHAR_LIMIT = 480
@@ -52,7 +53,7 @@ export function HeritageDetailPage() {
   const { locationId } = useParams<{ locationId: string }>()
   const [searchParams] = useSearchParams()
   const questRecordKey = questRecordFromSearch(searchParams)
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, user } = useAuth()
   const recordedRef = useRef(false)
   const [location, setLocation] = useState<Location | null>(null)
   const [characters, setCharacters] = useState<Character[]>([])
@@ -242,13 +243,13 @@ export function HeritageDetailPage() {
                       Đăng nhập và hoàn thành quest tại di tích để mở khoá.
                     </p>
                   )}
-                  {isAuthenticated && secretStory?.locked && (
+                  {isAuthenticated && secretStory?.locked && !isAdminPreview(user?.role) && (
                     <p className="text-sm text-on-surface-variant flex items-center gap-1">
                       <MaterialIcon name="lock" className="text-sm" />
                       Hoàn thành nhiệm vụ và check-in SECRET QR tại hiện trường để mở.
                     </p>
                   )}
-                  {isAuthenticated && secretStory && !secretStory.locked && (
+                  {isAuthenticated && secretStory && (!secretStory.locked || isAdminPreview(user?.role)) && (
                     <Link to={`/secret/${location.id}`} className="inline-flex items-center gap-1 mt-sm text-secondary underline">
                       <MaterialIcon name="auto_stories" className="text-sm" />
                       Câu chuyện bí mật
@@ -263,7 +264,7 @@ export function HeritageDetailPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-md mb-xl">
                 <Link to={`/time-portal/${location.id}`} className={`group relative w-full h-[120px] rounded-xl overflow-hidden bg-surface-container border border-primary/50 hover:border-primary transition-colors flex items-center p-md gap-md ${onlineHighlight(true)}`}>
                   <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center text-primary z-10"><MaterialIcon name="motion_photos_on" className="text-4xl" /></div>
-                  <div className="z-10 text-left"><h3 className="font-title-md text-title-md text-primary mb-1">Cổng Thời Gian</h3><p className="font-body-md text-body-md text-on-surface-variant">Ảnh xưa và nay</p></div>
+                  <div className="z-10 text-left"><h3 className="font-title-md text-title-md text-primary mb-1">Cổng Thời Gian</h3><p className="font-body-md text-body-md text-on-surface-variant">So sánh 3 thời kỳ (1948 · 1968 · 2026) trên điện thoại</p></div>
                 </Link>
                 {location.id === CU_CHI_LOCATION_ID && (
                   <Link
@@ -278,13 +279,13 @@ export function HeritageDetailPage() {
                         AR Cổng thời gian
                         <span className="text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-primary/20 text-primary border border-primary/30">Mới</span>
                       </h3>
-                      <p className="font-label-sm text-label-sm text-on-surface-variant">Mô hình 3D — demo laptop</p>
+                      <p className="font-label-sm text-label-sm text-on-surface-variant">Overlay mô phỏng trên camera — không nhận diện cổ vật tự động</p>
                     </div>
                   </Link>
                 )}
                 <Link to={`/tour/360/${location.id}`} className={`group relative w-full h-[100px] rounded-xl overflow-hidden bg-surface-container border border-secondary/30 hover:border-secondary transition-colors flex items-center p-md gap-md ${onlineHighlight(true)}`}>
                   <div className="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center text-secondary"><MaterialIcon name="view_in_ar" className="text-2xl" /></div>
-                  <div className="text-left flex-1"><h3 className="font-title-md text-title-md text-on-surface mb-1">Tour 360°</h3><p className="font-label-sm text-label-sm text-on-surface-variant">Khám phá không gian</p></div>
+                  <div className="text-left flex-1"><h3 className="font-title-md text-title-md text-on-surface mb-1">Tour 360°</h3><p className="font-label-sm text-label-sm text-on-surface-variant">Tái hiện không gian — visual storytelling</p></div>
                 </Link>
                 <Link to={`/artifacts?locationId=${location.id}`} className={`group relative w-full h-[100px] rounded-xl overflow-hidden bg-surface-container border border-primary/30 hover:border-primary transition-colors flex items-center p-md gap-md ${onlineHighlight(false)}`}>
                   <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary"><MaterialIcon name="history_edu" className="text-2xl" /></div>

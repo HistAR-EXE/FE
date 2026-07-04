@@ -27,10 +27,12 @@ import {
   type ExploreMapLayer,
 } from './exploreMapTiles'
 import { isLocationLocked } from './locationUnlock'
+import type { ContentAccessUser } from '../../shared/access/contentAccess'
 
 type ExploreMapPanelProps = {
   locations: HeritageLocation[]
   visitedIds?: Set<string>
+  user?: ContentAccessUser
   onLockedLocationClick?: (location: HeritageLocation) => void
 }
 
@@ -106,7 +108,7 @@ function createPinIcon(region: VietnamRegion, active: boolean, visited: boolean,
   })
 }
 
-export function ExploreMapPanel({ locations, visitedIds, onLockedLocationClick }: ExploreMapPanelProps) {
+export function ExploreMapPanel({ locations, visitedIds, user, onLockedLocationClick }: ExploreMapPanelProps) {
   const navigate = useNavigate()
   const containerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<L.Map | null>(null)
@@ -214,7 +216,7 @@ export function ExploreMapPanel({ locations, visitedIds, onLockedLocationClick }
     markers.forEach((marker) => {
       const name = normalizeHeritageName(marker.location.name)
       const visited = visitedIds?.has(marker.location.id) ?? false
-      const locked = isLocationLocked(marker.location)
+      const locked = isLocationLocked(marker.location, user)
       const icon = createPinIcon(marker.region, false, visited, locked)
       const leafletMarker = L.marker([marker.lat, marker.lng], { icon })
 
@@ -246,17 +248,17 @@ export function ExploreMapPanel({ locations, visitedIds, onLockedLocationClick }
     if (markers.length > 0) {
       fitVietnamView(map, markers, false)
     }
-  }, [markers, navigate, visitedIds, onLockedLocationClick])
+  }, [markers, navigate, visitedIds, onLockedLocationClick, user])
 
   useEffect(() => {
     markers.forEach((marker) => {
       const leafletMarker = markerRefs.current.get(marker.location.id)
       if (!leafletMarker) return
       const visited = visitedIds?.has(marker.location.id) ?? false
-      const locked = isLocationLocked(marker.location)
+      const locked = isLocationLocked(marker.location, user)
       leafletMarker.setIcon(createPinIcon(marker.region, hoveredId === marker.location.id, visited, locked))
     })
-  }, [hoveredId, markers, visitedIds])
+  }, [hoveredId, markers, visitedIds, user])
 
   const zoomIn = () => mapRef.current?.zoomIn()
   const zoomOut = () => mapRef.current?.zoomOut()

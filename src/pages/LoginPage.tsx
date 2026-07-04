@@ -9,6 +9,17 @@ import { Footer } from '../components/layout/Footer'
 import { images } from '../assets/images'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 
+const SAFE_REDIRECT_PREFIXES = [
+  '/home', '/explore', '/quests', '/artifacts', '/profile', '/leaderboard',
+  '/time-portal', '/tour', '/heritage', '/chat', '/scan', '/photo-frame',
+  '/teacher', '/admin', '/characters',
+] as const
+
+function isSafeRedirect(path: string): boolean {
+  if (!path.startsWith('/') || path.startsWith('//')) return false
+  return SAFE_REDIRECT_PREFIXES.some((prefix) => path === prefix || path.startsWith(`${prefix}/`))
+}
+
 export function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -20,7 +31,7 @@ export function LoginPage() {
   const { showToast } = useToast()
   const pendingFrom = useMemo(() => {
     const from = (location.state as { from?: string } | null)?.from
-    return from && from.startsWith('/') && from !== '/mode-select' ? from : null
+    return from && from.startsWith('/') && from !== '/mode-select' && isSafeRedirect(from) ? from : null
   }, [location.state])
 
   const redirectPath = useMemo(() => {
@@ -32,9 +43,19 @@ export function LoginPage() {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const formData = new FormData(event.currentTarget)
-    const email = String(formData.get('email') ?? '')
+    const email = String(formData.get('email') ?? '').trim()
     const password = String(formData.get('password') ?? '')
-    const displayName = String(formData.get('displayName') ?? '')
+    const displayName = String(formData.get('displayName') ?? '').trim()
+
+    const nextErrors: Record<string, string> = {}
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailPattern.test(email)) nextErrors.email = 'Email không hợp lệ'
+    if (password.length < 6) nextErrors.password = 'Mật khẩu tối thiểu 6 ký tự'
+    if (mode === 'register' && !displayName) nextErrors.displayName = 'Vui lòng nhập tên hiển thị'
+    if (Object.keys(nextErrors).length > 0) {
+      setFieldErrors(nextErrors)
+      return
+    }
 
     if (!email || !password || (mode === 'register' && !displayName)) return
 

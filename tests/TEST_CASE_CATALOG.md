@@ -1,6 +1,6 @@
 # HistAR — Test Case Catalog (Happy + Bad)
 
-> Traceability: BR/AC/LUỐNG từ `HISTAR_SYSTEM_OVERVIEW.md`, `HISTAR_CONSOLIDATED_BUSINESS_PRODUCT_SPEC.md`.
+> Traceability: BR/AC/LUỐNG từ **`HISTAR_MASTER_SPEC_v2.md`** (§4–§5, §7–§23).
 > Automated = có test JUnit hoặc Playwright (api/ui/e2e).
 
 ## Auth (BR-01, BR-02)

@@ -94,13 +94,26 @@ export function HomeTopNav({ avatarSrc }: HomeTopNavProps) {
 
 type ExploreTopNavProps = {
   avatarSrc?: string
+  backTo?: string
+  backLabel?: string
 }
 
-export function ExploreTopNav({ avatarSrc }: ExploreTopNavProps) {
+export function ExploreTopNav({ avatarSrc, backTo = '/home', backLabel = 'Trang chủ' }: ExploreTopNavProps) {
   const resolvedAvatar = avatarSrc ?? useUserAvatar(images.avatarExploreV3)
   return (
-    <header className="fixed top-0 right-0 left-0 md:left-16 lg:left-[16rem] z-50 backdrop-blur-xl border-b border-outline-variant bg-surface/70 hidden md:flex justify-between items-center h-16 px-xl">
-      <div className="relative w-full max-w-sm md:max-w-md lg:max-w-[24rem]">
+    <header className="fixed top-0 right-0 left-0 md:left-16 lg:left-[16rem] z-50 backdrop-blur-xl border-b border-outline-variant bg-surface/70 hidden md:flex justify-between items-center h-16 px-xl gap-md">
+      <div className="flex items-center gap-md min-w-0 flex-1">
+        {backTo && (
+          <Link
+            to={backTo}
+            className="inline-flex items-center gap-1.5 shrink-0 text-on-surface-variant hover:text-secondary transition-colors font-title-sm"
+            title={backLabel}
+          >
+            <MaterialIcon name="arrow_back" className="text-[20px]" />
+            <span className="hidden xl:inline truncate max-w-[8rem]">{backLabel}</span>
+          </Link>
+        )}
+        <div className="relative w-full max-w-sm md:max-w-md lg:max-w-[20rem] min-w-0">
         <MaterialIcon
           name="search"
           className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]"
@@ -110,18 +123,16 @@ export function ExploreTopNav({ avatarSrc }: ExploreTopNavProps) {
           placeholder="Tìm kiếm di tích, triều đại..."
           type="text"
         />
+        </div>
       </div>
       <div className="flex items-center gap-md shrink-0">
         <ModeBadge className="hidden sm:inline-flex" />
-        <button type="button" className="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-secondary hover:bg-surface-variant/50 transition-all">
-          <MaterialIcon name="notifications" />
-        </button>
-        <button type="button" className="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-secondary hover:bg-surface-variant/50 transition-all">
+        <Link to="/profile" className="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-secondary hover:bg-surface-variant/50 transition-all" title="Hồ sơ">
           <MaterialIcon name="settings" />
-        </button>
-        <div className="w-10 h-10 rounded-full bg-surface-variant border-2 border-primary/50 overflow-hidden cursor-pointer hover:shadow-[0_0_10px_rgba(242,191,80,0.4)] transition-all">
+        </Link>
+        <Link to="/profile" className="w-10 h-10 rounded-full bg-surface-variant border-2 border-primary/50 overflow-hidden hover:shadow-[0_0_10px_rgba(242,191,80,0.4)] transition-all">
           <img alt="User Avatar" className="w-full h-full object-cover" src={resolvedAvatar} />
-        </div>
+        </Link>
       </div>
     </header>
   )
@@ -159,17 +170,31 @@ type SimpleTopNavProps = {
   title?: string
   avatarSrc?: string
   showSearch?: boolean
+  backTo?: string
+  backLabel?: string
 }
 
-export function SimpleTopNav({ title, avatarSrc, showSearch = false }: SimpleTopNavProps) {
+export function SimpleTopNav({ title, avatarSrc, showSearch = false, backTo, backLabel = 'Quay lại' }: SimpleTopNavProps) {
   const resolvedAvatar = avatarSrc ?? useUserAvatar(images.avatarHomeV3)
   return (
-    <header className="fixed top-0 right-0 left-0 md:left-16 lg:left-[16rem] z-50 backdrop-blur-xl border-b border-outline-variant bg-surface/70 flex justify-between items-center h-16 px-xl hidden md:flex">
-      {title ? (
-        <span className="font-headline-lg text-headline-lg text-primary">{title}</span>
-      ) : (
-        <div className="flex-1" />
-      )}
+    <header className="fixed top-0 right-0 left-0 md:left-16 lg:left-[16rem] z-50 backdrop-blur-xl border-b border-outline-variant bg-surface/70 flex justify-between items-center h-16 px-xl hidden md:flex gap-md">
+      <div className="flex items-center gap-md min-w-0 flex-1">
+        {backTo && (
+          <Link
+            to={backTo}
+            className="inline-flex items-center gap-1.5 shrink-0 text-on-surface-variant hover:text-secondary transition-colors font-title-sm"
+            title={backLabel}
+          >
+            <MaterialIcon name="arrow_back" className="text-[20px]" />
+            <span className="hidden lg:inline truncate max-w-[10rem]">{backLabel}</span>
+          </Link>
+        )}
+        {title ? (
+          <span className="font-headline-lg text-headline-lg text-primary truncate">{title}</span>
+        ) : (
+          !backTo && <div className="flex-1" />
+        )}
+      </div>
       <div className="flex items-center gap-md">
         <ModeBadge />
         {showSearch && (
@@ -182,15 +207,12 @@ export function SimpleTopNav({ title, avatarSrc, showSearch = false }: SimpleTop
             />
           </div>
         )}
-        <button type="button" className="p-2 text-on-surface-variant hover:text-secondary rounded-full hover:bg-surface-variant/50">
-          <MaterialIcon name="notifications" />
-        </button>
-        <button type="button" className="p-2 text-on-surface-variant hover:text-secondary rounded-full hover:bg-surface-variant/50">
+        <Link to="/profile" className="p-2 text-on-surface-variant hover:text-secondary rounded-full hover:bg-surface-variant/50" title="Hồ sơ">
           <MaterialIcon name="settings" />
-        </button>
-        <div className="w-8 h-8 rounded-full overflow-hidden border border-outline-variant">
+        </Link>
+        <Link to="/profile" className="w-8 h-8 rounded-full overflow-hidden border border-outline-variant">
           <img alt="User Avatar" className="w-full h-full object-cover" src={resolvedAvatar} />
-        </div>
+        </Link>
       </div>
     </header>
   )

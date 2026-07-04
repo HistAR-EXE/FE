@@ -1,7 +1,7 @@
 # HistAR (TimeLens) — E2E Test Matrix
 
 Bộ kiểm thử end-to-end bằng **Playwright**, chia 3 tầng theo yêu cầu: **BE → FE → FE+BE**.
-Catalog đầy đủ happy/bad: [`TEST_CASE_CATALOG.md`](TEST_CASE_CATALOG.md).
+Spec traceability: [`HISTAR_MASTER_SPEC_v2.md`](../../HISTAR_MASTER_SPEC_v2.md) · Catalog: [`TEST_CASE_CATALOG.md`](TEST_CASE_CATALOG.md).
 
 ## Điều kiện chạy
 

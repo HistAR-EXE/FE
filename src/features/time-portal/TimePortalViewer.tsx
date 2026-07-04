@@ -147,7 +147,7 @@ export function TimePortalViewer({
           <div
             className="w-[120%] h-[120%] rounded-full opacity-70 animate-spin"
             style={{
-              background: 'conic-gradient(from 0deg, transparent, #f2bf50, #44dbd5, transparent)',
+              background: 'conic-gradient(from 0deg, transparent, #FFB547, #5EEAD4, transparent)',
               animationDuration: '1.4s',
             }}
           />
@@ -219,7 +219,7 @@ export function TimePortalViewer({
       )}
 
       <div className="absolute bottom-xl left-1/2 -translate-x-1/2 z-30 flex flex-col items-center gap-sm">
-        <div className="bg-surface/70 backdrop-blur-xl border border-outline-variant/50 rounded-full px-lg py-sm flex gap-md">
+        <div className="bg-surface/70 backdrop-blur-xl border border-outline-variant/50 rounded-full px-lg py-sm flex gap-lg">
           {ERA_VALUES.map((e) => {
             const locked = !isPremium && e !== defaultEra
             return (
@@ -227,9 +227,13 @@ export function TimePortalViewer({
               key={e}
               type="button"
               onClick={() => triggerVortex(e)}
-              className={`font-title-md inline-flex items-center gap-1 ${e === era ? 'text-primary glow-primary' : 'text-on-surface-variant hover:text-on-surface'} ${locked ? 'opacity-70' : ''} transition-colors`}
+              className={`font-title-md inline-flex items-center gap-1.5 px-sm py-xs rounded-full transition-colors ${
+                e === era
+                  ? 'text-primary bg-primary/10 border border-primary/30'
+                  : 'text-on-surface-variant hover:text-on-surface border border-transparent'
+              } ${locked ? 'opacity-70' : ''}`}
             >
-              {locked && <MaterialIcon name="lock" className="text-xs" />}
+              {locked && <MaterialIcon name="lock" className="text-sm text-on-surface-variant" />}
               {eraTimelineLabel(e)}
             </button>
             )

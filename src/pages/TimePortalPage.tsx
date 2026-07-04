@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+﻿import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { locationsApi, type PhotoPair } from '../features/locations/api'
 import { photoScenesApi, type PhotoScene } from '../features/photo-scenes/api'
 import { eraDiscoveryKey, recordDiscoveryEngagement } from '../features/gamification/discoveryRouting'
+import { showDiscoveryRecordError } from '../features/gamification/discoveryEngagementToast'
 import { notifyEngagementOutcome } from '../features/gamification/handleEngagement'
 import { analyticsApi } from '../features/analytics/api'
 import { useUserProgress } from '../shared/context/UserProgressProvider'
@@ -14,6 +15,7 @@ import { ERA_VALUES, type EraValue } from '../features/time-portal/eraLabels'
 import { ApiError } from '../shared/api/contracts'
 import { useToast } from '../shared/ui/toast/useToast'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
+import { hasPremiumAccess } from '../shared/access/contentAccess'
 import { CU_CHI_LOCATION_ID } from '../shared/config/constants'
 import { useVisitSessionForLocation, useVisitSession } from '../features/visit/VisitSessionProvider'
 import { isArEnabledLocation, sceneSlugFromIndex } from '../features/ar/arDeepLink'
@@ -26,13 +28,13 @@ import { TimePortalViewSwitch, type PortalViewMode } from '../features/time-port
 
 const DISCOVER_KEY_LABELS: Record<string, string> = {
 
-  'era:1948': '1948 — khởi đầu hầm ngầm',
+  'era:1948': '1948 â€” khá»Ÿi Ä‘áº§u háº§m ngáº§m',
 
-  'photo:cua-ham': 'Cửa hầm',
+  'photo:cua-ham': 'Cá»­a háº§m',
 
-  'photo:gieng': 'Giếng nước',
+  'photo:gieng': 'Giáº¿ng nÆ°á»›c',
 
-  'hotspot:vent': 'Lỗ thông hơi',
+  'hotspot:vent': 'Lá»— thÃ´ng hÆ¡i',
 
 }
 
@@ -83,7 +85,7 @@ export function TimePortalPage() {
   useVisitSessionForLocation(activeLocationId, isAuthenticated)
   const { getSessionId } = useVisitSession()
   const visitSessionId = getSessionId(activeLocationId)
-  const isPremium = user?.tier === 'PREMIUM'
+  const isPremium = hasPremiumAccess(user)
 
   const [scenes, setScenes] = useState<PhotoScene[]>([])
 
@@ -133,21 +135,13 @@ export function TimePortalPage() {
           })
         },
 
-        onError: () =>
-
-          showToast({
-
-            message: 'Không ghi được tiến độ khám phá.',
-
-            type: 'error',
-
-          }),
+        onError: () => showDiscoveryRecordError(showToast, { role: user?.role }),
 
       })
 
     },
 
-    [isAuthenticated, locationId, activeLocationId, showToast, applyEngagement, visitSessionId],
+    [isAuthenticated, locationId, activeLocationId, showToast, applyEngagement, visitSessionId, user?.role],
 
   )
 
@@ -261,7 +255,7 @@ export function TimePortalPage() {
 
         showToast({
 
-          message: e instanceof ApiError ? e.message : 'Không tải được dữ liệu cổng thời gian.',
+          message: e instanceof ApiError ? e.message : 'KhÃ´ng táº£i Ä‘Æ°á»£c dá»¯ liá»‡u cá»•ng thá»i gian.',
 
           type: 'error',
 
@@ -385,7 +379,7 @@ export function TimePortalPage() {
 
       mobileBackTo={locationId ? `/explore/${locationId}` : '/explore'}
 
-      mobileTitle="Cổng thời gian"
+      mobileTitle="Cá»•ng thá»i gian"
 
     >
 
@@ -407,11 +401,11 @@ export function TimePortalPage() {
 
             <Link to={locationId ? `/explore/${locationId}` : '/explore'} className="text-on-surface-variant hover:text-secondary flex items-center gap-xs">
 
-              <MaterialIcon name="arrow_back" /> Quay lại
+              <MaterialIcon name="arrow_back" /> Quay láº¡i
 
             </Link>
 
-            <h1 className="font-headline-lg font-bold text-on-surface">Cổng thời gian</h1>
+            <h1 className="font-headline-lg font-bold text-on-surface">Cá»•ng thá»i gian</h1>
 
             <TimePortalViewSwitch mode={portalView} onChange={setPortalViewMode} arAvailable={arAvailable} />
 
@@ -446,7 +440,7 @@ export function TimePortalPage() {
                 className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-black/50 border border-white/15 text-on-surface/90 text-sm backdrop-blur-sm hover:border-secondary/40"
               >
                 <MaterialIcon name="arrow_back" className="text-base" />
-                Quay lại
+                Quay láº¡i
               </Link>
             </div>
           )}
@@ -455,11 +449,11 @@ export function TimePortalPage() {
 
             <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 max-w-lg w-[92%] bg-surface/90 border border-secondary/40 rounded-xl px-4 py-2 text-sm text-secondary text-center">
 
-              <p>Khám phá: {discoverBanner}</p>
+              <p>KhÃ¡m phÃ¡: {discoverBanner}</p>
 
               <p className="text-xs text-on-surface-variant mt-1">
 
-                Kéo thanh hoặc chọn mốc thời gian để ghi nhận tiến độ
+                KÃ©o thanh hoáº·c chá»n má»‘c thá»i gian Ä‘á»ƒ ghi nháº­n tiáº¿n Ä‘á»™
 
               </p>
 
@@ -473,15 +467,15 @@ export function TimePortalPage() {
 
               <div className="w-full max-w-xl h-64 rounded-xl bg-surface-container animate-pulse border border-outline-variant" />
 
-              <p className="text-on-surface-variant text-sm">Đang tải ảnh lịch sử...</p>
+              <p className="text-on-surface-variant text-sm">Äang táº£i áº£nh lá»‹ch sá»­...</p>
 
             </div>
 
           )}
 
-          {!locationId && <p className="p-lg text-on-surface-variant">Thiếu locationId. Hãy mở từ màn chi tiết địa điểm.</p>}
+          {!locationId && <p className="p-lg text-on-surface-variant">Thiáº¿u locationId. HÃ£y má»Ÿ tá»« mÃ n chi tiáº¿t Ä‘á»‹a Ä‘iá»ƒm.</p>}
 
-          {!hasContent && !loading && <p className="p-lg text-on-surface-variant">Không có ảnh lịch sử cho địa điểm này.</p>}
+          {!hasContent && !loading && <p className="p-lg text-on-surface-variant">KhÃ´ng cÃ³ áº£nh lá»‹ch sá»­ cho Ä‘á»‹a Ä‘iá»ƒm nÃ y.</p>}
 
           {hasContent && !loading && portalView === 'compare' && (
 
@@ -503,7 +497,7 @@ export function TimePortalPage() {
               isPremium={isPremium}
               onPremiumRequired={() =>
                 showToast({
-                  message: 'Era này dành cho Premium. Nâng cấp tại Hồ sơ để mở đầy đủ Time Portal.',
+                  message: 'Era nÃ y dÃ nh cho Premium. NÃ¢ng cáº¥p táº¡i Há»“ sÆ¡ Ä‘á»ƒ má»Ÿ Ä‘áº§y Ä‘á»§ Time Portal.',
                   type: 'info',
                 })
               }

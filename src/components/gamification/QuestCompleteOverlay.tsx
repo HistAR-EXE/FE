@@ -33,7 +33,7 @@ export function QuestCompleteOverlay({
             <p className="text-xs uppercase tracking-wider text-primary mb-1">Hộ chiếu Di sản</p>
             <p className="text-sm text-on-surface inline-flex items-center gap-1">
               <MaterialIcon name="verified" className="text-primary text-base" />
-              Stamp: {quest.locationName}
+              Đóng dấu: {quest.locationName}
             </p>
           </div>
         )}

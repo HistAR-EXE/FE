@@ -17,6 +17,7 @@ import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { panoramaApi, type Hotspot, type Panorama } from '../features/panorama/api'
 
 import { recordDiscoveryEngagement, preloadDiscoveryBindings } from '../features/gamification/discoveryRouting'
+import { showDiscoveryRecordError } from '../features/gamification/discoveryEngagementToast'
 import { notifyEngagementOutcome } from '../features/gamification/handleEngagement'
 import { analyticsApi } from '../features/analytics/api'
 import { useUserProgress } from '../shared/context/UserProgressProvider'
@@ -39,7 +40,7 @@ export function Tour360Page() {
   const { locationId } = useParams<{ locationId?: string }>()
   const [searchParams] = useSearchParams()
   const panoramaParam = searchParams.get('panorama')
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, user } = useAuth()
   const activeLocationId = locationId ?? CU_CHI_LOCATION_ID
   const isCuChi = activeLocationId === CU_CHI_LOCATION_ID
   useVisitSessionForLocation(activeLocationId, isAuthenticated)
@@ -85,14 +86,10 @@ export function Tour360Page() {
             source: 'tour_panorama',
           })
         },
-        onError: () =>
-          showToast({
-            message: 'Không ghi được tiến độ khám phá.',
-            type: 'error',
-          }),
+        onError: () => showDiscoveryRecordError(showToast, { role: user?.role }),
       })
     },
-    [isAuthenticated, locationId, showToast, applyEngagement],
+    [isAuthenticated, locationId, showToast, applyEngagement, user?.role],
   )
 
   const onPanoramaEnter = useCallback(
@@ -178,11 +175,7 @@ export function Tour360Page() {
                 locationId: locationId ?? CU_CHI_LOCATION_ID,
                 visitSessionId,
               }),
-            onError: () =>
-              showToast({
-                message: 'Không ghi được tiến độ khám phá.',
-                type: 'error',
-              }),
+            onError: () => showDiscoveryRecordError(showToast, { role: user?.role }),
           })
         }
 
@@ -195,7 +188,7 @@ export function Tour360Page() {
         }
       }
     },
-    [isAuthenticated, locationId, showToast, applyEngagement, visitSessionId],
+    [isAuthenticated, locationId, showToast, applyEngagement, visitSessionId, user?.role],
   )
 
   const closeInfoModal = useCallback(() => {

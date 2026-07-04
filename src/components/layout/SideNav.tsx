@@ -21,37 +21,32 @@ const mobileNavItems = [
   { to: '/profile', icon: 'person', label: 'Hồ sơ', modes: 'both' as const, prefixes: ['/profile'] },
 ] as const
 
+type NavItem = { modes: 'online' | 'offline' | 'both' }
+
+function effectiveMode(mode: AppMode | null): AppMode {
+  return mode ?? 'online'
+}
+
+export function filterNavItemsByMode<T extends NavItem>(items: readonly T[], mode: AppMode | null): T[] {
+  const active = effectiveMode(mode)
+  return items.filter((item) => item.modes === 'both' || item.modes === active)
+}
+
 type SideNavProps = {
   activeBorder?: 'left' | 'right'
   showCta?: boolean
   onCtaClick?: () => void
 }
 
-function itemPriorityClass(mode: AppMode | null, itemModes: 'online' | 'offline' | 'both'): string {
-  if (mode === null) return ''
-  if (itemModes === 'both') return ''
-  if (mode === 'online' && itemModes === 'offline') return 'opacity-50'
-  if (mode === 'offline' && itemModes === 'online') return 'opacity-50'
-  return ''
-}
-
-function activeClasses(isActive: boolean, border: 'left' | 'right', priorityDimmed: boolean) {
+function activeClasses(isActive: boolean, border: 'left' | 'right') {
   if (!isActive) {
-    return `text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/50 ${priorityDimmed ? 'opacity-50' : ''}`
+    return 'text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/50'
   }
   const borderClass =
     border === 'left'
       ? 'border-l-4 border-secondary bg-secondary-container/10'
       : 'border-r-4 border-secondary bg-secondary-container/10'
   return `text-secondary font-bold ${borderClass}`
-}
-
-function filterMobileItems(mode: AppMode | null) {
-  if (mode === null) return mobileNavItems
-  return mobileNavItems.filter((item) => {
-    if (item.modes === 'both') return true
-    return item.modes === mode
-  })
 }
 
 export function SideNav({
@@ -71,7 +66,7 @@ export function SideNav({
           <button
             type="button"
             onClick={onCtaClick}
-            className="w-full py-sm px-md rounded-lg bg-primary text-on-primary font-title-md text-title-md shadow-[0_0_15px_rgba(242,191,80,0.3)] hover:shadow-[0_0_25px_rgba(242,191,80,0.5)] transition-all flex items-center justify-center gap-sm"
+            className="w-full py-sm px-md rounded-xl bg-primary text-on-primary font-title-md text-title-md shadow-elev-1 hover:shadow-elev-2 card-interactive flex items-center justify-center gap-sm"
           >
             Bắt đầu hành trình
             <MaterialIcon name="arrow_forward" className="text-[18px]" />
@@ -97,7 +92,7 @@ export function SideNavTablet({ activeBorder = 'right' }: { activeBorder?: 'left
 export function SideNavMobile() {
   const { pathname } = useLocation()
   const { mode } = useAppMode()
-  const items = filterMobileItems(mode)
+  const items = filterNavItemsByMode(mobileNavItems, mode)
 
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-outline-variant bg-surface-container-low/95 backdrop-blur-xl pb-safe">
@@ -108,7 +103,7 @@ export function SideNavMobile() {
             <NavLink
               key={item.to}
               to={item.to}
-              className={`flex flex-col items-center justify-center gap-0.5 flex-1 py-1 min-w-0 ${
+              className={`flex flex-col items-center justify-center gap-0.5 flex-1 py-1 min-w-0 transition-colors duration-200 ${
                 isActive ? 'text-secondary' : 'text-on-surface-variant'
               }`}
             >
@@ -147,17 +142,18 @@ function SideNavLinks({
   pathname: string
   iconOnly: boolean
 }) {
+  const items = filterNavItemsByMode(navItems, mode)
+
   return (
     <div className="flex flex-col gap-sm flex-1 min-h-0 overflow-y-auto custom-scrollbar w-full">
-      {navItems.map((item) => {
+      {items.map((item) => {
         const isActive = item.prefixes.some((p) => pathname === p || pathname.startsWith(`${p}/`))
-        const dimmed = itemPriorityClass(mode, item.modes) !== ''
         return (
           <NavLink
             key={item.to}
             to={item.to}
             title={item.label}
-            className={`flex items-center gap-md p-md rounded-lg transition-all duration-200 min-w-0 justify-center lg:justify-start ${activeClasses(isActive, activeBorder, dimmed)} ${itemPriorityClass(mode, item.modes)}`}
+            className={`flex items-center gap-md p-md rounded-xl transition-all duration-200 min-w-0 justify-center lg:justify-start card-interactive ${activeClasses(isActive, activeBorder)}`}
           >
             <MaterialIcon name={item.icon} filled={isActive} className="shrink-0" />
             {!iconOnly && <span className="font-title-md text-title-md truncate hidden lg:inline">{item.label}</span>}

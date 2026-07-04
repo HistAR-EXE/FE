@@ -443,7 +443,7 @@ export function ChatPage() {
               <span className="px-sm py-xs bg-surface-variant rounded-full border border-outline-variant text-xs text-on-surface-variant">Di sản</span>
             </div>
             <div className="text-on-surface font-body-md text-body-md leading-relaxed">
-              Trò chuyện bằng text hoặc giọng nói — AI trả lời theo ngữ cảnh địa điểm.
+              AI trả lời theo ngữ cảnh di tích; có trích dẫn nguồn khi tìm thấy tài liệu. Nội dung mang tính tham khảo giáo dục.
             </div>
             <div className="mt-auto">
               <label className="text-sm text-on-surface-variant">Nhân vật</label>
@@ -571,6 +571,9 @@ export function ChatPage() {
                 </button>
               ))}
             </div>
+            <p className="text-[11px] text-on-surface-variant mb-sm">
+              Trò chuyện bằng text hoặc giọng nói. Nội dung AI mang tính tham khảo giáo dục.
+            </p>
             <div className="relative flex items-center bg-surface rounded-xl border border-outline-variant focus-within:border-secondary transition-all p-xs pl-sm">
               <button type="button" className="text-on-surface-variant hover:text-primary p-sm transition-colors rounded-lg" disabled={busy}>
                 <MaterialIcon name="add_circle" className="text-lg" />

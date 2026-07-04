@@ -17,7 +17,8 @@ import { ExploreMapPanel } from '../features/explore/ExploreMapPanel'
 import { isLocationLocked, LOCATION_UNLOCKED_EVENT } from '../features/explore/locationUnlock'
 import { buildArUrl } from '../features/ar/arDeepLink'
 import { normalizeHeritageName } from '../features/explore/vietnamMap'
-import { images } from '../assets/images'
+import { pickLocationCover, resolveLocationCoverFallback } from '../shared/media/resolveMedia'
+import { SmartImage } from '../shared/ui/SmartImage'
 
 const PAGE_SIZE = 20
 
@@ -44,11 +45,11 @@ export function ExplorePage() {
   const [lockedHint, setLockedHint] = useState<Location | null>(null)
   const { showToast } = useToast()
   const { mode } = useAppMode()
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, user } = useAuth()
   const focusLocationId = useMemo(() => {
-    const unlocked = mapLocations.find((location) => !isLocationLocked(location))
+    const unlocked = mapLocations.find((location) => !isLocationLocked(location, user))
     return unlocked?.id ?? mapLocations[0]?.id ?? CU_CHI_LOCATION_ID
-  }, [mapLocations])
+  }, [mapLocations, user])
   useVisitSessionForLocation(focusLocationId, isAuthenticated)
 
   const loadPage = useCallback(
@@ -148,13 +149,10 @@ export function ExplorePage() {
     return true
   })
   const [brokenCovers, setBrokenCovers] = useState<Record<string, true>>({})
-  const stitchedCover = (idx: number) => (idx % 2 === 0 ? images.exploreDaiNoi : images.exploreChuaThienMu)
-  const coverSrc = (location: Location, index: number) => {
-    if (brokenCovers[location.id] || !location.coverImage?.trim()) {
-      return stitchedCover(index)
-    }
-    return location.coverImage
-  }
+  const coverFallback = (location: Location, index: number) =>
+    resolveLocationCoverFallback(location.name, index)
+  const coverSrc = (location: Location, index: number) =>
+    pickLocationCover(location.coverImage, location.name, index, Boolean(brokenCovers[location.id]))
   const onCoverError = (locationId: string) => () => {
     setBrokenCovers((prev) => ({ ...prev, [locationId]: true }))
   }
@@ -168,9 +166,9 @@ export function ExplorePage() {
   }
 
   return (
-    <AppLayout activeBorder="right" topNav={<ExploreTopNav />}>
-      <main className="w-full min-h-[calc(100dvh-7rem)] md:min-h-[calc(100vh-4rem)] mt-14 md:mt-16 p-md md:p-lg flex flex-col lg:flex-row gap-md lg:gap-lg relative min-h-0 overflow-hidden lg:h-[calc(100vh-4rem)]">
-        <section className="w-full lg:w-[400px] lg:max-w-[400px] lg:min-w-[320px] h-auto lg:h-full flex flex-col gap-md lg:gap-lg z-10 shrink-0 min-h-0 flex-1 lg:flex-none">
+    <AppLayout activeBorder="right" mobileBackTo="/home" mobileTitle="Khám phá" topNav={<ExploreTopNav backTo="/home" backLabel="Trang chủ" />}>
+      <main className="w-full mt-14 md:mt-16 p-md md:p-lg flex flex-col xl:flex-row gap-lg relative min-h-[calc(100dvh-4rem)]">
+        <section className="w-full xl:w-[min(440px,38vw)] xl:max-w-[480px] xl:min-w-[320px] flex flex-col gap-md z-10 shrink-0 min-h-0 xl:max-h-[calc(100vh-5rem)]">
           <div className="bg-surface/80 backdrop-blur-xl border border-outline-variant rounded-xl p-md shadow-lg flex flex-col gap-md shrink-0">
             <div className="flex items-center justify-between">
               <h2 className="font-title-md text-title-md text-on-surface flex items-center gap-2">
@@ -181,7 +179,10 @@ export function ExplorePage() {
             <div className="flex flex-wrap gap-sm">
               <button
                 type="button"
-                onClick={() => setActiveFilter('near')}
+                onClick={() => {
+                  setActiveFilter('near')
+                  showToast({ message: 'Bộ lọc “Gần đây” cần quyền vị trí — đang phát triển.', type: 'info' })
+                }}
                 className={`px-4 py-2 rounded-full border text-sm flex items-center gap-1 ${
                   activeFilter === 'near' ? 'border-secondary bg-secondary/10 text-secondary' : 'border-outline-variant bg-surface-container text-on-surface-variant'
                 }`}
@@ -224,12 +225,12 @@ export function ExplorePage() {
                 {!loading &&
                   !failed &&
                   filteredLocations.map((location, index) => {
-                    const locked = isLocationLocked(location)
+                    const locked = isLocationLocked(location, user)
                     return (
                     <article
                       key={location.id}
-                      className={`group shrink-0 bg-surface-container-low border border-outline-variant rounded-xl overflow-hidden transition-all ${
-                        locked ? 'opacity-60' : 'hover:border-primary/50 hover:bg-surface-container'
+                      className={`group shrink-0 bg-surface-container-low border border-outline-variant rounded-xl overflow-hidden card-interactive ${
+                        locked ? 'opacity-60' : 'hover:border-primary/50 hover:bg-surface-container shadow-elev-1 hover:shadow-elev-2'
                       }`}
                     >
                       {locked ? (
@@ -238,12 +239,14 @@ export function ExplorePage() {
                           onClick={() => setLockedHint(location)}
                           className="block w-full text-left"
                         >
-                          <div className="h-32 relative overflow-hidden bg-surface-container-high shrink-0">
-                            <img
+                          <div className="h-36 relative overflow-hidden bg-surface-container-high shrink-0">
+                            <SmartImage
                               alt={location.name || 'Di tích lịch sử'}
-                              className="w-full h-32 object-cover grayscale"
+                              fill
+                              className="group-hover:scale-105 transition-transform duration-500 grayscale"
                               src={coverSrc(location, index)}
-                              onError={onCoverError(location.id)}
+                              fallback={coverFallback(location, index)}
+                              onFailed={onCoverError(location.id)}
                             />
                             <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                               <span className="text-2xl" aria-hidden>🔒</span>
@@ -258,12 +261,14 @@ export function ExplorePage() {
                         </button>
                       ) : (
                       <Link to={`/explore/${location.id}`} className="block">
-                        <div className="h-32 relative overflow-hidden bg-surface-container-high shrink-0">
-                          <img
+                        <div className="h-36 relative overflow-hidden bg-surface-container-high shrink-0">
+                          <SmartImage
                             alt={location.name || 'Di tích lịch sử'}
-                            className="w-full h-32 object-cover group-hover:scale-105 transition-transform duration-500"
+                            fill
+                            className="group-hover:scale-105 transition-transform duration-500"
                             src={coverSrc(location, index)}
-                            onError={onCoverError(location.id)}
+                            fallback={coverFallback(location, index)}
+                            onFailed={onCoverError(location.id)}
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
                           <div className="absolute bottom-2 left-3 flex flex-wrap gap-1">
@@ -352,6 +357,7 @@ export function ExplorePage() {
         <ExploreMapPanel
           locations={mapLocations.length > 0 ? mapLocations : filteredLocations}
           visitedIds={visitedIds}
+          user={user}
           onLockedLocationClick={setLockedHint}
         />
 

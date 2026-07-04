@@ -14,6 +14,7 @@ import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { images } from '../assets/images'
 import { ProgressSummaryCard } from '../features/gamification/ProgressSummaryCard'
 import { normalizeHeritageName } from '../features/explore/vietnamMap'
+import { isAdminPreview } from '../shared/access/contentAccess'
 
 export function ProfilePage() {
   const { logout, user, updateUser } = useAuth()
@@ -94,6 +95,11 @@ export function ProfilePage() {
                     <span className="inline-flex px-xs py-[2px] text-xs rounded-full border border-outline-variant text-on-surface-variant">
                       {profile.role === 'ADMIN' ? 'Quản trị' : profile.role === 'TEACHER' ? 'Giáo viên' : 'Thành viên'}
                     </span>
+                    {isAdminPreview(profile.role) && (
+                      <span className="inline-flex px-xs py-[2px] text-xs rounded-full border border-primary/40 bg-primary/10 text-primary">
+                        Admin · xem trước toàn bộ
+                      </span>
+                    )}
                     <span className={`inline-flex px-xs py-[2px] text-xs rounded-full border ${
                       profile.tier === 'PREMIUM'
                         ? 'border-primary text-primary'
@@ -165,7 +171,7 @@ export function ProfilePage() {
               )}
               {user?.role === 'TEACHER' && (
                 <Link to="/teacher" className="inline-flex items-center gap-1 px-md py-sm border border-secondary text-secondary rounded-lg hover:bg-secondary/10">
-                  Dashboard lớp
+                  Dashboard lớp (Giáo viên)
                 </Link>
               )}
               <Link to="/artifacts" className="inline-flex items-center gap-1 px-md py-sm border border-outline-variant rounded-lg hover:border-secondary">
@@ -192,7 +198,7 @@ export function ProfilePage() {
             <MaterialIcon name="menu_book" className="text-primary" />
             Hộ chiếu Di sản
           </h2>
-          <p className="text-xs text-on-surface-variant mb-sm">Hoàn thành nhiệm vụ tại mỗi di tích để đóng dấu vào hộ chiếu.</p>
+          <p className="text-xs text-on-surface-variant mb-sm">Đóng dấu khi hoàn thành nhiệm vụ tại mỗi di tích.</p>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-sm">
             {passportStamps.stamped.map(({ location, completedAt }) => (
               <Link
@@ -229,6 +235,7 @@ export function ProfilePage() {
 
         <section className="mt-md">
           <h2 className="font-title-md mb-sm">Huy hiệu</h2>
+          <p className="text-xs text-on-surface-variant mb-sm">Thành tích & mốc khám phá (onsite, chia sẻ…).</p>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-sm">
             {badges.length === 0 && (
               <div className="col-span-full text-center py-xl border border-dashed border-outline-variant rounded-xl">

@@ -3,7 +3,7 @@ import { login } from '../helpers/api'
 import { seedSession } from '../helpers/session'
 
 /**
- * Mode Online vs Offline — LUỐNG 11 (SYSTEM_OVERVIEW §11), ModeGuardRoute.
+ * Mode Online vs Offline — MASTER_SPEC §9, ModeGuardRoute.
  */
 test.describe('E2E · Mode guard', () => {
   test('online mode: /scan redirect về /explore', async ({ page, request }) => {

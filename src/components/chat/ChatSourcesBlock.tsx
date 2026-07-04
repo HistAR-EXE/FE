@@ -16,7 +16,7 @@ export function ChatSourcesBlock({ sources }: ChatSourcesBlockProps) {
         onClick={() => setOpen((v) => !v)}
         className="text-left text-xs text-on-surface-variant hover:text-secondary w-full"
       >
-        📚 Nguồn: {sources.map((s) => s.title).join(' · ')}
+        📚 Nguồn (kho tư liệu di tích): {sources.map((s) => s.title).join(' · ')}
         <span className="ml-1 opacity-70">{open ? '▲' : '▼'}</span>
       </button>
       {open && (
