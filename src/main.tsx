@@ -4,6 +4,7 @@ import './styles/globals.css'
 import App from './App.tsx'
 import { AuthProvider } from './shared/auth/AuthContext'
 import { AppModeProvider } from './shared/context/AppModeProvider'
+import { UserProgressProvider } from './shared/context/UserProgressProvider'
 import { ToastProvider } from './shared/ui/toast/ToastProvider'
 
 createRoot(document.getElementById('root')!).render(
@@ -11,7 +12,9 @@ createRoot(document.getElementById('root')!).render(
     <AppModeProvider>
       <AuthProvider>
         <ToastProvider>
-          <App />
+          <UserProgressProvider>
+            <App />
+          </UserProgressProvider>
         </ToastProvider>
       </AuthProvider>
     </AppModeProvider>

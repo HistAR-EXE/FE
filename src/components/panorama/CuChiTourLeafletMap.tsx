@@ -391,7 +391,7 @@ export function CuChiTourLeafletMap({
             <span className="w-5 h-5 rounded-full shrink-0 bg-gradient-to-br from-amber-300 to-amber-600 text-[9px] font-bold text-amber-950 flex items-center justify-center ring-1 ring-white/50">
               1
             </span>
-            <span className="text-[10px] text-on-surface-variant">Lộ trình 360° (1→5)</span>
+            <span className="text-[10px] text-on-surface-variant">Lộ trình 360° (1→{markers.length})</span>
           </div>
         </div>
 

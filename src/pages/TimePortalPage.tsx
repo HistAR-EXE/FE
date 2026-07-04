@@ -4,6 +4,9 @@ import { AppLayout } from '../components/layout/AppLayout'
 import { locationsApi, type PhotoPair } from '../features/locations/api'
 import { photoScenesApi, type PhotoScene } from '../features/photo-scenes/api'
 import { eraDiscoveryKey, recordDiscoveryEngagement } from '../features/gamification/discoveryRouting'
+import { notifyEngagementOutcome } from '../features/gamification/handleEngagement'
+import { analyticsApi } from '../features/analytics/api'
+import { useUserProgress } from '../shared/context/UserProgressProvider'
 import { useAuth } from '../shared/auth/useAuth'
 import { DualPhotoExport } from '../features/time-portal/DualPhotoExport'
 import { TimePortalViewer } from '../features/time-portal/TimePortalViewer'
@@ -12,7 +15,7 @@ import { ApiError } from '../shared/api/contracts'
 import { useToast } from '../shared/ui/toast/useToast'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { CU_CHI_LOCATION_ID } from '../shared/config/constants'
-import { useVisitSessionForLocation } from '../features/visit/VisitSessionProvider'
+import { useVisitSessionForLocation, useVisitSession } from '../features/visit/VisitSessionProvider'
 import { isArEnabledLocation, sceneSlugFromIndex } from '../features/ar/arDeepLink'
 import { getArSceneBySlug, getArSceneBySceneId, isCuChiSceneSlug } from '../features/ar/cuChiArScenes'
 import { TimePortalArEmbed } from '../features/ar/TimePortalArEmbed'
@@ -76,8 +79,11 @@ export function TimePortalPage() {
   const portalView: PortalViewMode = viewParam === 'ar' ? 'ar' : 'compare'
   const arAvailable = isArEnabledLocation(activeLocationId)
 
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, user } = useAuth()
   useVisitSessionForLocation(activeLocationId, isAuthenticated)
+  const { getSessionId } = useVisitSession()
+  const visitSessionId = getSessionId(activeLocationId)
+  const isPremium = user?.tier === 'PREMIUM'
 
   const [scenes, setScenes] = useState<PhotoScene[]>([])
 
@@ -88,6 +94,7 @@ export function TimePortalPage() {
   const [loading, setLoading] = useState(true)
 
   const { showToast } = useToast()
+  const { applyEngagement } = useUserProgress()
 
   const pendingDiscoverKey = useRef<string | null>(discoverKeyParam ?? questRecordParam)
   const skipNextEraRecord = useRef(false)
@@ -112,6 +119,20 @@ export function TimePortalPage() {
 
         source: 'time_portal',
 
+        onSuccess: (response) => {
+          notifyEngagementOutcome(response, showToast, applyEngagement, {
+            locationId: locationId ?? activeLocationId,
+            visitSessionId,
+          })
+          void analyticsApi.recordEvent({
+            locationId: locationId ?? activeLocationId,
+            visitSessionId,
+            eventType: 'TIME_PORTAL_ERA_VIEWED',
+            eventKey: recordKey,
+            source: 'time_portal',
+          })
+        },
+
         onError: () =>
 
           showToast({
@@ -126,7 +147,7 @@ export function TimePortalPage() {
 
     },
 
-    [isAuthenticated, showToast],
+    [isAuthenticated, locationId, activeLocationId, showToast, applyEngagement, visitSessionId],
 
   )
 
@@ -479,7 +500,13 @@ export function TimePortalPage() {
               onEngagement={onPortalEngagement}
 
               initialEra={initialEra}
-
+              isPremium={isPremium}
+              onPremiumRequired={() =>
+                showToast({
+                  message: 'Era này dành cho Premium. Nâng cấp tại Hồ sơ để mở đầy đủ Time Portal.',
+                  type: 'info',
+                })
+              }
             />
 
           )}

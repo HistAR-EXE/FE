@@ -441,6 +441,29 @@
   transform-origin: 50% 100%;
 }
 
+.heritage-map-pin--visited .heritage-map-pin__head {
+  border-color: #f2bf50;
+  box-shadow: 0 0 0 2px rgba(242, 191, 80, 0.45), 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+.heritage-map-pin__visited-badge {
+  position: absolute;
+  right: 2px;
+  top: 0;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #f2bf50;
+  color: #1b1c24;
+  font-size: 8px;
+  font-weight: 700;
+  line-height: 12px;
+  text-align: center;
+  border: 1px solid #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+  z-index: 2;
+}
+
 .heritage-map-pin__glow {
   position: absolute;
   left: 50%;
@@ -746,6 +769,105 @@
   border-color: transparent transparent rgba(27, 28, 36, 0.95);
 }
 
+/* Sơ đồ minh hoạ (ảnh bản đồ giấy đã polish) — song song với Leaflet */
+.tour360-illustrated-shell {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(242, 191, 80, 0.06), transparent 60%),
+    #0d0e15;
+}
+
+.tour360-illustrated-pin {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(145deg, #f7d486, #f2bf50);
+  border: 2px solid #fff;
+  color: #3a2a06;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(242, 191, 80, 0.5);
+  cursor: pointer;
+  z-index: 4;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.tour360-illustrated-pin__num {
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.tour360-illustrated-pin:hover,
+.tour360-illustrated-pin.is-hover {
+  transform: translate(-50%, -50%) scale(1.18);
+  z-index: 5;
+}
+
+.tour360-illustrated-pin.is-active {
+  background: linear-gradient(145deg, #7af0ea, #44dbd5);
+  color: #052e2c;
+  box-shadow: 0 0 0 4px rgba(68, 219, 213, 0.35), 0 4px 14px rgba(0, 0, 0, 0.55);
+  transform: translate(-50%, -50%) scale(1.2);
+  z-index: 6;
+}
+
+.tour360-illustrated-hovercard {
+  position: absolute;
+  width: min(220px, 60vw);
+  border-radius: 12px;
+  overflow: hidden;
+  z-index: 7;
+  pointer-events: none;
+  background: rgba(27, 28, 36, 0.96);
+  border: 1px solid rgba(155, 143, 124, 0.4);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.5);
+}
+
+/* Toggle Sơ đồ minh hoạ <-> Vệ tinh (Leaflet) */
+.tour360-map-switch {
+  position: absolute;
+  top: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 500;
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 9999px;
+  background: rgba(27, 28, 36, 0.92);
+  border: 1px solid rgba(155, 143, 124, 0.35);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.tour360-map-switch__btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #b9b6c6;
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.tour360-map-switch__btn.is-active {
+  background: linear-gradient(145deg, #f7d486, #f2bf50);
+  color: #3a2a06;
+}
+
 .tour360-map-ctrl {
   display: flex;
   align-items: center;
@@ -821,11 +943,14 @@
   width: 100%;
   height: 100%;
   min-height: 100%;
+  overflow: hidden;
   background: #0d0e14;
 }
 
 .tour360-viewer .psv-container,
 .tour360-viewer .psv-canvas-container {
+  width: 100% !important;
+  height: 100% !important;
   font-family: 'Montserrat', sans-serif;
 }
 

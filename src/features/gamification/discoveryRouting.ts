@@ -3,6 +3,7 @@ export {
   eraDiscoveryKey,
   recordDiscoveryEngagement,
   getDiscoveryBinding,
+  preloadDiscoveryBindings,
   resolveCanonicalDiscoveryKey,
   resolveSceneLinkNodeId,
   DISCOVERY_RECORDED_EVENT,

@@ -8,11 +8,18 @@ import { VirtualTourViewer } from '../components/panorama/VirtualTourViewer'
 
 import { CuChiTourLeafletMap } from '../components/panorama/CuChiTourLeafletMap'
 
+import { CuChiIllustratedMap } from '../components/panorama/CuChiIllustratedMap'
+
 import { Tour360Hud } from '../components/panorama/Tour360Hud'
+
+import { MaterialIcon } from '../components/ui/MaterialIcon'
 
 import { panoramaApi, type Hotspot, type Panorama } from '../features/panorama/api'
 
-import { recordDiscoveryEngagement } from '../features/gamification/discoveryRouting'
+import { recordDiscoveryEngagement, preloadDiscoveryBindings } from '../features/gamification/discoveryRouting'
+import { notifyEngagementOutcome } from '../features/gamification/handleEngagement'
+import { analyticsApi } from '../features/analytics/api'
+import { useUserProgress } from '../shared/context/UserProgressProvider'
 
 import { useAuth } from '../shared/auth/useAuth'
 
@@ -22,11 +29,11 @@ import { useToast } from '../shared/ui/toast/useToast'
 
 import { appEnv } from '../shared/config/env'
 import { CU_CHI_LOCATION_ID } from '../shared/config/constants'
-import { useVisitSessionForLocation } from '../features/visit/VisitSessionProvider'
+import { useVisitSessionForLocation, useVisitSession } from '../features/visit/VisitSessionProvider'
 
 const CU_CHI_ENTRANCE_ID = '22222222-2222-2222-2222-222222222222'
 
-type TourViewMode = 'map' | 'panorama'
+type TourViewMode = 'illustrated' | 'map' | 'panorama'
 
 export function Tour360Page() {
   const { locationId } = useParams<{ locationId?: string }>()
@@ -36,12 +43,14 @@ export function Tour360Page() {
   const activeLocationId = locationId ?? CU_CHI_LOCATION_ID
   const isCuChi = activeLocationId === CU_CHI_LOCATION_ID
   useVisitSessionForLocation(activeLocationId, isAuthenticated)
+  const { getSessionId } = useVisitSession()
+  const visitSessionId = getSessionId(activeLocationId)
 
   const [panoramas, setPanoramas] = useState<Panorama[]>([])
   const [hotspotsByPanorama, setHotspotsByPanorama] = useState<Record<string, Hotspot[]>>({})
   const [activePanoramaId, setActivePanoramaId] = useState<string | null>(panoramaParam)
   const [viewMode, setViewMode] = useState<TourViewMode>(
-    isCuChi && !panoramaParam ? 'map' : 'panorama',
+    isCuChi && !panoramaParam ? 'illustrated' : 'panorama',
   )
   const [infoModal, setInfoModal] = useState<Hotspot | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
@@ -49,9 +58,11 @@ export function Tour360Page() {
   const [layoutRevision, setLayoutRevision] = useState(0)
   const [loading, setLoading] = useState(true)
   const { showToast } = useToast()
+  const { applyEngagement } = useUserProgress()
 
   const recordedScenes = useRef(new Set<string>())
   const dwellTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
+  const hotspotDwellTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
 
   const recordScene = useCallback(
     (panoramaId: string) => {
@@ -61,6 +72,19 @@ export function Tour360Page() {
         recordKey: `scene:${panoramaId}`,
         locationId: locationId ?? CU_CHI_LOCATION_ID,
         source: 'tour_panorama',
+        onSuccess: (response) => {
+          notifyEngagementOutcome(response, showToast, applyEngagement, {
+            locationId: locationId ?? CU_CHI_LOCATION_ID,
+            visitSessionId,
+          })
+          void analyticsApi.recordEvent({
+            locationId: locationId ?? CU_CHI_LOCATION_ID,
+            visitSessionId,
+            eventType: 'TOUR_SCENE_VIEWED',
+            eventKey: `scene:${panoramaId}`,
+            source: 'tour_panorama',
+          })
+        },
         onError: () =>
           showToast({
             message: 'Không ghi được tiến độ khám phá.',
@@ -68,7 +92,7 @@ export function Tour360Page() {
           }),
       })
     },
-    [isAuthenticated, locationId, showToast],
+    [isAuthenticated, locationId, showToast, applyEngagement],
   )
 
   const onPanoramaEnter = useCallback(
@@ -89,6 +113,11 @@ export function Tour360Page() {
     },
     [recordScene],
   )
+
+  useEffect(() => {
+    if (!locationId || !isAuthenticated) return
+    void preloadDiscoveryBindings(locationId)
+  }, [locationId, isAuthenticated])
 
   useEffect(() => {
     if (!locationId) return
@@ -132,11 +161,23 @@ export function Tour360Page() {
     (hotspot: Hotspot) => {
       if (hotspot.type === 'info' && (hotspot.title || hotspot.description)) {
         setInfoModal(hotspot)
-        if (isAuthenticated && hotspot.unlockKey) {
+        if (!isAuthenticated || !hotspot.unlockKey) return
+
+        const recordKey = hotspot.unlockKey
+        const existing = hotspotDwellTimers.current.get(recordKey)
+        if (existing) clearTimeout(existing)
+
+        const recordHotspot = () => {
+          hotspotDwellTimers.current.delete(recordKey)
           void recordDiscoveryEngagement({
-            recordKey: hotspot.unlockKey,
+            recordKey,
             locationId: locationId ?? CU_CHI_LOCATION_ID,
             source: 'hotspot_info',
+            onSuccess: (response) =>
+              notifyEngagementOutcome(response, showToast, applyEngagement, {
+                locationId: locationId ?? CU_CHI_LOCATION_ID,
+                visitSessionId,
+              }),
             onError: () =>
               showToast({
                 message: 'Không ghi được tiến độ khám phá.',
@@ -144,10 +185,24 @@ export function Tour360Page() {
               }),
           })
         }
+
+        const dwellMs = appEnv.hotspotDwellMs
+        if (dwellMs > 0) {
+          const timer = setTimeout(recordHotspot, dwellMs)
+          hotspotDwellTimers.current.set(recordKey, timer)
+        } else {
+          recordHotspot()
+        }
       }
     },
-    [isAuthenticated, locationId, showToast],
+    [isAuthenticated, locationId, showToast, applyEngagement, visitSessionId],
   )
+
+  const closeInfoModal = useCallback(() => {
+    setInfoModal(null)
+    hotspotDwellTimers.current.forEach((timer) => clearTimeout(timer))
+    hotspotDwellTimers.current.clear()
+  }, [])
 
   const onLoadError = useCallback(
     (message: string) => {
@@ -173,9 +228,17 @@ export function Tour360Page() {
   }, [])
 
   const handleOpenMap = useCallback(() => {
-    setViewMode('map')
+    setViewMode(isCuChi ? 'illustrated' : 'map')
     setMenuOpen(false)
-  }, [])
+  }, [isCuChi])
+
+  useEffect(() => {
+    if (viewMode === 'panorama') {
+      setLayoutRevision((n) => n + 1)
+    }
+  }, [viewMode])
+
+  const isMapMode = viewMode === 'illustrated' || viewMode === 'map'
 
   const handleToggleImmersive = useCallback(() => {
     setImmersive((v) => !v)
@@ -205,6 +268,16 @@ export function Tour360Page() {
 
         {!loading && panoramas.length > 0 && locationId && (
           <>
+            {isCuChi && viewMode === 'illustrated' && (
+              <div className="tour360-viewport">
+                <CuChiIllustratedMap
+                  panoramas={panoramas}
+                  activePanoramaId={activePanoramaId}
+                  onSelectPanorama={handleSelectPanorama}
+                />
+              </div>
+            )}
+
             {isCuChi && viewMode === 'map' && (
               <div className="tour360-viewport">
                 <CuChiTourLeafletMap
@@ -216,15 +289,37 @@ export function Tour360Page() {
               </div>
             )}
 
+            {isCuChi && isMapMode && (
+              <div className="tour360-map-switch" role="group" aria-label="Kiểu bản đồ">
+                <button
+                  type="button"
+                  className={`tour360-map-switch__btn ${viewMode === 'illustrated' ? 'is-active' : ''}`}
+                  onClick={() => setViewMode('illustrated')}
+                >
+                  <MaterialIcon name="map" className="text-base" />
+                  Sơ đồ
+                </button>
+                <button
+                  type="button"
+                  className={`tour360-map-switch__btn ${viewMode === 'map' ? 'is-active' : ''}`}
+                  onClick={() => setViewMode('map')}
+                >
+                  <MaterialIcon name="satellite_alt" className="text-base" />
+                  Vệ tinh
+                </button>
+              </div>
+            )}
+
             <div
-              className={`tour360-viewport ${viewMode === 'map' && isCuChi ? 'tour360-viewport--hidden' : ''}`}
-              aria-hidden={viewMode === 'map' && isCuChi}
+              className={`tour360-viewport ${isMapMode && isCuChi ? 'tour360-viewport--hidden' : ''}`}
+              aria-hidden={isMapMode && isCuChi}
             >
               <VirtualTourViewer
                 panoramas={panoramas}
                 hotspotsByPanorama={hotspotsByPanorama}
-                initialPanoramaId={activePanoramaId}
+                initialPanoramaId={panoramaParam ?? activePanoramaId}
                 activePanoramaId={activePanoramaId}
+                layoutRevision={layoutRevision}
                 onHotspotSelect={onHotspotSelect}
                 onPanoramaEnter={onPanoramaEnter}
                 onLoadError={onLoadError}
@@ -237,7 +332,7 @@ export function Tour360Page() {
               activePanorama={activePanorama}
               activePanoramaId={activePanoramaId}
               activeInfoHotspots={activeInfoHotspots}
-              viewMode={viewMode}
+              viewMode={viewMode === 'panorama' ? 'panorama' : 'map'}
               immersive={immersive}
               onSelectPanorama={handleSelectPanorama}
               onInfoHotspot={onHotspotSelect}
@@ -250,7 +345,7 @@ export function Tour360Page() {
             {infoModal && (
               <div
                 className="fixed inset-0 z-[60] flex items-end md:items-center justify-center p-md bg-black/50"
-                onClick={() => setInfoModal(null)}
+                onClick={closeInfoModal}
               >
                 <div
                   className="glass-panel w-full max-w-md rounded-xl border border-outline-variant p-md pointer-events-auto"
@@ -269,7 +364,7 @@ export function Tour360Page() {
                   </p>
                   <button
                     type="button"
-                    onClick={() => setInfoModal(null)}
+                    onClick={closeInfoModal}
                     className="mt-md px-4 py-2 rounded-full border border-outline-variant text-on-surface-variant"
                   >
                     Đóng

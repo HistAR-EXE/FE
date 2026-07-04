@@ -19,7 +19,8 @@ export type AuthPayload = {
   token: string
   userId: string
   displayName: string
-  role?: 'USER' | 'ADMIN'
+  role?: 'USER' | 'ADMIN' | 'TEACHER'
+  tier?: 'FREE' | 'PREMIUM'
   email?: string
   avatarUrl?: string | null
 }

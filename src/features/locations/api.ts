@@ -11,6 +11,10 @@ export type Location = {
   rating?: number
   distanceKm?: number
   isArAvailable?: boolean
+  unlockPrerequisiteQuestId?: string | null
+  unlockNarrative?: string | null
+  /** Present when JWT sent; false = locked on map */
+  isUnlocked?: boolean | null
   createdAt: string
 }
 

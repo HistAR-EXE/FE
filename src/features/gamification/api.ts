@@ -1,4 +1,5 @@
 import { getData, getListData, httpClient } from '../../shared/api/httpClient'
+import type { CheckinEngagementResponse, RecordDiscoveryResponse } from './engagementTypes'
 
 export type Quest = {
   id: string
@@ -11,6 +12,7 @@ export type Quest = {
   unlockLevel?: number
   coverImage?: string | null
   completionTrigger?: string | null
+  requireOnsiteCheckin?: boolean
 }
 
 export type QuestProgress = {
@@ -26,6 +28,7 @@ export type QuestProgress = {
   discoveryStepsComplete?: boolean
   hasCheckinAtLocation?: boolean
   completionTrigger?: string | null
+  requireOnsiteCheckin?: boolean
   startedAt?: string | null
   completedAt?: string | null
 }
@@ -36,14 +39,7 @@ export type BadgeEarned = {
   iconUrl?: string | null
 }
 
-export type CheckinResult = {
-  success: boolean
-  distanceMeters: number
-  questsCompleted: string[]
-  badgesEarned: BadgeEarned[]
-  secretUnlocked: boolean
-  bonusXpAwarded?: number
-}
+export type CheckinResult = CheckinEngagementResponse
 
 export type SecretStory = {
   locked: boolean
@@ -65,6 +61,11 @@ export type DiscoverySummary = {
   total: number
   keys: string[]
   version: number
+}
+
+export type VisitedLocations = {
+  visitedLocationIds: string[]
+  visitedCount: number
 }
 
 export const gamificationApi = {
@@ -99,8 +100,10 @@ export const discoveriesApi = {
     getListData<DiscoveryPoint>(httpClient.get(`/api/discovery-points/by-location/${locationId}`)),
   summary: (locationId: string) =>
     getData<DiscoverySummary>(httpClient.get('/api/me/discoveries/summary', { params: { locationId } })),
+  visitedLocations: () =>
+    getData<VisitedLocations>(httpClient.get('/api/me/discoveries/visited-locations')),
   record: (unlockKey: string, source?: string, locationId?: string) =>
-    getData<boolean>(
+    getData<RecordDiscoveryResponse>(
       httpClient.post('/api/me/discoveries', { unlockKey, source, locationId: locationId || undefined }),
     ),
 }

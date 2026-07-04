@@ -21,6 +21,8 @@ type TimePortalViewerProps = {
   onEraChange?: (era: EraValue) => void
   onEngagement?: () => void
   initialEra?: EraValue
+  isPremium?: boolean
+  onPremiumRequired?: () => void
 }
 
 type LayerData = { imageUrl: string; caption: string; era: EraValue }
@@ -66,6 +68,8 @@ export function TimePortalViewer({
   onEraChange,
   onEngagement,
   initialEra,
+  isPremium = true,
+  onPremiumRequired,
 }: TimePortalViewerProps) {
   const scene = scenes?.[sceneIndex]
   const pair = pairs?.[sceneIndex]
@@ -87,8 +91,14 @@ export function TimePortalViewer({
     if (initialEra) setEra(initialEra)
   }, [initialEra])
 
+  const defaultEra: EraValue = 1968
+
   const triggerVortex = useCallback(
     (nextEra: EraValue) => {
+      if (!isPremium && nextEra !== defaultEra) {
+        onPremiumRequired?.()
+        return
+      }
       setVortex(true)
       setEra(nextEra)
       if (!isPresentEra(nextEra)) setSliderPct(50)
@@ -96,7 +106,7 @@ export function TimePortalViewer({
       onEraChange?.(nextEra)
       window.setTimeout(() => setVortex(false), 1400)
     },
-    [onEraChange, onEngagement],
+    [onEraChange, onEngagement, isPremium, onPremiumRequired],
   )
 
   useEffect(() => {
@@ -210,16 +220,20 @@ export function TimePortalViewer({
 
       <div className="absolute bottom-xl left-1/2 -translate-x-1/2 z-30 flex flex-col items-center gap-sm">
         <div className="bg-surface/70 backdrop-blur-xl border border-outline-variant/50 rounded-full px-lg py-sm flex gap-md">
-          {ERA_VALUES.map((e) => (
+          {ERA_VALUES.map((e) => {
+            const locked = !isPremium && e !== defaultEra
+            return (
             <button
               key={e}
               type="button"
               onClick={() => triggerVortex(e)}
-              className={`font-title-md ${e === era ? 'text-primary glow-primary' : 'text-on-surface-variant hover:text-on-surface'} transition-colors`}
+              className={`font-title-md inline-flex items-center gap-1 ${e === era ? 'text-primary glow-primary' : 'text-on-surface-variant hover:text-on-surface'} ${locked ? 'opacity-70' : ''} transition-colors`}
             >
+              {locked && <MaterialIcon name="lock" className="text-xs" />}
               {eraTimelineLabel(e)}
             </button>
-          ))}
+            )
+          })}
         </div>
         <div className="bg-surface/70 backdrop-blur-xl border border-outline-variant/50 rounded-full px-lg py-sm flex gap-xl max-w-[95vw] overflow-x-auto hide-scrollbar">
           {tabs.map((tab, i) => {

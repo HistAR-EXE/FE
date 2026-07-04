@@ -40,6 +40,44 @@ export type AdminQuest = {
   story: string | null
   pointsReward: number
   requiredOrder: number
+  completionTrigger?: string | null
+  requireOnsiteCheckin?: boolean
+  stepsTotal?: number | null
+  coverImage?: string | null
+  stepDiscoveryKeys?: string | null
+}
+
+export type AdminDiscoveryPointInput = {
+  locationId: string
+  name: string
+  unlockKey: string
+  mapXPct?: number | null
+  mapYPct?: number | null
+  sortOrder?: number | null
+}
+
+export type AdminArtifactInput = {
+  locationId: string
+  name: string
+  unlockKey: string
+  imageUrl?: string | null
+  description?: string | null
+  reliability?: string | null
+  sortOrder?: number | null
+}
+
+export type AdminQuestInput = {
+  locationId: string
+  title: string
+  description?: string | null
+  story?: string | null
+  pointsReward?: number | null
+  requiredOrder?: number | null
+  completionTrigger?: string | null
+  requireOnsiteCheckin?: boolean | null
+  stepsTotal?: number | null
+  coverImage?: string | null
+  stepDiscoveryKeys?: string | null
 }
 
 export type PoiUnlockRateItem = {
@@ -125,6 +163,21 @@ export const adminApi = {
   listQuests: (locationId?: string) =>
     getData<AdminQuest[]>(httpClient.get('/api/admin/quests', { params: locationId ? { locationId } : {} })),
 
+  createDiscoveryPoint: (body: AdminDiscoveryPointInput) =>
+    getData<AdminDiscoveryPoint>(httpClient.post('/api/admin/discovery-points', body)),
+  updateDiscoveryPoint: (id: string, body: AdminDiscoveryPointInput) =>
+    getData<AdminDiscoveryPoint>(httpClient.patch(`/api/admin/discovery-points/${id}`, body)),
+
+  createArtifact: (body: AdminArtifactInput) =>
+    getData<AdminArtifact>(httpClient.post('/api/admin/artifacts', body)),
+  updateArtifact: (id: string, body: AdminArtifactInput) =>
+    getData<AdminArtifact>(httpClient.patch(`/api/admin/artifacts/${id}`, body)),
+
+  createQuest: (body: AdminQuestInput) =>
+    getData<AdminQuest>(httpClient.post('/api/admin/quests', body)),
+  updateQuest: (id: string, body: AdminQuestInput) =>
+    getData<AdminQuest>(httpClient.patch(`/api/admin/quests/${id}`, body)),
+
   analyticsOverview: (locationId: string) =>
     getData<AdminAnalyticsOverview>(
       httpClient.get('/api/admin/analytics/overview', { params: { locationId } }),
@@ -132,6 +185,11 @@ export const adminApi = {
 
   organizationAnalytics: (orgId: string) =>
     getData<OrganizationAnalytics>(httpClient.get(`/api/admin/organizations/${orgId}/analytics`)),
+
+  eraCount: (locationId: string) =>
+    getData<{ eraCount: number; sufficient: boolean }>(
+      httpClient.get(`/api/admin/locations/${locationId}/era-count`),
+    ),
 }
 
 export type { PageResponse }

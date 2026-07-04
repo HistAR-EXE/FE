@@ -5,7 +5,8 @@ export type ProfileMe = {
   email: string
   displayName: string
   avatarUrl: string | null
-  role: 'USER' | 'ADMIN'
+  role: 'USER' | 'ADMIN' | 'TEACHER'
+  tier: 'FREE' | 'PREMIUM'
   level: number
   totalPoints: number
   city: string | null
@@ -30,5 +31,6 @@ export const profileApi = {
   myBadges: () => getListData<MyBadge>(httpClient.get('/api/me/badges')),
   updateMe: (payload: { displayName?: string; avatarUrl?: string | null; city?: string | null }) =>
     getData<ProfileMe>(httpClient.patch('/api/profile/me', payload)),
+  upgrade: () => getData<ProfileMe>(httpClient.post('/api/profile/upgrade')),
 }
 

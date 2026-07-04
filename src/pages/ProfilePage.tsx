@@ -1,26 +1,69 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { SimpleTopNav } from '../components/layout/TopNav'
 import { profileApi, type MyBadge, type ProfileMe } from '../features/profile/api'
 import { ProfileEditForm } from '../features/profile/ProfileEditForm'
+import { gamificationApi, type QuestProgress } from '../features/gamification/api'
+import { locationsApi, type Location } from '../features/locations/api'
+import { discoveriesApi } from '../features/gamification/api'
 import { useAuth } from '../shared/auth/useAuth'
 import { useToast } from '../shared/ui/toast/useToast'
 import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { images } from '../assets/images'
 import { ProgressSummaryCard } from '../features/gamification/ProgressSummaryCard'
+import { normalizeHeritageName } from '../features/explore/vietnamMap'
 
 export function ProfilePage() {
-  const { logout, user } = useAuth()
+  const { logout, user, updateUser } = useAuth()
   const [profile, setProfile] = useState<ProfileMe | null>(null)
   const [badges, setBadges] = useState<MyBadge[]>([])
+  const [quests, setQuests] = useState<QuestProgress[]>([])
+  const [locations, setLocations] = useState<Location[]>([])
+  const [visitedCount, setVisitedCount] = useState(0)
+  const [upgrading, setUpgrading] = useState(false)
   const { showToast } = useToast()
+
+  const handleUpgrade = async () => {
+    try {
+      setUpgrading(true)
+      const next = await profileApi.upgrade()
+      setProfile(next)
+      updateUser({ tier: 'PREMIUM' })
+      showToast({ message: 'Đã nâng cấp Premium (demo)!', type: 'success' })
+    } catch (e) {
+      showToast({ message: getFriendlyErrorMessage(e, 'quest'), type: 'error' })
+    } finally {
+      setUpgrading(false)
+    }
+  }
 
   useEffect(() => {
     profileApi.me().then(setProfile).catch((e) => showToast({ message: getFriendlyErrorMessage(e, 'quest'), type: 'error' }))
     profileApi.myBadges().then(setBadges).catch(() => setBadges([]))
+    gamificationApi.myQuests().then(setQuests).catch(() => setQuests([]))
+    locationsApi.list({ size: 50 }).then(setLocations).catch(() => setLocations([]))
+    discoveriesApi.visitedLocations().then((d) => setVisitedCount(d.visitedLocationIds.length)).catch(() => setVisitedCount(0))
   }, [showToast])
+
+  const completedQuests = useMemo(
+    () => quests.filter((q) => q.status === 'completed'),
+    [quests],
+  )
+
+  const passportStamps = useMemo(() => {
+    const locById = new Map(locations.map((l) => [l.id, l]))
+    const stampedLocationIds = new Set(completedQuests.map((q) => q.locationId))
+    const stamped = locations
+      .filter((l) => stampedLocationIds.has(l.id))
+      .map((l) => {
+        const quest = completedQuests.find((q) => q.locationId === l.id)
+        return { location: l, completedAt: quest?.completedAt }
+      })
+    const unstamped = locations.filter((l) => !stampedLocationIds.has(l.id))
+    return { stamped, unstamped, locById }
+  }, [locations, completedQuests])
 
   return (
     <AppLayout activeBorder="left" topNav={<SimpleTopNav title="Hồ sơ" />}>
@@ -49,7 +92,14 @@ export function ProfilePage() {
                       Level {profile.level} {profile.levelName ? `· ${profile.levelName}` : ''}
                     </span>
                     <span className="inline-flex px-xs py-[2px] text-xs rounded-full border border-outline-variant text-on-surface-variant">
-                      {profile.role === 'ADMIN' ? 'Quản trị' : 'Thành viên'}
+                      {profile.role === 'ADMIN' ? 'Quản trị' : profile.role === 'TEACHER' ? 'Giáo viên' : 'Thành viên'}
+                    </span>
+                    <span className={`inline-flex px-xs py-[2px] text-xs rounded-full border ${
+                      profile.tier === 'PREMIUM'
+                        ? 'border-primary text-primary'
+                        : 'border-outline-variant text-on-surface-variant'
+                    }`}>
+                      {profile.tier === 'PREMIUM' ? 'Premium' : 'Miễn phí'}
                     </span>
                   </div>
                 </div>
@@ -86,22 +136,38 @@ export function ProfilePage() {
             <div className="mt-md grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-sm">
               <div className="bg-surface-container-high rounded-lg p-md border border-outline-variant text-center">
                 <MaterialIcon name="star" className="text-primary mx-auto mb-xs" />
-                <p className="text-[36px] leading-tight font-bold">{(profile.totalPoints / 1000).toFixed(1)}k</p>
+                <p className="text-[36px] leading-tight font-bold">{profile.totalPoints}</p>
                 <p className="text-xs text-on-surface-variant uppercase tracking-wider">XP</p>
               </div>
               <div className="bg-surface-container-high rounded-lg p-md border border-outline-variant text-center">
                 <MaterialIcon name="map" className="text-secondary mx-auto mb-xs" />
-                <p className="text-[36px] leading-tight font-bold">{badges.filter((b) => b.earned).length * 2 || 0}</p>
+                <p className="text-[36px] leading-tight font-bold">{completedQuests.length}</p>
                 <p className="text-xs text-on-surface-variant uppercase tracking-wider">Quests</p>
               </div>
               <div className="bg-surface-container-high rounded-lg p-md border border-outline-variant text-center">
                 <MaterialIcon name="location_on" className="text-tertiary mx-auto mb-xs" />
-                <p className="text-[36px] leading-tight font-bold">{Math.max(1, Math.ceil((profile.totalPoints || 0) / 300))}</p>
+                <p className="text-[36px] leading-tight font-bold">{visitedCount}</p>
                 <p className="text-xs text-on-surface-variant uppercase tracking-wider">Sites</p>
               </div>
             </div>
 
             <div className="mt-md flex flex-wrap gap-sm">
+              {profile.tier !== 'PREMIUM' && (
+                <button
+                  type="button"
+                  onClick={() => void handleUpgrade()}
+                  disabled={upgrading}
+                  title="Demo stub — không có thanh toán thật"
+                  className="inline-flex items-center gap-1 px-md py-sm border border-primary text-primary rounded-lg hover:bg-primary/10 disabled:opacity-60"
+                >
+                  Nâng cấp Premium (demo)
+                </button>
+              )}
+              {user?.role === 'TEACHER' && (
+                <Link to="/teacher" className="inline-flex items-center gap-1 px-md py-sm border border-secondary text-secondary rounded-lg hover:bg-secondary/10">
+                  Dashboard lớp
+                </Link>
+              )}
               <Link to="/artifacts" className="inline-flex items-center gap-1 px-md py-sm border border-outline-variant rounded-lg hover:border-secondary">
                 <MaterialIcon name="history_edu" className="text-sm" /> Bộ sưu tập
               </Link>
@@ -120,6 +186,47 @@ export function ProfilePage() {
             <ProfileEditForm profile={profile} onSaved={setProfile} />
           </section>
         )}
+
+        <section className="mt-md">
+          <h2 className="font-title-md mb-sm inline-flex items-center gap-1">
+            <MaterialIcon name="menu_book" className="text-primary" />
+            Hộ chiếu Di sản
+          </h2>
+          <p className="text-xs text-on-surface-variant mb-sm">Hoàn thành nhiệm vụ tại mỗi di tích để đóng dấu vào hộ chiếu.</p>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-sm">
+            {passportStamps.stamped.map(({ location, completedAt }) => (
+              <Link
+                key={location.id}
+                to={`/explore/${location.id}`}
+                className="border border-secondary/50 rounded-xl overflow-hidden bg-secondary/5 hover:border-secondary transition-colors"
+              >
+                {location.coverImage ? (
+                  <img src={location.coverImage} alt="" className="h-20 w-full object-cover" />
+                ) : (
+                  <div className="h-20 bg-surface-container-high" />
+                )}
+                <div className="p-2 text-center">
+                  <p className="text-xs font-title-sm text-on-surface line-clamp-2">{normalizeHeritageName(location.name)}</p>
+                  {completedAt && (
+                    <p className="text-[10px] text-on-surface-variant mt-0.5">
+                      {new Date(completedAt).toLocaleDateString('vi-VN')}
+                    </p>
+                  )}
+                </div>
+              </Link>
+            ))}
+            {passportStamps.unstamped.slice(0, Math.max(0, 8 - passportStamps.stamped.length)).map((location) => (
+              <div
+                key={location.id}
+                className="border border-dashed border-outline-variant rounded-xl p-sm flex flex-col items-center justify-center min-h-[7rem] opacity-50"
+              >
+                <MaterialIcon name="lock" className="text-on-surface-variant mb-1" />
+                <p className="text-xs text-on-surface-variant">???</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
         <section className="mt-md">
           <h2 className="font-title-md mb-sm">Huy hiệu</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-sm">
@@ -149,4 +256,3 @@ export function ProfilePage() {
     </AppLayout>
   )
 }
-

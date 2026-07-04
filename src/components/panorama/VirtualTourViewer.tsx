@@ -32,6 +32,8 @@ type VirtualTourViewerProps = {
   hotspotsByPanorama: Record<string, Hotspot[]>
   initialPanoramaId?: string | null
   activePanoramaId?: string | null
+  /** Bumped when layout changes (sidebar, immersive, map ↔ panorama) so PSV can resize. */
+  layoutRevision?: number
   onHotspotSelect?: (hotspot: Hotspot) => void
   onPanoramaEnter?: (panoramaId: string) => void
   onLoadError?: (message: string) => void
@@ -43,13 +45,15 @@ export function VirtualTourViewer({
   hotspotsByPanorama,
   initialPanoramaId,
   activePanoramaId,
+  layoutRevision = 0,
   onHotspotSelect,
   onPanoramaEnter,
   onLoadError,
   className = '',
 }: VirtualTourViewerProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
-  const viewerRef = useRef<{ destroy: () => void } | null>(null)
+  const viewerRef = useRef<{ destroy: () => void; resize: (size: { width: string; height: string }) => void } | null>(null)
+  const startNodeIdRef = useRef<string | null>(initialPanoramaId ?? null)
   const tourPluginRef = useRef<{ setCurrentNode: (id: string) => Promise<boolean> } | null>(null)
   const lastNodeRef = useRef<string | null>(null)
   const onPanoramaEnterRef = useRef(onPanoramaEnter)
@@ -58,6 +62,19 @@ export function VirtualTourViewer({
   onPanoramaEnterRef.current = onPanoramaEnter
   onHotspotSelectRef.current = onHotspotSelect
   onLoadErrorRef.current = onLoadError
+
+  if (startNodeIdRef.current === null && initialPanoramaId) {
+    startNodeIdRef.current = initialPanoramaId
+  }
+
+  const resizeViewer = () => {
+    const el = containerRef.current
+    const viewer = viewerRef.current
+    if (!el || !viewer) return
+    const { width, height } = el.getBoundingClientRect()
+    if (width < 1 || height < 1) return
+    viewer.resize({ width: `${width}px`, height: `${height}px` })
+  }
 
   useEffect(() => {
     if (!containerRef.current || panoramas.length === 0) return
@@ -108,10 +125,13 @@ export function VirtualTourViewer({
         }
       })
 
+      const preferredStart =
+        startNodeIdRef.current && panoramas.some((p) => p.id === startNodeIdRef.current)
+          ? startNodeIdRef.current
+          : null
       const startNodeId =
-        initialPanoramaId && panoramas.some((p) => p.id === initialPanoramaId)
-          ? initialPanoramaId
-          : (panoramas.find((p) => p.id === CU_CHI_ENTRANCE_ID)?.id ?? panoramas[0]?.id)
+        preferredStart ??
+        (panoramas.find((p) => p.id === CU_CHI_ENTRANCE_ID)?.id ?? panoramas[0]?.id)
 
       const viewer = new Viewer({
         container: containerRef.current,
@@ -167,7 +187,11 @@ export function VirtualTourViewer({
         }
       }
 
-      viewerRef.current = viewer
+      viewerRef.current = viewer as typeof viewerRef.current
+
+      requestAnimationFrame(() => {
+        if (!cancelled) resizeViewer()
+      })
     }
 
     init().catch(() => {
@@ -180,8 +204,24 @@ export function VirtualTourViewer({
       lastNodeRef.current = null
       viewerRef.current?.destroy()
       viewerRef.current = null
+      if (containerRef.current) {
+        containerRef.current.replaceChildren()
+      }
     }
-  }, [panoramas, hotspotsByPanorama, initialPanoramaId])
+  }, [panoramas, hotspotsByPanorama])
+
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+
+    const observer = new ResizeObserver(() => {
+      resizeViewer()
+    })
+    observer.observe(el)
+    resizeViewer()
+
+    return () => observer.disconnect()
+  }, [layoutRevision])
 
   useEffect(() => {
     if (!activePanoramaId || !tourPluginRef.current) return

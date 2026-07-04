@@ -1,6 +1,8 @@
 import { discoveriesApi } from './api'
+import { discoveryBindingsApi, type DiscoveryBindingDto } from './discoveryBindingsApi'
 import { readAppMode } from '../../shared/context/AppModeProvider'
 import { getToken } from '../../shared/auth/session'
+import type { RecordDiscoveryResponse } from './engagementTypes'
 
 export const DISCOVERY_RECORDED_EVENT = 'histar:discovery-recorded'
 
@@ -20,12 +22,12 @@ const SCENE_LINK_BY_CONTENT_REF: Record<string, string> = {
   'meeting-room': CU_CHI_PANORAMAS.meeting,
 }
 
-/** Map UI/content unlock key → catalog discovery_points unlock_key. */
+const bindingCache = new Map<string, DiscoveryBindingDto[]>()
+
 export function resolveCanonicalDiscoveryKey(rawKey: string): string {
   return CONTENT_KEY_TO_CANONICAL[rawKey] ?? rawKey
 }
 
-/** Map scene hotspot contentRef → VirtualTourPlugin node id (panorama UUID). */
 export function resolveSceneLinkNodeId(contentRef: string, panoramaIds: string[]): string {
   const mapped = SCENE_LINK_BY_CONTENT_REF[contentRef]
   if (mapped) return mapped
@@ -40,9 +42,8 @@ export type DiscoverySource =
   | 'time_portal'
   | 'artifact'
 
-export type DiscoveryRecordedDetail = {
+export type DiscoveryRecordedDetail = RecordDiscoveryResponse & {
   recordKey: string
-  recorded: boolean
   source?: DiscoverySource
 }
 
@@ -55,71 +56,37 @@ export type DiscoveryBinding = {
   buildHref: (locationId: string) => string
 }
 
-const CU_CHI_PHOTO_SCENES = {
-  cuaHam: '50000001-0000-4000-8000-000000000001',
-  gieng: '50000001-0000-4000-8000-000000000005',
-  vent: '50000001-0000-4000-8000-000000000004',
-} as const
-
 function timePortalHref(locationId: string, params: Record<string, string>): string {
   const search = new URLSearchParams(params).toString()
   return `/time-portal/${locationId}${search ? `?${search}` : ''}`
 }
 
-const CU_CHI_STATIC_BINDINGS: DiscoveryBinding[] = [
-  {
-    unlockKey: 'era:1948',
-    recordKey: 'era:1948',
-    engagement: 'time_portal',
-    buildHref: (locationId) => timePortalHref(locationId, { era: '1948' }),
-  },
-  {
-    unlockKey: 'era:1968',
-    recordKey: 'era:1968',
-    engagement: 'time_portal',
-    buildHref: (locationId) => timePortalHref(locationId, { era: '1968' }),
-  },
-  {
-    unlockKey: 'era:2026',
-    recordKey: 'era:2026',
-    engagement: 'time_portal',
-    buildHref: (locationId) => timePortalHref(locationId, { era: '2026' }),
-  },
-  {
-    unlockKey: 'photo:cua-ham',
-    recordKey: 'photo:cua-ham',
-    engagement: 'time_portal',
-    buildHref: (locationId) =>
-      timePortalHref(locationId, {
-        discoverKey: 'photo:cua-ham',
-        scene: CU_CHI_PHOTO_SCENES.cuaHam,
-      }),
-  },
-  {
-    unlockKey: 'photo:gieng',
-    recordKey: 'photo:gieng',
-    engagement: 'time_portal',
-    buildHref: (locationId) =>
-      timePortalHref(locationId, {
-        discoverKey: 'photo:gieng',
-        scene: CU_CHI_PHOTO_SCENES.gieng,
-      }),
-  },
-  {
-    unlockKey: 'hotspot:vent',
-    recordKey: 'hotspot:vent',
-    engagement: 'time_portal',
-    buildHref: (locationId) =>
-      timePortalHref(locationId, {
-        discoverKey: 'hotspot:vent',
-        scene: CU_CHI_PHOTO_SCENES.vent,
-      }),
-  },
-]
+function hrefFromTemplate(template: string | undefined, locationId: string, unlockKey: string): string {
+  if (!template) {
+    return `/explore/${locationId}`
+  }
+  return template
+    .replace('{locationId}', locationId)
+    .replace('{unlockKey}', encodeURIComponent(unlockKey))
+}
 
-function bindingForUnlockKey(unlockKey: string): DiscoveryBinding {
-  const staticMatch = CU_CHI_STATIC_BINDINGS.find((b) => b.unlockKey === unlockKey)
-  if (staticMatch) return staticMatch
+function bindingFromDto(dto: DiscoveryBindingDto): DiscoveryBinding {
+  const engagement = (dto.engagement ?? 'time_portal') as DiscoveryEngagement
+  return {
+    unlockKey: dto.unlockKey,
+    recordKey: dto.recordKey || dto.unlockKey,
+    engagement,
+    buildHref: (locId) => hrefFromTemplate(dto.hrefTemplate, locId, dto.unlockKey),
+  }
+}
+
+function bindingForUnlockKey(unlockKey: string, locationId?: string): DiscoveryBinding {
+  if (locationId) {
+    const cached = bindingCache.get(locationId)?.find((b) => b.unlockKey === unlockKey)
+    if (cached) {
+      return bindingFromDto(cached)
+    }
+  }
 
   if (unlockKey.startsWith('scene:')) {
     const panoramaId = unlockKey.slice('scene:'.length)
@@ -127,8 +94,7 @@ function bindingForUnlockKey(unlockKey: string): DiscoveryBinding {
       unlockKey,
       recordKey: unlockKey,
       engagement: 'tour_panorama',
-      buildHref: (locationId) =>
-        `/tour/360/${locationId}?panorama=${encodeURIComponent(panoramaId)}`,
+      buildHref: (locId) => `/tour/360/${locId}?panorama=${encodeURIComponent(panoramaId)}`,
     }
   }
 
@@ -138,7 +104,7 @@ function bindingForUnlockKey(unlockKey: string): DiscoveryBinding {
       unlockKey,
       recordKey: unlockKey,
       engagement: 'time_portal',
-      buildHref: (locationId) => timePortalHref(locationId, { era }),
+      buildHref: (locId) => timePortalHref(locId, { era }),
     }
   }
 
@@ -156,8 +122,7 @@ function bindingForUnlockKey(unlockKey: string): DiscoveryBinding {
       unlockKey,
       recordKey: unlockKey,
       engagement: 'time_portal',
-      buildHref: (locationId) =>
-        timePortalHref(locationId, { discoverKey: unlockKey }),
+      buildHref: (locId) => timePortalHref(locId, { discoverKey: unlockKey }),
     }
   }
 
@@ -165,47 +130,50 @@ function bindingForUnlockKey(unlockKey: string): DiscoveryBinding {
     unlockKey,
     recordKey: unlockKey,
     engagement: 'time_portal',
-    buildHref: (locationId) => `/explore/${locationId}`,
+    buildHref: (locId) => `/explore/${locId}`,
   }
 }
 
-export function getDiscoveryBinding(unlockKey: string): DiscoveryBinding {
-  return bindingForUnlockKey(unlockKey)
+export async function preloadDiscoveryBindings(locationId: string): Promise<void> {
+  if (!getToken() || bindingCache.has(locationId)) return
+  try {
+    const bindings = await discoveryBindingsApi.byLocation(locationId)
+    bindingCache.set(locationId, bindings)
+  } catch {
+    bindingCache.set(locationId, [])
+  }
+}
+
+export function getDiscoveryBinding(unlockKey: string, locationId?: string): DiscoveryBinding {
+  return bindingForUnlockKey(unlockKey, locationId)
 }
 
 export function discoveryDeepLink(locationId: string, unlockKey: string): string {
-  return getDiscoveryBinding(unlockKey).buildHref(locationId)
+  return getDiscoveryBinding(unlockKey, locationId).buildHref(locationId)
 }
 
 export type RecordDiscoveryOptions = {
-  /** Raw unlock key from UI/BE; resolved to canonical before POST. */
   recordKey: string
   locationId?: string
   source?: DiscoverySource
-  onSuccess?: (recorded: boolean) => void
+  onSuccess?: (response: RecordDiscoveryResponse) => void
   onError?: (error: unknown) => void
 }
 
-export function dispatchDiscoveryRecorded(
-  recordKey: string,
-  recorded: boolean,
-  source?: DiscoverySource,
-): void {
-  const detail: DiscoveryRecordedDetail = { recordKey, recorded, source }
+export function dispatchDiscoveryRecorded(detail: DiscoveryRecordedDetail): void {
   window.dispatchEvent(new CustomEvent(DISCOVERY_RECORDED_EVENT, { detail }))
-  if (import.meta.env.DEV && source) {
+  if (import.meta.env.DEV && detail.source) {
     console.debug('[discovery]', detail)
   }
 }
 
-/** Records discovery after meaningful engagement; online + authenticated only. */
 export async function recordDiscoveryEngagement({
   recordKey: rawKey,
   locationId,
   source,
   onSuccess,
   onError,
-}: RecordDiscoveryOptions): Promise<boolean | null> {
+}: RecordDiscoveryOptions): Promise<RecordDiscoveryResponse | null> {
   if (!rawKey) return null
   if (readAppMode() !== 'online') return null
   if (!getToken()) return null
@@ -213,17 +181,16 @@ export async function recordDiscoveryEngagement({
   const canonicalKey = resolveCanonicalDiscoveryKey(rawKey)
 
   try {
-    const recorded = await discoveriesApi.record(canonicalKey, source, locationId)
-    dispatchDiscoveryRecorded(canonicalKey, recorded, source)
-    onSuccess?.(recorded)
-    return recorded
+    const response = await discoveriesApi.record(canonicalKey, source, locationId)
+    dispatchDiscoveryRecorded({ ...response, recordKey: canonicalKey, source })
+    onSuccess?.(response)
+    return response
   } catch (error) {
     onError?.(error)
     return null
   }
 }
 
-/** Map era number to discovery POI key when present in catalog. */
 export function eraDiscoveryKey(era: number): string | null {
   if (era === 1948 || era === 1968 || era === 2026) {
     return `era:${era}`

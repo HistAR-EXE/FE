@@ -4,13 +4,16 @@ import { AppLayout } from '../components/layout/AppLayout'
 import { SimpleTopNav } from '../components/layout/TopNav'
 import { collectionApi, type Artifact } from '../features/collection/api'
 import { recordDiscoveryEngagement } from '../features/gamification/discoveryRouting'
+import { notifyEngagementOutcome } from '../features/gamification/handleEngagement'
+import { analyticsApi } from '../features/analytics/api'
+import { useUserProgress } from '../shared/context/UserProgressProvider'
 import { locationsApi, type Location } from '../features/locations/api'
 import { profileApi, type BadgeCatalogItem, type MyBadge } from '../features/profile/api'
 import { CU_CHI_LOCATION_ID, DEFAULT_ARTIFACTS_LOCATION_ID } from '../shared/config/constants'
 import { useAuth } from '../shared/auth/useAuth'
 import { useToast } from '../shared/ui/toast/useToast'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
-import { useVisitSessionForLocation } from '../features/visit/VisitSessionProvider'
+import { useVisitSessionForLocation, useVisitSession } from '../features/visit/VisitSessionProvider'
 import { buildArUrl } from '../features/ar/arDeepLink'
 import { getArSceneByUnlockKey } from '../features/ar/cuChiArScenes'
 
@@ -216,6 +219,7 @@ export function ArtifactsPage() {
   const locationIdParam = searchParams.get('locationId')
   const { isAuthenticated, user } = useAuth()
   const { showToast } = useToast()
+  const { applyEngagement } = useUserProgress()
   const recordedKeys = useRef(new Set<string>())
   const [locations, setLocations] = useState<Location[]>([])
   const [locationId, setLocationId] = useState(
@@ -239,6 +243,8 @@ export function ArtifactsPage() {
   )
 
   useVisitSessionForLocation(locationId, isAuthenticated)
+  const { getSessionId } = useVisitSession()
+  const visitSessionId = getSessionId(locationId)
 
   useEffect(() => {
     locationsApi
@@ -311,6 +317,16 @@ export function ArtifactsPage() {
         recordKey: unlockKey,
         locationId,
         source: 'artifact',
+        onSuccess: (response) => {
+          notifyEngagementOutcome(response, showToast, applyEngagement)
+          void analyticsApi.recordEvent({
+            locationId,
+            visitSessionId,
+            eventType: 'ARTIFACT_VIEWED',
+            eventKey: unlockKey,
+            source: 'artifact',
+          })
+        },
         onError: () =>
           showToast({
             message: 'Không ghi được tiến độ khám phá.',
@@ -318,7 +334,7 @@ export function ArtifactsPage() {
           }),
       })
     },
-    [isAuthenticated, locationId, showToast],
+    [isAuthenticated, locationId, visitSessionId, showToast, applyEngagement],
   )
 
   const filteredArtifacts = useMemo(

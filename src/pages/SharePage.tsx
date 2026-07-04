@@ -3,6 +3,8 @@ import { useSearchParams } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { SimpleTopNav } from '../components/layout/TopNav'
 import { viralApi } from '../features/viral/api'
+import { analyticsApi } from '../features/analytics/api'
+import { formatXpToast, XP_LABELS } from '../shared/ui/xpToast'
 import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
 import { useToast } from '../shared/ui/toast/useToast'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
@@ -40,10 +42,16 @@ export function SharePage() {
       }
       if (creationId) {
         const tracked = await viralApi.recordShare(creationId)
-        showToast({
-          message: tracked.bonusPointsAwarded > 0 ? `Đã cộng ${tracked.bonusPointsAwarded} điểm chia sẻ.` : 'Lượt chia sẻ này đã được ghi nhận trước đó.',
-          type: 'success',
+        void analyticsApi.recordEvent({
+          eventType: 'SHARE_CREATED',
+          eventKey: creationId,
+          source: 'share',
         })
+        if (tracked.bonusPointsAwarded > 0) {
+          showToast(formatXpToast(tracked.bonusPointsAwarded, XP_LABELS.share))
+        } else {
+          showToast({ message: 'Lượt chia sẻ này đã được ghi nhận trước đó.', type: 'success' })
+        }
       } else {
         showToast({ message: 'Chia sẻ thành công.', type: 'success' })
       }
@@ -59,10 +67,16 @@ export function SharePage() {
     }
     try {
       const tracked = await viralApi.recordShare(creationId)
-      showToast({
-        message: tracked.bonusPointsAwarded > 0 ? `Đã cộng ${tracked.bonusPointsAwarded} điểm chia sẻ.` : 'Lượt chia sẻ này đã được ghi nhận trước đó.',
-        type: 'success',
+      void analyticsApi.recordEvent({
+        eventType: 'SHARE_CREATED',
+        eventKey: creationId,
+        source: 'share_manual',
       })
+      if (tracked.bonusPointsAwarded > 0) {
+        showToast(formatXpToast(tracked.bonusPointsAwarded, XP_LABELS.share))
+      } else {
+        showToast({ message: 'Lượt chia sẻ này đã được ghi nhận trước đó.', type: 'success' })
+      }
     } catch (e) {
       showToast({ message: getFriendlyErrorMessage(e, 'upload'), type: 'error' })
     }

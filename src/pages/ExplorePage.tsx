@@ -1,9 +1,11 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { ExploreTopNav } from '../components/layout/TopNav'
 import { locationsApi, type Location } from '../features/locations/api'
 import { RecommendationCard } from '../features/gamification/RecommendationCard'
+import { discoveriesApi } from '../features/gamification/api'
+import { DISCOVERY_RECORDED_EVENT } from '../features/gamification/discoveryRouting'
 import { useVisitSessionForLocation } from '../features/visit/VisitSessionProvider'
 import { CU_CHI_LOCATION_ID } from '../shared/config/constants'
 import { useAuth } from '../shared/auth/useAuth'
@@ -12,6 +14,7 @@ import { useAppMode } from '../shared/context/useAppMode'
 import { useToast } from '../shared/ui/toast/useToast'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { ExploreMapPanel } from '../features/explore/ExploreMapPanel'
+import { isLocationLocked, LOCATION_UNLOCKED_EVENT } from '../features/explore/locationUnlock'
 import { buildArUrl } from '../features/ar/arDeepLink'
 import { normalizeHeritageName } from '../features/explore/vietnamMap'
 import { images } from '../assets/images'
@@ -37,10 +40,16 @@ export function ExplorePage() {
   const [activeFilter, setActiveFilter] = useState<'all' | 'near' | 'virtual' | 'dynasty'>('all')
   const [loading, setLoading] = useState(true)
   const [failed, setFailed] = useState(false)
+  const [visitedIds, setVisitedIds] = useState<Set<string>>(new Set())
+  const [lockedHint, setLockedHint] = useState<Location | null>(null)
   const { showToast } = useToast()
   const { mode } = useAppMode()
   const { isAuthenticated } = useAuth()
-  useVisitSessionForLocation(CU_CHI_LOCATION_ID, isAuthenticated)
+  const focusLocationId = useMemo(() => {
+    const unlocked = mapLocations.find((location) => !isLocationLocked(location))
+    return unlocked?.id ?? mapLocations[0]?.id ?? CU_CHI_LOCATION_ID
+  }, [mapLocations])
+  useVisitSessionForLocation(focusLocationId, isAuthenticated)
 
   const loadPage = useCallback(
     async (pageIndex: number, append: boolean) => {
@@ -70,12 +79,60 @@ export function ExplorePage() {
     loadPage(0, false)
   }, [loadPage])
 
+  const refetchLocations = useCallback(async () => {
+    try {
+      const [pageResult, mapList] = await Promise.all([
+        locationsApi.listPage({ page: 0, size: PAGE_SIZE, sort: 'createdAt,desc' }),
+        locationsApi.list({ size: 50, sort: 'name,asc' }),
+      ])
+      setLocations(pageResult.items)
+      setTotalPages(pageResult.totalPages || 1)
+      setPage(0)
+      setMapLocations(mapList)
+    } catch {
+      /* keep current data */
+    }
+  }, [])
+
   useEffect(() => {
     locationsApi
       .list({ size: 50, sort: 'name,asc' })
       .then(setMapLocations)
       .catch(() => undefined)
   }, [])
+
+  useEffect(() => {
+    const onUnlocked = () => {
+      void refetchLocations()
+    }
+    window.addEventListener(LOCATION_UNLOCKED_EVENT, onUnlocked)
+    return () => window.removeEventListener(LOCATION_UNLOCKED_EVENT, onUnlocked)
+  }, [refetchLocations])
+
+  const loadVisitedLocations = useCallback(async () => {
+    if (!isAuthenticated) {
+      setVisitedIds(new Set())
+      return
+    }
+    try {
+      const data = await discoveriesApi.visitedLocations()
+      setVisitedIds(new Set(data.visitedLocationIds))
+    } catch {
+      setVisitedIds(new Set())
+    }
+  }, [isAuthenticated])
+
+  useEffect(() => {
+    void loadVisitedLocations()
+  }, [loadVisitedLocations])
+
+  useEffect(() => {
+    const onDiscoveryRecorded = () => {
+      void loadVisitedLocations()
+    }
+    window.addEventListener(DISCOVERY_RECORDED_EVENT, onDiscoveryRecorded)
+    return () => window.removeEventListener(DISCOVERY_RECORDED_EVENT, onDiscoveryRecorded)
+  }, [loadVisitedLocations])
 
   const filteredLocations = locations.filter((location) => {
     if (activeFilter === 'all') return true
@@ -156,7 +213,7 @@ export function ExplorePage() {
             </div>
           </div>
 
-          {isAuthenticated && <RecommendationCard locationId={CU_CHI_LOCATION_ID} />}
+          {isAuthenticated && <RecommendationCard locationId={focusLocationId} />}
 
           <div className="flex flex-col flex-1 min-h-0">
             <h3 className="shrink-0 font-title-md text-title-md text-on-surface-variant px-1 mb-md">Di tích nổi bật</h3>
@@ -166,11 +223,40 @@ export function ExplorePage() {
               <div className="flex flex-col gap-md">
                 {!loading &&
                   !failed &&
-                  filteredLocations.map((location, index) => (
+                  filteredLocations.map((location, index) => {
+                    const locked = isLocationLocked(location)
+                    return (
                     <article
                       key={location.id}
-                      className="group shrink-0 bg-surface-container-low border border-outline-variant rounded-xl overflow-hidden hover:border-primary/50 transition-all hover:bg-surface-container"
+                      className={`group shrink-0 bg-surface-container-low border border-outline-variant rounded-xl overflow-hidden transition-all ${
+                        locked ? 'opacity-60' : 'hover:border-primary/50 hover:bg-surface-container'
+                      }`}
                     >
+                      {locked ? (
+                        <button
+                          type="button"
+                          onClick={() => setLockedHint(location)}
+                          className="block w-full text-left"
+                        >
+                          <div className="h-32 relative overflow-hidden bg-surface-container-high shrink-0">
+                            <img
+                              alt={location.name || 'Di tích lịch sử'}
+                              className="w-full h-32 object-cover grayscale"
+                              src={coverSrc(location, index)}
+                              onError={onCoverError(location.id)}
+                            />
+                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                              <span className="text-2xl" aria-hidden>🔒</span>
+                            </div>
+                          </div>
+                          <div className="p-md">
+                            <h4 className="font-title-md text-title-md text-on-surface-variant">
+                              {normalizeHeritageName(location.name || 'Địa điểm chưa đặt tên')}
+                            </h4>
+                            <p className="text-xs text-on-surface-variant mt-1">Hoàn thành quest trước để mở khoá</p>
+                          </div>
+                        </button>
+                      ) : (
                       <Link to={`/explore/${location.id}`} className="block">
                         <div className="h-32 relative overflow-hidden bg-surface-container-high shrink-0">
                           <img
@@ -210,7 +296,8 @@ export function ExplorePage() {
                           </div>
                         </div>
                       </Link>
-                      {mode === 'online' && (
+                      )}
+                      {!locked && mode === 'online' && (
                         <div className="px-md pb-md flex flex-wrap gap-2 -mt-1">
                           <Link
                             to={`/artifacts?locationId=${location.id}`}
@@ -236,7 +323,7 @@ export function ExplorePage() {
                             </Link>
                           )}
                           <Link
-                            to={`/chat/nguyen-du?locationId=${location.id}`}
+                            to={`/chat?locationId=${location.id}`}
                             className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border border-primary/50 bg-primary/10 text-primary text-xs font-label-sm hover:bg-primary/20"
                           >
                             <MaterialIcon name="chat_bubble" className="text-sm" />
@@ -245,7 +332,8 @@ export function ExplorePage() {
                         </div>
                       )}
                     </article>
-                  ))}
+                    )
+                  })}
               </div>
               {!loading && !failed && page + 1 < totalPages && (
                 <button
@@ -261,7 +349,39 @@ export function ExplorePage() {
           </div>
         </section>
 
-        <ExploreMapPanel locations={mapLocations.length > 0 ? mapLocations : filteredLocations} />
+        <ExploreMapPanel
+          locations={mapLocations.length > 0 ? mapLocations : filteredLocations}
+          visitedIds={visitedIds}
+          onLockedLocationClick={setLockedHint}
+        />
+
+        {lockedHint && (
+          <div className="fixed inset-0 z-[70] flex items-center justify-center p-md bg-black/60">
+            <div className="bg-surface-container border border-outline-variant rounded-2xl p-lg max-w-sm w-full shadow-xl">
+              <p className="font-title-md text-on-surface">🔒 {normalizeHeritageName(lockedHint.name)}</p>
+              <p className="text-sm text-on-surface-variant mt-sm">
+                {lockedHint.unlockNarrative ??
+                  'Hoàn thành nhiệm vụ tại di tích trước để mở khoá điểm đến này trên bản đồ.'}
+              </p>
+              <div className="flex gap-sm mt-md justify-end">
+                <button
+                  type="button"
+                  onClick={() => setLockedHint(null)}
+                  className="px-4 py-2 rounded-full border border-outline-variant text-on-surface-variant"
+                >
+                  Đóng
+                </button>
+                <Link
+                  to="/quests"
+                  onClick={() => setLockedHint(null)}
+                  className="px-4 py-2 rounded-full bg-secondary text-on-secondary font-title-sm"
+                >
+                  Xem nhiệm vụ
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </AppLayout>
   )

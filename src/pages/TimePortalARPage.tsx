@@ -4,6 +4,9 @@ import { AppLayout } from '../components/layout/AppLayout'
 import { CU_CHI_LOCATION_ID } from '../shared/config/constants'
 import { useAuth } from '../shared/auth/useAuth'
 import { recordDiscoveryEngagement } from '../features/gamification/discoveryRouting'
+import { notifyEngagementOutcome } from '../features/gamification/handleEngagement'
+import { analyticsApi } from '../features/analytics/api'
+import { useUserProgress } from '../shared/context/UserProgressProvider'
 import { useToast } from '../shared/ui/toast/useToast'
 import { useVisitSessionForLocation } from '../features/visit/VisitSessionProvider'
 import { ARHud, ARLoadingFallback, ARShell } from '../features/ar/ARHud'
@@ -33,6 +36,7 @@ export function TimePortalARPage() {
   const { isAuthenticated } = useAuth()
   useVisitSessionForLocation(activeLocationId, isAuthenticated)
   const { showToast } = useToast()
+  const { applyEngagement } = useUserProgress()
 
   const { loading, error, config, captionForEra, overlayImageForEra } = useArPhotoScenes(activeLocationId, sceneSlug)
   const [tracking, setTracking] = useState<ARTrackingState>(mode === 'sim' ? 'found' : 'scanning')
@@ -65,10 +69,19 @@ export function TimePortalARPage() {
         recordKey,
         locationId: activeLocationId,
         source: 'time_portal',
+        onSuccess: (response) => {
+          notifyEngagementOutcome(response, showToast, applyEngagement)
+          void analyticsApi.recordEvent({
+            locationId: activeLocationId,
+            eventType: 'TIME_PORTAL_ERA_VIEWED',
+            eventKey: recordKey,
+            source: 'time_portal_ar',
+          })
+        },
         onError: () => showToast({ message: 'Không ghi được tiến độ khám phá.', type: 'error' }),
       })
     },
-    [isAuthenticated, activeLocationId, showToast],
+    [isAuthenticated, activeLocationId, showToast, applyEngagement],
   )
 
   useEffect(() => {

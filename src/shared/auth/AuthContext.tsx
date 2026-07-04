@@ -11,14 +11,26 @@ import {
   saveSession,
   type AuthUser,
   type UserRole,
+  type UserTier,
 } from './session'
+
+function normalizeRole(role?: string): UserRole {
+  if (role === 'ADMIN') return 'ADMIN'
+  if (role === 'TEACHER') return 'TEACHER'
+  return 'USER'
+}
+
+function normalizeTier(tier?: string): UserTier {
+  return tier === 'PREMIUM' ? 'PREMIUM' : 'FREE'
+}
 
 function toUser(payload: AuthPayload): AuthUser {
   return {
     id: payload.userId,
     displayName: payload.displayName,
     email: payload.email ?? '',
-    role: payload.role === 'ADMIN' ? 'ADMIN' : 'USER',
+    role: normalizeRole(payload.role),
+    tier: normalizeTier(payload.tier),
     avatarUrl: payload.avatarUrl ?? null,
   }
 }
@@ -29,12 +41,14 @@ function profileToUser(profile: {
   displayName: string
   avatarUrl: string | null
   role?: string
+  tier?: string
 }): AuthUser {
   return {
     id: profile.id,
     displayName: profile.displayName,
     email: profile.email,
-    role: profile.role === 'ADMIN' ? 'ADMIN' : 'USER',
+    role: normalizeRole(profile.role),
+    tier: normalizeTier(profile.tier),
     avatarUrl: profile.avatarUrl,
   }
 }
@@ -64,6 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           displayName: next.displayName,
           email: next.email,
           role: next.role,
+          tier: next.tier,
           avatarUrl: next.avatarUrl,
         })
       })
@@ -92,6 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       displayName: next.displayName,
       email: next.email,
       role: next.role,
+      tier: next.tier,
       avatarUrl: next.avatarUrl,
     })
     setUser(next)
@@ -127,6 +143,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           displayName: next.displayName,
           email: next.email,
           role: next.role as UserRole,
+          tier: next.tier,
           avatarUrl: next.avatarUrl,
         })
       }

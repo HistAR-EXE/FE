@@ -6,16 +6,19 @@ import { ScanTopNav } from '../components/layout/TopNav'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { images } from '../assets/images'
 import { gamificationApi, type CheckinResult } from '../features/gamification/api'
+import { notifyEngagementOutcome } from '../features/gamification/handleEngagement'
+import { analyticsApi } from '../features/analytics/api'
+import { useUserProgress } from '../shared/context/UserProgressProvider'
 import { appEnv } from '../shared/config/env'
 import { demoApi } from '../features/demo/api'
 import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
 import { useToast } from '../shared/ui/toast/useToast'
 import { useAuth } from '../shared/auth/useAuth'
 import { CU_CHI_LOCATION_ID } from '../shared/config/constants'
-import { useVisitSessionForLocation } from '../features/visit/VisitSessionProvider'
+import { useVisitSessionForLocation, useVisitSession } from '../features/visit/VisitSessionProvider'
 import { buildArUrl } from '../features/ar/arDeepLink'
 
-const UUID_REGEX = /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}/
+const UUID_REGEX = /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/i
 
 function extractLocationIdFromQr(value: string): string {
   const raw = value.trim()
@@ -56,6 +59,8 @@ export function ScanPage() {
   const targetLocationId = params.get('locationId') ?? ''
   const sessionLocationId = targetLocationId || CU_CHI_LOCATION_ID
   useVisitSessionForLocation(sessionLocationId, isAuthenticated)
+  const { getSessionId } = useVisitSession()
+  const visitSessionId = getSessionId(sessionLocationId)
   const [qrCode, setQrCode] = useState(targetLocationId ? `timelens:location:${targetLocationId}` : '')
   const [result, setResult] = useState<CheckinResult | null>(null)
   const [geoError, setGeoError] = useState<string | null>(null)
@@ -71,6 +76,7 @@ export function ScanPage() {
   const lastDecodedAtRef = useRef<number>(0)
   const autoCheckinTimerRef = useRef<number | null>(null)
   const { showToast } = useToast()
+  const { applyEngagement } = useUserProgress()
   const parsedLocationId = useMemo(() => extractLocationIdFromQr(qrCode), [qrCode])
   const filteredHistory = useMemo(() => {
     const q = historySearch.trim().toLowerCase()
@@ -92,8 +98,11 @@ export function ScanPage() {
           navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 10000 })
         }).catch(() => null)
         if (!position) {
-          setGeoError('Không lấy được vị trí. Hãy bật quyền định vị trên trình duyệt hoặc điện thoại.')
-          showToast({ message: 'Không lấy được vị trí. Hãy bật GPS và thử lại.', type: 'error' })
+          setGeoError('Quét QR để check-in — bật GPS để xác minh vị trí tại di tích.')
+          showToast({
+            message: 'Không lấy được vị trí. Quét QR để check-in hoặc bật GPS.',
+            type: 'error',
+          })
           return
         }
         setGeoError(null)
@@ -105,6 +114,18 @@ export function ScanPage() {
         })
         setResult(res)
         setQrCode(normalizedQr)
+        notifyEngagementOutcome(res, showToast, applyEngagement, {
+          locationId,
+          visitSessionId,
+          engagementKind: 'checkin',
+        })
+        void analyticsApi.recordEvent({
+          locationId,
+          visitSessionId,
+          eventType: 'CHECKIN_SUCCESS',
+          eventKey: locationId,
+          source: 'scan',
+        })
         setScanHistory((prev) => [
           {
             id: locationId,
@@ -114,25 +135,13 @@ export function ScanPage() {
           },
           ...prev.slice(0, 9),
         ])
-        const bonusXp = res.bonusXpAwarded ?? 0
-        const onsiteBadge = res.badgesEarned.find((b) => b.name.startsWith('Đã đến nơi'))
-        if (bonusXp > 0) {
-          showToast({
-            message: onsiteBadge
-              ? `Check-in thành công — +${bonusXp} XP onsite · ${onsiteBadge.name}`
-              : `Check-in thành công — +${bonusXp} XP thưởng onsite`,
-            type: 'success',
-          })
-        } else {
-          showToast({ message: 'Check-in thành công.', type: 'success' })
-        }
       } catch (e) {
         showToast({ message: getFriendlyErrorMessage(e, 'checkin'), type: 'error' })
       } finally {
         setChecking(false)
       }
     },
-    [showToast],
+    [showToast, applyEngagement, visitSessionId],
   )
 
   useEffect(() => {

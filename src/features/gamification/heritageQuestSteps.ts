@@ -49,7 +49,7 @@ const CHECKIN_STEP: QuestStepMeta = {
   hint: 'Mở màn hình quét QR gần cổng hoặc điểm hướng dẫn.',
   actionType: 'checkin',
   actionLabel: 'Kích hoạt GPS',
-  xpPartial: 25,
+  xpPartial: 20,
 }
 
 /** Optional P2 bonus after heritage quest completes online (discovery trigger). */
@@ -61,7 +61,7 @@ const CHECKIN_BONUS_STEP: QuestStepMeta = {
   hint: 'Cần có mặt trong bán kính GPS của di tích.',
   actionType: 'checkin',
   actionLabel: 'Kích hoạt GPS',
-  xpPartial: 25,
+  xpPartial: 20,
 }
 
 function mixedVisualPipeline(
@@ -99,7 +99,7 @@ function mixedVisualPipeline(
       hint: ch1.hint,
       actionType: 'artifact',
       actionLabel: 'Chiêm ngưỡng hiện vật',
-      xpPartial: 25,
+      xpPartial: 20,
       previewImage: ch1.previewImage ?? coverImage,
     },
     {
@@ -110,7 +110,7 @@ function mixedVisualPipeline(
       hint: portal.hint,
       actionType: 'portal',
       actionLabel: 'Mở Time Portal',
-      xpPartial: 35,
+      xpPartial: 20,
       portalEra: 2026,
       previewImage: coverImage,
     },
@@ -122,7 +122,7 @@ function mixedVisualPipeline(
       hint: ch3.hint,
       actionType: 'artifact',
       actionLabel: ch3.actionLabel ?? 'Mở hiện vật cuối',
-      xpPartial: 45,
+      xpPartial: 20,
       previewImage: ch3.previewImage ?? coverImage,
     },
   ]
@@ -147,7 +147,7 @@ export const HERITAGE_QUEST_META: Record<string, HeritageQuestMeta> = {
         hint: 'Trong tour, chạm hotspot bếp để nghe thuyết minh.',
         actionType: 'tour',
         actionLabel: 'Vào tour 360°',
-        xpPartial: 25,
+        xpPartial: 20,
         previewImage: '/media/heritage/dia-dao-cu-chi/cover.jpeg',
       },
       {
@@ -158,7 +158,7 @@ export const HERITAGE_QUEST_META: Record<string, HeritageQuestMeta> = {
         hint: 'Chuyển panorama tới phòng họp trong tour.',
         actionType: 'tour',
         actionLabel: 'Tiếp tục tour',
-        xpPartial: 30,
+        xpPartial: 20,
         previewImage: '/media/heritage/dia-dao-cu-chi/cover.jpeg',
       },
       {
@@ -170,7 +170,7 @@ export const HERITAGE_QUEST_META: Record<string, HeritageQuestMeta> = {
         actionType: 'portal',
         actionLabel: 'Mở Time Portal',
         portalEra: 1948,
-        xpPartial: 35,
+        xpPartial: 20,
         previewImage: '/media/heritage/dia-dao-cu-chi/cover.jpeg',
       },
     ],
@@ -533,7 +533,7 @@ export function stepHref(locationId: string, step: QuestStepMeta, questId?: stri
     const params = new URLSearchParams({ locationId, questRecord: step.unlockKey })
     if (step.chatPrompt) params.set('questPrompt', step.chatPrompt)
     if (questId) params.set('questId', questId)
-    return `/chat/nguyen-du?${params}`
+    return `/chat?${params}`
   }
   if (step.actionType === 'reveal') {
     const era = step.portalEra ?? 2026

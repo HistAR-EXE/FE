@@ -89,3 +89,11 @@ export function useVisitSessionForLocation(locationId: string | undefined, enabl
 
   return { endSession }
 }
+
+export function useVisitSession() {
+  const ctx = useContext(VisitSessionContext)
+  if (!ctx) {
+    throw new Error('useVisitSession must be used within VisitSessionProvider')
+  }
+  return ctx
+}

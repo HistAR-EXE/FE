@@ -11,14 +11,14 @@ export type CuChiTourMapPin = {
   routeOrder: number
 }
 
-/** Trung tâm — Khu di tích lịch sử (chấm đỏ Google Maps) */
-export const CU_CHI_TOUR_CENTER: [number, number] = [11.14528, 106.49472]
-export const CU_CHI_TOUR_ZOOM = 17
+/** Trung tâm — Khu di tích lịch sử (theo GPS thật từ ảnh chuyến đi 06/2026) */
+export const CU_CHI_TOUR_CENTER: [number, number] = [11.1422, 106.462]
+export const CU_CHI_TOUR_ZOOM = 16
 
-/** Giới hạn pan — rìa rừng Bến Dước */
+/** Giới hạn pan — bao trọn vùng tham quan thực tế */
 export const CU_CHI_SITE_BOUNDS: [[number, number], [number, number]] = [
-  [11.14325, 106.49165],
-  [11.14725, 106.49755],
+  [11.138, 106.4585],
+  [11.149, 106.465],
 ]
 
 /**
@@ -26,112 +26,86 @@ export const CU_CHI_SITE_BOUNDS: [[number, number], [number, number]] = [
  * Điểm 1: ngã ba ĐT15 → 2–3: khu trưng bày (TB) → 4: sân lễ → 5: Đền Bến Dước (ĐN).
  */
 export const CU_CHI_TOUR_ROUTE: [number, number][] = [
-  [11.14602, 106.49612],
-  [11.14588, 106.49568],
-  [11.14572, 106.49522],
-  [11.14558, 106.49462],
-  [11.14552, 106.49418],
-  [11.14558, 106.49388],
-  [11.14550, 106.49428],
-  [11.14538, 106.49458],
-  [11.14524, 106.49488],
-  [11.14532, 106.49528],
-  [11.14548, 106.49562],
-  [11.14568, 106.49592],
-  [11.14582, 106.49618],
-  [11.14602, 106.49642],
-  [11.14618, 106.49658],
-  [11.14632, 106.49672],
+  [11.143375, 106.462739],
+  [11.141561, 106.462417],
+  [11.142989, 106.462806],
+  [11.142461, 106.462631],
+  [11.140064, 106.462075],
+  [11.145428, 106.463394],
+  [11.145044, 106.464011],
 ]
 
 /** Đường mòn phụ (mờ) — mạng lối đi trong rừng */
-export const CU_CHI_WALKING_PATHS: [number, number][][] = [
-  [
-    [11.14595, 106.49405],
-    [11.14578, 106.49372],
-    [11.14555, 106.49355],
-    [11.14528, 106.49348],
-    [11.14498, 106.49362],
-  ],
-  [
-    [11.14528, 106.49472],
-    [11.14512, 106.49495],
-    [11.14488, 106.49518],
-    [11.14455, 106.49505],
-    [11.14432, 106.49472],
-    [11.14418, 106.49425],
-  ],
-  [
-    [11.14655, 106.49645],
-    [11.14638, 106.49615],
-    [11.14615, 106.49585],
-    [11.14582, 106.49618],
-  ],
-  [
-    [11.14435, 106.49315],
-    [11.14412, 106.49285],
-    [11.14375, 106.49272],
-    [11.14355, 106.49305],
-    [11.14362, 106.49355],
-  ],
-]
+export const CU_CHI_WALKING_PATHS: [number, number][][] = []
 
 /** Viền khu di tích — đa giác theo rìa rừng (ảnh vệ tinh) */
 export const CU_CHI_SITE_POLYGON: [number, number][] = [
-  [11.14712, 106.49205],
-  [11.14685, 106.49175],
-  [11.14455, 106.49168],
-  [11.14342, 106.49255],
-  [11.14335, 106.49425],
-  [11.14355, 106.49585],
-  [11.14425, 106.49715],
-  [11.14585, 106.49748],
-  [11.14715, 106.49735],
-  [11.14722, 106.49585],
-  [11.14695, 106.49425],
-  [11.14712, 106.49205],
+  [11.1486, 106.46],
+  [11.1486, 106.4645],
+  [11.143, 106.4648],
+  [11.1395, 106.4632],
+  [11.1383, 106.4592],
+  [11.1402, 106.4585],
+  [11.1455, 106.4598],
+  [11.1486, 106.46],
 ]
 
 export const CU_CHI_TOUR_MAP_PINS: Record<string, CuChiTourMapPin> = {
-  /** Street View: đường nhựa từ ĐT15 vào khu di tích (góc ĐB) */
-  '22222222-2222-2222-2222-222222222222': {
-    lat: 11.14602,
-    lng: 106.49612,
-    shortLabel: 'Cổng / đường vào',
-    detail: 'Ngã ba từ ĐT15 — lối vào khu Bến Dước',
+  /** 1. Bãi gửi xe gắn máy số 1 — điểm bắt đầu (GPS thật từ ảnh Hảo) */
+  '22222222-2222-2222-2222-222222222221': {
+    lat: 11.143375,
+    lng: 106.462739,
+    shortLabel: 'Bãi xe số 1',
+    detail: 'Bãi gửi xe gắn máy số 1 — điểm bắt đầu, cạnh bảng giới thiệu khu di tích',
     routeOrder: 1,
   },
-  /** Street View: M113 + C-130 — khu trưng bày phía tây-bắc trung tâm */
-  '22222222-2222-2222-2222-222222222221': {
-    lat: 11.14558,
-    lng: 106.49388,
-    shortLabel: 'Trưng bày vũ khí',
-    detail: 'Khu trưng bày ngoài trời — M113, máy bay C-130',
+  /** 2. Đền tưởng niệm Liệt sĩ Bến Dược */
+  '22222222-2222-2222-2222-222222222222': {
+    lat: 11.141561,
+    lng: 106.462417,
+    shortLabel: 'Đền Bến Dược',
+    detail: 'Đền tưởng niệm Liệt sĩ Bến Dược — kiến trúc mái cong truyền thống',
     routeOrder: 2,
   },
-  /** Street View: xe thiết giáp có mái che — cùng khu trưng bày */
+  /** 3. Căn cứ Bộ Tư lệnh Quân khu Sài Gòn - Gia Định */
   '22222222-2222-2222-2222-222222222223': {
-    lat: 11.1455,
-    lng: 106.49428,
-    shortLabel: 'Xe thiết giáp',
-    detail: 'Khu trưng bày xe M113 (có mái che)',
+    lat: 11.142989,
+    lng: 106.462806,
+    shortLabel: 'Bộ Tư lệnh QK',
+    detail: 'Căn cứ Bộ Tư lệnh QK Sài Gòn - Gia Định — súng, bom đạn, bàn thờ',
     routeOrder: 3,
   },
-  /** Street View: sân lễ, tháp — lối vào Đền liệt sĩ */
+  /** 4. Khu trưng bày khí tài ngoài trời */
   '22222222-2222-2222-2222-222222222224': {
-    lat: 11.14582,
-    lng: 106.49618,
-    shortLabel: 'Sân lễ',
-    detail: 'Sân lễ & khu Đài tưởng niệm Liệt sĩ Bến Dước',
+    lat: 11.142461,
+    lng: 106.462631,
+    shortLabel: 'Khu trưng bày',
+    detail: 'Khu trưng bày — xe tăng, thiết giáp M113, pháo 105mm, máy bay',
     routeOrder: 4,
   },
-  /** Street View: hành lang Đền Bến Dước — Vietnamese Memorial Complex */
+  /** 5. Căn cứ Khu ủy Quân khu Sài Gòn - Gia Định */
   '22222222-2222-2222-2222-222222222225': {
-    lat: 11.14632,
-    lng: 106.49672,
-    shortLabel: 'Đền Bến Dước',
-    detail: 'Đền tưởng niệm Bến Dước — kiến trúc mái đỏ truyền thống',
+    lat: 11.140064,
+    lng: 106.462075,
+    shortLabel: 'Khu ủy QK',
+    detail: 'Căn cứ Khu ủy QK Sài Gòn - Gia Định — sâu trong rừng',
     routeOrder: 5,
+  },
+  /** 6. Nhà biểu diễn Sa bàn, Phim 3D */
+  '22222222-2222-2222-2222-222222222226': {
+    lat: 11.145428,
+    lng: 106.463394,
+    shortLabel: 'Nhà biểu diễn',
+    detail: 'Nhà biểu diễn Sa bàn, Phim 3D — mô phỏng hệ thống địa đạo',
+    routeOrder: 6,
+  },
+  /** 7. Khu tái hiện Vùng Giải phóng */
+  '22222222-2222-2222-2222-222222222227': {
+    lat: 11.145044,
+    lng: 106.464011,
+    shortLabel: 'Khu tái hiện',
+    detail: 'Khu tái hiện Vùng Giải phóng — bếp Hoàng Cầm, hầm, hố bom B52',
+    routeOrder: 7,
   },
 }
 
@@ -145,16 +119,16 @@ export type CuChiLandmark = {
 
 /** Điểm tham quan trên ảnh Google Maps (không phải điểm 360°) */
 export const CU_CHI_LANDMARKS: CuChiLandmark[] = [
-  { lat: 11.14672, lng: 106.49205, label: 'Nhà hàng Bến Dước', color: '#f59e0b', kind: 'site' },
-  { lat: 11.14685, lng: 106.49265, label: 'Địa đạo Bến Dước (cổng Bắc)', color: '#8b5cf6', kind: 'site' },
-  { lat: 11.14528, lng: 106.49472, label: 'Khu di tích trung tâm', color: '#ef4444', kind: 'site' },
-  { lat: 11.14582, lng: 106.49405, label: 'Bếp Hoàng Cầm / tham quan hầm', color: '#a855f7', kind: 'site' },
-  { lat: 11.14438, lng: 106.49485, label: 'Khu tái hiện Vùng Giải Phóng', color: '#84cc16', kind: 'site' },
-  { lat: 11.14372, lng: 106.49325, label: 'Biển Đông', color: '#06b6d4', kind: 'water' },
-  { lat: 11.14355, lng: 106.49255, label: 'Bắn súng thể thao', color: '#22c55e', kind: 'activity' },
-  { lat: 11.14595, lng: 106.49655, label: 'Sân tập lái', color: '#94a3b8', kind: 'activity' },
-  { lat: 11.14648, lng: 106.49685, label: 'Đền Liệt sĩ / Memorial', color: '#dc2626', kind: 'site' },
-  { lat: 11.14485, lng: 106.49185, label: 'Sông Sài Gòn', color: '#0ea5e9', kind: 'water' },
+  { lat: 11.141, lng: 106.4642, label: 'Nhà hàng Bến Dước', color: '#f59e0b', kind: 'site' },
+  { lat: 11.1455, lng: 106.464, label: 'Địa đạo Bến Dước (cổng Bắc)', color: '#8b5cf6', kind: 'site' },
+  { lat: 11.143, lng: 106.462, label: 'Khu di tích trung tâm', color: '#ef4444', kind: 'site' },
+  { lat: 11.1404, lng: 106.462, label: 'Bếp Hoàng Cầm / tham quan hầm', color: '#a855f7', kind: 'site' },
+  { lat: 11.1447, lng: 106.4636, label: 'Khu tái hiện Vùng Giải Phóng', color: '#84cc16', kind: 'site' },
+  { lat: 11.1392, lng: 106.4622, label: 'Biển Đông', color: '#06b6d4', kind: 'water' },
+  { lat: 11.1396, lng: 106.4602, label: 'Bắn súng thể thao', color: '#22c55e', kind: 'activity' },
+  { lat: 11.145, lng: 106.4632, label: 'Sân tập lái', color: '#94a3b8', kind: 'activity' },
+  { lat: 11.1416, lng: 106.46255, label: 'Đền Liệt sĩ / Memorial', color: '#dc2626', kind: 'site' },
+  { lat: 11.1412, lng: 106.4648, label: 'Sông Sài Gòn', color: '#0ea5e9', kind: 'water' },
 ]
 
 export const CU_CHI_MAP_HERO = '/media/cu-chi/map/hero.jpg'

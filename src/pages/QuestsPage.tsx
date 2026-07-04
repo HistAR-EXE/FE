@@ -12,6 +12,7 @@ import { useAuth } from '../shared/auth/useAuth'
 import { useToast } from '../shared/ui/toast/useToast'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { images } from '../assets/images'
+import { isLocationLocked } from '../features/explore/locationUnlock'
 import { appEnv } from '../shared/config/env'
 
 export function QuestsPage() {
@@ -127,6 +128,8 @@ export function QuestsPage() {
     }
   }
 
+  const locationById = useMemo(() => new Map(locations.map((l) => [l.id, l])), [locations])
+
   const questsForDisplay: Array<{
     id: string
     to: string
@@ -143,8 +146,12 @@ export function QuestsPage() {
     stepsTotal?: number
     readyToStart?: boolean
     completionTrigger?: string | null
+    requireOnsiteCheckin?: boolean
+    locationLocked?: boolean
   }> = filteredQuests.map((q) => {
     const meta = HERITAGE_QUEST_META[q.id]
+    const progress = getProgress(q.id)
+    const loc = locationById.get(q.locationId)
     return {
       id: q.id,
       to: `/quests/${q.id}`,
@@ -157,14 +164,15 @@ export function QuestsPage() {
       pointsReward: q.pointsReward,
       status: getStatus(q.id),
       image: q.coverImage || images.questDauAnHoangThanh,
-      currentStep: getProgress(q.id)?.currentStep,
-      stepsTotal: getProgress(q.id)?.stepsTotal ?? q.stepsTotal,
+      currentStep: progress?.currentStep,
+      stepsTotal: progress?.stepsTotal ?? q.stepsTotal,
       readyToStart: (() => {
-        const progress = getProgress(q.id)
         if (progress) return isReadyToStart(progress)
         return q.completionTrigger === 'discovery'
       })(),
       completionTrigger: q.completionTrigger,
+      requireOnsiteCheckin: progress?.requireOnsiteCheckin ?? q.requireOnsiteCheckin ?? q.completionTrigger === 'checkin',
+      locationLocked: loc ? isLocationLocked(loc) : false,
     }
   })
 
@@ -277,7 +285,23 @@ export function QuestsPage() {
         </div>
         {loading && <p className="mb-sm text-on-surface-variant">Đang tải nhiệm vụ...</p>}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-md">
-          {displayCards.map((q) => (
+          {displayCards.map((q) =>
+            q.locationLocked ? (
+              <div
+                key={q.id}
+                className="block bg-surface-container border border-outline-variant rounded-xl overflow-hidden opacity-60 cursor-not-allowed"
+                title="Hoàn thành quest trước để mở khoá di tích này"
+              >
+                <div className="h-48 relative grayscale">
+                  <img src={q.image} alt={q.title} className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-3xl">🔒</div>
+                </div>
+                <div className="p-md">
+                  <h2 className="font-headline-lg text-on-surface-variant">{q.title}</h2>
+                  <p className="text-xs text-on-surface-variant mt-sm">Hoàn thành nhiệm vụ Củ Chi để mở khoá</p>
+                </div>
+              </div>
+            ) : (
             <Link
               key={q.id}
               to={q.to}
@@ -301,6 +325,15 @@ export function QuestsPage() {
                   <span className="text-xs px-1.5 py-0.5 rounded-full border border-outline-variant text-on-surface-variant">
                     {q.difficulty} · ~{q.estimatedMinutes} phút
                   </span>
+                  {q.requireOnsiteCheckin ? (
+                    <span className="text-xs px-1.5 py-0.5 rounded-full border border-secondary/50 text-secondary inline-flex items-center gap-0.5">
+                      <MaterialIcon name="location_on" className="text-sm" /> Cần đến tận nơi
+                    </span>
+                  ) : (
+                    <span className="text-xs px-1.5 py-0.5 rounded-full border border-primary/40 text-primary inline-flex items-center gap-0.5">
+                      <MaterialIcon name="museum" className="text-sm" /> Remote-friendly
+                    </span>
+                  )}
                 </div>
                 <div className="flex items-end justify-between gap-sm mb-sm">
                   <h2 className="font-headline-lg text-on-surface leading-tight">{q.title}</h2>
@@ -345,7 +378,8 @@ export function QuestsPage() {
                 </div>
               </div>
             </Link>
-          ))}
+            ),
+          )}
         </div>
         {!loading && questsForDisplay.length === 0 && (
           <div className="mt-md text-center py-xl border border-dashed border-outline-variant rounded-xl">

@@ -26,9 +26,12 @@ import {
   VOYAGER_MAP_URL,
   type ExploreMapLayer,
 } from './exploreMapTiles'
+import { isLocationLocked } from './locationUnlock'
 
 type ExploreMapPanelProps = {
   locations: HeritageLocation[]
+  visitedIds?: Set<string>
+  onLockedLocationClick?: (location: HeritageLocation) => void
 }
 
 function RegionLegend() {
@@ -82,16 +85,19 @@ function fitVietnamView(map: L.Map, markerList: MapMarker[], animate: boolean) {
   map.fitBounds(bounds.pad(0.1), { animate, maxZoom: 6 })
 }
 
-function createPinIcon(region: VietnamRegion, active: boolean): L.DivIcon {
-  const color = REGION_META[region].marker
+function createPinIcon(region: VietnamRegion, active: boolean, visited: boolean, locked: boolean): L.DivIcon {
+  const color = locked ? '#6b7280' : REGION_META[region].marker
   const size = 32
+  const visitedClass = visited ? ' heritage-map-pin--visited' : ''
+  const lockedClass = locked ? ' heritage-map-pin--locked' : ''
   return L.divIcon({
     className: 'heritage-map-pin-wrap',
     html: `
-      <div class="heritage-map-pin ${active ? 'heritage-map-pin--active' : ''}" style="--pin-color:${color}">
+      <div class="heritage-map-pin ${active ? 'heritage-map-pin--active' : ''}${visitedClass}${lockedClass}" style="--pin-color:${color};${locked ? 'opacity:0.45;' : ''}">
         <span class="heritage-map-pin__glow"></span>
         <span class="heritage-map-pin__head"></span>
         <span class="heritage-map-pin__tail"></span>
+        ${locked ? '<span class="heritage-map-pin__visited-badge">🔒</span>' : visited ? '<span class="heritage-map-pin__visited-badge">✓</span>' : ''}
       </div>
     `,
     iconSize: [size, size],
@@ -100,7 +106,7 @@ function createPinIcon(region: VietnamRegion, active: boolean): L.DivIcon {
   })
 }
 
-export function ExploreMapPanel({ locations }: ExploreMapPanelProps) {
+export function ExploreMapPanel({ locations, visitedIds, onLockedLocationClick }: ExploreMapPanelProps) {
   const navigate = useNavigate()
   const containerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<L.Map | null>(null)
@@ -207,15 +213,24 @@ export function ExploreMapPanel({ locations }: ExploreMapPanelProps) {
 
     markers.forEach((marker) => {
       const name = normalizeHeritageName(marker.location.name)
-      const icon = createPinIcon(marker.region, false)
+      const visited = visitedIds?.has(marker.location.id) ?? false
+      const locked = isLocationLocked(marker.location)
+      const icon = createPinIcon(marker.region, false, visited, locked)
       const leafletMarker = L.marker([marker.lat, marker.lng], { icon })
 
       leafletMarker.on('mouseover', () => setHoveredId(marker.location.id))
       leafletMarker.on('mouseout', () => setHoveredId(null))
-      leafletMarker.on('click', () => navigate(`/explore/${marker.location.id}`))
+      leafletMarker.on('click', () => {
+        if (locked) {
+          onLockedLocationClick?.(marker.location)
+          return
+        }
+        navigate(`/explore/${marker.location.id}`)
+      })
 
+      const tooltipSuffix = locked ? '<br/><em>🔒 Hoàn thành quest trước để mở khoá</em>' : ''
       leafletMarker.bindTooltip(
-        `<strong>${name}</strong><br/><span>${marker.location.city}</span>`,
+        `<strong>${name}</strong><br/><span>${marker.location.city}</span>${tooltipSuffix}`,
         {
           direction: 'top',
           offset: [0, -34],
@@ -231,15 +246,17 @@ export function ExploreMapPanel({ locations }: ExploreMapPanelProps) {
     if (markers.length > 0) {
       fitVietnamView(map, markers, false)
     }
-  }, [markers, navigate])
+  }, [markers, navigate, visitedIds, onLockedLocationClick])
 
   useEffect(() => {
     markers.forEach((marker) => {
       const leafletMarker = markerRefs.current.get(marker.location.id)
       if (!leafletMarker) return
-      leafletMarker.setIcon(createPinIcon(marker.region, hoveredId === marker.location.id))
+      const visited = visitedIds?.has(marker.location.id) ?? false
+      const locked = isLocationLocked(marker.location)
+      leafletMarker.setIcon(createPinIcon(marker.region, hoveredId === marker.location.id, visited, locked))
     })
-  }, [hoveredId, markers])
+  }, [hoveredId, markers, visitedIds])
 
   const zoomIn = () => mapRef.current?.zoomIn()
   const zoomOut = () => mapRef.current?.zoomOut()

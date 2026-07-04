@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { SimpleTopNav } from '../components/layout/TopNav'
 import { locationsApi, type Character, type Location } from '../features/locations/api'
@@ -45,7 +46,11 @@ export function CharacterExplorePage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-lg">
           {characters.map((c) => (
-            <article key={c.id} className="rounded-xl overflow-hidden border border-outline-variant hover:border-secondary transition-all bg-surface-container">
+            <Link
+              key={c.id}
+              to={`/characters/${c.id}`}
+              className="group block rounded-xl overflow-hidden border border-outline-variant hover:border-secondary transition-all bg-surface-container"
+            >
               <div className="h-48 relative overflow-hidden">
                 <img src={c.portraitUrl} alt={c.name} className="w-full h-full object-cover opacity-80" />
                 <div className="absolute inset-0 bg-gradient-to-t from-surface-container-high to-transparent" />
@@ -54,7 +59,7 @@ export function CharacterExplorePage() {
                 <h2 className="font-title-md">{c.name}</h2>
                 <p className="text-sm text-secondary">{c.era}</p>
               </div>
-            </article>
+            </Link>
           ))}
         </div>
       </main>

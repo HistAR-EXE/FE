@@ -1,15 +1,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { SimpleTopNav } from '../components/layout/TopNav'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { images } from '../assets/images'
-import { chatApi, type ChatMessage } from '../features/chat/api'
+import { chatApi, normalizeChatSources, type ChatMessage, type ChatSource } from '../features/chat/api'
+import { ChatSourcesBlock } from '../components/chat/ChatSourcesBlock'
+import { analyticsApi } from '../features/analytics/api'
 import { buildChatTimeline } from '../features/chat/chatTimeline'
 import { stopActiveRecorder, voiceChatStepwise, type VoicePhase } from '../features/chat/voice'
 import { locationsApi, type Character } from '../features/locations/api'
 import { questRecordFromSearch, recordQuestStepEngagement } from '../features/gamification/questEngagement'
 import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
+import { ApiError } from '../shared/api/contracts'
+import { profileApi } from '../features/profile/api'
 import { ChatMessageContent } from '../shared/ui/ChatMessageContent'
 import { useAuth } from '../shared/auth/useAuth'
 import { useToast } from '../shared/ui/toast/useToast'
@@ -47,12 +51,13 @@ function TimelineDivider({ label }: { label: string }) {
 }
 
 export function ChatPage() {
+  const { characterId: routeCharacterId } = useParams<{ characterId?: string }>()
   const [params] = useSearchParams()
   const locationId = params.get('locationId') ?? ''
-  const initialCharacterId = params.get('characterId') ?? ''
+  const initialCharacterId = routeCharacterId ?? params.get('characterId') ?? ''
   const questRecordKey = questRecordFromSearch(params)
   const questPrompt = params.get('questPrompt') ?? ''
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, user, updateUser } = useAuth()
   const questDialogueRecorded = useRef(false)
   const prefilledQuestPrompt = useRef(false)
 
@@ -66,6 +71,8 @@ export function ChatPage() {
   const [historyPage, setHistoryPage] = useState(0)
   const [hasOlder, setHasOlder] = useState(false)
   const [sending, setSending] = useState(false)
+  const [chatLimitReached, setChatLimitReached] = useState(false)
+  const [upgrading, setUpgrading] = useState(false)
   const [voicePhase, setVoicePhase] = useState<VoicePhase>('idle')
   const recorderRef = useRef<MediaRecorder | null>(null)
   const recordPromiseRef = useRef<Promise<Blob> | null>(null)
@@ -73,6 +80,7 @@ export function ChatPage() {
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
   const loadMoreRef = useRef<HTMLDivElement | null>(null)
   const shouldStickToBottomRef = useRef(true)
+  const chatStartedRef = useRef<string | null>(null)
   const { showToast } = useToast()
   const quickReplies = [
     'Cuộc sống trong địa đạo thế nào?',
@@ -83,6 +91,20 @@ export function ChatPage() {
 
   const voiceBusy = voicePhase !== 'idle' && voicePhase !== 'recording'
   const busy = sending || voiceBusy
+
+  const handleUpgrade = async () => {
+    try {
+      setUpgrading(true)
+      await profileApi.upgrade()
+      updateUser({ tier: 'PREMIUM' })
+      setChatLimitReached(false)
+      showToast({ message: 'Đã nâng cấp Premium — trò chuyện không giới hạn!', type: 'success' })
+    } catch (e) {
+      showToast({ message: getFriendlyErrorMessage(e, 'chat'), type: 'error' })
+    } finally {
+      setUpgrading(false)
+    }
+  }
 
   const timeline = useMemo(() => buildChatTimeline(messages), [messages])
 
@@ -135,6 +157,12 @@ export function ChatPage() {
       setLoadingOlder(false)
     }
   }, [conversationId, hasOlder, historyPage, loadingOlder, showToast])
+
+  useEffect(() => {
+    if (initialCharacterId) {
+      setCharacterId(initialCharacterId)
+    }
+  }, [initialCharacterId])
 
   useEffect(() => {
     if (!locationId) return
@@ -216,7 +244,7 @@ export function ChatPage() {
 
   const selected = useMemo(() => characters.find((c) => c.id === characterId), [characters, characterId])
 
-  const appendExchange = (userText: string, reply: string, convId: string) => {
+  const appendExchange = (userText: string, reply: string, convId: string, sources?: ChatSource[]) => {
     setConversationId(convId)
     shouldStickToBottomRef.current = true
     setMessages((prev) =>
@@ -231,6 +259,7 @@ export function ChatPage() {
           id: `assistant-${Date.now()}`,
           role: 'assistant',
           content: reply,
+          sources: normalizeChatSources(sources),
           createdAt: new Date().toISOString(),
         },
       ]),
@@ -267,25 +296,18 @@ export function ChatPage() {
         characterId,
         message: userText,
         conversationId,
-        onStreamToken: (partial) => {
-          setMessages((prev) => {
-            const base = prev.filter((m) => m.id !== optimistic.id)
-            const assistantMsg: ChatMessage = {
-              id: assistantId,
-              role: 'assistant',
-              content: partial,
-              createdAt: new Date().toISOString(),
-            }
-            const userMsg: ChatMessage = {
-              ...optimistic,
-              id: userMessageId,
-            }
-            return mergeMessages(base, [userMsg, assistantMsg])
-          })
-        },
       })
 
       setConversationId(reply.conversationId)
+      if (chatStartedRef.current !== characterId) {
+        chatStartedRef.current = characterId
+        void analyticsApi.recordEvent({
+          locationId: locationId ?? undefined,
+          eventType: 'CHARACTER_CHAT_STARTED',
+          eventKey: characterId,
+          source: 'chat',
+        })
+      }
       if (
         locationId &&
         questRecordKey &&
@@ -308,12 +330,16 @@ export function ChatPage() {
             id: assistantId,
             role: 'assistant',
             content: reply.reply,
+            sources: normalizeChatSources(reply.sources),
             createdAt: new Date().toISOString(),
           },
         ])
       })
     } catch (e) {
       setMessages((prev) => prev.filter((m) => m.id !== optimistic.id))
+      if (e instanceof ApiError && e.status === 422 && /giới hạn/i.test(e.message)) {
+        setChatLimitReached(true)
+      }
       showToast({ message: getFriendlyErrorMessage(e, 'chat'), type: 'error' })
     } finally {
       setSending(false)
@@ -334,13 +360,17 @@ export function ChatPage() {
             audio: blob,
             characterId,
             conversationId,
-            aiPayload: { message: '' },
           },
           {
             onFirstAudio: () => setVoicePhase('playing'),
           },
         )
-        appendExchange(result.userText, result.reply, result.conversationId)
+        appendExchange(
+          result.userText,
+          result.reply,
+          result.conversationId,
+          normalizeChatSources(result.sources),
+        )
         setVoicePhase('idle')
       } catch (e) {
         setVoicePhase('idle')
@@ -488,6 +518,9 @@ export function ChatPage() {
                   </div>
                   <div className={`p-md rounded-2xl border relative ${m.role === 'user' ? 'bg-inverse-surface/10 border-secondary/30 rounded-tr-sm' : 'bg-surface-container border-outline-variant rounded-tl-sm'}`}>
                     <ChatMessageContent content={m.content} />
+                    {m.role === 'assistant' && m.sources && m.sources.length > 0 && (
+                      <ChatSourcesBlock sources={m.sources} />
+                    )}
                     <span className="font-label-sm text-label-sm text-on-surface-variant mt-xs block text-right">
                       {new Date(m.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
                     </span>
@@ -510,6 +543,21 @@ export function ChatPage() {
             <div ref={messagesEndRef} className="h-px shrink-0" />
           </div>
           <div className="shrink-0 p-md lg:p-lg border-t border-outline-variant bg-surface-container-high/80">
+            {chatLimitReached && user?.tier !== 'PREMIUM' && (
+              <div className="mb-md p-md rounded-xl border border-primary/40 bg-primary/10 flex flex-col sm:flex-row sm:items-center gap-sm">
+                <p className="text-sm flex-1">
+                  Bạn đã hết quota chat hôm nay. Nâng cấp Premium để trò chuyện không giới hạn với nhân vật lịch sử.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => void handleUpgrade()}
+                  disabled={upgrading}
+                  className="px-md py-sm rounded-lg bg-primary text-on-primary text-sm font-medium disabled:opacity-60"
+                >
+                  Nâng cấp Premium
+                </button>
+              </div>
+            )}
             <div className="flex overflow-x-auto gap-sm pb-md">
               {quickReplies.map((item) => (
                 <button

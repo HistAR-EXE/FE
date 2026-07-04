@@ -5,6 +5,8 @@ import { SimpleTopNav } from '../components/layout/TopNav'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { collectionApi } from '../features/collection/api'
 import { gamificationApi, type Quest, type QuestProgress } from '../features/gamification/api'
+import { locationsApi } from '../features/locations/api'
+import { analyticsApi } from '../features/analytics/api'
 import { DISCOVERY_RECORDED_EVENT } from '../features/gamification/discoveryRouting'
 import {
   actionIcon,
@@ -21,6 +23,7 @@ import { useAuth } from '../shared/auth/useAuth'
 import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
 import { useAppMode } from '../shared/context/useAppMode'
 import { useToast } from '../shared/ui/toast/useToast'
+import { useVisitSession } from '../features/visit/VisitSessionProvider'
 import { images } from '../assets/images'
 
 export function QuestDetailPage() {
@@ -30,7 +33,9 @@ export function QuestDetailPage() {
   const [quest, setQuest] = useState<Quest | null>(null)
   const [progress, setProgress] = useState<QuestProgress | null>(null)
   const [stepImages, setStepImages] = useState<Record<string, string>>({})
+  const [locationName, setLocationName] = useState('')
   const [loading, setLoading] = useState(false)
+  const { getSessionId } = useVisitSession()
   const { showToast } = useToast()
 
   useEffect(() => {
@@ -75,6 +80,21 @@ export function QuestDetailPage() {
   const stepsTotal = progress?.stepsTotal ?? quest?.stepsTotal ?? steps.length
   const heroImage = quest?.coverImage || images.questDetailHero
   const locationId = progress?.locationId ?? quest?.locationId ?? meta?.locationId ?? ''
+  const requireOnsiteCheckin =
+    progress?.requireOnsiteCheckin ?? quest?.requireOnsiteCheckin ?? quest?.completionTrigger === 'checkin'
+  const visitSessionId = locationId ? getSessionId(locationId) : undefined
+  const onsiteSiteLabel = locationName || title
+
+  useEffect(() => {
+    if (!locationId) {
+      setLocationName('')
+      return
+    }
+    locationsApi
+      .getById(locationId)
+      .then((loc) => setLocationName(loc.name))
+      .catch(() => setLocationName(''))
+  }, [locationId])
 
   useEffect(() => {
     if (!locationId) return
@@ -102,11 +122,18 @@ export function QuestDetailPage() {
         message: `Chương ${stepIndex + 1} hoàn tất — +${step.xpPartial ?? 0} XP`,
         type: 'success',
       })
+      void analyticsApi.recordEvent({
+        locationId,
+        visitSessionId,
+        eventType: 'QUEST_STEP_COMPLETED',
+        eventKey: detail.recordKey,
+        source: 'quest_detail',
+      })
       void refetchProgress()
     }
     window.addEventListener(DISCOVERY_RECORDED_EVENT, onDiscoveryRecorded)
     return () => window.removeEventListener(DISCOVERY_RECORDED_EVENT, onDiscoveryRecorded)
-  }, [questId, isAuthenticated, status, steps, currentStep, showToast, refetchProgress])
+  }, [questId, isAuthenticated, status, steps, currentStep, locationId, visitSessionId, showToast, refetchProgress])
 
   const firstOpenIndex = steps.findIndex(
     (step, index) =>
@@ -179,6 +206,15 @@ export function QuestDetailPage() {
               )}
               {status === 'in_progress' && (
                 <span className="text-xs text-primary">{progressPct}% · {currentStep}/{stepsTotal}</span>
+              )}
+              {requireOnsiteCheckin ? (
+                <span className="text-xs px-1.5 py-0.5 rounded-full border border-secondary/50 text-secondary inline-flex items-center gap-0.5">
+                  <MaterialIcon name="location_on" className="text-sm" /> Cần đến tận nơi
+                </span>
+              ) : (
+                <span className="text-xs px-1.5 py-0.5 rounded-full border border-primary/40 text-primary inline-flex items-center gap-0.5">
+                  <MaterialIcon name="museum" className="text-sm" /> Remote-friendly
+                </span>
               )}
             </div>
 
@@ -297,6 +333,12 @@ export function QuestDetailPage() {
 
         {isAuthenticated && progress && isReadyToStart(progress) && (
           <div className="mx-lg mb-md rounded-xl border border-secondary/40 bg-secondary/10 p-md">
+            {requireOnsiteCheckin && (
+              <p className="text-secondary text-sm mb-sm flex items-center gap-1">
+                <MaterialIcon name="location_on" className="text-sm" />
+                Nhiệm vụ này cần bạn có mặt tại <strong>{onsiteSiteLabel}</strong> để hoàn thành.
+              </p>
+            )}
             <p className="text-on-surface mb-sm">
               {progress.completionTrigger === 'discovery'
                 ? 'Ba chương thị giác: hiện vật → Time Portal → hiện vật kết.'

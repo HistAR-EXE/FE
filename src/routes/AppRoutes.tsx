@@ -1,7 +1,10 @@
 import { lazy, Suspense } from 'react'
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { ArtifactsPage } from '../pages/ArtifactsPage'
 import { CharacterExplorePage } from '../pages/CharacterExplorePage'
+import { CharacterDetailPage } from '../pages/CharacterDetailPage'
+import { TeacherDashboardPage } from '../pages/TeacherDashboardPage'
+import { TeacherRoute } from '../shared/router/TeacherRoute'
 import { CharacterSelectPage } from '../pages/CharacterSelectPage'
 import { ChatPage } from '../pages/ChatPage'
 import { ExplorePage } from '../pages/ExplorePage'
@@ -9,6 +12,7 @@ import { HeritageDetailPage } from '../pages/HeritageDetailPage'
 import { HomePage } from '../pages/HomePage'
 import { LeaderboardPage } from '../pages/LeaderboardPage'
 import { LoginPage } from '../pages/LoginPage'
+import { NotFoundPage } from '../pages/NotFoundPage'
 import { OnboardingPage } from '../pages/OnboardingPage'
 import { PhotoFramePage } from '../pages/PhotoFramePage'
 import { ProfilePage } from '../pages/ProfilePage'
@@ -62,22 +66,28 @@ export function AppRoutes() {
           <Route path="/admin/analytics" element={<AdminAnalyticsPage />} />
           <Route path="/admin/organizations" element={<AdminOrganizationsPage />} />
         </Route>
+        <Route element={<TeacherRoute />}>
+          <Route path="/teacher" element={<TeacherDashboardPage />} />
+        </Route>
         <Route element={<ProtectedRoute />}>
           <Route path="/mode-select" element={<ModeSelectPage />} />
           <Route element={<ModeGuardRoute />}>
             <Route path="/character-select" element={<CharacterSelectPage />} />
             <Route path="/home" element={<HomePage />} />
             <Route path="/characters" element={<CharacterExplorePage />} />
+            <Route path="/characters/:characterId" element={<CharacterDetailPage />} />
             <Route path="/artifacts" element={<ArtifactsPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/share" element={<SharePage />} />
             <Route path="/photo-frame" element={<PhotoFramePage />} />
             <Route path="/scan" element={<ScanPage />} />
-            <Route path="/chat/nguyen-du" element={<ChatPage />} />
+            <Route path="/chat" element={<ChatPage />} />
+            <Route path="/chat/:characterId" element={<ChatPage />} />
             <Route path="/secret/:locationId" element={<SecretStoryPage />} />
           </Route>
         </Route>
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="/404" element={<NotFoundPage />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
       </VisitSessionProvider>
     </BrowserRouter>

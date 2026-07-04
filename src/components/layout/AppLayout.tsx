@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { SideNav, SideNavMobile, SideNavTablet } from './SideNav'
 import { TopNavCompact } from './TopNav'
+import { useAppMode } from '../../shared/context/useAppMode'
 
 type AppLayoutProps = {
   children: ReactNode
@@ -28,13 +29,15 @@ export function AppLayout({
   className = '',
 }: AppLayoutProps) {
   const navigate = useNavigate()
+  const { mode } = useAppMode()
+  const ctaPath = mode === 'offline' ? '/scan' : '/explore'
 
   return (
     <div className={`antialiased min-h-screen flex bg-background ${className}`}>
       <div className="dong-son-bg fixed inset-0 pointer-events-none z-0" />
       {!hideSideNav && (
         <>
-          <SideNav activeBorder={activeBorder} showCta={showCta} onCtaClick={() => navigate('/explore')} />
+          <SideNav activeBorder={activeBorder} showCta={showCta} onCtaClick={() => navigate(ctaPath)} />
           <SideNavTablet activeBorder={activeBorder} />
         </>
       )}

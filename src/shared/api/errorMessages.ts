@@ -21,6 +21,7 @@ export function getFriendlyErrorMessage(error: unknown, context: ErrorContext): 
       }
     }
     if (error.code === 'UNAUTHORIZED') return 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.'
+    if (error.status === 403) return 'Bạn chưa đủ điều kiện truy cập nội dung này.'
     if (error.code === 'VALIDATION_ERROR') return error.message || 'Dữ liệu gửi lên không hợp lệ.'
     return error.message || 'Có lỗi xảy ra từ hệ thống.'
   }

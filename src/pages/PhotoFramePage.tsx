@@ -101,7 +101,10 @@ export function PhotoFramePage() {
             )}
             <div className="flex flex-col gap-md">
               <h3 className="font-title-md">Nguồn ảnh</h3>
-              <input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="w-full text-sm" />
+              <p className="text-sm text-on-surface-variant">
+                Không dùng được camera? Chọn từ thư viện ảnh bên dưới.
+              </p>
+              <input type="file" accept="image/*" capture="environment" onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="w-full text-sm" />
             </div>
             <div className="flex flex-col gap-md">
               <h3 className="font-title-md">Khung</h3>

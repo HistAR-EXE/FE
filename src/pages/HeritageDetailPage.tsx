@@ -4,6 +4,8 @@ import { AppLayout } from '../components/layout/AppLayout'
 import { DetailHeader } from '../components/layout/DetailHeader'
 import { locationsApi, type Character, type Location } from '../features/locations/api'
 import { questRecordFromSearch, recordQuestStepEngagement } from '../features/gamification/questEngagement'
+import { gamificationApi, type SecretStory } from '../features/gamification/api'
+import { preloadDiscoveryBindings } from '../features/gamification/discoveryRouting'
 import { useAuth } from '../shared/auth/useAuth'
 import { ApiError } from '../shared/api/contracts'
 import { useAppMode } from '../shared/context/useAppMode'
@@ -13,6 +15,14 @@ import { ProgressSummaryCard } from '../features/gamification/ProgressSummaryCar
 import { CU_CHI_LOCATION_ID } from '../shared/config/constants'
 
 const PREVIEW_CHAR_LIMIT = 480
+
+type HeritageTab = 'overview' | 'experiences' | 'characters'
+
+const HERITAGE_TABS: { id: HeritageTab; label: string; icon: string }[] = [
+  { id: 'overview', label: 'Tổng quan', icon: 'menu_book' },
+  { id: 'experiences', label: 'Trải nghiệm', icon: 'explore' },
+  { id: 'characters', label: 'Nhân vật', icon: 'groups' },
+]
 
 function splitParagraphs(text: string): string[] {
   return text
@@ -46,8 +56,10 @@ export function HeritageDetailPage() {
   const recordedRef = useRef(false)
   const [location, setLocation] = useState<Location | null>(null)
   const [characters, setCharacters] = useState<Character[]>([])
+  const [secretStory, setSecretStory] = useState<SecretStory | null>(null)
   const [failed, setFailed] = useState(false)
   const [descriptionExpanded, setDescriptionExpanded] = useState(false)
+  const [activeTab, setActiveTab] = useState<HeritageTab>('overview')
   const { showToast } = useToast()
   const { mode } = useAppMode()
   const onlineHighlight = (active: boolean) =>
@@ -60,6 +72,7 @@ export function HeritageDetailPage() {
 
   useEffect(() => {
     if (!locationId) return
+    void preloadDiscoveryBindings(locationId)
     const run = async () => {
       try {
         const [loc, chars] = await Promise.all([
@@ -69,6 +82,7 @@ export function HeritageDetailPage() {
         setLocation(loc)
         setCharacters(chars)
         setDescriptionExpanded(false)
+        setActiveTab('overview')
       } catch (e) {
         setFailed(true)
         showToast({
@@ -79,6 +93,17 @@ export function HeritageDetailPage() {
     }
     run()
   }, [locationId, showToast])
+
+  useEffect(() => {
+    if (!locationId || !isAuthenticated) {
+      setSecretStory(null)
+      return
+    }
+    gamificationApi
+      .secretStory(locationId)
+      .then(setSecretStory)
+      .catch(() => setSecretStory(null))
+  }, [locationId, isAuthenticated])
 
   useEffect(() => {
     if (!locationId || !questRecordKey || !isAuthenticated || recordedRef.current) return
@@ -124,9 +149,7 @@ export function HeritageDetailPage() {
               </div>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-lg mb-xl">
-              <div className="lg:col-span-8 flex flex-col gap-md">
-                <div className="relative w-full h-[400px] rounded-xl overflow-hidden border border-outline-variant shadow-lg group">
+            <div className="relative w-full h-[400px] rounded-xl overflow-hidden border border-outline-variant shadow-lg group mb-md">
                   <img src={location.coverImage} alt={location.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                   <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
                   <div className="absolute bottom-0 left-0 p-lg w-full">
@@ -139,6 +162,27 @@ export function HeritageDetailPage() {
                   </div>
                 </div>
 
+            <div className="flex gap-xs mb-lg border-b border-outline-variant overflow-x-auto">
+              {HERITAGE_TABS.map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-2 px-md py-sm font-title-md text-title-md whitespace-nowrap border-b-2 transition-colors ${
+                    activeTab === tab.id
+                      ? 'border-secondary text-secondary'
+                      : 'border-transparent text-on-surface-variant hover:text-on-surface'
+                  }`}
+                >
+                  <MaterialIcon name={tab.icon} className="text-lg" />
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {activeTab === 'overview' && (
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-lg mb-xl">
+              <div className="lg:col-span-12 flex flex-col gap-md">
                 <article className="bg-surface-container border border-outline-variant rounded-xl p-lg">
                   <h2 className="font-title-md text-on-surface mb-md flex items-center gap-2">
                     <MaterialIcon name="menu_book" className="text-primary" />
@@ -191,9 +235,32 @@ export function HeritageDetailPage() {
                     <div><p className="font-label-sm text-label-sm text-on-surface-variant uppercase">Nhân vật</p><p className="font-title-md text-title-md text-on-surface">{characters.length}</p></div>
                   </div>
                 </div>
+                <div className="bg-surface-container border border-outline-variant rounded-lg p-md">
+                  <h3 className="font-semibold mb-xs">Câu chuyện bí mật</h3>
+                  {!isAuthenticated && (
+                    <p className="text-sm text-on-surface-variant">
+                      Đăng nhập và hoàn thành quest tại di tích để mở khoá.
+                    </p>
+                  )}
+                  {isAuthenticated && secretStory?.locked && (
+                    <p className="text-sm text-on-surface-variant flex items-center gap-1">
+                      <MaterialIcon name="lock" className="text-sm" />
+                      Hoàn thành nhiệm vụ và check-in SECRET QR tại hiện trường để mở.
+                    </p>
+                  )}
+                  {isAuthenticated && secretStory && !secretStory.locked && (
+                    <Link to={`/secret/${location.id}`} className="inline-flex items-center gap-1 mt-sm text-secondary underline">
+                      <MaterialIcon name="auto_stories" className="text-sm" />
+                      Câu chuyện bí mật
+                    </Link>
+                  )}
+                </div>
               </div>
+            </div>
+            )}
 
-              <div className="lg:col-span-4 flex flex-col gap-md">
+            {activeTab === 'experiences' && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-md mb-xl">
                 <Link to={`/time-portal/${location.id}`} className={`group relative w-full h-[120px] rounded-xl overflow-hidden bg-surface-container border border-primary/50 hover:border-primary transition-colors flex items-center p-md gap-md ${onlineHighlight(true)}`}>
                   <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center text-primary z-10"><MaterialIcon name="motion_photos_on" className="text-4xl" /></div>
                   <div className="z-10 text-left"><h3 className="font-title-md text-title-md text-primary mb-1">Cổng Thời Gian</h3><p className="font-body-md text-body-md text-on-surface-variant">Ảnh xưa và nay</p></div>
@@ -227,26 +294,39 @@ export function HeritageDetailPage() {
                   <div className="w-12 h-12 rounded-full bg-surface-variant flex items-center justify-center text-on-surface"><MaterialIcon name="assignment" className="text-2xl" /></div>
                   <div className="text-left flex-1"><h3 className="font-title-md text-title-md text-on-surface mb-1">Nhiệm vụ</h3><p className="font-label-sm text-label-sm text-on-surface-variant">Xem nhiệm vụ tại địa điểm</p></div>
                 </Link>
-                <Link to={`/chat/nguyen-du?locationId=${location.id}&characterId=${characters[0]?.id ?? ''}`} className={`group relative w-full h-[100px] rounded-xl overflow-hidden bg-surface-container border border-outline-variant hover:border-secondary/50 transition-colors flex items-center p-md gap-md ${onlineHighlight(true)}`}>
+                <Link to={characters[0]?.id ? `/chat/${characters[0].id}?locationId=${location.id}` : `/chat?locationId=${location.id}`} className={`group relative w-full h-[100px] rounded-xl overflow-hidden bg-surface-container border border-outline-variant hover:border-secondary/50 transition-colors flex items-center p-md gap-md ${onlineHighlight(true)}`}>
                   <div className="w-12 h-12 rounded-full bg-surface-variant flex items-center justify-center text-on-surface"><MaterialIcon name="chat_bubble" className="text-2xl" /></div>
                   <div className="text-left flex-1"><h3 className="font-title-md text-title-md text-on-surface mb-1">Trò chuyện AI</h3><p className="font-label-sm text-label-sm text-on-surface-variant">Hỏi đáp với nhân vật lịch sử</p></div>
                 </Link>
-              </div>
             </div>
-            <div className="mt-md bg-surface-container border border-outline-variant rounded-lg p-md">
-              <h3 className="font-semibold mb-xs">Nhân vật khả dụng</h3>
+            )}
+
+            {activeTab === 'characters' && (
+            <div className="mb-xl bg-surface-container border border-outline-variant rounded-xl p-lg">
+              <h3 className="font-title-md text-on-surface mb-md flex items-center gap-2">
+                <MaterialIcon name="groups" className="text-primary" />
+                Nhân vật khả dụng
+              </h3>
               {characters.length === 0 && <p className="text-sm text-on-surface-variant">Chưa có nhân vật cho địa điểm này.</p>}
-              <ul className="space-y-xs">
+              <ul className="space-y-md">
                 {characters.map((character) => (
-                  <li key={character.id} className="text-sm text-on-surface-variant">
-                    {character.name} ({character.era})
+                  <li key={character.id} className="flex items-center justify-between gap-md p-md rounded-lg border border-outline-variant bg-surface-container-high">
+                    <div>
+                      <p className="font-title-md text-on-surface">{character.name}</p>
+                      <p className="text-sm text-on-surface-variant">{character.era}</p>
+                    </div>
+                    <Link
+                      to={`/chat/${character.id}?locationId=${location.id}`}
+                      className="inline-flex items-center gap-1 text-secondary underline text-sm shrink-0"
+                    >
+                      Trò chuyện
+                      <MaterialIcon name="chat_bubble" className="text-sm" />
+                    </Link>
                   </li>
                 ))}
               </ul>
             </div>
-            <Link to={`/secret/${location.id}`} className="inline-block mt-md text-secondary underline">
-              Xem Secret Story
-            </Link>
+            )}
           </>
         )}
       </main>

@@ -24,6 +24,4 @@ export const collectionApi = {
     getListData<Artifact>(httpClient.get('/api/artifacts', { params: { locationId } })),
   mine: (locationId: string) =>
     getData<MyArtifactsResponse>(httpClient.get('/api/me/artifacts', { params: { locationId } })),
-  unlock: (unlockKey: string) =>
-    getData<boolean>(httpClient.post('/api/me/artifacts/unlock', { unlockKey })),
 }

@@ -53,7 +53,7 @@ export function CharacterSelectPage() {
   const handleConfirm = () => {
     if (selected) {
       localStorage.setItem('timelens_selected_character', selected)
-      navigate(`/chat/nguyen-du?locationId=${resolvedLocationId}&characterId=${selected}`)
+      navigate(`/chat/${selected}?locationId=${resolvedLocationId}`)
       return
     }
     navigate('/explore')

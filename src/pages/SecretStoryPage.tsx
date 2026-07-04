@@ -4,6 +4,8 @@ import { AppLayout } from '../components/layout/AppLayout'
 import { SimpleTopNav } from '../components/layout/TopNav'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { gamificationApi, type SecretStory } from '../features/gamification/api'
+import { ApiError } from '../shared/api/contracts'
+import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
 import { useToast } from '../shared/ui/toast/useToast'
 
 export function SecretStoryPage() {
@@ -27,8 +29,12 @@ export function SecretStoryPage() {
       if (!response.locked) {
         setUnlocked(true)
       }
-    } catch {
-      showToast({ message: 'Không tải được Secret Story.', type: 'error' })
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 403) {
+        showToast({ message: 'Khám phá thêm để mở khoá câu chuyện này.', type: 'info' })
+      } else {
+        showToast({ message: getFriendlyErrorMessage(e, 'quest'), type: 'error' })
+      }
     } finally {
       setLoading(false)
     }
@@ -70,7 +76,7 @@ export function SecretStoryPage() {
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-md bg-background/40 rounded-lg">
                   <MaterialIcon name="lock" className="text-5xl text-on-surface-variant" />
                   <p className="text-on-surface-variant text-center max-w-sm px-md">
-                    Câu chuyện vẫn đang khóa. Hoàn thành nhiệm vụ và check-in tại di tích để mở khóa.
+                    Khám phá thêm để mở khoá câu chuyện này. Hoàn thành nhiệm vụ và check-in tại di tích.
                   </p>
                   <Link to={`/scan?locationId=${targetLocationId}`} className="inline-flex items-center gap-1 text-secondary underline">
                     Đi tới quét mã <MaterialIcon name="qr_code_scanner" className="text-sm" />

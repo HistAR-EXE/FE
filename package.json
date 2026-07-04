@@ -7,7 +7,13 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:e2e": "playwright test",
+    "test:e2e:api": "playwright test --project=setup --project=1-backend-api",
+    "test:e2e:ui": "playwright test --project=setup --project=2-frontend-ui",
+    "test:e2e:full": "playwright test --project=setup --project=3-fullstack-e2e",
+    "test:e2e:report": "playwright show-report",
+    "test:all": "powershell -ExecutionPolicy Bypass -File ../scripts/run-all-tests.ps1"
   },
   "dependencies": {
     "@photo-sphere-viewer/core": "^5.14.1",
@@ -26,6 +32,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.61.1",
     "@types/leaflet": "^1.9.21",
     "@types/node": "^24.12.3",
     "@types/react": "^19.2.14",

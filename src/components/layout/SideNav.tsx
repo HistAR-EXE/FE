@@ -7,7 +7,7 @@ const navItems = [
   { to: '/home', icon: 'home', label: 'Trang chủ', prefixes: ['/home'], modes: 'both' as const },
   { to: '/explore', icon: 'explore', label: 'Khám phá', prefixes: ['/explore', '/characters'], modes: 'online' as const },
   { to: '/scan', icon: 'qr_code_scanner', label: 'Quét mã', prefixes: ['/scan'], modes: 'offline' as const },
-  { to: '/quests', icon: 'assignment', label: 'Nhiệm vụ', prefixes: ['/quests'], modes: 'offline' as const },
+  { to: '/quests', icon: 'assignment', label: 'Nhiệm vụ', prefixes: ['/quests'], modes: 'both' as const },
   { to: '/artifacts', icon: 'history_edu', label: 'Cổ vật', prefixes: ['/artifacts'], modes: 'both' as const },
   { to: '/leaderboard', icon: 'leaderboard', label: 'Bảng xếp hạng', prefixes: ['/leaderboard'], modes: 'both' as const },
   { to: '/profile', icon: 'person', label: 'Hồ sơ', prefixes: ['/profile'], modes: 'both' as const },
@@ -16,7 +16,7 @@ const navItems = [
 const mobileNavItems = [
   { to: '/explore', icon: 'explore', label: 'Khám phá', modes: 'online' as const, prefixes: ['/explore', '/tour/360', '/time-portal', '/chat'] },
   { to: '/scan', icon: 'qr_code_scanner', label: 'Quét', modes: 'offline' as const, prefixes: ['/scan'] },
-  { to: '/quests', icon: 'assignment', label: 'Nhiệm vụ', modes: 'offline' as const, prefixes: ['/quests'] },
+  { to: '/quests', icon: 'assignment', label: 'Nhiệm vụ', modes: 'both' as const, prefixes: ['/quests'] },
   { to: '/leaderboard', icon: 'leaderboard', label: 'Xếp hạng', modes: 'both' as const, prefixes: ['/leaderboard'] },
   { to: '/profile', icon: 'person', label: 'Hồ sơ', modes: 'both' as const, prefixes: ['/profile'] },
 ] as const

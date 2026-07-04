@@ -8,7 +8,10 @@ const EMAIL_KEY = 'timelens_email'
 const ROLE_KEY = 'timelens_role'
 const AVATAR_URL_KEY = 'timelens_avatar_url'
 
-export type UserRole = 'USER' | 'ADMIN'
+export type UserRole = 'USER' | 'ADMIN' | 'TEACHER'
+export type UserTier = 'FREE' | 'PREMIUM'
+
+const TIER_KEY = 'timelens_tier'
 
 export type SessionData = {
   token: string
@@ -19,6 +22,7 @@ export type SessionData = {
   displayName: string
   email?: string
   role?: UserRole
+  tier?: UserTier
   avatarUrl?: string | null
 }
 
@@ -27,6 +31,7 @@ export type AuthUser = {
   displayName: string
   email: string
   role: UserRole
+  tier: UserTier
   avatarUrl: string | null
 }
 
@@ -49,6 +54,9 @@ export function saveSession(data: SessionData) {
   if (data.role) {
     localStorage.setItem(ROLE_KEY, data.role)
   }
+  if (data.tier) {
+    localStorage.setItem(TIER_KEY, data.tier)
+  }
   if (data.avatarUrl !== undefined) {
     if (data.avatarUrl) {
       localStorage.setItem(AVATAR_URL_KEY, data.avatarUrl)
@@ -67,6 +75,7 @@ export function clearSession() {
   localStorage.removeItem(DISPLAY_NAME_KEY)
   localStorage.removeItem(EMAIL_KEY)
   localStorage.removeItem(ROLE_KEY)
+  localStorage.removeItem(TIER_KEY)
   localStorage.removeItem(AVATAR_URL_KEY)
 }
 
@@ -80,11 +89,13 @@ export function getRefreshToken() {
 
 export function getSessionMeta() {
   const role = localStorage.getItem(ROLE_KEY)
+  const tier = localStorage.getItem(TIER_KEY)
   return {
     userId: localStorage.getItem(USER_ID_KEY),
     displayName: localStorage.getItem(DISPLAY_NAME_KEY),
     email: localStorage.getItem(EMAIL_KEY),
-    role: role === 'ADMIN' || role === 'USER' ? role : null,
+    role: role === 'ADMIN' || role === 'USER' || role === 'TEACHER' ? role : null,
+    tier: tier === 'PREMIUM' || tier === 'FREE' ? tier : null,
     avatarUrl: localStorage.getItem(AVATAR_URL_KEY),
   }
 }
@@ -98,6 +109,7 @@ export function readStoredUser(): AuthUser | null {
     displayName: meta.displayName,
     email: meta.email ?? '',
     role: (meta.role ?? 'USER') as UserRole,
+    tier: (meta.tier ?? 'FREE') as UserTier,
     avatarUrl: meta.avatarUrl,
   }
 }
