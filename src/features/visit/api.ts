@@ -1,3 +1,4 @@
+// src/features/visit/api.ts
 import { getData, httpClient } from '../../shared/api/httpClient'
 
 export type VisitSessionResponse = {

@@ -1,3 +1,4 @@
+// src/data/mock/leaderboard.ts
 import { images } from '../../assets/images'
 
 export type LeaderboardEntry = {

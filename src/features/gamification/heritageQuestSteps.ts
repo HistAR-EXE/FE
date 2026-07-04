@@ -1,3 +1,4 @@
+// src/features/gamification/heritageQuestSteps.ts
 import type { AppMode } from '../../shared/context/modeContext'
 
 export type QuestActionType =

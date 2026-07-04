@@ -1,3 +1,4 @@
+// src/components/ui/MaterialIcon.tsx
 import type { CSSProperties, ReactNode } from 'react'
 
 type MaterialIconProps = {

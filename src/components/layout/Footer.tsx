@@ -1,3 +1,4 @@
+// src/components/layout/Footer.tsx
 type FooterProps = {
   variant?: 'default' | 'login'
 }
@@ -12,7 +13,7 @@ export function Footer({ variant = 'default' }: FooterProps) {
             TimeLens
           </div>
           <div className="font-label-sm text-label-sm text-secondary mb-sm md:mb-0">
-            © 2024 TimeLens - Hành Trình Di Sản Số. All rights reserved.
+            © 2026 TimeLens - Hành Trình Di Sản Số. All rights reserved.
           </div>
           <div className="flex gap-md">
             <a
@@ -47,7 +48,7 @@ export function Footer({ variant = 'default' }: FooterProps) {
           TimeLens
         </div>
         <div className="font-label-sm text-label-sm text-on-surface-variant text-center md:text-left mb-md md:mb-0">
-          © 2024 TimeLens - Hành Trình Di Sản Số. All rights reserved.
+          © 2026 TimeLens - Hành Trình Di Sản Số. All rights reserved.
         </div>
         <div className="flex gap-md font-label-sm text-label-sm text-on-surface-variant">
           <a className="hover:text-primary transition-opacity" href="#">

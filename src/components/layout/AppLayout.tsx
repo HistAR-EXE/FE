@@ -1,3 +1,4 @@
+// src/components/layout/AppLayout.tsx
 import type { ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { SideNav, SideNavMobile, SideNavTablet } from './SideNav'

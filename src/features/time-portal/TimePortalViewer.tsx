@@ -1,3 +1,4 @@
+// src/features/time-portal/TimePortalViewer.tsx
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { PhotoPair } from '../locations/api'
 import type { PhotoScene } from '../photo-scenes/api'

@@ -1,3 +1,4 @@
+// src/data/mock/questsList.ts
 import { images } from '../../assets/images'
 
 export type Quest = {

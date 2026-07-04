@@ -1,3 +1,4 @@
+// src/components/panorama/CuChiTourLeafletMap.tsx
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import L from 'leaflet'

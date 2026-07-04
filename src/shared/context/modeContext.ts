@@ -1,3 +1,4 @@
+// src/shared/context/modeContext.ts
 import { createContext } from 'react'
 
 export type AppMode = 'online' | 'offline'

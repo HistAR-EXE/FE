@@ -1,3 +1,4 @@
+// src/components/panorama/VirtualTourViewer.tsx
 import { useEffect, useRef } from 'react'
 
 import { images } from '../../assets/images'

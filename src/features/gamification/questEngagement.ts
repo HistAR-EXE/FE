@@ -1,3 +1,4 @@
+// src/features/gamification/questEngagement.ts
 import { recordDiscoveryEngagement } from './discoveryRouting'
 
 /** Record a quest step discovery after meaningful engagement (online + authenticated). */

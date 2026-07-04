@@ -1,3 +1,4 @@
+// src/pages/ModeSelectPage.tsx
 import { useLocation, useNavigate } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { MaterialIcon } from '../components/ui/MaterialIcon'

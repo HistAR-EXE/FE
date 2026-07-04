@@ -1,3 +1,4 @@
+// src/shared/utils/resizeImage.ts
 const MAX_EDGE = 1080
 
 /** Giới hạn cạnh dài nhất 1080px trước upload — tránh crash canvas/mobile. */

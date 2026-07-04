@@ -1,3 +1,4 @@
+// src/shared/ui/toast/ToastProvider.tsx
 import { useCallback, useMemo, useState, type ReactNode } from 'react'
 import { ToastContext, type ToastInput, type ToastType } from './toast-context'
 import { MaterialIcon } from '../../../components/ui/MaterialIcon'

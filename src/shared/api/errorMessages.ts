@@ -1,3 +1,4 @@
+// src/shared/api/errorMessages.ts
 import { ApiError } from './contracts'
 
 type ErrorContext = 'chat' | 'checkin' | 'leaderboard' | 'upload' | 'demoCheckin' | 'quest'

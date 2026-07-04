@@ -1,3 +1,4 @@
+// src/features/gamification/ProgressSummaryCard.tsx
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { collectionApi } from '../collection/api'
 import { DISCOVERY_RECORDED_EVENT } from './discoveryRouting'

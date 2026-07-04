@@ -1,3 +1,4 @@
+// src/components/layout/DetailHeader.tsx
 import { Link } from 'react-router-dom'
 import { MaterialIcon } from '../ui/MaterialIcon'
 

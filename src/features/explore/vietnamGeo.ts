@@ -1,3 +1,4 @@
+// src/features/explore/vietnamGeo.ts
 /** Vietnam mainland outline ring [lng, lat] — world.geo.json / Natural Earth. */
 export const VIETNAM_MAINLAND_RING: ReadonlyArray<readonly [number, number]> = [
   [108.05018, 21.55238],

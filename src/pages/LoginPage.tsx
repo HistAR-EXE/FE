@@ -1,3 +1,4 @@
+// src/pages/Login.tsx
 import { useMemo, useState, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { AuthLayout } from '../components/layout/AuthLayout'

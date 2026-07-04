@@ -1,3 +1,4 @@
+// src/shared/context/useAppMode.ts
 import { useContext } from 'react'
 import { AppModeContext } from './modeContext'
 

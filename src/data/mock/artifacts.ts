@@ -1,3 +1,4 @@
+// src/data/mock/artifacts.ts
 import { images } from '../../assets/images'
 
 export type Artifact = {

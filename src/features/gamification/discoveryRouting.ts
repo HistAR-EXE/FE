@@ -1,3 +1,4 @@
+// src/features/gamification/discoveryRouting.ts
 export {
   discoveryDeepLink,
   eraDiscoveryKey,

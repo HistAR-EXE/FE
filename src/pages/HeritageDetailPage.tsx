@@ -1,3 +1,4 @@
+// src/pages/HeritageDetailPage.tsx
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'

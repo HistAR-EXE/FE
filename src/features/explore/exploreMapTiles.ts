@@ -1,3 +1,4 @@
+// src/features/explore/exploreMapTiles.ts
 import type { TileLayerOptions } from 'leaflet'
 
 export type ExploreMapLayer = 'vi' | 'hybrid'

@@ -1,3 +1,4 @@
+// src/shared/ui/toast/ChatMessageContent.tsx
 type ChatMessageContentProps = {
   content: string
   className?: string

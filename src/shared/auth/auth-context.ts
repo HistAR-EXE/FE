@@ -1,3 +1,4 @@
+// src/shared/auth/auth-context.ts
 import { createContext } from 'react'
 import type { LoginInput, RegisterInput } from '../../features/auth/api'
 import type { AuthUser } from './session'

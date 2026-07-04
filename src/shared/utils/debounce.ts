@@ -1,3 +1,4 @@
+// src/shared/utils/debounce.ts
 /** Debounce — trailing edge; cancel on unmount via returned function. */
 export function debounce<T extends (...args: never[]) => void>(fn: T, waitMs: number): T & { cancel: () => void } {
   let timer: ReturnType<typeof setTimeout> | undefined

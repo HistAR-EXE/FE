@@ -1,3 +1,4 @@
+// src/pages/PhotoFramePage.tsx
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'

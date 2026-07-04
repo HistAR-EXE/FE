@@ -1,3 +1,4 @@
+// src/features/admin/analyticsDemo.ts
 import type {
   PoiUnlockRateItem,
   QuestFunnelItem,

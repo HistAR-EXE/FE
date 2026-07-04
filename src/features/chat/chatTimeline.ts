@@ -1,3 +1,4 @@
+// src/features/chat/chatTimeline.ts
 import type { ChatMessage } from './api'
 
 export const SESSION_GAP_MS = 10 * 60 * 1000

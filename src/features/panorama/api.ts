@@ -1,3 +1,4 @@
+// src/features/panorama/api.ts
 import { getListData, httpClient } from '../../shared/api/httpClient'
 
 export type Panorama = {

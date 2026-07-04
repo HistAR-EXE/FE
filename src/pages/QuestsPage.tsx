@@ -1,3 +1,4 @@
+// src/pages/QuestsPage.tsx
 import { useCallback, useEffect, useMemo, useState, type MouseEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'

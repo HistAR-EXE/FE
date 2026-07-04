@@ -1,3 +1,4 @@
+// src/data/mock/tokens.ts
 export const colors = {
   surface: '#f7f9fc',
   background: '#ffffff',

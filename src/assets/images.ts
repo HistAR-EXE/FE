@@ -1,3 +1,4 @@
+// src/assets/images.ts
 /** Image registry — 1 semantic key per entity, sourced from Stitch HTML lh3 URLs */
 export const images = {
   // Avatars

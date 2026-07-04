@@ -1,3 +1,4 @@
+// src/shared/api/httpClient.ts
 import axios from 'axios'
 import { getRefreshToken, getToken, clearSession, saveSession } from '../auth/session'
 import { ApiError, isApiResponse, isPageResponse, type ApiErrorPayload, type PageResponse } from './contracts'

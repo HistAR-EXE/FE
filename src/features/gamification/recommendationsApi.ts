@@ -1,3 +1,4 @@
+// src/features/gamification/recommendationsApi.ts
 import { getData, httpClient } from '../../shared/api/httpClient'
 
 export type RecommendationItem = {

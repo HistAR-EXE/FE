@@ -1,3 +1,4 @@
+// src/shared/api/aiClient.ts
 import axios from 'axios'
 import { appEnv } from '../config/env'
 

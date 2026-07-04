@@ -1,3 +1,4 @@
+// src/data/mock/profile.ts
 import { images } from '../../assets/images'
 
 export const profile = {

@@ -1,3 +1,4 @@
+// src/features/gamification/QuestJourneyPanel.tsx
 import { Link } from 'react-router-dom'
 import { MaterialIcon } from '../../components/ui/MaterialIcon'
 import { useAppMode } from '../../shared/context/useAppMode'

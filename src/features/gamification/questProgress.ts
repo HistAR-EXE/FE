@@ -1,3 +1,4 @@
+// src/features/gamification/questProgress.ts
 import type { QuestProgress } from './api'
 
 export function isReadyToStart(progress: QuestProgress): boolean {

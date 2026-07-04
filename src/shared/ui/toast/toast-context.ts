@@ -1,3 +1,4 @@
+// src/shared/ui/toast/toast-context.ts
 import { createContext } from 'react'
 
 export type ToastType = 'error' | 'success' | 'info'

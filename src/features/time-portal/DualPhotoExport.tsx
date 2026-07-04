@@ -1,3 +1,4 @@
+// src/features/time-portal/DualPhotoExport.tsx
 import { useCallback, useState } from 'react'
 import { MaterialIcon } from '../../components/ui/MaterialIcon'
 import { useToast } from '../../shared/ui/toast/useToast'
