@@ -446,11 +446,11 @@ function ContentTable({ headers, rows }: { headers: string[]; rows: TableRow[] }
   }
   return (
     <div className="overflow-x-auto border border-outline-variant rounded-xl">
-      <table className="w-full text-sm">
+      <table className="w-full text-xs">
         <thead className="bg-surface-container-high text-on-surface-variant">
           <tr>
             {headers.map((h) => (
-              <th key={h || 'actions'} className="text-left p-sm">
+              <th key={h || 'actions'} className="text-left px-2 py-1.5 font-medium">
                 {h}
               </th>
             ))}
@@ -460,11 +460,11 @@ function ContentTable({ headers, rows }: { headers: string[]; rows: TableRow[] }
           {rows.map((row) => (
             <tr key={row.key} className="border-t border-outline-variant/50">
               {row.cells.map((cell, j) => (
-                <td key={j} className="p-sm">
+                <td key={j} className="px-2 py-1.5 align-top">
                   {cell}
                 </td>
               ))}
-              <td className="p-sm">
+              <td className="px-2 py-1.5 align-top">
                 {row.onEdit && (
                   <button
                     type="button"

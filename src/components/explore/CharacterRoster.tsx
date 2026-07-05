@@ -69,7 +69,7 @@ export function CharacterRoster({
                     </div>
                     <div className="w-full bg-surface-variant rounded-full h-1.5">
                       <div
-                        className="bg-gradient-to-r from-primary to-secondary h-1.5 rounded-full"
+                        className="bg-gradient-to-r from-primary-500 to-accent-500 h-1.5 rounded-full"
                         style={{ width: `${stat.value}%` }}
                       />
                     </div>

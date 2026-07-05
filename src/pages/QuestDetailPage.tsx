@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { SimpleTopNav } from '../components/layout/TopNav'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
+import { Button } from '../components/ui/Button'
 import { collectionApi } from '../features/collection/api'
 import { gamificationApi, type Quest, type QuestProgress } from '../features/gamification/api'
 import { locationsApi } from '../features/locations/api'
@@ -36,6 +37,7 @@ export function QuestDetailPage() {
   const [stepImages, setStepImages] = useState<Record<string, string>>({})
   const [locationName, setLocationName] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showRewardsModal, setShowRewardsModal] = useState(false)
   const { getSessionId } = useVisitSession()
   const { showToast } = useToast()
 
@@ -189,8 +191,8 @@ export function QuestDetailPage() {
           )}
         </div>
 
-        <div className="p-lg grid lg:grid-cols-12 gap-lg">
-          <section className="lg:col-span-8 space-y-md">
+        <div className="p-lg max-w-3xl mx-auto w-full">
+          <section className="space-y-md">
             <div className="flex items-center gap-sm flex-wrap">
               <span className="px-xs py-[2px] rounded-full border border-primary/40 bg-primary/10 text-primary text-xs">
                 Nhiệm vụ chính tuyến
@@ -220,7 +222,18 @@ export function QuestDetailPage() {
               )}
             </div>
 
-            <h1 className="font-display-lg text-primary">{title}</h1>
+            <div className="flex items-center gap-sm flex-wrap">
+              <h1 className="font-display-lg text-primary flex-1 min-w-0">{title}</h1>
+              <button
+                type="button"
+                onClick={() => setShowRewardsModal(true)}
+                className="shrink-0 w-8 h-8 rounded-full border border-outline-variant flex items-center justify-center text-on-surface-variant hover:text-primary hover:border-primary transition-colors"
+                aria-label="Phần thưởng và luật chơi"
+                title="Phần thưởng & Luật"
+              >
+                <MaterialIcon name="info" className="text-lg" />
+              </button>
+            </div>
             <p className="text-on-surface-variant">{description}</p>
 
             {story && (
@@ -276,62 +289,82 @@ export function QuestDetailPage() {
               />
             )}
           </section>
+        </div>
 
-          <aside className="lg:col-span-4 space-y-md">
-            <div className="border border-outline-variant rounded-xl p-md bg-surface-container">
-              <h3 className="font-title-md flex items-center gap-2 mb-sm">
-                <MaterialIcon name="trophy" className="text-primary" /> Phần thưởng
-              </h3>
-              <div className="grid grid-cols-2 gap-sm">
-                <div className="border border-outline-variant rounded-lg p-sm text-center">
-                  <p className="text-xs text-on-surface-variant">Kinh nghiệm</p>
-                  <p className="font-headline-lg text-primary">+{pointsReward}</p>
+        {showRewardsModal && (
+          <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center p-md bg-black/60">
+            <div
+              className="bg-surface-container border border-outline-variant rounded-t-2xl sm:rounded-2xl p-lg max-w-md w-full shadow-xl max-h-[85vh] overflow-y-auto"
+              role="dialog"
+              aria-labelledby="rewards-modal-title"
+            >
+              <div className="flex items-center justify-between gap-sm mb-md">
+                <h2 id="rewards-modal-title" className="font-title-md flex items-center gap-2">
+                  <MaterialIcon name="trophy" className="text-primary" /> Phần thưởng & Luật
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => setShowRewardsModal(false)}
+                  className="text-on-surface-variant hover:text-on-surface p-1"
+                  aria-label="Đóng"
+                >
+                  <MaterialIcon name="close" />
+                </button>
+              </div>
+              <div className="space-y-md">
+                <div>
+                  <h3 className="font-title-md mb-sm text-sm">Phần thưởng</h3>
+                  <div className="grid grid-cols-2 gap-sm">
+                    <div className="border border-outline-variant rounded-lg p-sm text-center">
+                      <p className="text-xs text-on-surface-variant">Kinh nghiệm</p>
+                      <p className="font-headline-lg text-primary">+{pointsReward}</p>
+                    </div>
+                    <div className="border border-outline-variant rounded-lg p-sm text-center">
+                      <p className="text-xs text-on-surface-variant">Danh hiệu</p>
+                      <p className="font-title-md text-sm">{meta?.badge ?? 'Người khám phá'}</p>
+                    </div>
+                  </div>
+                  {status === 'in_progress' && (
+                    <div className="mt-md">
+                      <div className="h-2 bg-neutral-200 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-primary-500 to-accent-500 transition-all"
+                          style={{ width: `${progressPct}%` }}
+                        />
+                      </div>
+                      <p className="text-xs text-on-surface-variant mt-1 text-center">{currentStep}/{stepsTotal} chương</p>
+                    </div>
+                  )}
                 </div>
-                <div className="border border-outline-variant rounded-lg p-sm text-center">
-                  <p className="text-xs text-on-surface-variant">Danh hiệu</p>
-                  <p className="font-title-md text-sm">{meta?.badge ?? 'Người khám phá'}</p>
+                <div>
+                  <h3 className="font-title-md flex items-center gap-2 mb-sm text-sm">
+                    <MaterialIcon name="history_edu" /> Bối cảnh
+                  </h3>
+                  <p className="text-sm text-on-surface-variant">{meta?.context ?? description}</p>
+                  {meta && (
+                    <Link
+                      to={`/explore/${meta.locationId}`}
+                      className="inline-flex items-center gap-1 mt-sm text-secondary text-sm underline"
+                      onClick={() => setShowRewardsModal(false)}
+                    >
+                      Xem hồ sơ di tích <MaterialIcon name="open_in_new" className="text-sm" />
+                    </Link>
+                  )}
+                </div>
+                <div className="border border-outline-variant/60 rounded-xl p-md bg-surface-container-low text-xs text-on-surface-variant">
+                  <p className="flex items-center gap-1 font-medium text-on-surface mb-1">
+                    <MaterialIcon name="info" className="text-sm" /> Quy tắc
+                  </p>
+                  <ul className="list-disc pl-4 space-y-1">
+                    <li>Heritage: hiện vật → Time Portal → hiện vật kết (+ check-in onsite thưởng)</li>
+                    <li>Củ Chi: tour 360° → portal 1948 → check-in GPS</li>
+                    <li>Mỗi chương ghi tiến độ khi xem đủ trải nghiệm</li>
+                  </ul>
                 </div>
               </div>
-              {status === 'in_progress' && (
-                <div className="mt-md">
-                  <div className="h-2 bg-surface-container-highest rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-primary to-secondary transition-all"
-                      style={{ width: `${progressPct}%` }}
-                    />
-                  </div>
-                  <p className="text-xs text-on-surface-variant mt-1 text-center">{currentStep}/{stepsTotal} chương</p>
-                </div>
-              )}
             </div>
-
-            <div className="border border-outline-variant rounded-xl p-md bg-surface-container">
-              <h3 className="font-title-md flex items-center gap-2 mb-sm">
-                <MaterialIcon name="history_edu" /> Bối cảnh
-              </h3>
-              <p className="text-sm text-on-surface-variant">{meta?.context ?? description}</p>
-              {meta && (
-                <Link
-                  to={`/explore/${meta.locationId}`}
-                  className="inline-flex items-center gap-1 mt-sm text-secondary text-sm underline"
-                >
-                  Xem hồ sơ di tích <MaterialIcon name="open_in_new" className="text-sm" />
-                </Link>
-              )}
-            </div>
-
-            <div className="border border-outline-variant/60 rounded-xl p-md bg-surface-container-low text-xs text-on-surface-variant">
-              <p className="flex items-center gap-1 font-medium text-on-surface mb-1">
-                <MaterialIcon name="info" className="text-sm" /> Quy tắc
-              </p>
-              <ul className="list-disc pl-4 space-y-1">
-                <li>Heritage: hiện vật → Time Portal → hiện vật kết (+ check-in onsite thưởng)</li>
-                <li>Củ Chi: tour 360° → portal 1948 → check-in GPS</li>
-                <li>Mỗi chương ghi tiến độ khi xem đủ trải nghiệm</li>
-              </ul>
-            </div>
-          </aside>
-        </div>
+          </div>
+        )}
 
         {isAuthenticated && progress && isReadyToStart(progress) && (
           <div className="mx-lg mb-md rounded-xl border border-secondary/40 bg-secondary/10 p-md">
@@ -348,14 +381,9 @@ export function QuestDetailPage() {
                   ? 'Hành trình online xong — sẵn sàng check-in hiện trường.'
                   : 'Bắt đầu tour 360° và Time Portal, sau đó check-in tại Củ Chi.'}
             </p>
-            <button
-              type="button"
-              onClick={startQuest}
-              disabled={loading}
-              className="bg-primary text-on-primary px-md py-sm rounded-lg disabled:opacity-60"
-            >
+            <Button type="button" onClick={startQuest} disabled={loading}>
               {loading ? 'Đang xử lý...' : 'Nhận nhiệm vụ'}
-            </button>
+            </Button>
           </div>
         )}
 
@@ -389,13 +417,9 @@ export function QuestDetailPage() {
 
         {isAuthenticated && status === 'not_started' && (
           <div className="px-lg pb-xl">
-            <button
-              onClick={startQuest}
-              disabled={loading}
-              className="bg-primary text-on-primary px-md py-sm rounded-lg disabled:opacity-60"
-            >
+            <Button onClick={startQuest} disabled={loading}>
               {loading ? 'Đang xử lý...' : 'Nhận nhiệm vụ'}
-            </button>
+            </Button>
           </div>
         )}
       </main>

@@ -34,6 +34,7 @@ type ExploreMapPanelProps = {
   visitedIds?: Set<string>
   user?: ContentAccessUser
   onLockedLocationClick?: (location: HeritageLocation) => void
+  className?: string
 }
 
 function RegionLegend() {
@@ -108,7 +109,7 @@ function createPinIcon(region: VietnamRegion, active: boolean, visited: boolean,
   })
 }
 
-export function ExploreMapPanel({ locations, visitedIds, user, onLockedLocationClick }: ExploreMapPanelProps) {
+export function ExploreMapPanel({ locations, visitedIds, user, onLockedLocationClick, className = '' }: ExploreMapPanelProps) {
   const navigate = useNavigate()
   const containerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<L.Map | null>(null)
@@ -269,7 +270,7 @@ export function ExploreMapPanel({ locations, visitedIds, user, onLockedLocationC
   }
 
   return (
-    <section className="flex-1 h-64 lg:h-full min-h-[16rem] lg:min-h-0 rounded-2xl overflow-hidden border border-outline-variant relative shadow-inner order-last lg:order-none bg-[#0b1628]">
+    <section className={`flex-1 h-64 lg:h-full min-h-[16rem] lg:min-h-0 rounded-2xl overflow-hidden border border-outline-variant relative shadow-inner bg-[#0b1628] ${className}`}>
       <div ref={containerRef} className="heritage-leaflet-map absolute inset-0 z-0" />
 
       <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-[#091420]/50 via-transparent to-transparent z-[1]" />

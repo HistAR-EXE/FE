@@ -34,7 +34,7 @@ export function AppLayout({
 
   return (
     <div className={`antialiased min-h-screen flex bg-background ${className}`}>
-      <div className="dong-son-bg fixed inset-0 pointer-events-none z-0" />
+      <div className="fixed inset-0 pointer-events-none z-0 bg-gradient-to-b from-neutral-50 to-neutral-100" />
       {!hideSideNav && (
         <>
           <SideNav activeBorder={activeBorder} showCta={showCta} onCtaClick={() => navigate(ctaPath)} />

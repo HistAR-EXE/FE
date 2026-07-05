@@ -3,6 +3,7 @@ import type { PhotoPair } from '../locations/api'
 import type { PhotoScene } from '../photo-scenes/api'
 import { images } from '../../assets/images'
 import { MaterialIcon } from '../../components/ui/MaterialIcon'
+import { eraBadgeClass } from '../../shared/ui/eraBadge'
 import { CompareLayerImage } from './CompareLayerImage'
 import {
   ERA_VALUES,
@@ -147,7 +148,7 @@ export function TimePortalViewer({
           <div
             className="w-[120%] h-[120%] rounded-full opacity-70 animate-spin"
             style={{
-              background: 'conic-gradient(from 0deg, transparent, #FFB547, #5EEAD4, transparent)',
+              background: 'conic-gradient(from 0deg, transparent, #3B82F6, #5EEAD4, transparent)',
               animationDuration: '1.4s',
             }}
           />
@@ -172,7 +173,7 @@ export function TimePortalViewer({
             src={past.imageUrl}
             fallback={images.timePortalPast}
             alt={`Tái hiện ${compareEra}`}
-            className="absolute inset-0 w-full h-full object-cover sepia-[0.6] contrast-[1.1] brightness-90"
+            className="absolute inset-0 w-full h-full object-cover brightness-90"
           />
         </div>
       )}
@@ -227,10 +228,10 @@ export function TimePortalViewer({
               key={e}
               type="button"
               onClick={() => triggerVortex(e)}
-              className={`font-title-md inline-flex items-center gap-1.5 px-sm py-xs rounded-full transition-colors ${
+              className={`font-title-md inline-flex items-center gap-1.5 px-sm py-xs rounded-full border transition-colors ${
                 e === era
-                  ? 'text-primary bg-primary/10 border border-primary/30'
-                  : 'text-on-surface-variant hover:text-on-surface border border-transparent'
+                  ? eraBadgeClass(e)
+                  : 'text-on-surface-variant hover:text-on-surface border-transparent'
               } ${locked ? 'opacity-70' : ''}`}
             >
               {locked && <MaterialIcon name="lock" className="text-sm text-on-surface-variant" />}

@@ -43,6 +43,7 @@ export function ExplorePage() {
   const [failed, setFailed] = useState(false)
   const [visitedIds, setVisitedIds] = useState<Set<string>>(new Set())
   const [lockedHint, setLockedHint] = useState<Location | null>(null)
+  const [showAllFeatured, setShowAllFeatured] = useState(false)
   const { showToast } = useToast()
   const { mode } = useAppMode()
   const { isAuthenticated, user } = useAuth()
@@ -165,10 +166,21 @@ export function ExplorePage() {
     return (4.9 - index * 0.1).toFixed(1)
   }
 
+  const displayedLocations = showAllFeatured ? filteredLocations : filteredLocations.slice(0, 3)
+
   return (
     <AppLayout activeBorder="right" mobileBackTo="/home" mobileTitle="Khám phá" topNav={<ExploreTopNav backTo="/home" backLabel="Trang chủ" />}>
       <main className="w-full mt-14 md:mt-16 p-md md:p-lg flex flex-col xl:flex-row gap-lg relative min-h-[calc(100dvh-4rem)]">
-        <section className="w-full xl:w-[min(440px,38vw)] xl:max-w-[480px] xl:min-w-[320px] flex flex-col gap-md z-10 shrink-0 min-h-0 xl:max-h-[calc(100vh-5rem)]">
+        {/* Map first on mobile (< lg), sidebar first on desktop */}
+        <ExploreMapPanel
+          className="order-1 xl:order-2 flex-1 min-h-[280px] lg:min-h-0"
+          locations={mapLocations.length > 0 ? mapLocations : filteredLocations}
+          visitedIds={visitedIds}
+          user={user}
+          onLockedLocationClick={setLockedHint}
+        />
+
+        <section className="order-2 xl:order-1 w-full xl:w-[min(440px,38vw)] xl:max-w-[480px] xl:min-w-[320px] flex flex-col gap-md z-10 shrink-0 min-h-0 xl:max-h-[calc(100vh-5rem)]">
           <div className="bg-surface/80 backdrop-blur-xl border border-outline-variant rounded-xl p-md shadow-lg flex flex-col gap-md shrink-0">
             <div className="flex items-center justify-between">
               <h2 className="font-title-md text-title-md text-on-surface flex items-center gap-2">
@@ -176,14 +188,14 @@ export function ExplorePage() {
                 Bộ lọc bản đồ
               </h2>
             </div>
-            <div className="flex flex-wrap gap-sm">
+            <div className="flex overflow-x-auto gap-2 hide-scrollbar pb-1">
               <button
                 type="button"
                 onClick={() => {
                   setActiveFilter('near')
                   showToast({ message: 'Bộ lọc “Gần đây” cần quyền vị trí — đang phát triển.', type: 'info' })
                 }}
-                className={`px-4 py-2 rounded-full border text-sm flex items-center gap-1 ${
+                className={`shrink-0 px-3 py-1.5 rounded-full border text-sm flex items-center gap-1 ${
                   activeFilter === 'near' ? 'border-secondary bg-secondary/10 text-secondary' : 'border-outline-variant bg-surface-container text-on-surface-variant'
                 }`}
               >
@@ -193,7 +205,7 @@ export function ExplorePage() {
               <button
                 type="button"
                 onClick={() => setActiveFilter('virtual')}
-                className={`px-4 py-2 rounded-full border text-sm ${
+                className={`shrink-0 px-3 py-1.5 rounded-full border text-sm ${
                   activeFilter === 'virtual' ? 'border-secondary bg-secondary/10 text-secondary' : 'border-outline-variant bg-surface-container text-on-surface-variant'
                 }`}
               >
@@ -202,13 +214,13 @@ export function ExplorePage() {
               <button
                 type="button"
                 onClick={() => setActiveFilter('dynasty')}
-                className={`px-4 py-2 rounded-full border text-sm ${
+                className={`shrink-0 px-3 py-1.5 rounded-full border text-sm ${
                   activeFilter === 'dynasty' ? 'border-secondary bg-secondary/10 text-secondary' : 'border-outline-variant bg-surface-container text-on-surface-variant'
                 }`}
               >
                 Triều đại
               </button>
-              <button type="button" onClick={() => setActiveFilter('all')} className="px-4 py-2 rounded-full border border-outline-variant bg-surface-container text-on-surface-variant text-sm">
+              <button type="button" onClick={() => setActiveFilter('all')} className="shrink-0 px-3 py-1.5 rounded-full border border-outline-variant bg-surface-container text-on-surface-variant text-sm">
                 Xóa lọc
               </button>
             </div>
@@ -224,7 +236,7 @@ export function ExplorePage() {
               <div className="flex flex-col gap-md">
                 {!loading &&
                   !failed &&
-                  filteredLocations.map((location, index) => {
+                  displayedLocations.map((location, index) => {
                     const locked = isLocationLocked(location, user)
                     return (
                     <article
@@ -340,7 +352,16 @@ export function ExplorePage() {
                     )
                   })}
               </div>
-              {!loading && !failed && page + 1 < totalPages && (
+              {!loading && !failed && filteredLocations.length > 3 && !showAllFeatured && (
+                <button
+                  type="button"
+                  onClick={() => setShowAllFeatured(true)}
+                  className="shrink-0 mt-md w-full py-2 rounded-lg border border-outline-variant bg-surface-container text-on-surface-variant hover:border-primary hover:text-primary transition-colors"
+                >
+                  Xem tất cả ({filteredLocations.length})
+                </button>
+              )}
+              {!loading && !failed && page + 1 < totalPages && showAllFeatured && (
                 <button
                   type="button"
                   disabled={loadingMore}
@@ -353,13 +374,6 @@ export function ExplorePage() {
             </div>
           </div>
         </section>
-
-        <ExploreMapPanel
-          locations={mapLocations.length > 0 ? mapLocations : filteredLocations}
-          visitedIds={visitedIds}
-          user={user}
-          onLockedLocationClick={setLockedHint}
-        />
 
         {lockedHint && (
           <div className="fixed inset-0 z-[70] flex items-center justify-center p-md bg-black/60">

@@ -16,6 +16,14 @@ import { ProgressSummaryCard } from '../features/gamification/ProgressSummaryCar
 import { normalizeHeritageName } from '../features/explore/vietnamMap'
 import { isAdminPreview } from '../shared/access/contentAccess'
 
+type ProfileTab = 'overview' | 'passport' | 'settings'
+
+const PROFILE_TABS: { id: ProfileTab; label: string }[] = [
+  { id: 'overview', label: 'Tổng quan' },
+  { id: 'passport', label: 'Hộ chiếu & Huy hiệu' },
+  { id: 'settings', label: 'Cài đặt' },
+]
+
 export function ProfilePage() {
   const { logout, user, updateUser } = useAuth()
   const [profile, setProfile] = useState<ProfileMe | null>(null)
@@ -24,6 +32,7 @@ export function ProfilePage() {
   const [locations, setLocations] = useState<Location[]>([])
   const [visitedCount, setVisitedCount] = useState(0)
   const [upgrading, setUpgrading] = useState(false)
+  const [activeTab, setActiveTab] = useState<ProfileTab>('overview')
   const { showToast } = useToast()
 
   const handleUpgrade = async () => {
@@ -76,6 +85,25 @@ export function ProfilePage() {
           </div>
         )}
         {profile && (
+          <>
+            <div className="flex gap-md border-b border-neutral-200 mb-md overflow-x-auto">
+              {PROFILE_TABS.map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`shrink-0 pb-sm px-xs font-title-md text-sm whitespace-nowrap border-b-2 transition-colors ${
+                    activeTab === tab.id
+                      ? 'border-primary-500 text-primary-500'
+                      : 'border-transparent text-on-surface-variant hover:text-on-surface'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {activeTab === 'overview' && (
           <section className="bg-surface-container border border-outline-variant rounded-xl p-lg relative overflow-hidden">
             <div className="absolute -top-20 -right-10 h-48 w-48 bg-primary/10 rounded-full blur-3xl" />
             <div className="grid md:grid-cols-3 gap-md items-center relative pb-md border-b border-outline-variant/40">
@@ -132,7 +160,7 @@ export function ProfilePage() {
                 </div>
                 <div className="h-2 bg-surface-container-highest rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-gradient-to-r from-primary to-secondary"
+                    className="h-full bg-gradient-to-r from-primary-500 to-accent-500"
                     style={{ width: `${Math.min(100, profile.levelProgressPercent)}%` }}
                   />
                 </div>
@@ -158,42 +186,19 @@ export function ProfilePage() {
             </div>
 
             <div className="mt-md flex flex-wrap gap-sm">
-              {profile.tier !== 'PREMIUM' && (
-                <button
-                  type="button"
-                  onClick={() => void handleUpgrade()}
-                  disabled={upgrading}
-                  title="Demo stub — không có thanh toán thật"
-                  className="inline-flex items-center gap-1 px-md py-sm border border-primary text-primary rounded-lg hover:bg-primary/10 disabled:opacity-60"
-                >
-                  Nâng cấp Premium (demo)
-                </button>
-              )}
-              {user?.role === 'TEACHER' && (
-                <Link to="/teacher" className="inline-flex items-center gap-1 px-md py-sm border border-secondary text-secondary rounded-lg hover:bg-secondary/10">
-                  Dashboard lớp (Giáo viên)
-                </Link>
-              )}
+              <Link to="/leaderboard" className="inline-flex items-center gap-1 px-md py-sm border border-secondary text-secondary rounded-lg hover:bg-secondary/10">
+                <MaterialIcon name="leaderboard" className="text-sm" /> Bảng xếp hạng
+              </Link>
               <Link to="/artifacts" className="inline-flex items-center gap-1 px-md py-sm border border-outline-variant rounded-lg hover:border-secondary">
                 <MaterialIcon name="history_edu" className="text-sm" /> Bộ sưu tập
               </Link>
-              {user?.role === 'ADMIN' && (
-                <>
-                  <Link to="/admin/users" className="inline-flex items-center gap-1 px-md py-sm border border-primary/40 text-primary rounded-lg hover:bg-primary/10">
-                    <MaterialIcon name="admin_panel_settings" className="text-sm" /> Người dùng
-                  </Link>
-                  <Link to="/admin/content" className="inline-flex items-center gap-1 px-md py-sm border border-primary/40 text-primary rounded-lg hover:bg-primary/10">
-                    <MaterialIcon name="inventory_2" className="text-sm" /> Nội dung
-                  </Link>
-                </>
-              )}
-              <button onClick={logout} className="px-md py-sm border border-error text-error rounded-lg">Đăng xuất</button>
             </div>
-            <ProfileEditForm profile={profile} onSaved={setProfile} />
           </section>
-        )}
+            )}
 
-        <section className="mt-md">
+            {activeTab === 'passport' && (
+              <>
+        <section className="bg-surface-container border border-outline-variant rounded-xl p-lg">
           <h2 className="font-title-md mb-sm inline-flex items-center gap-1">
             <MaterialIcon name="menu_book" className="text-primary" />
             Hộ chiếu Di sản
@@ -233,7 +238,7 @@ export function ProfilePage() {
           </div>
         </section>
 
-        <section className="mt-md">
+        <section className="mt-md bg-surface-container border border-outline-variant rounded-xl p-lg">
           <h2 className="font-title-md mb-sm">Huy hiệu</h2>
           <p className="text-xs text-on-surface-variant mb-sm">Thành tích & mốc khám phá (onsite, chia sẻ…).</p>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-sm">
@@ -259,6 +264,45 @@ export function ProfilePage() {
             ))}
           </div>
         </section>
+              </>
+            )}
+
+            {activeTab === 'settings' && (
+              <section className="bg-surface-container border border-outline-variant rounded-xl p-lg space-y-md">
+                <ProfileEditForm profile={profile} onSaved={setProfile} />
+                <div className="flex flex-wrap gap-sm pt-md border-t border-outline-variant/40">
+                  {profile.tier !== 'PREMIUM' && (
+                    <button
+                      type="button"
+                      onClick={() => void handleUpgrade()}
+                      disabled={upgrading}
+                      title="Demo stub — không có thanh toán thật"
+                      className="inline-flex items-center gap-1 px-md py-sm border border-primary text-primary rounded-lg hover:bg-primary/10 disabled:opacity-60"
+                    >
+                      Nâng cấp Premium (demo)
+                    </button>
+                  )}
+                  {user?.role === 'TEACHER' && (
+                    <Link to="/teacher" className="inline-flex items-center gap-1 px-md py-sm border border-secondary text-secondary rounded-lg hover:bg-secondary/10">
+                      Dashboard lớp (Giáo viên)
+                    </Link>
+                  )}
+                  {user?.role === 'ADMIN' && (
+                    <>
+                      <Link to="/admin/users" className="inline-flex items-center gap-1 px-md py-sm border border-primary/40 text-primary rounded-lg hover:bg-primary/10">
+                        <MaterialIcon name="admin_panel_settings" className="text-sm" /> Người dùng
+                      </Link>
+                      <Link to="/admin/content" className="inline-flex items-center gap-1 px-md py-sm border border-primary/40 text-primary rounded-lg hover:bg-primary/10">
+                        <MaterialIcon name="inventory_2" className="text-sm" /> Nội dung
+                      </Link>
+                    </>
+                  )}
+                  <button onClick={logout} className="px-md py-sm border border-error text-error rounded-lg">Đăng xuất</button>
+                </div>
+              </section>
+            )}
+          </>
+        )}
       </main>
     </AppLayout>
   )

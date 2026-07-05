@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { MaterialIcon } from '../../components/ui/MaterialIcon'
 import { useAppMode } from '../../shared/context/useAppMode'
@@ -38,20 +39,32 @@ export function QuestJourneyPanel({
   stepImages,
 }: QuestJourneyPanelProps) {
   const { mode } = useAppMode()
+  const [expandedAll, setExpandedAll] = useState(false)
   const firstOpenIndex = steps.findIndex(
     (step, index) => !isStepDone(step, currentStep, index, status, hasCheckin),
   )
 
   return (
     <div className="border border-outline-variant rounded-xl p-md bg-surface-container">
-      <h3 className="font-title-md mb-sm flex items-center gap-2">
-        <MaterialIcon name="route" /> Hành trình
-      </h3>
+      <div className="flex items-center justify-between gap-sm mb-sm">
+        <h3 className="font-title-md flex items-center gap-2">
+          <MaterialIcon name="route" /> Hành trình
+        </h3>
+        {steps.length > 1 && (
+          <button
+            type="button"
+            onClick={() => setExpandedAll((v) => !v)}
+            className="text-xs text-primary hover:underline shrink-0"
+          >
+            {expandedAll ? 'Thu gọn' : 'Xem tất cả chương'}
+          </button>
+        )}
+      </div>
       <p className="text-xs text-on-surface-variant mb-md">
         Hoàn thành từng chương theo thứ tự — mỗi bước mở khóa phần tiếp theo.
       </p>
       <div className="space-y-md relative">
-        {steps.length > 1 && (
+        {steps.length > 1 && expandedAll && (
           <div
             className="absolute left-[58px] top-10 bottom-10 w-0.5 bg-outline-variant/50"
             aria-hidden
@@ -64,22 +77,25 @@ export function QuestJourneyPanel({
           const done = isStepDone(step, currentStep, index, status, hasCheckin)
           const active = !done && index === firstOpenIndex
           const locked = !done && index > firstOpenIndex && firstOpenIndex >= 0
+          const collapsed = !expandedAll && !done && !active
           const imageUrl = resolveStepImage(step, stepImages)
           const ctaLabel = stepActionLabel(step, mode)
 
           return (
             <div
               key={step.unlockKey}
-              className={`relative rounded-lg p-sm border flex gap-sm ${
+              className={`relative rounded-lg p-sm border flex gap-sm transition-opacity ${
                 done
                   ? 'border-secondary/40 bg-secondary/10'
                   : active
                     ? 'border-primary/50 bg-primary/5 shadow-sm'
-                    : 'border-outline-variant/60 opacity-85'
+                    : collapsed
+                      ? 'border-outline-variant/40 opacity-50'
+                      : 'border-outline-variant/60 opacity-85'
               }`}
             >
               <div className="relative shrink-0 w-20 h-20">
-                {imageUrl ? (
+                {imageUrl && !collapsed ? (
                   <img
                     src={imageUrl}
                     alt=""
@@ -99,7 +115,7 @@ export function QuestJourneyPanel({
                     />
                   </div>
                 )}
-                {locked && (
+                {locked && expandedAll && (
                   <div className="absolute inset-0 rounded-lg bg-background/40 flex items-center justify-center">
                     <MaterialIcon name="lock" className="text-lg text-on-surface-variant" />
                   </div>
@@ -119,53 +135,59 @@ export function QuestJourneyPanel({
 
               <div className="flex-1 min-w-0">
                 <div className="flex items-start gap-2 flex-wrap">
-                  <span className="inline-flex items-center gap-0.5 text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-surface-container-highest text-on-surface-variant">
-                    <MaterialIcon name={stepTypeBadge(step.actionType)} className="text-xs" />
-                    {step.actionType === 'artifact'
-                      ? 'Hiện vật'
-                      : step.actionType === 'portal'
-                        ? 'Portal'
-                        : step.actionType === 'tour'
-                          ? '360°'
-                          : step.actionType === 'checkin'
-                            ? 'Check-in'
-                            : 'Bước'}
-                  </span>
-                  <p className="font-title-md w-full">{step.title}</p>
-                </div>
-                <p className="text-xs text-primary/90 mt-0.5 font-medium">{step.objective}</p>
-                <p className="text-sm text-on-surface-variant mt-1">{step.description}</p>
-                {step.hint && (active || done) && (
-                  <p className="text-xs text-on-surface-variant/80 mt-1 flex items-start gap-1">
-                    <MaterialIcon name="lightbulb" className="text-sm text-secondary shrink-0" />
-                    {step.hint}
-                  </p>
-                )}
-                <div className="flex items-center gap-2 mt-2 flex-wrap">
-                  <span className="text-xs text-on-surface-variant">
-                    {done ? 'Hoàn tất' : active ? 'Đang thực hiện' : locked ? 'Chưa mở' : 'Sẵn sàng'}
-                  </span>
-                  {step.xpPartial && (
-                    <span className="text-xs px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">
-                      +{step.xpPartial} XP
+                  {!collapsed && (
+                    <span className="inline-flex items-center gap-0.5 text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-surface-container-highest text-on-surface-variant">
+                      <MaterialIcon name={stepTypeBadge(step.actionType)} className="text-xs" />
+                      {step.actionType === 'artifact'
+                        ? 'Hiện vật'
+                        : step.actionType === 'portal'
+                          ? 'Portal'
+                          : step.actionType === 'tour'
+                            ? '360°'
+                            : step.actionType === 'checkin'
+                              ? 'Check-in'
+                              : 'Bước'}
                     </span>
                   )}
+                  <p className="font-title-md w-full">{step.title}</p>
                 </div>
-                {!done && !locked && locationId && (status === 'in_progress' || status === 'completed') && (
-                  <Link
-                    to={stepHref(locationId, step, questId)}
-                    className={`inline-flex items-center gap-1 mt-sm px-md py-xs rounded-full text-sm ${
-                      active
-                        ? 'bg-primary text-on-primary'
-                        : 'border border-secondary text-secondary'
-                    }`}
-                  >
-                    {ctaLabel}
-                    <MaterialIcon
-                      name={step.actionType === 'checkin' ? 'my_location' : 'arrow_forward'}
-                      className="text-sm"
-                    />
-                  </Link>
+                {!collapsed && (
+                  <>
+                    <p className="text-xs text-primary/90 mt-0.5 font-medium">{step.objective}</p>
+                    <p className="text-sm text-on-surface-variant mt-1">{step.description}</p>
+                    {step.hint && (active || done) && (
+                      <p className="text-xs text-on-surface-variant/80 mt-1 flex items-start gap-1">
+                        <MaterialIcon name="lightbulb" className="text-sm text-secondary shrink-0" />
+                        {step.hint}
+                      </p>
+                    )}
+                    <div className="flex items-center gap-2 mt-2 flex-wrap">
+                      <span className="text-xs text-on-surface-variant">
+                        {done ? 'Hoàn tất' : active ? 'Đang thực hiện' : locked ? 'Chưa mở' : 'Sẵn sàng'}
+                      </span>
+                      {step.xpPartial && (
+                        <span className="text-xs px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">
+                          +{step.xpPartial} XP
+                        </span>
+                      )}
+                    </div>
+                    {!done && !locked && locationId && (status === 'in_progress' || status === 'completed') && (
+                      <Link
+                        to={stepHref(locationId, step, questId)}
+                        className={`inline-flex items-center gap-1 mt-sm px-md py-xs rounded-full text-sm ${
+                          active
+                            ? 'bg-primary text-on-primary'
+                            : 'border border-secondary text-secondary'
+                        }`}
+                      >
+                        {ctaLabel}
+                        <MaterialIcon
+                          name={step.actionType === 'checkin' ? 'my_location' : 'arrow_forward'}
+                          className="text-sm"
+                        />
+                      </Link>
+                    )}
+                  </>
                 )}
               </div>
             </div>

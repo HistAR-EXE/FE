@@ -43,7 +43,7 @@ export function HomePage() {
               </span>
             </div>
             <div className="h-3 w-full bg-surface-container-high rounded-full overflow-hidden relative border border-outline-variant">
-              <div className="absolute top-0 left-0 h-full bg-gradient-to-r from-primary to-secondary rounded-full" style={{ width: `${profile?.levelProgressPercent ?? 20}%` }} />
+              <div className="absolute top-0 left-0 h-full bg-gradient-to-r from-primary-500 to-accent-500 rounded-full" style={{ width: `${profile?.levelProgressPercent ?? 20}%` }} />
             </div>
             {import.meta.env.DEV && (
               <p className="text-xs text-on-surface-variant">Readiness: API {ready?.status ?? '...'} · DB {ready?.database ?? '...'}</p>

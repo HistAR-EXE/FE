@@ -5,7 +5,6 @@ import { CharacterExplorePage } from '../pages/CharacterExplorePage'
 import { CharacterDetailPage } from '../pages/CharacterDetailPage'
 import { TeacherDashboardPage } from '../pages/TeacherDashboardPage'
 import { TeacherRoute } from '../shared/router/TeacherRoute'
-import { CharacterSelectPage } from '../pages/CharacterSelectPage'
 import { ChatPage } from '../pages/ChatPage'
 import { ExplorePage } from '../pages/ExplorePage'
 import { HeritageDetailPage } from '../pages/HeritageDetailPage'
@@ -72,7 +71,6 @@ export function AppRoutes() {
         <Route element={<ProtectedRoute />}>
           <Route path="/mode-select" element={<ModeSelectPage />} />
           <Route element={<ModeGuardRoute />}>
-            <Route path="/character-select" element={<CharacterSelectPage />} />
             <Route path="/home" element={<HomePage />} />
             <Route path="/characters" element={<CharacterExplorePage />} />
             <Route path="/characters/:characterId" element={<CharacterDetailPage />} />

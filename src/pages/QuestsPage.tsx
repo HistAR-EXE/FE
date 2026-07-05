@@ -11,6 +11,7 @@ import { ApiError } from '../shared/api/contracts'
 import { useAuth } from '../shared/auth/useAuth'
 import { useToast } from '../shared/ui/toast/useToast'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
+import { Button } from '../components/ui/Button'
 import { images } from '../assets/images'
 import { isLocationLocked } from '../features/explore/locationUnlock'
 import { appEnv } from '../shared/config/env'
@@ -395,18 +396,18 @@ export function QuestsPage() {
                           : 'Tour 360° + Time Portal, sau đó check-in tại địa đạo'}
                     </p>
                     {isAuthenticated && (
-                      <button
+                      <Button
                         type="button"
                         onClick={(e) => void handleStartQuest(q.id, e)}
-                        className="bg-primary text-on-primary px-sm py-xs rounded-lg text-sm"
+                        className="px-sm py-xs text-sm"
                       >
                         Bắt đầu ngay
-                      </button>
+                      </Button>
                     )}
                   </div>
                 )}
-                <div className="h-2 bg-surface-container-highest rounded-full overflow-hidden">
-                  <div className="h-full bg-gradient-to-r from-primary to-secondary" style={{ width: `${progressPct(q.status, q.currentStep, q.stepsTotal)}%` }} />
+                <div className="h-2 bg-neutral-200 rounded-full overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-primary-500 to-accent-500" style={{ width: `${progressPct(q.status, q.currentStep, q.stepsTotal)}%` }} />
                 </div>
               </div>
             </Link>

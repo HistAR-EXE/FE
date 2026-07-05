@@ -8,6 +8,7 @@ import { useToast } from '../shared/ui/toast/useToast'
 import { Footer } from '../components/layout/Footer'
 import { images } from '../assets/images'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
+import { Button } from '../components/ui/Button'
 
 const SAFE_REDIRECT_PREFIXES = [
   '/home', '/explore', '/quests', '/artifacts', '/profile', '/leaderboard',
@@ -165,9 +166,9 @@ export function LoginPage() {
                   </div>
                   {fieldErrors.password && <p className="mt-1 text-xs text-red-400">{fieldErrors.password}</p>}
                 </div>
-                <button type="submit" disabled={loading} className="w-full mt-lg bg-primary text-on-primary font-title-md py-sm rounded-lg disabled:opacity-60">
+                <Button type="submit" disabled={loading} className="w-full mt-lg">
                   {loading ? 'Đang xử lý...' : mode === 'login' ? 'Tiếp tục' : 'Tạo tài khoản'}
-                </button>
+                </Button>
               </form>
             </div>
           </div>

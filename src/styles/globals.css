@@ -13,6 +13,27 @@
   --spacing-md: 16px;
   --spacing-lg: 24px;
   --spacing-xl: 32px;
+
+  --color-primary-50: #eff6ff;
+  --color-primary-400: #60a5fa;
+  --color-primary-500: #3b82f6;
+  --color-primary-600: #2563eb;
+  --color-primary-700: #1d4ed8;
+  --color-accent-400: #fbbf24;
+  --color-accent-500: #f59e0b;
+  --color-accent-600: #d97706;
+  --color-neutral-0: #1e293b;
+  --color-neutral-50: #0f172a;
+  --color-neutral-100: #1e293b;
+  --color-neutral-200: #334155;
+  --color-neutral-500: #94a3b8;
+  --color-neutral-700: #cbd5e1;
+  --color-neutral-900: #f8fafc;
+  --color-success-500: #22c55e;
+  --color-danger-500: #ef4444;
+  --color-heritage-bronze: #b45309;
+  --color-heritage-crimson: #b91c1c;
+  --color-heritage-jade: #0d9488;
 }
 
 @layer base {
@@ -21,11 +42,11 @@
   }
 
   body {
-    background-color: #14151f;
-    color: #e3e1ed;
-    font-family: 'Montserrat', sans-serif;
+    background-color: #0f172a;
+    color: #f1f5f9;
+    font-family: 'Be Vietnam Pro', sans-serif;
     font-size: 14px;
-    line-height: 20px;
+    line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -34,7 +55,7 @@
   textarea:focus-visible,
   select:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 2px rgba(94, 234, 212, 0.5);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
   }
 }
 
@@ -43,11 +64,7 @@
 }
 
 .card-interactive:hover {
-  transform: scale(1.02);
-}
-
-.card-interactive:active {
-  transform: scale(0.98);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .shadow-elev-1 {
@@ -59,18 +76,18 @@
 }
 
 .glass-panel {
-  background: rgba(41, 41, 50, 0.4);
+  background: rgba(30, 41, 59, 0.5);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(155, 143, 124, 0.2);
+  border: 1px solid rgba(148, 163, 184, 0.2);
 }
 
 .glow-accent {
-  box-shadow: 0 0 15px rgba(94, 234, 212, 0.2);
+  box-shadow: 0 0 15px rgba(245, 158, 11, 0.25);
 }
 
 .glow-primary {
-  box-shadow: 0 0 20px rgba(212, 164, 55, 0.3);
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
 }
 
 .glow-secondary {
@@ -80,22 +97,22 @@
 .dong-son-bg {
   background-image: radial-gradient(
     circle at center,
-    rgba(155, 143, 124, 0.05) 0%,
+    rgba(59, 130, 246, 0.04) 0%,
     transparent 70%
   );
 }
 
 .bg-dongson-pattern {
-  background-image: radial-gradient(rgba(255, 181, 71, 0.05) 1px, transparent 1px);
+  background-image: radial-gradient(rgba(59, 130, 246, 0.05) 1px, transparent 1px);
   background-size: 20px 20px;
 }
 
 .bloom-glow {
-  text-shadow: 0 0 20px rgba(255, 181, 71, 0.35);
+  text-shadow: 0 0 20px rgba(59, 130, 246, 0.35);
 }
 
 .bloom-primary {
-  box-shadow: 0 0 20px rgba(255, 181, 71, 0.15);
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.15);
 }
 
 .marker-glow {
@@ -103,7 +120,7 @@
 }
 
 .podium-gradient-1 {
-  background: linear-gradient(180deg, rgba(255, 181, 71, 0.2) 0%, transparent 100%);
+  background: linear-gradient(180deg, rgba(59, 130, 246, 0.2) 0%, transparent 100%);
 }
 
 .podium-gradient-2 {
@@ -136,7 +153,7 @@
 
 .bg-scan-pattern {
   background-image:
-    radial-gradient(circle at 50% 50%, rgba(255, 181, 71, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.05) 0%, transparent 50%),
     linear-gradient(to right, rgba(255, 255, 255, 0.01) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(255, 255, 255, 0.01) 1px, transparent 1px);
   background-size: 100% 100%, 40px 40px, 40px 40px;
@@ -200,8 +217,8 @@
 }
 
 .particle-gold {
-  background: #FFB547;
-  box-shadow: 0 0 5px #FFB547;
+  background: #3B82F6;
+  box-shadow: 0 0 5px #3B82F6;
 }
 
 .particle-cyan {
@@ -216,7 +233,7 @@
 .pattern-overlay {
   background-image: radial-gradient(
     circle at 2px 2px,
-    rgba(255, 181, 71, 0.05) 1px,
+    rgba(59, 130, 246, 0.05) 1px,
     transparent 0
   );
   background-size: 24px 24px;
@@ -232,10 +249,10 @@
 }
 
 .hero-pattern {
-  background-color: #14151f;
+  background-color: #0f172a;
   background-image: radial-gradient(
     circle at center,
-    rgba(255, 181, 71, 0.05) 0%,
+    rgba(59, 130, 246, 0.05) 0%,
     transparent 70%
   );
 }
@@ -245,7 +262,7 @@
 }
 
 .glow-text {
-  text-shadow: 0 0 10px rgba(255, 181, 71, 0.4);
+  text-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
 }
 
 .neo-input {
@@ -305,7 +322,7 @@
 }
 
 .neo-pattern {
-  background-image: radial-gradient(circle at 2px 2px, rgba(255, 181, 71, 0.05) 1px, transparent 0);
+  background-image: radial-gradient(circle at 2px 2px, rgba(59, 130, 246, 0.05) 1px, transparent 0);
   background-size: 24px 24px;
 }
 
@@ -353,11 +370,11 @@
   top: 0;
   bottom: 0;
   width: 4px;
-  background: linear-gradient(to bottom, transparent, #FFB547, transparent);
+  background: linear-gradient(to bottom, transparent, #3B82F6, transparent);
   z-index: 20;
   transform: translateX(-50%);
   cursor: ew-resize;
-  box-shadow: 0 0 15px #FFB547, 0 0 30px rgba(255, 181, 71, 0.5);
+  box-shadow: 0 0 15px #3B82F6, 0 0 30px rgba(59, 130, 246, 0.5);
 }
 
 .slider-button {
@@ -368,12 +385,12 @@
   width: 48px;
   height: 48px;
   background-color: #1b1c24;
-  border: 2px solid #FFB547;
+  border: 2px solid #3B82F6;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 0 20px rgba(255, 181, 71, 0.5);
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
   cursor: pointer;
   z-index: 21;
 }
@@ -469,8 +486,8 @@
 }
 
 .heritage-map-pin--visited .heritage-map-pin__head {
-  border-color: #FFB547;
-  box-shadow: 0 0 0 2px rgba(255, 181, 71, 0.45), 0 2px 8px rgba(0, 0, 0, 0.35);
+  border-color: #3B82F6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.45), 0 2px 8px rgba(0, 0, 0, 0.35);
 }
 
 .heritage-map-pin__visited-badge {
@@ -480,7 +497,7 @@
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: #FFB547;
+  background: #3B82F6;
   color: #1b1c24;
   font-size: 8px;
   font-weight: 700;
@@ -535,7 +552,7 @@
   color: #e3e1ed !important;
   border-radius: 8px !important;
   padding: 6px 10px !important;
-  font-family: Montserrat, sans-serif !important;
+  font-family: Be Vietnam Pro, sans-serif !important;
   font-size: 12px !important;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35) !important;
 }
@@ -564,7 +581,7 @@
 }
 
 .vn-sovereign-pin__label {
-  font-family: Montserrat, sans-serif;
+  font-family: Be Vietnam Pro, sans-serif;
   font-size: 11px;
   font-weight: 600;
   color: #1a2a4a;
@@ -581,7 +598,7 @@
   color: #fff !important;
   border-radius: 8px !important;
   padding: 5px 10px !important;
-  font-family: Montserrat, sans-serif !important;
+  font-family: Be Vietnam Pro, sans-serif !important;
   font-size: 11px !important;
   font-weight: 600 !important;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3) !important;
@@ -598,7 +615,7 @@
 
 .vn-place-label {
   display: inline-block;
-  font-family: Montserrat, sans-serif;
+  font-family: Be Vietnam Pro, sans-serif;
   font-weight: 700;
   white-space: nowrap;
   transform: translate(-50%, -50%);
@@ -634,7 +651,7 @@
 
 .vn-city-label {
   display: inline-block;
-  font-family: Montserrat, sans-serif;
+  font-family: Be Vietnam Pro, sans-serif;
   font-size: 13px;
   font-weight: 700;
   white-space: nowrap;
@@ -804,7 +821,7 @@
   height: 100%;
   overflow: hidden;
   background:
-    radial-gradient(ellipse at 50% 0%, rgba(255, 181, 71, 0.06), transparent 60%),
+    radial-gradient(ellipse at 50% 0%, rgba(59, 130, 246, 0.06), transparent 60%),
     #0d0e15;
 }
 
@@ -817,10 +834,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(145deg, #f7d486, #FFB547);
+  background: linear-gradient(145deg, #93c5fd, #3B82F6);
   border: 2px solid #fff;
   color: #3a2a06;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 181, 71, 0.5);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(59, 130, 246, 0.5);
   cursor: pointer;
   z-index: 4;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
@@ -891,7 +908,7 @@
 }
 
 .tour360-map-switch__btn.is-active {
-  background: linear-gradient(145deg, #f7d486, #FFB547);
+  background: linear-gradient(145deg, #93c5fd, #3B82F6);
   color: #3a2a06;
 }
 
@@ -978,7 +995,7 @@
 .tour360-viewer .psv-canvas-container {
   width: 100% !important;
   height: 100% !important;
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Be Vietnam Pro', sans-serif;
 }
 
 /* HUD — thanh mỏng trên cùng */
@@ -1149,7 +1166,7 @@
   background: rgba(18, 19, 27, 0.85);
   border: 1px solid rgba(212, 175, 55, 0.55);
   color: #f5e6b8;
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Be Vietnam Pro', sans-serif;
   font-size: 11px;
   font-weight: 600;
   white-space: nowrap;

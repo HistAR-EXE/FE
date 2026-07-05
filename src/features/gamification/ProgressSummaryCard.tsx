@@ -31,9 +31,16 @@ export function computeOverallPercent(
 type ProgressSummaryCardProps = {
   locationId?: string
   compact?: boolean
+  variant?: 'default' | 'slim'
+  questLabel?: string
 }
 
-export function ProgressSummaryCard({ locationId = CU_CHI_LOCATION_ID, compact = false }: ProgressSummaryCardProps) {
+export function ProgressSummaryCard({
+  locationId = CU_CHI_LOCATION_ID,
+  compact = false,
+  variant = 'default',
+  questLabel,
+}: ProgressSummaryCardProps) {
   const { isAuthenticated } = useAuth()
   const { summary: discoverySummary, loading: discoveryLoading } = useDiscoverySummary(locationId)
   const [artifactCollected, setArtifactCollected] = useState(0)
@@ -122,6 +129,27 @@ export function ProgressSummaryCard({ locationId = CU_CHI_LOCATION_ID, compact =
   const discoveryLabel = `${summary.discovered}/${summary.discoveryTotal}`
   const artifactLabel = `${summary.collected}/${summary.artifactTotal}`
 
+  if (variant === 'slim') {
+    return (
+      <section className="flex items-center justify-between gap-md px-4 py-2 bg-surface-container border border-outline-variant rounded-lg">
+        <div className="flex-1 min-w-0 flex items-center gap-sm">
+          <div className="flex-1 h-1.5 bg-neutral-200 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-primary-500 to-accent-500 transition-all duration-500"
+              style={{ width: `${Math.min(100, summary.overallPercent)}%` }}
+            />
+          </div>
+          <span className="text-xs font-semibold text-primary tabular-nums shrink-0">{summary.overallPercent}%</span>
+        </div>
+        {questLabel && (
+          <span className="shrink-0 text-[11px] px-2 py-0.5 rounded-full border border-secondary/40 bg-secondary/10 text-secondary">
+            {questLabel}
+          </span>
+        )}
+      </section>
+    )
+  }
+
   return (
     <section className="bg-surface-container border border-outline-variant rounded-xl p-md md:p-lg">
       <div className="flex items-center justify-between gap-sm mb-sm">
@@ -129,9 +157,9 @@ export function ProgressSummaryCard({ locationId = CU_CHI_LOCATION_ID, compact =
         <span className="font-display-sm text-primary tabular-nums">{summary.overallPercent}%</span>
       </div>
       {!compact && (
-        <div className="h-2.5 bg-surface-container-highest rounded-full overflow-hidden mb-md">
+        <div className="h-2.5 bg-neutral-200 rounded-full overflow-hidden mb-md">
           <div
-            className="h-full bg-gradient-to-r from-primary to-secondary transition-all duration-500"
+            className="h-full bg-gradient-to-r from-primary-500 to-accent-500 transition-all duration-500"
             style={{ width: `${Math.min(100, summary.overallPercent)}%` }}
           />
         </div>

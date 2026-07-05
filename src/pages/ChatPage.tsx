@@ -3,6 +3,7 @@ import { useParams, useSearchParams } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { SimpleTopNav } from '../components/layout/TopNav'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
+import { Button } from '../components/ui/Button'
 import { images } from '../assets/images'
 import { chatApi, normalizeChatSources, type ChatMessage, type ChatSource } from '../features/chat/api'
 import { ChatSourcesBlock } from '../components/chat/ChatSourcesBlock'
@@ -72,6 +73,9 @@ export function ChatPage() {
   const [hasOlder, setHasOlder] = useState(false)
   const [sending, setSending] = useState(false)
   const [chatLimitReached, setChatLimitReached] = useState(false)
+  const [premiumBannerDismissed, setPremiumBannerDismissed] = useState(
+    () => sessionStorage.getItem('premiumBannerDismissed') === '1',
+  )
   const [upgrading, setUpgrading] = useState(false)
   const [voicePhase, setVoicePhase] = useState<VoicePhase>('idle')
   const recorderRef = useRef<MediaRecorder | null>(null)
@@ -423,7 +427,7 @@ export function ChatPage() {
     >
       <main className="flex flex-col lg:flex-row overflow-hidden p-md lg:p-lg gap-md lg:gap-lg max-w-[1600px] mx-auto w-full mt-14 md:mt-16 h-[calc(100dvh-4rem)] max-h-[calc(100dvh-4rem)] min-h-0">
         <section className="hidden lg:flex lg:h-full lg:shrink-0 w-[360px] xl:w-[400px] bg-surface-container-low/80 rounded-xl border border-outline-variant flex-col overflow-hidden relative">
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-secondary opacity-80 z-10" />
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary-500 to-accent-500 opacity-80 z-10" />
           <div className="h-[240px] shrink-0 w-full relative">
             <div className="absolute inset-0 bg-gradient-to-t from-surface-container-low via-transparent to-transparent z-10" />
             <img alt={selected?.name ?? 'Nhân vật'} className="w-full h-full object-cover object-top" src={selected?.portraitUrl || images.nguyenDuPortrait} />
@@ -543,21 +547,6 @@ export function ChatPage() {
             <div ref={messagesEndRef} className="h-px shrink-0" />
           </div>
           <div className="shrink-0 p-md lg:p-lg border-t border-outline-variant bg-surface-container-high/80">
-            {chatLimitReached && user?.tier !== 'PREMIUM' && (
-              <div className="mb-md p-md rounded-xl border border-primary/40 bg-primary/10 flex flex-col sm:flex-row sm:items-center gap-sm">
-                <p className="text-sm flex-1">
-                  Bạn đã hết quota chat hôm nay. Nâng cấp Premium để trò chuyện không giới hạn với nhân vật lịch sử.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => void handleUpgrade()}
-                  disabled={upgrading}
-                  className="px-md py-sm rounded-lg bg-primary text-on-primary text-sm font-medium disabled:opacity-60"
-                >
-                  Nâng cấp Premium
-                </button>
-              </div>
-            )}
             <div className="flex overflow-x-auto gap-sm pb-md">
               {quickReplies.map((item) => (
                 <button
@@ -606,6 +595,32 @@ export function ChatPage() {
                 </button>
               </div>
             </div>
+            {chatLimitReached && user?.tier !== 'PREMIUM' && !premiumBannerDismissed && (
+              <div className="mt-md p-md rounded-xl border border-primary/40 bg-primary/10 flex flex-col sm:flex-row sm:items-center gap-sm relative">
+                <button
+                  type="button"
+                  onClick={() => {
+                    sessionStorage.setItem('premiumBannerDismissed', '1')
+                    setPremiumBannerDismissed(true)
+                  }}
+                  className="absolute top-2 right-2 text-on-surface-variant hover:text-on-surface p-1"
+                  aria-label="Đóng"
+                >
+                  <MaterialIcon name="close" className="text-sm" />
+                </button>
+                <p className="text-sm flex-1 pr-6">
+                  Bạn đã hết quota chat hôm nay. Nâng cấp Premium để trò chuyện không giới hạn với nhân vật lịch sử.
+                </p>
+                <Button
+                  type="button"
+                  onClick={() => void handleUpgrade()}
+                  disabled={upgrading}
+                  className="text-sm shrink-0"
+                >
+                  Nâng cấp Premium
+                </Button>
+              </div>
+            )}
           </div>
         </section>
       </main>

@@ -1,5 +1,6 @@
 import { NavLink, useLocation } from 'react-router-dom'
 import { MaterialIcon } from '../ui/MaterialIcon'
+import { Button } from '../ui/Button'
 import type { AppMode } from '../../shared/context/modeContext'
 import { useAppMode } from '../../shared/context/useAppMode'
 
@@ -63,14 +64,10 @@ export function SideNav({
       <SideNavLinks activeBorder={activeBorder} mode={mode} pathname={pathname} iconOnly={false} />
       {showCta && (
         <div className="mt-auto pt-md shrink-0">
-          <button
-            type="button"
-            onClick={onCtaClick}
-            className="w-full py-sm px-md rounded-xl bg-primary text-on-primary font-title-md text-title-md shadow-elev-1 hover:shadow-elev-2 card-interactive flex items-center justify-center gap-sm"
-          >
+          <Button type="button" onClick={onCtaClick} className="w-full shadow-elev-1 hover:shadow-elev-2">
             Bắt đầu hành trình
             <MaterialIcon name="arrow_forward" className="text-[18px]" />
-          </button>
+          </Button>
         </div>
       )}
     </nav>

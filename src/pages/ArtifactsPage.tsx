@@ -36,7 +36,7 @@ const TIER_META = {
     color: 'text-amber-400',
     accent: 'from-amber-600/25 via-amber-900/10 to-[#14100c]',
     ring: 'ring-amber-500/40',
-    chip: 'border-amber-500/30 bg-amber-500/10 text-amber-300',
+    chip: 'border-heritage-bronze/30 bg-heritage-bronze/10 text-heritage-bronze',
     glow: 'shadow-amber-900/20',
   },
   2: {
@@ -570,7 +570,7 @@ export function ArtifactsPage() {
               role="dialog"
               aria-modal
             >
-              <div className="h-1 bg-gradient-to-r from-primary via-secondary to-primary shrink-0" />
+              <div className="h-1 bg-gradient-to-r from-primary-500 via-accent-500 to-primary-500 shrink-0" />
               <div className="overflow-y-auto flex-1">
                 <div className="md:grid md:grid-cols-5">
                   <div className="md:col-span-2 relative">

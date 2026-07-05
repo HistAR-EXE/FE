@@ -137,20 +137,7 @@ export function HeritageDetailPage() {
         {!location && failed && <p>Không thể hiển thị chi tiết địa điểm.</p>}
         {location && (
           <>
-            <div className="mb-md">
-              <ProgressSummaryCard locationId={location.id} />
-            </div>
-
-            {questRecordKey && (
-              <div className="mb-md rounded-xl border border-secondary/40 bg-secondary/10 p-md">
-                <p className="text-xs uppercase tracking-wide text-secondary mb-1">Nhiệm vụ · Chương Định vị</p>
-                <p className="text-sm text-on-surface">
-                  Đọc hồ sơ di tích (≥ 5 giây hoặc bấm &quot;Xem thêm&quot;) để hoàn thành chương này.
-                </p>
-              </div>
-            )}
-
-            <div className="relative w-full h-[400px] rounded-xl overflow-hidden border border-outline-variant shadow-lg group mb-md">
+            <div className="relative w-full h-[400px] rounded-xl overflow-hidden border border-outline-variant shadow-lg group mb-sm">
                   <img src={location.coverImage} alt={location.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                   <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
                   <div className="absolute bottom-0 left-0 p-lg w-full">
@@ -162,6 +149,14 @@ export function HeritageDetailPage() {
                     <h1 className="font-display-lg text-display-lg text-primary mb-2 inline-block">{location.name}</h1>
                   </div>
                 </div>
+
+            <div className="mb-md">
+              <ProgressSummaryCard
+                locationId={location.id}
+                variant="slim"
+                questLabel={questRecordKey ? 'Chương Định vị' : undefined}
+              />
+            </div>
 
             <div className="flex gap-xs mb-lg border-b border-outline-variant overflow-x-auto">
               {HERITAGE_TABS.map((tab) => (
@@ -236,26 +231,30 @@ export function HeritageDetailPage() {
                     <div><p className="font-label-sm text-label-sm text-on-surface-variant uppercase">Nhân vật</p><p className="font-title-md text-title-md text-on-surface">{characters.length}</p></div>
                   </div>
                 </div>
-                <div className="bg-surface-container border border-outline-variant rounded-lg p-md">
-                  <h3 className="font-semibold mb-xs">Câu chuyện bí mật</h3>
-                  {!isAuthenticated && (
-                    <p className="text-sm text-on-surface-variant">
-                      Đăng nhập và hoàn thành quest tại di tích để mở khoá.
-                    </p>
-                  )}
-                  {isAuthenticated && secretStory?.locked && !isAdminPreview(user?.role) && (
-                    <p className="text-sm text-on-surface-variant flex items-center gap-1">
-                      <MaterialIcon name="lock" className="text-sm" />
-                      Hoàn thành nhiệm vụ và check-in SECRET QR tại hiện trường để mở.
-                    </p>
-                  )}
-                  {isAuthenticated && secretStory && (!secretStory.locked || isAdminPreview(user?.role)) && (
-                    <Link to={`/secret/${location.id}`} className="inline-flex items-center gap-1 mt-sm text-secondary underline">
-                      <MaterialIcon name="auto_stories" className="text-sm" />
-                      Câu chuyện bí mật
-                    </Link>
-                  )}
-                </div>
+                {isAuthenticated && secretStory?.locked && !isAdminPreview(user?.role) ? (
+                <Link
+                  to={`/secret/${location.id}`}
+                  className="flex items-center gap-2 py-2 text-sm text-on-surface-variant hover:text-secondary transition-colors"
+                >
+                  <MaterialIcon name="lock" className="text-sm shrink-0" />
+                  <span className="truncate">Câu chuyện bí mật — hoàn thành quest và check-in SECRET QR để mở.</span>
+                  <MaterialIcon name="chevron_right" className="text-sm shrink-0 ml-auto" />
+                </Link>
+              ) : !isAuthenticated ? (
+                <p className="flex items-center gap-2 py-2 text-sm text-on-surface-variant">
+                  <MaterialIcon name="lock" className="text-sm shrink-0" />
+                  <span>Đăng nhập và hoàn thành quest tại di tích để mở khoá.</span>
+                </p>
+              ) : secretStory && (!secretStory.locked || isAdminPreview(user?.role)) ? (
+                <Link
+                  to={`/secret/${location.id}`}
+                  className="flex items-center gap-2 py-2 text-sm text-secondary hover:underline"
+                >
+                  <MaterialIcon name="auto_stories" className="text-sm shrink-0" />
+                  <span>Câu chuyện bí mật — nhấn để đọc</span>
+                  <MaterialIcon name="chevron_right" className="text-sm shrink-0 ml-auto" />
+                </Link>
+              ) : null}
               </div>
             </div>
             )}
