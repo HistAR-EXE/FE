@@ -1,3 +1,4 @@
+// src/shared/router/ModeGuardRoute.tsx
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAppMode } from '../context/useAppMode'
 

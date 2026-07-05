@@ -1,3 +1,4 @@
+// src/components/panorama/Tour360Hud.tsx
 import { Link } from 'react-router-dom'
 
 import type { Hotspot, Panorama } from '../../features/panorama/api'

@@ -1,3 +1,4 @@
+// src/data/mock/user.ts
 export const user = {
   name: 'Time Traveler',
   level: 12,

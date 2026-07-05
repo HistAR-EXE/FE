@@ -1,3 +1,4 @@
+// src/shared/auth/useUserAvatar.ts
 import { images } from '../../assets/images'
 import { useAuth } from './useAuth'
 

@@ -1,3 +1,4 @@
+// src/pages/AdminContentPage.tsx
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'

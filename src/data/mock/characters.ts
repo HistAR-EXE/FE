@@ -1,3 +1,4 @@
+// src/data/mock/characters.ts
 import { images } from '../../assets/images'
 
 export type CharacterStat = { label: string; value: number }

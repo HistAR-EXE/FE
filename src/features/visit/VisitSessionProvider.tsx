@@ -1,3 +1,4 @@
+// src/features/visit/VisitSessionProvider.tsx
 import {
   createContext,
   useCallback,

@@ -1,3 +1,4 @@
+// src/pages/SecretStoryPage.tsx
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'

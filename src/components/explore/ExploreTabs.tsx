@@ -1,3 +1,4 @@
+// src/components/explore/ExploreTabs.tsx
 import { NavLink } from 'react-router-dom'
 import { MaterialIcon } from '../ui/MaterialIcon'
 

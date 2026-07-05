@@ -1,3 +1,4 @@
+// src/shared/auth/AuthContext.tsx
 import { useEffect, useState, type ReactNode } from 'react'
 import { profileApi } from '../../features/profile/api'
 import { authApi, type AuthPayload, type LoginInput, type RegisterInput } from '../../features/auth/api'

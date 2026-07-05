@@ -1,3 +1,4 @@
+// src/components/layout/OfflineSyncBadge.tsx
 import { useEffect, useState } from 'react'
 import { useAppMode } from '../../shared/context/useAppMode'
 import { MaterialIcon } from '../ui/MaterialIcon'

@@ -1,3 +1,4 @@
+// src/features/gamification/api.ts
 import { getData, getListData, httpClient } from '../../shared/api/httpClient'
 import type { CheckinEngagementResponse, RecordDiscoveryResponse } from './engagementTypes'
 

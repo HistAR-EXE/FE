@@ -1,3 +1,4 @@
+// src/features/gamification/useDiscoverySummary.ts
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { discoveriesApi, type DiscoverySummary } from './api'
 import { DISCOVERY_RECORDED_EVENT } from './discoveryRouting'

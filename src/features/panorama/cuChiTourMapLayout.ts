@@ -1,3 +1,4 @@
+// src/features/panorama/cuChiTourMapLayout.ts
 /**
  * Tọa độ GPS — Khu di tích Địa đạo Củ Chi (Bến Dước).
  * Căn theo ảnh vệ tinh Google Maps (06/2026): Sông Sài Gòn (T), ĐT15 (ĐB),

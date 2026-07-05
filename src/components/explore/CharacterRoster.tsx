@@ -1,3 +1,4 @@
+// src/components/explore/CharacterRoster.tsx
 import { useState } from 'react'
 import { MaterialIcon } from '../ui/MaterialIcon'
 import {

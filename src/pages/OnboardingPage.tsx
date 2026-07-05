@@ -1,3 +1,4 @@
+// src/pages/OnboardingPage.tsx
 import { useNavigate } from 'react-router-dom'
 import { AuthLayout } from '../components/layout/AuthLayout'
 import { Footer } from '../components/layout/Footer'

@@ -1,3 +1,4 @@
+// src/shared/context/appModeUtils.ts
 import type { AppMode } from './modeContext'
 
 export const ONLINE_ROUTES = ['/explore', '/tour/360', '/chat', '/time-portal'] as const

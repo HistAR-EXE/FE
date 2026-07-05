@@ -1,3 +1,4 @@
+// src/features/explore/vietnamMap.ts
 import type { Location } from '../locations/api'
 import { getRegionFromLat, type VietnamRegion } from './vietnamGeo'
 

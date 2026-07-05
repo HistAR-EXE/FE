@@ -1,3 +1,4 @@
+// src/components/layout/SideNav.tsx
 import { NavLink, useLocation } from 'react-router-dom'
 import { MaterialIcon } from '../ui/MaterialIcon'
 import { Button } from '../ui/Button'

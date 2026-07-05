@@ -1,3 +1,4 @@
+// src/features/gamification/discoveryLayer.ts
 import { discoveriesApi } from './api'
 import { discoveryBindingsApi, type DiscoveryBindingDto } from './discoveryBindingsApi'
 import { readAppMode } from '../../shared/context/AppModeProvider'

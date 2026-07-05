@@ -1,3 +1,4 @@
+// src/features/explore/ExploreMapPanel.tsx
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import L from 'leaflet'

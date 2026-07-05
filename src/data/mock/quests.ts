@@ -1,3 +1,4 @@
+// src/data/mock/quests.ts
 export const dailyQuests = {
   completed: 2,
   total: 5,

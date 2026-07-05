@@ -1,3 +1,4 @@
+// src/features/collection/api.ts
 import { getData, getListData, httpClient } from '../../shared/api/httpClient'
 
 export type Artifact = {

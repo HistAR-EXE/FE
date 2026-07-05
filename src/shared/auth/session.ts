@@ -1,3 +1,4 @@
+//src/shared/auth/session.ts
 const TOKEN_KEY = 'timelens_token'
 const REFRESH_TOKEN_KEY = 'timelens_refresh_token'
 const EXPIRES_IN_KEY = 'timelens_token_expires_in'

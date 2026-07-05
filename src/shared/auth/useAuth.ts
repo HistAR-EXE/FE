@@ -1,3 +1,4 @@
+// src/shared/auth/useAuth.ts
 import { useContext } from 'react'
 import { AuthContext } from './auth-context'
 

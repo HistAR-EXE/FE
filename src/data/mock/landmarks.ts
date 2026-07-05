@@ -1,3 +1,4 @@
+// src/data/mock/landmarks.ts
 import { images } from '../../assets/images'
 
 export const exploreLandmarks = [

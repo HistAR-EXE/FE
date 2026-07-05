@@ -1,3 +1,4 @@
+// src/features/panorama/cuChiTourRouteLayer.ts
 import L from 'leaflet'
 
 import { CU_CHI_TOUR_ROUTE, CU_CHI_WALKING_PATHS } from './cuChiTourMapLayout'

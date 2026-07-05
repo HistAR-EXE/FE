@@ -1,3 +1,4 @@
+// src/features/locations/api.ts
 import { getData, getListData, getPageData, httpClient } from '../../shared/api/httpClient'
 
 export type Location = {

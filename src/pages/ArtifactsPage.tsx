@@ -1,3 +1,4 @@
+//src/pages/ArtifactsPage.tsx
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'

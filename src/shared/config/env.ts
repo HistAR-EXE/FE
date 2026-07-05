@@ -1,3 +1,4 @@
+// src/shared/config/env.ts
 const env = import.meta.env
 
 const apiUrl = env.VITE_API_URL ?? 'http://localhost:8080'

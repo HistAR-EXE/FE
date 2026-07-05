@@ -1,3 +1,4 @@
+// src/features/admin/analyticsDemo.ts
 import { getData, getPageData, httpClient } from '../../shared/api/httpClient'
 import type { PageResponse } from '../../shared/api/contracts'
 

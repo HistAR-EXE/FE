@@ -1,3 +1,4 @@
+// src/routes/AppRoutes.tsx
 import { lazy, Suspense } from 'react'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { ArtifactsPage } from '../pages/ArtifactsPage'
