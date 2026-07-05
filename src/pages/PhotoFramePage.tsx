@@ -11,6 +11,7 @@ import { images } from '../assets/images'
 import { useAuth } from '../shared/auth/useAuth'
 import { isPremium } from '../shared/auth/types'
 import { UpgradePrompt } from '../components/monetization/UpgradePrompt'
+import { resizeImageForUpload } from '../shared/utils/resizeImage'
 
 export function PhotoFramePage() {
   const navigate = useNavigate()

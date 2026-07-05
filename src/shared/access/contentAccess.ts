@@ -13,7 +13,7 @@ export function hasPremiumAccess(user?: ContentAccessUser): boolean {
 }
 
 export function isLocationLockedForUser(
-  location: { isUnlocked?: boolean },
+  location: { isUnlocked?: boolean | null },
   user?: ContentAccessUser,
 ): boolean {
   if (isAdminPreview(user?.role)) return false
