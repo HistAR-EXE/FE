@@ -124,10 +124,19 @@ export function Tour360Page() {
       try {
         setLoading(true)
         const list = await panoramaApi.byLocation(locationId)
-        setPanoramas(list)
+        let merged = list
+        if (panoramaParam && !list.some((p) => p.id === panoramaParam)) {
+          try {
+            const single = await panoramaApi.getById(panoramaParam)
+            merged = [...list, single]
+          } catch {
+            // panorama id not in location list — deep-link fallback failed
+          }
+        }
+        setPanoramas(merged)
 
         const hotspotEntries = await Promise.all(
-          list.map(async (panorama) => {
+          merged.map(async (panorama) => {
             const hotspots = await panoramaApi.hotspotsByPanorama(panorama.id)
             return [panorama.id, hotspots] as const
           }),
@@ -135,9 +144,9 @@ export function Tour360Page() {
         setHotspotsByPanorama(Object.fromEntries(hotspotEntries))
 
         const preferred =
-          panoramaParam && list.some((p) => p.id === panoramaParam)
+          panoramaParam && merged.some((p) => p.id === panoramaParam)
             ? panoramaParam
-            : (list.find((p) => p.id === CU_CHI_ENTRANCE_ID)?.id ?? list[0]?.id ?? null)
+            : (merged.find((p) => p.id === CU_CHI_ENTRANCE_ID)?.id ?? merged[0]?.id ?? null)
         setActivePanoramaId(preferred)
       } catch (e) {
         showToast({

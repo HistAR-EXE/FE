@@ -7,6 +7,7 @@ export type PhotoFrame = {
   imageUrl: string
   era: string
   sortOrder: number
+  requiresPremium?: boolean
 }
 
 export type UserCreation = {
@@ -33,7 +34,7 @@ export type LeaderboardEntry = {
 }
 
 export type LeaderboardResponse = {
-  scope: 'all' | 'city' | 'week'
+  scope: 'all' | 'city' | 'week' | 'group'
   city: string | null
   entries: LeaderboardEntry[]
 }
@@ -61,8 +62,8 @@ export const viralApi = {
   sharePrefill: () => getData<SharePrefill>(httpClient.get('/api/share/prefill')),
   recordShare: (creationId: string) =>
     getData<ShareRecorded>(httpClient.post(`/api/user-creations/${creationId}/record-share`)),
-  leaderboard: (scope: 'all' | 'city' | 'week', city?: string) =>
-    getData<unknown>(httpClient.get('/api/leaderboard', { params: { scope, city } })).then((data) => {
+  leaderboard: (scope: 'all' | 'city' | 'week', city?: string, groupId?: string) =>
+    getData<unknown>(httpClient.get('/api/leaderboard', { params: { scope, city, groupId } })).then((data) => {
       if (data && typeof data === 'object' && Array.isArray((data as { entries?: unknown }).entries)) {
         return data as LeaderboardResponse
       }

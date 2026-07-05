@@ -1,6 +1,7 @@
 // // src/shared/router/AdminRoute.tsx
 import { Navigate, Outlet } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
+import { isAdmin, isTeacher } from '../auth/types'
 
 export function AdminRoute() {
   const { isAuthenticated, isLoading, user } = useAuth()
@@ -17,8 +18,8 @@ export function AdminRoute() {
     return <Navigate to="/login" replace />
   }
 
-  if (user?.role !== 'ADMIN') {
-    return <Navigate to="/profile" replace />
+  if (!isAdmin(user)) {
+    return <Navigate to={isTeacher(user) ? '/teacher' : '/home'} replace />
   }
 
   return <Outlet />

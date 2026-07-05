@@ -125,6 +125,24 @@ export type SessionQualityMetrics = {
   avgDiscoveriesPerSession: number
 }
 
+export type SessionReplayStep = {
+  poiName: string
+  unlockKey: string
+  eventType: string
+  at: string
+  source: string
+}
+
+export type SessionReplay = {
+  sessionId: string
+  userId: string
+  locationId: string
+  mode: string
+  startedAt: string
+  endedAt: string | null
+  steps: SessionReplayStep[]
+}
+
 export type AdminAnalyticsOverview = {
   locationId: string
   poiUnlockRates: PoiUnlockRateItem[]
@@ -150,7 +168,7 @@ export type OrganizationAnalytics = {
 export const adminApi = {
   listUsers: (page = 0, size = 20) =>
     getPageData<AdminUserSummary>(httpClient.get('/api/admin/users', { params: { page, size } })),
-  updateRole: (userId: string, role: 'USER' | 'ADMIN') =>
+  updateRole: (userId: string, role: 'USER' | 'ORG_MEMBER' | 'TEACHER' | 'ADMIN') =>
     getData<AdminUserSummary>(httpClient.patch(`/api/admin/users/${userId}/role`, { role })),
 
   listDiscoveryPoints: (locationId?: string) =>
@@ -183,6 +201,9 @@ export const adminApi = {
     getData<AdminAnalyticsOverview>(
       httpClient.get('/api/admin/analytics/overview', { params: { locationId } }),
     ),
+
+  sessionReplay: (sessionId: string) =>
+    getData<SessionReplay>(httpClient.get(`/api/admin/analytics/sessions/${sessionId}/replay`)),
 
   organizationAnalytics: (orgId: string) =>
     getData<OrganizationAnalytics>(httpClient.get(`/api/admin/organizations/${orgId}/analytics`)),

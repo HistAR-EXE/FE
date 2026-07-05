@@ -1,5 +1,5 @@
 // src/features/panorama/api.ts
-import { getListData, httpClient } from '../../shared/api/httpClient'
+import { getData, getListData, httpClient } from '../../shared/api/httpClient'
 
 export type Panorama = {
   id: string
@@ -25,6 +25,7 @@ export type Hotspot = {
 export const panoramaApi = {
   byLocation: (locationId: string) =>
     getListData<Panorama>(httpClient.get(`/api/panoramas/by-location/${locationId}`)),
+  getById: (panoramaId: string) => getData<Panorama>(httpClient.get(`/api/panoramas/${panoramaId}`)),
   hotspotsByPanorama: (panoramaId: string) =>
     getListData<Hotspot>(httpClient.get(`/api/hotspots/by-panorama/${panoramaId}`)),
 }

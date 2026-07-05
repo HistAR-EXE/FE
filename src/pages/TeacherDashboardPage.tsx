@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { SimpleTopNav } from '../components/layout/TopNav'
-import { orgApi, type OrgMembership, type OrgRosterMember } from '../features/org/api'
+import { orgApi, type OrgInviteCode, type OrgMembership, type OrgRosterMember } from '../features/org/api'
 import type { OrganizationAnalytics } from '../features/admin/api'
 import { useToast } from '../shared/ui/toast/useToast'
 
@@ -11,6 +11,8 @@ export function TeacherDashboardPage() {
   const [orgId, setOrgId] = useState('')
   const [analytics, setAnalytics] = useState<OrganizationAnalytics | null>(null)
   const [roster, setRoster] = useState<OrgRosterMember[]>([])
+  const [invite, setInvite] = useState<OrgInviteCode | null>(null)
+  const [inviteLoading, setInviteLoading] = useState(false)
   const { showToast } = useToast()
 
   useEffect(() => {
@@ -27,7 +29,32 @@ export function TeacherDashboardPage() {
     if (!orgId) return
     orgApi.analytics(orgId).then(setAnalytics).catch(() => setAnalytics(null))
     orgApi.roster(orgId).then(setRoster).catch(() => setRoster([]))
+    orgApi.getInviteCode(orgId).then(setInvite).catch(() => setInvite(null))
   }, [orgId])
+
+  const regenerateInvite = async () => {
+    if (!orgId) return
+    try {
+      setInviteLoading(true)
+      const next = await orgApi.generateInviteCode(orgId)
+      setInvite(next)
+      showToast({ message: 'Đã tạo mã mời mới', type: 'success' })
+    } catch {
+      showToast({ message: 'Không tạo được mã mời', type: 'error' })
+    } finally {
+      setInviteLoading(false)
+    }
+  }
+
+  const copyInvite = async () => {
+    if (!invite?.inviteCode) return
+    try {
+      await navigator.clipboard.writeText(invite.inviteCode)
+      showToast({ message: 'Đã copy mã mời', type: 'success' })
+    } catch {
+      showToast({ message: invite.inviteCode, type: 'info' })
+    }
+  }
 
   const students = roster.filter((m) => m.orgRole !== 'teacher')
 
@@ -61,6 +88,42 @@ export function TeacherDashboardPage() {
               ))}
             </select>
           </label>
+        )}
+
+        {orgId && (
+          <section className="bg-surface-container border border-outline-variant rounded-xl p-md space-y-sm">
+            <h2 className="font-title-md">Mã mời tổ chức</h2>
+            <p className="text-sm text-on-surface-variant">
+              Học sinh nhập mã này tại Cài đặt → Lớp học để gia nhập lớp.
+            </p>
+            {invite?.inviteCode ? (
+              <div className="flex flex-wrap items-center gap-sm">
+                <code className="text-lg font-mono tracking-widest text-secondary bg-surface-container-high px-md py-xs rounded-lg border border-outline-variant">
+                  {invite.inviteCode}
+                </code>
+                <button type="button" onClick={() => void copyInvite()} className="text-sm text-secondary underline">
+                  Copy
+                </button>
+                <button
+                  type="button"
+                  disabled={inviteLoading}
+                  onClick={() => void regenerateInvite()}
+                  className="text-sm px-sm py-xs border border-outline-variant rounded-lg"
+                >
+                  {inviteLoading ? 'Đang tạo...' : 'Tạo mã mới'}
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                disabled={inviteLoading}
+                onClick={() => void regenerateInvite()}
+                className="text-sm px-md py-sm border border-secondary text-secondary rounded-lg"
+              >
+                Tạo mã mời
+              </button>
+            )}
+          </section>
         )}
 
         {analytics && (

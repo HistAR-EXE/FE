@@ -1,9 +1,11 @@
 // src/pages/AdminContentPage.tsx
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { SimpleTopNav } from '../components/layout/TopNav'
 import { AdminModal } from '../components/admin/AdminModal'
+import { AdminSubNav } from '../components/admin/AdminSubNav'
+import { ImageFilePicker } from '../components/admin/ImageFilePicker'
 import {
   CheckboxInput,
   FormField,
@@ -205,20 +207,16 @@ export function AdminContentPage() {
             <h1 className="font-display-lg text-on-surface">
               {selectedLocation ? `Nội dung: ${selectedLocation.name}` : 'Quản lý nội dung'}
             </h1>
-            <p className="text-xs text-on-surface-variant mt-0.5">CMS nội bộ — tạo và chỉnh sửa theo địa điểm</p>
+            <p className="text-xs text-on-surface-variant mt-0.5">CMS nội bộ — tạo và chỉnh sửa theo địa điểm (chọn tab Hiện vật / Nhiệm vụ để thêm mới)</p>
           </div>
-          <div className="flex gap-2 text-sm">
-            <Link to="/admin/analytics" className="text-secondary inline-flex items-center gap-1">
-              <MaterialIcon name="analytics" className="text-sm" /> Analytics
-            </Link>
-            <Link to="/admin/users" className="text-secondary inline-flex items-center gap-1">
-              <MaterialIcon name="group" className="text-sm" /> Người dùng
-            </Link>
-            <Link to="/profile" className="text-secondary inline-flex items-center gap-1">
+          <div className="flex gap-2 text-sm shrink-0">
+            <Link to="/profile" className="text-secondary inline-flex items-center gap-1 hover:underline">
               <MaterialIcon name="arrow_back" className="text-sm" /> Hồ sơ
             </Link>
           </div>
         </div>
+
+        <AdminSubNav />
 
         <div className="mb-md flex flex-wrap items-end gap-sm">
           <FormField label="Địa điểm">
@@ -423,6 +421,7 @@ export function AdminContentPage() {
         {modal?.kind === 'panorama-replace' && (
           <AdminModal title={`Thay ảnh: ${modal.item.title}`} onClose={() => setModal(null)}>
             <PanoramaReplaceForm
+              currentImageUrl={modal.item.imageUrl}
               saving={saving}
               onSubmit={(file) => handleReplacePanorama(modal.item.id, file)}
               onCancel={() => setModal(null)}
@@ -694,14 +693,11 @@ function PanoramaUploadForm({
   onCancel: () => void
 }) {
   const [title, setTitle] = useState('Panorama 360°')
-  const fileRef = useRef<HTMLInputElement>(null)
+  const [file, setFile] = useState<File | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const file = fileRef.current?.files?.[0]
-    if (!file) {
-      return
-    }
+    if (!file) return
     await onSubmit(title.trim() || 'Panorama 360°', file)
   }
 
@@ -710,8 +706,13 @@ function PanoramaUploadForm({
       <FormField label="Tiêu đề">
         <TextInput value={title} onChange={(e) => setTitle(e.target.value)} />
       </FormField>
-      <FormField label="Ảnh equirectangular *" hint="JPEG/PNG/WebP, tối đa 8MB">
-        <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="text-sm" required />
+      <FormField label="Ảnh equirectangular">
+        <ImageFilePicker
+          newLabel="Ảnh panorama mới"
+          hint="JPEG/PNG/WebP, tối đa 8MB"
+          required
+          onFileChange={setFile}
+        />
       </FormField>
       <FormActions saving={saving} onCancel={onCancel} submitLabel="Tải lên" />
     </form>
@@ -719,27 +720,35 @@ function PanoramaUploadForm({
 }
 
 function PanoramaReplaceForm({
+  currentImageUrl,
   saving,
   onSubmit,
   onCancel,
 }: {
+  currentImageUrl: string | null
   saving: boolean
   onSubmit: (file: File) => Promise<void>
   onCancel: () => void
 }) {
-  const fileRef = useRef<HTMLInputElement>(null)
+  const [file, setFile] = useState<File | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const file = fileRef.current?.files?.[0]
     if (!file) return
     await onSubmit(file)
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-1">
-      <FormField label="Ảnh mới *" hint="JPEG/PNG/WebP, tối đa 8MB">
-        <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="text-sm" required />
+      <FormField label="So sánh ảnh">
+        <ImageFilePicker
+          currentImageUrl={currentImageUrl}
+          currentLabel="Ảnh hiện tại"
+          newLabel="Ảnh thay thế"
+          hint="JPEG/PNG/WebP, tối đa 8MB"
+          required
+          onFileChange={setFile}
+        />
       </FormField>
       <FormActions saving={saving} onCancel={onCancel} submitLabel="Thay ảnh" />
     </form>

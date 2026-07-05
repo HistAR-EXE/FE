@@ -140,3 +140,29 @@
 |---|---|---|---|---|
 | GP-H1 | Happy | Online: explore→heritage→tour→portal | Yes | e2e |
 | GP-H2 | Happy | Offline: scan→checkin→quest badge | Yes | e2e |
+
+## Admin CMS & Role UI (audit 2026-07)
+
+| ID | Type | Case | Automated | Layer |
+|---|---|---|---|---|
+| CMS-UI-H1 | Happy | Admin tab Hiện vật → Thêm hiện vật | Yes | e2e |
+| CMS-UI-B1 | Bad | USER vào /admin/content redirect | Yes | e2e |
+| ROLE-UI-A1 | Happy | ADMIN login → /admin/content | Yes | e2e |
+| ROLE-UI-A3 | Happy | ADMIN Profile links Analytics/Tổ chức | Yes | e2e |
+| ROLE-UI-T1 | Happy | TEACHER login → /teacher | Yes | e2e |
+| ROLE-UI-U1 | Happy | USER Profile org join + groups | Yes | e2e |
+| ROLE-UI-B1 | Bad | USER GET /api/admin/users → 403 | Yes | e2e |
+
+## API gaps (§10 audit)
+
+| ID | Type | Case | Automated | Layer |
+|---|---|---|---|---|
+| REPLAY-H1 | Happy | GET session replay ADMIN JWT | Partial | manual |
+| REPLAY-B1 | Bad | USER JWT replay → 403 | Partial | manual |
+| CREATIONS-H1 | Happy | GET /api/me/user-creations | Yes | api |
+| CREATIONS-UI-H1 | Happy | Profile gallery ảnh khung | Yes | e2e manual |
+| PANO-H1 | Happy | GET /api/panoramas/{id} | Partial | api |
+| PANO-UI-H1 | Happy | Tour360 deep-link fallback | Yes | code |
+
+Xem chi tiết limitation: **`KNOWN_GAPS.md`**.
+

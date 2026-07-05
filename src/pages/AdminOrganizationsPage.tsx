@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { SimpleTopNav } from '../components/layout/TopNav'
+import { AdminSubNav } from '../components/admin/AdminSubNav'
 import { adminApi, type OrganizationAnalytics } from '../features/admin/api'
 import { orgApi, type OrgRosterMember } from '../features/org/api'
 
@@ -18,23 +19,23 @@ export function AdminOrganizationsPage() {
   }, [])
 
   return (
-    <AppLayout activeBorder="left" topNav={<SimpleTopNav title="B2B Organizations" />}>
+    <AppLayout activeBorder="left" topNav={<SimpleTopNav title="Tổ chức B2B" />}>
       <main className="mt-14 md:mt-16 p-md md:p-lg max-w-5xl mx-auto w-full space-y-md">
-        <div className="flex gap-2">
-          <Link to="/admin/analytics" className="text-sm text-secondary underline">
-            Analytics
-          </Link>
-          <Link to="/teacher" className="text-sm text-secondary underline">
-            Teacher view
+        <div className="flex flex-wrap items-center justify-between gap-sm">
+          <h1 className="font-display-md text-on-surface">Bảng tổ chức</h1>
+          <Link to="/teacher" className="text-sm text-secondary underline hover:no-underline">
+            Xem giao diện giáo viên
           </Link>
         </div>
-        <h1 className="font-display-md text-on-surface">Organization Dashboard</h1>
+
+        <AdminSubNav />
+
         {data && (
           <section className="bg-surface-container border border-outline-variant rounded-xl p-md space-y-sm">
             <p className="font-title-md">{data.name}</p>
             <p className="text-sm text-on-surface-variant">Loại: {data.orgType}</p>
             <p className="text-sm">Thành viên: {data.memberCount}</p>
-            <p className="text-sm">Hoàn thành quest: {data.completionRatePct}%</p>
+            <p className="text-sm">Hoàn thành nhiệm vụ: {data.completionRatePct}%</p>
             <p className="text-sm">Full tour Củ Chi: {data.fullTourRatePct}%</p>
             <p className="text-xs text-on-surface-variant mt-2">{data.note}</p>
           </section>
@@ -42,7 +43,7 @@ export function AdminOrganizationsPage() {
 
         <section className="bg-surface-container border border-outline-variant rounded-xl overflow-hidden">
           <div className="p-md border-b border-outline-variant">
-            <h2 className="font-title-md">Roster</h2>
+            <h2 className="font-title-md">Danh sách thành viên</h2>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -50,9 +51,9 @@ export function AdminOrganizationsPage() {
                 <tr>
                   <th className="text-left p-sm">Thành viên</th>
                   <th className="text-left p-sm">Vai trò</th>
-                  <th className="text-left p-sm">Level</th>
+                  <th className="text-left p-sm">Cấp</th>
                   <th className="text-left p-sm">XP</th>
-                  <th className="text-left p-sm">Quest</th>
+                  <th className="text-left p-sm">Nhiệm vụ</th>
                 </tr>
               </thead>
               <tbody>

@@ -1,4 +1,16 @@
 //src/shared/auth/session.ts
+import {
+  normalizeOrgSubscription,
+  normalizeRole,
+  normalizeTier,
+  type AuthUser,
+  type OrgSubscription,
+  type UserRole,
+  type UserTier,
+} from './types'
+
+export type { AuthUser, OrgSubscription, UserRole, UserTier } from './types'
+
 const TOKEN_KEY = 'timelens_token'
 const REFRESH_TOKEN_KEY = 'timelens_refresh_token'
 const EXPIRES_IN_KEY = 'timelens_token_expires_in'
@@ -8,14 +20,13 @@ const DISPLAY_NAME_KEY = 'timelens_display_name'
 const EMAIL_KEY = 'timelens_email'
 const ROLE_KEY = 'timelens_role'
 const AVATAR_URL_KEY = 'timelens_avatar_url'
-
-export type UserRole = 'USER' | 'ADMIN' | 'TEACHER'
-export type UserTier = 'FREE' | 'PREMIUM'
-
 const TIER_KEY = 'timelens_tier'
+const ORG_ID_KEY = 'timelens_org_id'
+const ORG_SUBSCRIPTION_KEY = 'timelens_org_subscription'
 const TOKEN_ISSUED_AT_KEY = 'timelens_token_issued_at'
 
 export const SESSION_CLEARED_EVENT = 'histar:session-cleared'
+export const SESSION_REFRESHED_EVENT = 'histar:session-refreshed'
 
 export type SessionData = {
   token: string
@@ -27,16 +38,9 @@ export type SessionData = {
   email?: string
   role?: UserRole
   tier?: UserTier
+  orgId?: string | null
+  orgSubscription?: OrgSubscription
   avatarUrl?: string | null
-}
-
-export type AuthUser = {
-  id: string
-  displayName: string
-  email: string
-  role: UserRole
-  tier: UserTier
-  avatarUrl: string | null
 }
 
 export function saveSession(data: SessionData) {
@@ -62,6 +66,14 @@ export function saveSession(data: SessionData) {
   if (data.tier) {
     localStorage.setItem(TIER_KEY, data.tier)
   }
+  if (data.orgId) {
+    localStorage.setItem(ORG_ID_KEY, data.orgId)
+  } else if (data.orgId === null) {
+    localStorage.removeItem(ORG_ID_KEY)
+  }
+  if (data.orgSubscription) {
+    localStorage.setItem(ORG_SUBSCRIPTION_KEY, data.orgSubscription)
+  }
   if (data.avatarUrl !== undefined) {
     if (data.avatarUrl) {
       localStorage.setItem(AVATAR_URL_KEY, data.avatarUrl)
@@ -82,6 +94,8 @@ export function clearSession() {
   localStorage.removeItem(EMAIL_KEY)
   localStorage.removeItem(ROLE_KEY)
   localStorage.removeItem(TIER_KEY)
+  localStorage.removeItem(ORG_ID_KEY)
+  localStorage.removeItem(ORG_SUBSCRIPTION_KEY)
   localStorage.removeItem(AVATAR_URL_KEY)
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent(SESSION_CLEARED_EVENT))
@@ -99,12 +113,15 @@ export function getRefreshToken() {
 export function getSessionMeta() {
   const role = localStorage.getItem(ROLE_KEY)
   const tier = localStorage.getItem(TIER_KEY)
+  const orgSub = localStorage.getItem(ORG_SUBSCRIPTION_KEY)
   return {
     userId: localStorage.getItem(USER_ID_KEY),
     displayName: localStorage.getItem(DISPLAY_NAME_KEY),
     email: localStorage.getItem(EMAIL_KEY),
-    role: role === 'ADMIN' || role === 'USER' || role === 'TEACHER' ? role : null,
-    tier: tier === 'PREMIUM' || tier === 'FREE' ? tier : null,
+    role: role ? normalizeRole(role) : null,
+    tier: tier ? normalizeTier(tier) : null,
+    orgId: localStorage.getItem(ORG_ID_KEY),
+    orgSubscription: orgSub ? normalizeOrgSubscription(orgSub) : null,
     avatarUrl: localStorage.getItem(AVATAR_URL_KEY),
   }
 }
@@ -128,8 +145,10 @@ export function readStoredUser(): AuthUser | null {
     id: meta.userId,
     displayName: meta.displayName,
     email: meta.email ?? '',
-    role: (meta.role ?? 'USER') as UserRole,
-    tier: (meta.tier ?? 'FREE') as UserTier,
+    role: meta.role ?? 'USER',
+    tier: meta.tier ?? 'FREE',
+    orgId: meta.orgId,
+    orgSubscription: meta.orgSubscription ?? 'NONE',
     avatarUrl: meta.avatarUrl,
   }
 }

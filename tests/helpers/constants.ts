@@ -3,9 +3,21 @@
 export const BE_URL = process.env.HISTAR_BE_URL ?? 'http://localhost:8080'
 export const FE_URL = process.env.HISTAR_FE_URL ?? 'http://localhost:5173'
 
-/** Tài khoản demo có sẵn trong seed (role ADMIN, tier PREMIUM). */
+/** Tài khoản demo có sẵn trong seed (role ADMIN sau 2026-07-05). */
 export const DEMO_USER = {
   email: 'demo@histar.vn',
+  password: 'Demo@2026',
+} as const
+
+/** Platform admin (2026-07-05 seed). */
+export const ADMIN_USER = {
+  email: 'admin@histar.vn',
+  password: 'Demo@2026',
+} as const
+
+/** Demo teacher B2B (2026-07-04 org + 2026-07-05 password). */
+export const TEACHER_USER = {
+  email: 'teacher@histar.vn',
   password: 'Demo@2026',
 } as const
 

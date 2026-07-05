@@ -16,6 +16,7 @@ import { NotFoundPage } from '../pages/NotFoundPage'
 import { OnboardingPage } from '../pages/OnboardingPage'
 import { PhotoFramePage } from '../pages/PhotoFramePage'
 import { ProfilePage } from '../pages/ProfilePage'
+import { SettingsPage } from '../pages/SettingsPage'
 import { QuestDetailPage } from '../pages/QuestDetailPage'
 import { QuestsPage } from '../pages/QuestsPage'
 import { ScanPage } from '../pages/ScanPage'
@@ -28,6 +29,8 @@ import { AdminAnalyticsPage } from '../pages/AdminAnalyticsPage'
 import { AdminContentPage } from '../pages/AdminContentPage'
 import { AdminOrganizationsPage } from '../pages/AdminOrganizationsPage'
 import { AdminUsersPage } from '../pages/AdminUsersPage'
+import { GroupHubPage } from '../pages/GroupHubPage'
+import { GroupProgressPage } from '../pages/GroupProgressPage'
 import { AdminRoute } from '../shared/router/AdminRoute'
 import { ModeGuardRoute } from '../shared/router/ModeGuardRoute'
 import { ProtectedRoute } from '../shared/router/ProtectedRoute'
@@ -77,6 +80,9 @@ export function AppRoutes() {
             <Route path="/characters/:characterId" element={<CharacterDetailPage />} />
             <Route path="/artifacts" element={<ArtifactsPage />} />
             <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/groups" element={<GroupHubPage />} />
+            <Route path="/groups/:groupId/progress" element={<GroupProgressPage />} />
             <Route path="/share" element={<SharePage />} />
             <Route path="/photo-frame" element={<PhotoFramePage />} />
             <Route path="/scan" element={<ScanPage />} />

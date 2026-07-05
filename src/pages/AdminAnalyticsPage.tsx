@@ -1,9 +1,9 @@
 // src/pages/AdminAnalyticsPage.tsx
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { SimpleTopNav } from '../components/layout/TopNav'
-import { adminApi, type AdminAnalyticsOverview } from '../features/admin/api'
+import { AdminSubNav } from '../components/admin/AdminSubNav'
+import { adminApi, type AdminAnalyticsOverview, type SessionReplay } from '../features/admin/api'
 import { analyticsDemoOverview, useDemoAnalytics } from '../features/admin/analyticsDemo'
 import { CU_CHI_LOCATION_ID } from '../shared/config/constants'
 import { useToast } from '../shared/ui/toast/useToast'
@@ -37,6 +37,9 @@ export function AdminAnalyticsPage() {
   const [data, setData] = useState<AdminAnalyticsOverview | null>(null)
   const [usingDemo, setUsingDemo] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [replaySessionId, setReplaySessionId] = useState('')
+  const [replay, setReplay] = useState<SessionReplay | null>(null)
+  const [replayLoading, setReplayLoading] = useState(false)
   const { showToast } = useToast()
 
   useEffect(() => {
@@ -63,28 +66,32 @@ export function AdminAnalyticsPage() {
       .finally(() => setLoading(false))
   }, [showToast])
 
+  const loadReplay = async () => {
+    const id = replaySessionId.trim()
+    if (!id) return
+    try {
+      setReplayLoading(true)
+      setReplay(null)
+      const result = await adminApi.sessionReplay(id)
+      setReplay(result)
+    } catch (e) {
+      showToast({ message: getFriendlyErrorMessage(e, 'quest'), type: 'error' })
+    } finally {
+      setReplayLoading(false)
+    }
+  }
+
   return (
-    <AppLayout activeBorder="left" topNav={<SimpleTopNav title="Analytics B2B" />}>
+    <AppLayout activeBorder="left" topNav={<SimpleTopNav title="Thống kê quản trị" />}>
       <main className="mt-14 md:mt-16 p-md md:p-lg max-w-5xl mx-auto w-full space-y-md">
-        <div className="flex flex-wrap items-center justify-between gap-sm">
-          <div>
-            <h1 className="font-display-md text-on-surface">Dashboard ban quản lý di tích</h1>
-            <p className="text-sm text-on-surface-variant mt-1">
-              HistAR SaaS — POI Unlock Rate, Quest funnel, Online → Onsite
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <Link to="/admin/content" className="text-sm text-secondary underline">
-              CMS nội dung
-            </Link>
-            <Link to="/admin/users" className="text-sm text-secondary underline">
-              Users
-            </Link>
-            <Link to="/admin/organizations" className="text-sm text-secondary underline">
-              Organizations
-            </Link>
-          </div>
+        <div>
+          <h1 className="font-display-md text-on-surface">Bảng thống kê quản lý di tích</h1>
+          <p className="text-sm text-on-surface-variant mt-1">
+            HistAR SaaS — tỷ lệ mở khóa POI, phễu nhiệm vụ, chuyển đổi trực tuyến → tại chỗ
+          </p>
         </div>
+
+        <AdminSubNav />
 
         {usingDemo && (
           <p className="text-xs text-amber-600/90 bg-amber-500/10 border border-amber-500/20 rounded-lg px-md py-sm">
@@ -98,33 +105,33 @@ export function AdminAnalyticsPage() {
           <>
             <section className="grid md:grid-cols-3 gap-md">
               <div className="bg-surface-container border border-outline-variant rounded-xl p-md">
-                <p className="text-xs uppercase text-on-surface-variant">Online discovery</p>
+                <p className="text-xs uppercase text-on-surface-variant">Khám phá trực tuyến</p>
                 <p className="font-display-sm text-primary tabular-nums">{data.onlineToOnsite.usersWithDiscovery}</p>
               </div>
               <div className="bg-surface-container border border-outline-variant rounded-xl p-md">
-                <p className="text-xs uppercase text-on-surface-variant">Onsite check-in</p>
+                <p className="text-xs uppercase text-on-surface-variant">Check-in tại chỗ</p>
                 <p className="font-display-sm text-secondary tabular-nums">{data.onlineToOnsite.usersWithCheckin}</p>
               </div>
               <div className="bg-surface-container border border-outline-variant rounded-xl p-md">
-                <p className="text-xs uppercase text-on-surface-variant">Online → Onsite</p>
+                <p className="text-xs uppercase text-on-surface-variant">Trực tuyến → Tại chỗ</p>
                 <p className="font-display-sm text-on-surface tabular-nums">{data.onlineToOnsite.conversionRatePct}%</p>
                 <p className="text-xs text-on-surface-variant mt-1">
-                  {data.onlineToOnsite.usersDiscoveryThenCheckin} khách discovery rồi check-in
+                  {data.onlineToOnsite.usersDiscoveryThenCheckin} khách khám phá rồi check-in
                 </p>
               </div>
             </section>
 
             <section className="grid md:grid-cols-2 gap-md">
               <div className="bg-surface-container border border-outline-variant rounded-xl p-md">
-                <p className="text-xs uppercase text-on-surface-variant">Average Session Duration</p>
+                <p className="text-xs uppercase text-on-surface-variant">Thời lượng phiên trung bình</p>
                 <p className="font-display-sm text-on-surface tabular-nums">
                   {data.sessionQuality.avgDurationMinutes > 0
-                    ? `${data.sessionQuality.avgDurationMinutes}m`
+                    ? `${data.sessionQuality.avgDurationMinutes} phút`
                     : '—'}
                 </p>
               </div>
               <div className="bg-surface-container border border-outline-variant rounded-xl p-md">
-                <p className="text-xs uppercase text-on-surface-variant">Average Discoveries / Session</p>
+                <p className="text-xs uppercase text-on-surface-variant">Khám phá / phiên (TB)</p>
                 <p className="font-display-sm text-on-surface tabular-nums">
                   {data.sessionQuality.avgDiscoveriesPerSession > 0
                     ? data.sessionQuality.avgDiscoveriesPerSession
@@ -136,13 +143,13 @@ export function AdminAnalyticsPage() {
             <section className="bg-surface-container border border-outline-variant rounded-xl p-md md:p-lg">
               <h2 className="font-title-md text-on-surface mb-1 flex items-center gap-2">
                 <MaterialIcon name="place" className="text-secondary" />
-                POI Unlock Rate
+                Tỷ lệ mở khóa POI
               </h2>
               <p className="text-xs text-on-surface-variant mb-md">
                 Tỷ lệ khám phá POI (unlock) — không phải lượt xem / traffic
               </p>
               <BarChart
-                labelKey="POI Unlock Rate"
+                labelKey="Tỷ lệ mở khóa POI"
                 items={data.poiUnlockRates.map((p) => ({
                   label: p.name,
                   value: p.unlockCount,
@@ -154,13 +161,13 @@ export function AdminAnalyticsPage() {
             <section className="bg-surface-container border border-outline-variant rounded-xl p-md md:p-lg">
               <h2 className="font-title-md text-on-surface mb-1 flex items-center gap-2">
                 <MaterialIcon name="assignment" className="text-secondary" />
-                Quest Completion Rate (Check-in-based MVP)
+                Tỷ lệ hoàn thành nhiệm vụ
               </h2>
               <p className="text-xs text-on-surface-variant mb-md">
-                Completed = đủ discovery steps (nếu có) + GPS check-in onsite — không phải hoàn thành tuần tự từng bước trên UI.
+                Hoàn thành = đủ bước khám phá (nếu có) + GPS check-in tại chỗ — không phải hoàn thành tuần tự từng bước trên UI.
               </p>
               {data.questFunnel.length === 0 && (
-                <p className="text-sm text-on-surface-variant">Chưa có quest tại địa điểm.</p>
+                <p className="text-sm text-on-surface-variant">Chưa có nhiệm vụ tại địa điểm.</p>
               )}
               {data.questFunnel.map((q) => (
                 <div key={q.questId} className="border-t border-outline-variant/50 pt-md mt-md first:border-0 first:pt-0 first:mt-0">
@@ -183,15 +190,15 @@ export function AdminAnalyticsPage() {
             <section className="bg-surface-container border border-outline-variant rounded-xl p-md md:p-lg">
               <h2 className="font-title-md text-on-surface mb-md flex items-center gap-2">
                 <MaterialIcon name="route" className="text-secondary" />
-                Journey drop-off
+                Điểm rời bỏ hành trình
               </h2>
               {data.journeyDropOff.length === 0 && (
-                <p className="text-sm text-on-surface-variant">Chưa có session events.</p>
+                <p className="text-sm text-on-surface-variant">Chưa có sự kiện phiên thăm quan.</p>
               )}
               {data.journeyDropOff.map((j) => (
                 <div key={j.unlockKey} className="flex justify-between text-sm py-1 border-b border-outline-variant/30 last:border-0">
                   <span>{j.poiName}</span>
-                  <span className="text-on-surface-variant tabular-nums">{j.sessionCount} visits · drop {j.dropOffPct}%</span>
+                  <span className="text-on-surface-variant tabular-nums">{j.sessionCount} lượt · rời {j.dropOffPct}%</span>
                 </div>
               ))}
             </section>
@@ -199,10 +206,10 @@ export function AdminAnalyticsPage() {
             <section className="bg-surface-container border border-outline-variant rounded-xl p-md md:p-lg">
               <h2 className="font-title-md text-on-surface mb-md flex items-center gap-2">
                 <MaterialIcon name="map" className="text-secondary" />
-                POI Heatmap (visit vs unlock)
+                Bản đồ nhiệt POI (lượt xem vs mở khóa)
               </h2>
               <BarChart
-                labelKey="Visit count"
+                labelKey="Lượt xem"
                 items={data.poiHeatmap.map((p) => ({
                   label: p.dropOffHotspot ? `${p.name} ⚠` : p.name,
                   value: p.visitCount,
@@ -213,6 +220,57 @@ export function AdminAnalyticsPage() {
 
             <section className="bg-surface-container-low border border-dashed border-outline-variant rounded-xl p-md">
               <p className="text-sm text-on-surface-variant">{data.journeyNote}</p>
+            </section>
+
+            <section className="bg-surface-container border border-outline-variant rounded-xl p-md md:p-lg">
+              <h2 className="font-title-md text-on-surface mb-1 flex items-center gap-2">
+                <MaterialIcon name="history" className="text-secondary" />
+                Phát lại phiên thăm quan
+              </h2>
+              <p className="text-xs text-on-surface-variant mb-md">
+                Nhập UUID phiên thăm quan để xem dòng thời gian sự kiện.
+              </p>
+              <div className="flex flex-wrap gap-sm mb-md">
+                <input
+                  value={replaySessionId}
+                  onChange={(e) => setReplaySessionId(e.target.value)}
+                  placeholder="uuid-phiên-thăm-quan"
+                  className="flex-1 min-w-[12rem] neo-input rounded-lg px-md py-sm text-sm font-mono"
+                />
+                <button
+                  type="button"
+                  disabled={replayLoading || !replaySessionId.trim()}
+                  onClick={() => void loadReplay()}
+                  className="px-md py-sm rounded-lg bg-primary text-on-primary text-sm disabled:opacity-50"
+                >
+                  {replayLoading ? 'Đang tải...' : 'Xem phát lại'}
+                </button>
+              </div>
+              {replay && (
+                <div className="space-y-sm text-sm">
+                  <p className="text-on-surface-variant">
+                    Chế độ: {replay.mode} · {replay.steps.length} bước
+                    {replay.startedAt && (
+                      <> · bắt đầu {new Date(replay.startedAt).toLocaleString('vi-VN')}</>
+                    )}
+                  </p>
+                  {replay.steps.length === 0 ? (
+                    <p className="text-on-surface-variant">Không có sự kiện trong phiên này.</p>
+                  ) : (
+                    <ol className="space-y-1 border-l-2 border-secondary/40 pl-md">
+                      {replay.steps.map((step, i) => (
+                        <li key={`${step.unlockKey}-${step.at}-${i}`} className="text-on-surface">
+                          <span className="font-medium">{step.poiName || step.unlockKey}</span>
+                          <span className="text-on-surface-variant text-xs ml-2">
+                            {step.eventType} · {step.source}
+                            {step.at && ` · ${new Date(step.at).toLocaleTimeString('vi-VN')}`}
+                          </span>
+                        </li>
+                      ))}
+                    </ol>
+                  )}
+                </div>
+              )}
             </section>
           </>
         )}

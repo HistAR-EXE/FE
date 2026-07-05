@@ -1,5 +1,6 @@
 // src/features/auth/api.ts
 import { getData, httpClient } from '../../shared/api/httpClient'
+import type { OrgSubscription, UserRole, UserTier } from '../../shared/auth/types'
 
 export type LoginInput = {
   email: string
@@ -20,8 +21,10 @@ export type AuthPayload = {
   token: string
   userId: string
   displayName: string
-  role?: 'USER' | 'ADMIN' | 'TEACHER'
-  tier?: 'FREE' | 'PREMIUM'
+  role?: UserRole
+  tier?: UserTier
+  orgId?: string | null
+  orgSubscription?: OrgSubscription
   email?: string
   avatarUrl?: string | null
 }
@@ -35,4 +38,3 @@ export const authApi = {
     ),
   logout: (refreshToken?: string | null) => getData<{ success?: boolean }>(httpClient.post('/api/auth/logout', { refreshToken })),
 }
-

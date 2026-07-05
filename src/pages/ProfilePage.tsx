@@ -4,51 +4,33 @@ import { Link } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { SimpleTopNav } from '../components/layout/TopNav'
 import { profileApi, type MyBadge, type ProfileMe } from '../features/profile/api'
-import { ProfileEditForm } from '../features/profile/ProfileEditForm'
 import { gamificationApi, type QuestProgress } from '../features/gamification/api'
 import { locationsApi, type Location } from '../features/locations/api'
 import { discoveriesApi } from '../features/gamification/api'
-import { useAuth } from '../shared/auth/useAuth'
 import { useToast } from '../shared/ui/toast/useToast'
 import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { images } from '../assets/images'
 import { ProgressSummaryCard } from '../features/gamification/ProgressSummaryCard'
 import { normalizeHeritageName } from '../features/explore/vietnamMap'
-import { isAdminPreview } from '../shared/access/contentAccess'
+import { viralApi, type UserCreation } from '../features/viral/api'
 
-type ProfileTab = 'overview' | 'passport' | 'settings'
+type ProfileTab = 'overview' | 'passport'
 
 const PROFILE_TABS: { id: ProfileTab; label: string }[] = [
   { id: 'overview', label: 'Tổng quan' },
   { id: 'passport', label: 'Hộ chiếu & Huy hiệu' },
-  { id: 'settings', label: 'Cài đặt' },
 ]
 
 export function ProfilePage() {
-  const { logout, user, updateUser } = useAuth()
   const [profile, setProfile] = useState<ProfileMe | null>(null)
   const [badges, setBadges] = useState<MyBadge[]>([])
   const [quests, setQuests] = useState<QuestProgress[]>([])
   const [locations, setLocations] = useState<Location[]>([])
   const [visitedCount, setVisitedCount] = useState(0)
-  const [upgrading, setUpgrading] = useState(false)
   const [activeTab, setActiveTab] = useState<ProfileTab>('overview')
+  const [creations, setCreations] = useState<UserCreation[]>([])
   const { showToast } = useToast()
-
-  const handleUpgrade = async () => {
-    try {
-      setUpgrading(true)
-      const next = await profileApi.upgrade()
-      setProfile(next)
-      updateUser({ tier: 'PREMIUM' })
-      showToast({ message: 'Đã nâng cấp Premium (demo)!', type: 'success' })
-    } catch (e) {
-      showToast({ message: getFriendlyErrorMessage(e, 'quest'), type: 'error' })
-    } finally {
-      setUpgrading(false)
-    }
-  }
 
   useEffect(() => {
     profileApi.me().then(setProfile).catch((e) => showToast({ message: getFriendlyErrorMessage(e, 'quest'), type: 'error' }))
@@ -56,6 +38,7 @@ export function ProfilePage() {
     gamificationApi.myQuests().then(setQuests).catch(() => setQuests([]))
     locationsApi.list({ size: 50 }).then(setLocations).catch(() => setLocations([]))
     discoveriesApi.visitedLocations().then((d) => setVisitedCount(d.visitedLocationIds.length)).catch(() => setVisitedCount(0))
+    viralApi.myCreations().then(setCreations).catch(() => setCreations([]))
   }, [showToast])
 
   const completedQuests = useMemo(
@@ -122,9 +105,15 @@ export function ProfilePage() {
                       Level {profile.level} {profile.levelName ? `· ${profile.levelName}` : ''}
                     </span>
                     <span className="inline-flex px-xs py-[2px] text-xs rounded-full border border-outline-variant text-on-surface-variant">
-                      {profile.role === 'ADMIN' ? 'Quản trị' : profile.role === 'TEACHER' ? 'Giáo viên' : 'Thành viên'}
+                      {profile.role === 'ADMIN'
+                        ? 'Quản trị'
+                        : profile.role === 'TEACHER'
+                          ? 'Giáo viên'
+                          : profile.role === 'ORG_MEMBER'
+                            ? 'Thành viên tổ chức'
+                            : 'Thành viên'}
                     </span>
-                    {isAdminPreview(profile.role) && (
+                    {profile.role === 'ADMIN' && (
                       <span className="inline-flex px-xs py-[2px] text-xs rounded-full border border-primary/40 bg-primary/10 text-primary">
                         Admin · xem trước toàn bộ
                       </span>
@@ -193,7 +182,41 @@ export function ProfilePage() {
               <Link to="/artifacts" className="inline-flex items-center gap-1 px-md py-sm border border-outline-variant rounded-lg hover:border-secondary">
                 <MaterialIcon name="history_edu" className="text-sm" /> Bộ sưu tập
               </Link>
+              <Link to="/photo-frame" className="inline-flex items-center gap-1 px-md py-sm border border-outline-variant rounded-lg hover:border-secondary">
+                <MaterialIcon name="photo_camera" className="text-sm" /> Khung ảnh
+              </Link>
             </div>
+
+            <section className="mt-md border-t border-outline-variant/40 pt-md">
+              <h2 className="font-title-md mb-sm inline-flex items-center gap-1">
+                <MaterialIcon name="photo_library" className="text-secondary" />
+                Ảnh khung của bạn
+              </h2>
+              {creations.length === 0 ? (
+                <p className="text-sm text-on-surface-variant">
+                  Chưa có ảnh nào.{' '}
+                  <Link to="/photo-frame" className="text-secondary underline">
+                    Tạo tại Khung ảnh
+                  </Link>
+                </p>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-sm">
+                  {creations.map((c) => (
+                    <Link
+                      key={c.id}
+                      to={`/share?creationId=${encodeURIComponent(c.id)}`}
+                      className="border border-outline-variant rounded-lg overflow-hidden hover:border-secondary transition-colors"
+                    >
+                      <img src={c.outputUrl} alt="" className="w-full aspect-square object-cover" />
+                      <p className="text-[10px] text-on-surface-variant p-1 truncate">
+                        {new Date(c.createdAt).toLocaleDateString('vi-VN')}
+                        {c.shared ? ' · đã chia sẻ' : ''}
+                      </p>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </section>
           </section>
             )}
 
@@ -268,40 +291,6 @@ export function ProfilePage() {
               </>
             )}
 
-            {activeTab === 'settings' && (
-              <section className="bg-surface-container border border-outline-variant rounded-xl p-lg space-y-md">
-                <ProfileEditForm profile={profile} onSaved={setProfile} />
-                <div className="flex flex-wrap gap-sm pt-md border-t border-outline-variant/40">
-                  {profile.tier !== 'PREMIUM' && (
-                    <button
-                      type="button"
-                      onClick={() => void handleUpgrade()}
-                      disabled={upgrading}
-                      title="Demo stub — không có thanh toán thật"
-                      className="inline-flex items-center gap-1 px-md py-sm border border-primary text-primary rounded-lg hover:bg-primary/10 disabled:opacity-60"
-                    >
-                      Nâng cấp Premium (demo)
-                    </button>
-                  )}
-                  {user?.role === 'TEACHER' && (
-                    <Link to="/teacher" className="inline-flex items-center gap-1 px-md py-sm border border-secondary text-secondary rounded-lg hover:bg-secondary/10">
-                      Dashboard lớp (Giáo viên)
-                    </Link>
-                  )}
-                  {user?.role === 'ADMIN' && (
-                    <>
-                      <Link to="/admin/users" className="inline-flex items-center gap-1 px-md py-sm border border-primary/40 text-primary rounded-lg hover:bg-primary/10">
-                        <MaterialIcon name="admin_panel_settings" className="text-sm" /> Người dùng
-                      </Link>
-                      <Link to="/admin/content" className="inline-flex items-center gap-1 px-md py-sm border border-primary/40 text-primary rounded-lg hover:bg-primary/10">
-                        <MaterialIcon name="inventory_2" className="text-sm" /> Nội dung
-                      </Link>
-                    </>
-                  )}
-                  <button onClick={logout} className="px-md py-sm border border-error text-error rounded-lg">Đăng xuất</button>
-                </div>
-              </section>
-            )}
           </>
         )}
       </main>

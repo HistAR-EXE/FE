@@ -4,6 +4,8 @@ import { MaterialIcon } from '../ui/MaterialIcon'
 import { Button } from '../ui/Button'
 import type { AppMode } from '../../shared/context/modeContext'
 import { useAppMode } from '../../shared/context/useAppMode'
+import { useAuth } from '../../shared/auth/useAuth'
+import type { UserRole } from '../../shared/auth/types'
 
 const navItems = [
   { to: '/home', icon: 'home', label: 'Trang chủ', prefixes: ['/home'], modes: 'both' as const },
@@ -13,6 +15,16 @@ const navItems = [
   { to: '/artifacts', icon: 'history_edu', label: 'Cổ vật', prefixes: ['/artifacts'], modes: 'both' as const },
   { to: '/leaderboard', icon: 'leaderboard', label: 'Bảng xếp hạng', prefixes: ['/leaderboard'], modes: 'both' as const },
   { to: '/profile', icon: 'person', label: 'Hồ sơ', prefixes: ['/profile'], modes: 'both' as const },
+  { to: '/settings', icon: 'settings', label: 'Cài đặt', prefixes: ['/settings'], modes: 'both' as const },
+  {
+    to: '/admin/content',
+    icon: 'admin_panel_settings',
+    label: 'Quản trị',
+    prefixes: ['/admin'],
+    modes: 'both' as const,
+    roles: ['ADMIN'] as const,
+    desktopOnly: true,
+  },
 ] as const
 
 const mobileNavItems = [
@@ -21,9 +33,14 @@ const mobileNavItems = [
   { to: '/quests', icon: 'assignment', label: 'Nhiệm vụ', modes: 'both' as const, prefixes: ['/quests'] },
   { to: '/leaderboard', icon: 'leaderboard', label: 'Xếp hạng', modes: 'both' as const, prefixes: ['/leaderboard'] },
   { to: '/profile', icon: 'person', label: 'Hồ sơ', modes: 'both' as const, prefixes: ['/profile'] },
+  { to: '/settings', icon: 'settings', label: 'Cài đặt', modes: 'both' as const, prefixes: ['/settings'] },
 ] as const
 
-type NavItem = { modes: 'online' | 'offline' | 'both' }
+type NavItem = {
+  modes: 'online' | 'offline' | 'both'
+  roles?: readonly UserRole[]
+  desktopOnly?: boolean
+}
 
 function effectiveMode(mode: AppMode | null): AppMode {
   return mode ?? 'online'
@@ -32,6 +49,19 @@ function effectiveMode(mode: AppMode | null): AppMode {
 export function filterNavItemsByMode<T extends NavItem>(items: readonly T[], mode: AppMode | null): T[] {
   const active = effectiveMode(mode)
   return items.filter((item) => item.modes === 'both' || item.modes === active)
+}
+
+export function filterNavItems<T extends NavItem>(
+  items: readonly T[],
+  mode: AppMode | null,
+  userRole: UserRole | null | undefined,
+  options?: { excludeDesktopOnly?: boolean },
+): T[] {
+  return filterNavItemsByMode(items, mode).filter((item) => {
+    if (options?.excludeDesktopOnly && item.desktopOnly) return false
+    if (!item.roles) return true
+    return userRole != null && item.roles.includes(userRole)
+  })
 }
 
 type SideNavProps = {
@@ -90,7 +120,8 @@ export function SideNavTablet({ activeBorder = 'right' }: { activeBorder?: 'left
 export function SideNavMobile() {
   const { pathname } = useLocation()
   const { mode } = useAppMode()
-  const items = filterNavItemsByMode(mobileNavItems, mode)
+  const { user } = useAuth()
+  const items = filterNavItems(mobileNavItems, mode, user?.role, { excludeDesktopOnly: true })
 
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-outline-variant bg-surface-container-low/95 backdrop-blur-xl pb-safe">
@@ -140,7 +171,8 @@ function SideNavLinks({
   pathname: string
   iconOnly: boolean
 }) {
-  const items = filterNavItemsByMode(navItems, mode)
+  const { user } = useAuth()
+  const items = filterNavItems(navItems, mode, user?.role)
 
   return (
     <div className="flex flex-col gap-sm flex-1 min-h-0 overflow-y-auto custom-scrollbar w-full">

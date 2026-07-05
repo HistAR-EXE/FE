@@ -16,7 +16,7 @@ test.describe('BE API · Auth', () => {
   test('login demo trả accessToken + role', async ({ request }) => {
     const s = await login(request, DEMO_USER)
     expect(s.token).toBeTruthy()
-    expect(['USER', 'ADMIN', 'TEACHER']).toContain(s.role)
+    expect(['USER', 'ORG_MEMBER', 'ADMIN', 'TEACHER']).toContain(s.role)
   })
 
   test('login sai mật khẩu → 401, không lộ token', async ({ request }) => {

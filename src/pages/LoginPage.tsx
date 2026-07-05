@@ -1,9 +1,9 @@
 // src/pages/Login.tsx
-import { useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { AuthLayout } from '../components/layout/AuthLayout'
 import { useAuth } from '../shared/auth/useAuth'
-import { useAppMode } from '../shared/context/useAppMode'
+import { getAlreadyLoggedInRedirect, getPostLoginRedirect, isSafeRedirect } from '../shared/auth/types'
 import { ApiError } from '../shared/api/contracts'
 import { useToast } from '../shared/ui/toast/useToast'
 import { Footer } from '../components/layout/Footer'
@@ -11,22 +11,10 @@ import { images } from '../assets/images'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { Button } from '../components/ui/Button'
 
-const SAFE_REDIRECT_PREFIXES = [
-  '/home', '/explore', '/quests', '/artifacts', '/profile', '/leaderboard',
-  '/time-portal', '/tour', '/heritage', '/chat', '/scan', '/photo-frame',
-  '/teacher', '/admin', '/characters',
-] as const
-
-function isSafeRedirect(path: string): boolean {
-  if (!path.startsWith('/') || path.startsWith('//')) return false
-  return SAFE_REDIRECT_PREFIXES.some((prefix) => path === prefix || path.startsWith(`${prefix}/`))
-}
-
 export function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { login, register } = useAuth()
-  const { mode: appMode } = useAppMode()
+  const { login, register, user } = useAuth()
   const [mode, setMode] = useState<'login' | 'register'>('login')
   const [loading, setLoading] = useState(false)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
@@ -36,11 +24,10 @@ export function LoginPage() {
     return from && from.startsWith('/') && from !== '/mode-select' && isSafeRedirect(from) ? from : null
   }, [location.state])
 
-  const redirectPath = useMemo(() => {
-    if (pendingFrom && appMode !== null) return pendingFrom
-    if (appMode === null) return '/mode-select'
-    return appMode === 'offline' ? '/scan' : '/explore'
-  }, [pendingFrom, appMode])
+  useEffect(() => {
+    if (!user) return
+    navigate(getAlreadyLoggedInRedirect(user), { replace: true })
+  }, [user, navigate])
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -64,14 +51,14 @@ export function LoginPage() {
     try {
       setLoading(true)
       setFieldErrors({})
-      if (mode === 'login') {
-        await login({ email, password })
-      } else {
-        await register({ email, password, displayName })
-      }
-      navigate(redirectPath, {
+      const loggedInUser =
+        mode === 'login'
+          ? await login({ email, password })
+          : await register({ email, password, displayName })
+      const destination = getPostLoginRedirect(loggedInUser, pendingFrom)
+      navigate(destination, {
         replace: true,
-        state: redirectPath === '/mode-select' && pendingFrom ? { from: pendingFrom } : undefined,
+        state: destination === '/mode-select' && pendingFrom ? { from: pendingFrom } : undefined,
       })
     } catch (e) {
       if (e instanceof ApiError && e.code === 'VALIDATION_ERROR' && e.fieldErrors) {

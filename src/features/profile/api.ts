@@ -1,13 +1,18 @@
 // src/features/profile/api.ts
 import { getData, getListData, httpClient } from '../../shared/api/httpClient'
+import type { OrgSubscription, UserRole, UserTier } from '../../shared/auth/types'
 
 export type ProfileMe = {
   id: string
   email: string
   displayName: string
   avatarUrl: string | null
-  role: 'USER' | 'ADMIN' | 'TEACHER'
-  tier: 'FREE' | 'PREMIUM'
+  role: UserRole
+  tier: UserTier
+  orgId: string | null
+  orgName: string | null
+  orgSubscription: OrgSubscription
+  orgRole: string | null
   level: number
   totalPoints: number
   city: string | null
@@ -34,4 +39,3 @@ export const profileApi = {
     getData<ProfileMe>(httpClient.patch('/api/profile/me', payload)),
   upgrade: () => getData<ProfileMe>(httpClient.post('/api/profile/upgrade')),
 }
-

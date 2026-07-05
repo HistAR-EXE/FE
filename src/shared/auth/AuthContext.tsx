@@ -1,8 +1,9 @@
 // src/shared/auth/AuthContext.tsx
-import { useEffect, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { profileApi } from '../../features/profile/api'
 import { authApi, type AuthPayload, type LoginInput, type RegisterInput } from '../../features/auth/api'
 import { AuthContext, type AuthContextValue } from './auth-context'
+import { normalizeOrgSubscription, normalizeRole, normalizeTier, type AuthUser } from './types'
 import {
   clearSession,
   getRefreshToken,
@@ -11,20 +12,8 @@ import {
   readStoredUser,
   saveSession,
   SESSION_CLEARED_EVENT,
-  type AuthUser,
-  type UserRole,
-  type UserTier,
+  SESSION_REFRESHED_EVENT,
 } from './session'
-
-function normalizeRole(role?: string): UserRole {
-  if (role === 'ADMIN') return 'ADMIN'
-  if (role === 'TEACHER') return 'TEACHER'
-  return 'USER'
-}
-
-function normalizeTier(tier?: string): UserTier {
-  return tier === 'PREMIUM' ? 'PREMIUM' : 'FREE'
-}
 
 function toUser(payload: AuthPayload): AuthUser {
   return {
@@ -33,6 +22,8 @@ function toUser(payload: AuthPayload): AuthUser {
     email: payload.email ?? '',
     role: normalizeRole(payload.role),
     tier: normalizeTier(payload.tier),
+    orgId: payload.orgId ?? null,
+    orgSubscription: normalizeOrgSubscription(payload.orgSubscription),
     avatarUrl: payload.avatarUrl ?? null,
   }
 }
@@ -44,6 +35,10 @@ function profileToUser(profile: {
   avatarUrl: string | null
   role?: string
   tier?: string
+  orgId?: string | null
+  orgName?: string | null
+  orgSubscription?: string
+  orgRole?: string | null
 }): AuthUser {
   return {
     id: profile.id,
@@ -51,19 +46,57 @@ function profileToUser(profile: {
     email: profile.email,
     role: normalizeRole(profile.role),
     tier: normalizeTier(profile.tier),
+    orgId: profile.orgId ?? null,
+    orgSubscription: normalizeOrgSubscription(profile.orgSubscription),
+    orgName: profile.orgName ?? null,
+    orgRole: profile.orgRole ?? null,
     avatarUrl: profile.avatarUrl,
   }
+}
+
+function persistUserSession(next: AuthUser) {
+  const token = getToken()
+  if (!token) return
+  saveSession({
+    token,
+    refreshToken: getRefreshToken() ?? undefined,
+    userId: next.id,
+    displayName: next.displayName,
+    email: next.email,
+    role: next.role,
+    tier: next.tier,
+    orgId: next.orgId,
+    orgSubscription: next.orgSubscription,
+    avatarUrl: next.avatarUrl,
+  })
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(() => readStoredUser())
   const [isLoading, setIsLoading] = useState(() => Boolean(getToken()) && !isAccessTokenExpired())
 
+  const rehydrateFromProfile = useCallback(async () => {
+    const token = getToken()
+    if (!token || isAccessTokenExpired()) return
+    const profile = await profileApi.me()
+    const next = profileToUser(profile)
+    setUser(next)
+    persistUserSession(next)
+  }, [])
+
   useEffect(() => {
     const onSessionCleared = () => setUser(null)
     window.addEventListener(SESSION_CLEARED_EVENT, onSessionCleared)
     return () => window.removeEventListener(SESSION_CLEARED_EVENT, onSessionCleared)
   }, [])
+
+  useEffect(() => {
+    const onSessionRefreshed = () => {
+      rehydrateFromProfile().catch(() => undefined)
+    }
+    window.addEventListener(SESSION_REFRESHED_EVENT, onSessionRefreshed)
+    return () => window.removeEventListener(SESSION_REFRESHED_EVENT, onSessionRefreshed)
+  }, [rehydrateFromProfile])
 
   useEffect(() => {
     const token = getToken()
@@ -74,23 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return
     }
     let cancelled = false
-    profileApi
-      .me()
-      .then((profile) => {
-        if (cancelled) return
-        const next = profileToUser(profile)
-        setUser(next)
-        saveSession({
-          token,
-          refreshToken: getRefreshToken() ?? undefined,
-          userId: next.id,
-          displayName: next.displayName,
-          email: next.email,
-          role: next.role,
-          tier: next.tier,
-          avatarUrl: next.avatarUrl,
-        })
-      })
+    rehydrateFromProfile()
       .catch(() => {
         if (cancelled) return
         clearSession()
@@ -102,9 +119,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [rehydrateFromProfile])
 
-  const storeAuth = (payload: AuthPayload) => {
+  const storeAuth = (payload: AuthPayload): AuthUser => {
     const accessToken = payload.accessToken ?? payload.token
     const next = toUser(payload)
     saveSession({
@@ -117,19 +134,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email: next.email,
       role: next.role,
       tier: next.tier,
+      orgId: next.orgId,
+      orgSubscription: next.orgSubscription,
       avatarUrl: next.avatarUrl,
     })
     setUser(next)
+    return next
   }
 
-  const login = async (input: LoginInput) => {
+  const login = async (input: LoginInput): Promise<AuthUser> => {
     const payload = await authApi.login(input)
-    storeAuth(payload)
+    return storeAuth(payload)
   }
 
-  const register = async (input: RegisterInput) => {
+  const register = async (input: RegisterInput): Promise<AuthUser> => {
     const payload = await authApi.register(input)
-    storeAuth(payload)
+    return storeAuth(payload)
   }
 
   const logout = () => {
@@ -142,19 +162,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser((current) => {
       if (!current) return current
       const next: AuthUser = { ...current, ...patch }
-      const token = getToken()
-      if (token) {
-        saveSession({
-          token,
-          refreshToken: getRefreshToken() ?? undefined,
-          userId: next.id,
-          displayName: next.displayName,
-          email: next.email,
-          role: next.role as UserRole,
-          tier: next.tier,
-          avatarUrl: next.avatarUrl,
-        })
-      }
+      persistUserSession(next)
       return next
     })
   }

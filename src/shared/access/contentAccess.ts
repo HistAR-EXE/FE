@@ -1,9 +1,7 @@
-import type { Location } from '../../features/locations/api'
+import type { AuthUser } from '../auth/types'
+import { isPremium } from '../auth/types'
 
-export type ContentAccessUser = {
-  role?: string
-  tier?: string
-} | null | undefined
+export type ContentAccessUser = Pick<AuthUser, 'role' | 'tier'> | null | undefined
 
 export function isAdminPreview(role?: string): boolean {
   return role === 'ADMIN'
@@ -11,13 +9,17 @@ export function isAdminPreview(role?: string): boolean {
 
 export function hasPremiumAccess(user?: ContentAccessUser): boolean {
   if (!user) return false
-  return isAdminPreview(user.role) || user.tier === 'PREMIUM'
+  return isPremium(user as AuthUser)
 }
 
 export function isLocationLockedForUser(
-  location: Pick<Location, 'isUnlocked'>,
+  location: { isUnlocked?: boolean },
   user?: ContentAccessUser,
 ): boolean {
   if (isAdminPreview(user?.role)) return false
   return location.isUnlocked === false
+}
+
+export function canAccessPremiumContent(user?: ContentAccessUser): boolean {
+  return hasPremiumAccess(user)
 }

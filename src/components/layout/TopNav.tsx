@@ -7,6 +7,34 @@ import { modeBadgeLabel } from '../../shared/context/appModeUtils'
 import { OfflineSyncBadge } from './OfflineSyncBadge'
 import { useAuth } from '../../shared/auth/useAuth'
 import { useUserAvatar } from '../../shared/auth/useUserAvatar'
+import { isAdmin, isTeacher } from '../../shared/auth/types'
+
+function RoleBadge() {
+  const { user, isAuthenticated } = useAuth()
+  if (!isAuthenticated || !user) return null
+  if (isAdmin(user)) {
+    return (
+      <span className="inline-flex items-center px-2 py-0.5 rounded-full border border-primary/40 bg-primary/10 text-primary font-label-sm text-label-sm shrink-0">
+        Admin
+      </span>
+    )
+  }
+  if (user?.role === 'ORG_MEMBER') {
+    return (
+      <span className="inline-flex items-center px-2 py-0.5 rounded-full border border-accent-500/40 bg-accent-500/10 text-accent-600 font-label-sm text-label-sm shrink-0">
+        Thành viên
+      </span>
+    )
+  }
+  if (isTeacher(user) && user.role === 'TEACHER') {
+    return (
+      <span className="inline-flex items-center px-2 py-0.5 rounded-full border border-secondary/40 bg-secondary/10 text-secondary font-label-sm text-label-sm shrink-0">
+        Giáo viên
+      </span>
+    )
+  }
+  return null
+}
 
 export function ModeBadge({ className = '' }: { className?: string }) {
   const { mode } = useAppMode()
@@ -28,6 +56,7 @@ export function ModeBadge({ className = '' }: { className?: string }) {
   return (
     <div className="inline-flex items-center gap-1.5 shrink-0">
       <OfflineSyncBadge />
+      <RoleBadge />
       <button
         type="button"
         onClick={onBadgeClick}
@@ -128,7 +157,7 @@ export function ExploreTopNav({ avatarSrc, backTo = '/home', backLabel = 'Trang 
       </div>
       <div className="flex items-center gap-md shrink-0">
         <ModeBadge className="hidden sm:inline-flex" />
-        <Link to="/profile" className="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-secondary hover:bg-surface-variant/50 transition-all" title="Hồ sơ">
+        <Link to="/settings" className="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-secondary hover:bg-surface-variant/50 transition-all" title="Cài đặt">
           <MaterialIcon name="settings" />
         </Link>
         <Link to="/profile" className="w-10 h-10 rounded-full bg-surface-variant border-2 border-primary/50 overflow-hidden hover:shadow-[0_0_10px_rgba(242,191,80,0.4)] transition-all">
@@ -208,7 +237,7 @@ export function SimpleTopNav({ title, avatarSrc, showSearch = false, backTo, bac
             />
           </div>
         )}
-        <Link to="/profile" className="p-2 text-on-surface-variant hover:text-secondary rounded-full hover:bg-surface-variant/50" title="Hồ sơ">
+        <Link to="/settings" className="p-2 text-on-surface-variant hover:text-secondary rounded-full hover:bg-surface-variant/50" title="Cài đặt">
           <MaterialIcon name="settings" />
         </Link>
         <Link to="/profile" className="w-8 h-8 rounded-full overflow-hidden border border-outline-variant">

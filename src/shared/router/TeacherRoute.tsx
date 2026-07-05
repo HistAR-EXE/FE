@@ -1,5 +1,6 @@
 import { Navigate, Outlet } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
+import { isTeacher } from '../auth/types'
 
 export function TeacherRoute() {
   const { isAuthenticated, isLoading, user } = useAuth()
@@ -16,7 +17,7 @@ export function TeacherRoute() {
     return <Navigate to="/login" replace />
   }
 
-  if (user?.role !== 'TEACHER' && user?.role !== 'ADMIN') {
+  if (!isTeacher(user)) {
     return <Navigate to="/home" replace />
   }
 

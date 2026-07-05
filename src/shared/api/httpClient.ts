@@ -1,6 +1,7 @@
 // src/shared/api/httpClient.ts
 import axios from 'axios'
-import { getRefreshToken, getToken, clearSession, saveSession } from '../auth/session'
+import { getRefreshToken, getToken, clearSession, saveSession, SESSION_REFRESHED_EVENT } from '../auth/session'
+import { normalizeOrgSubscription, normalizeRole, normalizeTier } from '../auth/types'
 import { ApiError, isApiResponse, isPageResponse, type ApiErrorPayload, type PageResponse } from './contracts'
 import { appEnv } from '../config/env'
 
@@ -36,9 +37,12 @@ async function tryRefreshToken() {
         const displayName = localStorage.getItem('timelens_display_name') ?? ''
         const email = localStorage.getItem('timelens_email') ?? undefined
         const roleRaw = localStorage.getItem('timelens_role')
-        const role = roleRaw === 'ADMIN' || roleRaw === 'USER' || roleRaw === 'TEACHER' ? roleRaw : undefined
+        const role = roleRaw ? normalizeRole(roleRaw) : undefined
         const tierRaw = localStorage.getItem('timelens_tier')
-        const tier = tierRaw === 'PREMIUM' || tierRaw === 'FREE' ? tierRaw : undefined
+        const tier = tierRaw ? normalizeTier(tierRaw) : undefined
+        const orgId = localStorage.getItem('timelens_org_id') ?? undefined
+        const orgSubRaw = localStorage.getItem('timelens_org_subscription')
+        const orgSubscription = orgSubRaw ? normalizeOrgSubscription(orgSubRaw) : undefined
         const avatarUrl = localStorage.getItem('timelens_avatar_url')
         if (!nextAccessToken || !userId || !displayName) return null
         saveSession({
@@ -51,8 +55,13 @@ async function tryRefreshToken() {
           email,
           role,
           tier,
+          orgId,
+          orgSubscription,
           avatarUrl,
         })
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent(SESSION_REFRESHED_EVENT))
+        }
         return nextAccessToken
       })
       .catch(() => null)

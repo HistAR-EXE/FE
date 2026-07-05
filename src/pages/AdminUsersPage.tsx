@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { SimpleTopNav } from '../components/layout/TopNav'
+import { AdminSubNav } from '../components/admin/AdminSubNav'
 import { adminApi, type AdminUserSummary } from '../features/admin/api'
 import { useToast } from '../shared/ui/toast/useToast'
 import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
@@ -26,7 +27,7 @@ export function AdminUsersPage() {
     load()
   }, [showToast])
 
-  const onRoleChange = async (userId: string, role: 'USER' | 'ADMIN') => {
+  const onRoleChange = async (userId: string, role: 'USER' | 'ORG_MEMBER' | 'TEACHER' | 'ADMIN') => {
     try {
       await adminApi.updateRole(userId, role)
       showToast({ message: 'Đã cập nhật quyền', type: 'success' })
@@ -41,15 +42,11 @@ export function AdminUsersPage() {
       <main className="mt-14 md:mt-16 p-md md:p-lg max-w-5xl mx-auto w-full">
         <div className="flex items-center justify-between mb-md">
           <h1 className="font-display-lg text-on-surface">Người dùng</h1>
-          <div className="flex gap-3 text-sm">
-            <Link to="/admin/content" className="text-secondary inline-flex items-center gap-1">
-              <MaterialIcon name="inventory_2" className="text-sm" /> Nội dung
-            </Link>
-            <Link to="/profile" className="text-secondary inline-flex items-center gap-1">
-              <MaterialIcon name="arrow_back" className="text-sm" /> Hồ sơ
-            </Link>
-          </div>
+          <Link to="/profile" className="text-secondary inline-flex items-center gap-1 text-sm hover:underline">
+            <MaterialIcon name="arrow_back" className="text-sm" /> Hồ sơ
+          </Link>
         </div>
+        <AdminSubNav />
         {loading && <p className="text-on-surface-variant text-sm">Đang tải...</p>}
         {!loading && (
           <div className="overflow-x-auto border border-outline-variant rounded-xl">
@@ -58,7 +55,7 @@ export function AdminUsersPage() {
                 <tr>
                   <th className="text-left p-sm">Email</th>
                   <th className="text-left p-sm">Tên</th>
-                  <th className="text-left p-sm">Role</th>
+                  <th className="text-left p-sm">Vai trò</th>
                   <th className="text-left p-sm">XP</th>
                   <th className="text-left p-sm">Thao tác</th>
                 </tr>
@@ -78,9 +75,13 @@ export function AdminUsersPage() {
                       <select
                         className="bg-surface border border-outline-variant rounded px-2 py-1"
                         value={u.role}
-                        onChange={(e) => onRoleChange(u.id, e.target.value as 'USER' | 'ADMIN')}
+                        onChange={(e) =>
+                          onRoleChange(u.id, e.target.value as 'USER' | 'ORG_MEMBER' | 'TEACHER' | 'ADMIN')
+                        }
                       >
                         <option value="USER">USER</option>
+                        <option value="ORG_MEMBER">ORG_MEMBER</option>
+                        <option value="TEACHER">TEACHER</option>
                         <option value="ADMIN">ADMIN</option>
                       </select>
                     </td>

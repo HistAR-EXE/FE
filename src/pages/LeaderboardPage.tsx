@@ -1,6 +1,6 @@
 // src/pages/LeaderboardPage.tsx
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { SimpleTopNav } from '../components/layout/TopNav'
 import { viralApi, type LeaderboardResponse } from '../features/viral/api'
@@ -12,6 +12,8 @@ import { useAppMode } from '../shared/context/useAppMode'
 
 export function LeaderboardPage() {
   const { mode: appMode } = useAppMode()
+  const [searchParams] = useSearchParams()
+  const groupId = searchParams.get('groupId')
   const [scope, setScope] = useState<'all' | 'city' | 'week'>('all')
   const [city, setCity] = useState('TP.HCM')
   const [data, setData] = useState<LeaderboardResponse | null>(null)
@@ -21,6 +23,13 @@ export function LeaderboardPage() {
   const currentUserEntry = data?.entries.find((entry) => entry.currentUser) ?? null
 
   useEffect(() => {
+    if (groupId) {
+      viralApi
+        .leaderboard('all', undefined, groupId)
+        .then((res) => setData(res))
+        .catch((e) => showToast({ message: getFriendlyErrorMessage(e, 'leaderboard'), type: 'error' }))
+      return
+    }
     if (scope === 'city' && !city.trim()) {
       return
     }
@@ -28,7 +37,7 @@ export function LeaderboardPage() {
       .leaderboard(scope, scope === 'city' ? city.trim() : undefined)
       .then((res) => setData(res))
       .catch((e) => showToast({ message: getFriendlyErrorMessage(e, 'leaderboard'), type: 'error' }))
-  }, [scope, city, showToast])
+  }, [scope, city, groupId, showToast])
 
   return (
     <AppLayout activeBorder="left" topNav={<SimpleTopNav showSearch />}>
@@ -37,9 +46,16 @@ export function LeaderboardPage() {
           <MaterialIcon name="arrow_back" className="text-sm" />
           Quay về trang chủ
         </Link>
-        <h1 className="font-display-lg text-primary mb-xs uppercase tracking-wider">Bảng Vinh Danh</h1>
-        <p className="text-on-surface-variant mb-md">Những nhà du hành xuất sắc nhất trong kỷ nguyên Neo-Heritage.</p>
+        <h1 className="font-display-lg text-primary mb-xs uppercase tracking-wider">
+          {groupId ? 'Bảng xếp hạng nhóm' : 'Bảng Vinh Danh'}
+        </h1>
+        <p className="text-on-surface-variant mb-md">
+          {groupId
+            ? 'Xếp hạng XP trong nhóm học tập của bạn.'
+            : 'Những nhà du hành xuất sắc nhất trong kỷ nguyên Neo-Heritage.'}
+        </p>
 
+        {!groupId && (
         <div className="flex items-center gap-lg border-b border-outline-variant/50 mb-lg overflow-x-auto">
           {(['all', 'city', 'week'] as const).map((s) => (
             <button
@@ -53,7 +69,8 @@ export function LeaderboardPage() {
             </button>
           ))}
         </div>
-        {scope === 'city' && (
+        )}
+        {!groupId && scope === 'city' && (
           <>
             <input value={city} onChange={(e) => setCity(e.target.value)} className="neo-input rounded px-sm py-xs mb-xs" />
             {!city.trim() && <p className="text-xs text-red-400 mb-md">Vui lòng nhập city khi chọn scope=city.</p>}

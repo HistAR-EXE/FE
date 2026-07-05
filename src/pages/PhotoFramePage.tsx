@@ -8,10 +8,14 @@ import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
 import { useToast } from '../shared/ui/toast/useToast'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { images } from '../assets/images'
-import { resizeImageForUpload } from '../shared/utils/resizeImage'
+import { useAuth } from '../shared/auth/useAuth'
+import { isPremium } from '../shared/auth/types'
+import { UpgradePrompt } from '../components/monetization/UpgradePrompt'
 
 export function PhotoFramePage() {
   const navigate = useNavigate()
+  const { user } = useAuth()
+  const premium = isPremium(user)
   const [frames, setFrames] = useState<PhotoFrame[]>([])
   const [frameId, setFrameId] = useState('')
   const [variant, setVariant] = useState<'square' | 'story'>('square')
@@ -32,13 +36,14 @@ export function PhotoFramePage() {
   }, [showToast])
 
   const selectedFrame = useMemo(() => frames.find((f) => f.id === frameId), [frames, frameId])
+  const selectedLocked = selectedFrame?.requiresPremium && !premium
   const previewUrl = useMemo(() => (file ? URL.createObjectURL(file) : null), [file])
   useEffect(() => () => {
     if (previewUrl) URL.revokeObjectURL(previewUrl)
   }, [previewUrl])
 
   const submit = async () => {
-    if (!file || !frameId) return
+    if (!file || !frameId || selectedLocked) return
     const maxBytes = 8 * 1024 * 1024
     if (file.size > maxBytes) {
       showToast({ message: 'Ảnh vượt quá 8MB. Vui lòng chọn ảnh nhỏ hơn.', type: 'error' })
@@ -111,9 +116,17 @@ export function PhotoFramePage() {
               <h3 className="font-title-md">Khung</h3>
               <select value={frameId} onChange={(e) => setFrameId(e.target.value)} className="bg-surface border border-outline-variant rounded-lg px-sm py-sm">
                 {frames.map((f) => (
-                  <option key={f.id} value={f.id}>{f.name} ({f.era})</option>
+                  <option key={f.id} value={f.id}>
+                    {f.name} ({f.era}){f.requiresPremium ? ' · Premium' : ''}
+                  </option>
                 ))}
               </select>
+              {selectedLocked && (
+                <UpgradePrompt
+                  compact
+                  message="Khung ảnh này dành cho gói Premium. Nâng cấp để sử dụng toàn bộ theme."
+                />
+              )}
               <div className="flex gap-sm">
                 <button type="button" className={`flex-1 border rounded-lg p-sm ${variant === 'square' ? 'border-primary text-primary bg-surface-variant' : 'border-outline-variant text-on-surface-variant'}`} onClick={() => setVariant('square')}>Vuông 1080×1080</button>
                 <button type="button" className={`flex-1 border rounded-lg p-sm ${variant === 'story' ? 'border-primary text-primary bg-surface-variant' : 'border-outline-variant text-on-surface-variant'}`} onClick={() => setVariant('story')}>Dọc 1080×1920</button>
@@ -121,7 +134,7 @@ export function PhotoFramePage() {
             </div>
           </div>
           <div className="p-lg border-t border-surface-variant mt-auto">
-            <button onClick={submit} disabled={uploading || !file} className="w-full bg-primary text-on-primary font-title-md py-4 rounded-lg disabled:opacity-60 flex items-center justify-center gap-2">
+            <button onClick={submit} disabled={uploading || !file || selectedLocked} className="w-full bg-primary text-on-primary font-title-md py-4 rounded-lg disabled:opacity-60 flex items-center justify-center gap-2">
               <MaterialIcon name="magic_button" />
               {uploading ? 'Đang upload...' : 'Tạo & Chia sẻ'}
             </button>
