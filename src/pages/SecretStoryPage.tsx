@@ -42,7 +42,7 @@ export function SecretStoryPage() {
   }, [showToast, targetLocationId])
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+     
     loadStory()
   }, [loadStory])
 

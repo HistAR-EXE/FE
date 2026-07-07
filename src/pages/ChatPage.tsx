@@ -131,7 +131,7 @@ export function ChatPage() {
     const [hasOlder, setHasOlder] = useState(false)
     const [sending, setSending] = useState(false)
     const [chatLimitReached, setChatLimitReached] = useState(false)
-    const [premiumBannerDismissed, setPremiumBannerDismissed] = useState(
+    const [premiumBannerDismissed] = useState(
         () => sessionStorage.getItem('premiumBannerDismissed') === '1',
     )
     const [upgrading, setUpgrading] = useState(false)

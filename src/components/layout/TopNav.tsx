@@ -187,12 +187,7 @@ function UserAvatarDropdown({ avatarSrc }: { avatarSrc: string }) {
     )
 }
 
-type TopNavCompactProps = {
-    backTo?: string
-    title?: string
-}
-
-export function TopNavCompact({ backTo, title }: TopNavCompactProps) {
+export function TopNavCompact({ backTo, title }: { backTo?: string; title?: string }) {
     return (
         <header className="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl border-b border-white/10 bg-[#0f1015]/80 flex justify-between items-center h-14 px-4 md:hidden">
             {backTo ? (
@@ -214,15 +209,12 @@ export function TopNavCompact({ backTo, title }: TopNavCompactProps) {
     )
 }
 
-type HomeTopNavProps = {
-    avatarSrc?: string
-}
+export function HomeTopNav({ avatarSrc }: { avatarSrc?: string }) {
+    const defaultAvatar = useUserAvatar(images.avatarHomeV3)
+    const resolvedAvatar = avatarSrc ?? defaultAvatar
 
-export function HomeTopNav({ avatarSrc }: HomeTopNavProps) {
-    const resolvedAvatar = avatarSrc ?? useUserAvatar(images.avatarHomeV3)
     return (
         <header className="fixed top-0 right-0 left-0 md:left-16 lg:left-[16rem] z-50 backdrop-blur-xl border-b border-white/10 bg-[#0f1015]/80 justify-between items-center h-16 px-6 hidden md:flex">
-            {/* Đã bỏ ModeBadge trên HomeTopNav để không bị trùng lặp với banner Trang chủ */}
             <div className="flex-1" />
             <div className="flex items-center gap-3">
                 <OfflineSyncBadge />
@@ -236,14 +228,10 @@ export function HomeTopNav({ avatarSrc }: HomeTopNavProps) {
     )
 }
 
-type ExploreTopNavProps = {
-    avatarSrc?: string
-    backTo?: string
-    backLabel?: string
-}
+export function ExploreTopNav({ avatarSrc, backTo = '/home', backLabel = 'Trang chủ' }: { avatarSrc?: string; backTo?: string; backLabel?: string }) {
+    const defaultAvatar = useUserAvatar(images.avatarExploreV3)
+    const resolvedAvatar = avatarSrc ?? defaultAvatar
 
-export function ExploreTopNav({ avatarSrc, backTo = '/home', backLabel = 'Trang chủ' }: ExploreTopNavProps) {
-    const resolvedAvatar = avatarSrc ?? useUserAvatar(images.avatarExploreV3)
     return (
         <header className="fixed top-0 right-0 left-0 md:left-16 lg:left-[16rem] z-50 backdrop-blur-xl border-b border-white/10 bg-[#0f1015]/80 hidden md:flex justify-between items-center h-16 px-6 gap-4">
             <div className="flex items-center gap-4 min-w-0 flex-1">
@@ -277,12 +265,10 @@ export function ExploreTopNav({ avatarSrc, backTo = '/home', backLabel = 'Trang 
     )
 }
 
-type DetailTopNavProps = {
-    avatarSrc?: string
-}
+export function DetailTopNav({ avatarSrc }: { avatarSrc?: string }) {
+    const defaultAvatar = useUserAvatar(images.avatarDetailV3)
+    const resolvedAvatar = avatarSrc ?? defaultAvatar
 
-export function DetailTopNav({ avatarSrc }: DetailTopNavProps) {
-    const resolvedAvatar = avatarSrc ?? useUserAvatar(images.avatarDetailV3)
     return (
         <nav className="fixed top-0 right-0 left-0 md:left-16 lg:left-[16rem] z-50 backdrop-blur-xl border-b border-white/10 bg-[#0f1015]/80 justify-between items-center h-16 px-6 hidden md:flex">
             <Link to="/home" className="inline-flex items-center gap-2.5 font-black text-xl text-white tracking-tight">
@@ -300,16 +286,10 @@ export function DetailTopNav({ avatarSrc }: DetailTopNavProps) {
     )
 }
 
-type SimpleTopNavProps = {
-    title?: string
-    avatarSrc?: string
-    showSearch?: boolean
-    backTo?: string
-    backLabel?: string
-}
+export function SimpleTopNav({ title, avatarSrc, showSearch = false, backTo, backLabel = 'Quay lại' }: { title?: string; avatarSrc?: string; showSearch?: boolean; backTo?: string; backLabel?: string }) {
+    const defaultAvatar = useUserAvatar(images.avatarHomeV3)
+    const resolvedAvatar = avatarSrc ?? defaultAvatar
 
-export function SimpleTopNav({ title, avatarSrc, showSearch = false, backTo, backLabel = 'Quay lại' }: SimpleTopNavProps) {
-    const resolvedAvatar = avatarSrc ?? useUserAvatar(images.avatarHomeV3)
     return (
         <header className="fixed top-0 right-0 left-0 md:left-16 lg:left-[16rem] z-50 backdrop-blur-xl border-b border-white/10 bg-[#0f1015]/80 justify-between items-center h-16 px-6 hidden md:flex gap-4">
             <div className="flex items-center gap-4 min-w-0 flex-1">
@@ -347,12 +327,10 @@ export function SimpleTopNav({ title, avatarSrc, showSearch = false, backTo, bac
     )
 }
 
-type ScanTopNavProps = {
-    avatarSrc?: string
-}
+export function ScanTopNav({ avatarSrc }: { avatarSrc?: string }) {
+    const defaultAvatar = useUserAvatar(images.avatarExploreV3)
+    const resolvedAvatar = avatarSrc ?? defaultAvatar
 
-export function ScanTopNav({ avatarSrc }: ScanTopNavProps) {
-    const resolvedAvatar = avatarSrc ?? useUserAvatar(images.avatarExploreV3)
     return (
         <header className="fixed top-0 right-0 left-0 md:left-16 lg:left-[16rem] z-50 backdrop-blur-xl border-b border-white/10 bg-[#0f1015]/80 hidden md:flex justify-between items-center h-16 px-6">
             <div className="flex items-center gap-3 min-w-0">
