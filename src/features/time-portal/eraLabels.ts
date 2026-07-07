@@ -1,3 +1,4 @@
+// src/features/time-portal/eraLabels.ts
 export const ERA_VALUES = [1948, 1968, 2026] as const
 export type EraValue = (typeof ERA_VALUES)[number]
 

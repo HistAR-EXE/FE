@@ -1,409 +1,320 @@
 // src/pages/ExplorePage.tsx
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useState, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { ExploreTopNav } from '../components/layout/TopNav'
-import { locationsApi, type Location } from '../features/locations/api'
-import { RecommendationCard } from '../features/gamification/RecommendationCard'
-import { discoveriesApi } from '../features/gamification/api'
-import { DISCOVERY_RECORDED_EVENT } from '../features/gamification/discoveryRouting'
-import { useVisitSessionForLocation } from '../features/visit/VisitSessionProvider'
 import { CU_CHI_LOCATION_ID } from '../shared/config/constants'
-import { useAuth } from '../shared/auth/useAuth'
-import { ApiError } from '../shared/api/contracts'
-import { useAppMode } from '../shared/context/useAppMode'
-import { useToast } from '../shared/ui/toast/useToast'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
-import { ExploreMapPanel } from '../features/explore/ExploreMapPanel'
-import { isLocationLocked, LOCATION_UNLOCKED_EVENT } from '../features/explore/locationUnlock'
-import { buildArUrl } from '../features/ar/arDeepLink'
-import { normalizeHeritageName } from '../features/explore/vietnamMap'
-import { pickLocationCover, resolveLocationCoverFallback } from '../shared/media/resolveMedia'
-import { SmartImage } from '../shared/ui/SmartImage'
 
-const PAGE_SIZE = 20
+type ZoneFilter = 'all' | 'military' | 'memorial' | 'underground' | 'tech'
 
-function exploreCardDescription(description: string | undefined): string {
-  if (!description?.trim()) return 'Đang cập nhật mô tả di tích.'
-  const firstBlock = description.split('\n').find((line) => {
-    const t = line.trim()
-    return t && !t.startsWith('Vị trí:') && !/^\d+\.\s/.test(t)
-  })
-  const text = (firstBlock ?? description).replace(/\s+/g, ' ').trim()
-  return text.length > 220 ? `${text.slice(0, 217).trim()}…` : text
+interface HotspotCard {
+    id: string
+    name: string
+    zone: ZoneFilter
+    desc: string
+    image: string
+    xp: number
+    arSlug?: string
 }
 
-export function ExplorePage() {
-  const [locations, setLocations] = useState<Location[]>([])
-  const [page, setPage] = useState(0)
-  const [totalPages, setTotalPages] = useState(1)
-  const [loadingMore, setLoadingMore] = useState(false)
-  const [mapLocations, setMapLocations] = useState<Location[]>([])
-  const [activeFilter, setActiveFilter] = useState<'all' | 'near' | 'virtual' | 'dynasty'>('all')
-  const [loading, setLoading] = useState(true)
-  const [failed, setFailed] = useState(false)
-  const [visitedIds, setVisitedIds] = useState<Set<string>>(new Set())
-  const [lockedHint, setLockedHint] = useState<Location | null>(null)
-  const [showAllFeatured, setShowAllFeatured] = useState(false)
-  const { showToast } = useToast()
-  const { mode } = useAppMode()
-  const { isAuthenticated, user } = useAuth()
-  const focusLocationId = useMemo(() => {
-    const unlocked = mapLocations.find((location) => !isLocationLocked(location, user))
-    return unlocked?.id ?? mapLocations[0]?.id ?? CU_CHI_LOCATION_ID
-  }, [mapLocations, user])
-  useVisitSessionForLocation(focusLocationId, isAuthenticated)
-
-  const loadPage = useCallback(
-    async (pageIndex: number, append: boolean) => {
-      try {
-        if (append) setLoadingMore(true)
-        else setFailed(false)
-        const result = await locationsApi.listPage({ page: pageIndex, size: PAGE_SIZE, sort: 'createdAt,desc' })
-        setLocations((prev) => (append ? [...prev, ...result.items] : result.items))
-        setTotalPages(result.totalPages || 1)
-        setPage(pageIndex)
-      } catch (e) {
-        if (!append) setFailed(true)
-        showToast({
-          message: e instanceof ApiError ? e.message : 'Không tải được danh sách địa điểm.',
-          type: 'error',
-        })
-      } finally {
-        if (append) setLoadingMore(false)
-        else setLoading(false)
-      }
+const CU_CHI_HOTSPOTS: HotspotCard[] = [
+    {
+        id: '22222222-2222-2222-2222-222222222222',
+        name: 'Đền Tưởng Niệm Liệt Sĩ Bến Dược',
+        zone: 'memorial',
+        desc: 'Công trình kiến trúc mang đậm bản sắc văn hóa Việt, nơi tưởng niệm 45.639 liệt sĩ đã hy sinh vì độc lập dân tộc.',
+        image: 'https://images.unsplash.com/photo-1599708153386-62bf3f0b2bd6?auto=format&fit=crop&w=800&q=80',
+        xp: 100
     },
-    [showToast],
-  )
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    loadPage(0, false)
-  }, [loadPage])
-
-  const refetchLocations = useCallback(async () => {
-    try {
-      const [pageResult, mapList] = await Promise.all([
-        locationsApi.listPage({ page: 0, size: PAGE_SIZE, sort: 'createdAt,desc' }),
-        locationsApi.list({ size: 50, sort: 'name,asc' }),
-      ])
-      setLocations(pageResult.items)
-      setTotalPages(pageResult.totalPages || 1)
-      setPage(0)
-      setMapLocations(mapList)
-    } catch {
-      /* keep current data */
+    {
+        id: '22222222-2222-2222-2222-222222222224',
+        name: 'Khu Trưng Bày Khí Tài Ngoài Trời',
+        zone: 'military',
+        desc: 'Trưng bày xác xe tăng M41, M48, pháo 105mm, máy bay C-130 chiến lợi phẩm thu được của quân đội Mỹ.',
+        image: 'https://images.unsplash.com/photo-1518998053901-5348d3961a04?auto=format&fit=crop&w=800&q=80',
+        xp: 80,
+        arSlug: 'xe-tang-m41'
+    },
+    {
+        id: '22222222-2222-2222-2222-222222222227',
+        name: 'Khu Tái Hiện Vùng Giải Phóng & Bếp Hoàng Cầm',
+        zone: 'underground',
+        desc: 'Trải nghiệm sinh hoạt dưới hầm ngầm, hệ thống thoát khói Hoàng Cầm trứ danh và thưởng thức khoai mì.',
+        image: '/media/cu-chi/scenes/bep-hoang-cam-2026.jpg',
+        xp: 120
+    },
+    {
+        id: '22222222-2222-2222-2222-222222222223',
+        name: 'Căn Cứ Bộ Tư Lệnh Quân Khu Sài Gòn - Gia Định',
+        zone: 'military',
+        desc: 'Sở chỉ huy ngầm với hệ thống hầm họp, phòng giải phẫu và sa bàn chỉ đạo chiến dịch.',
+        image: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=800&q=80',
+        xp: 90
+    },
+    {
+        id: '22222222-2222-2222-2222-222222222226',
+        name: 'Nhà Biểu Diễn Sa Bàn & Phim Lịch Sử 3D',
+        zone: 'tech',
+        desc: 'Không gian trình chiếu công nghệ cao mô phỏng chiến thuật đào hầm 3 tầng ngầm kỳ công của du kích.',
+        image: '/media/banner-main.jpg',
+        xp: 70
+    },
+    {
+        id: '22222222-2222-2222-2222-222222222225',
+        name: 'Căn Cứ Khu Ủy Sài Gòn - Gia Định',
+        zone: 'underground',
+        desc: 'Hệ thống hầm ngầm sâu 8m ẩn giấu giữa rừng cây giáng hương già, kiên cố trước bom đạn B-52.',
+        image: 'https://images.unsplash.com/photo-1508804185872-d7badad00f7d?auto=format&fit=crop&w=800&q=80',
+        xp: 85
     }
-  }, [])
+]
 
-  useEffect(() => {
-    locationsApi
-      .list({ size: 50, sort: 'name,asc' })
-      .then(setMapLocations)
-      .catch(() => undefined)
-  }, [])
+const ZONE_BUTTONS: { id: ZoneFilter; label: string }[] = [
+    { id: 'all', label: 'Tất Cả Điểm Chạm' },
+    { id: 'underground', label: 'Hầm Ngầm & Đời Sống' },
+    { id: 'military', label: 'Khí Tài Quân Sự' },
+    { id: 'memorial', label: 'Đền Tưởng Niệm' },
+    { id: 'tech', label: 'Sa Bàn & AR 3D' },
+]
 
-  useEffect(() => {
-    const onUnlocked = () => {
-      void refetchLocations()
-    }
-    window.addEventListener(LOCATION_UNLOCKED_EVENT, onUnlocked)
-    return () => window.removeEventListener(LOCATION_UNLOCKED_EVENT, onUnlocked)
-  }, [refetchLocations])
+export function ExplorePage() {
+    const navigate = useNavigate()
+    const [zoneFilter, setZoneFilter] = useState<ZoneFilter>('all')
 
-  const loadVisitedLocations = useCallback(async () => {
-    if (!isAuthenticated) {
-      setVisitedIds(new Set())
-      return
-    }
-    try {
-      const data = await discoveriesApi.visitedLocations()
-      setVisitedIds(new Set(data.visitedLocationIds))
-    } catch {
-      setVisitedIds(new Set())
-    }
-  }, [isAuthenticated])
+    const filteredHotspots = useMemo(() => {
+        if (zoneFilter === 'all') return CU_CHI_HOTSPOTS
+        return CU_CHI_HOTSPOTS.filter(h => h.zone === zoneFilter)
+    }, [zoneFilter])
 
-  useEffect(() => {
-    void loadVisitedLocations()
-  }, [loadVisitedLocations])
+    return (
+        <AppLayout activeBorder="right" topNav={<ExploreTopNav backTo="/home" backLabel="Trang chủ" />}>
+            <main className="flex-grow pt-[88px] px-4 md:px-8 pb-20 max-w-7xl w-full mx-auto space-y-8 bg-[#0f1015] text-white selection:bg-[#fe951c] selection:text-black">
 
-  useEffect(() => {
-    const onDiscoveryRecorded = () => {
-      void loadVisitedLocations()
-    }
-    window.addEventListener(DISCOVERY_RECORDED_EVENT, onDiscoveryRecorded)
-    return () => window.removeEventListener(DISCOVERY_RECORDED_EVENT, onDiscoveryRecorded)
-  }, [loadVisitedLocations])
+                {/* --- HERO BANNER CỦ CHI VỚI SÂN KHẤU ĐẠI SỨ DU KÍCH 3D --- */}
+                <section className="relative rounded-3xl overflow-hidden border border-white/15 bg-gradient-to-r from-[#1a1d2c] via-[#161824] to-[#0f1015] p-6 sm:p-10 shadow-[0_20px_50px_rgba(0,0,0,0.7)]">
+                    {/* Hào quang nền sinh động */}
+                    <div className="absolute -left-20 -top-20 w-96 h-96 bg-[#fe951c]/15 rounded-full blur-3xl pointer-events-none animate-pulse" />
+                    <div className="absolute right-10 -bottom-20 w-96 h-96 bg-[#388cf1]/20 rounded-full blur-3xl pointer-events-none" />
+                    <div className="absolute inset-0 bg-[radial-gradient(#fe951c_1px,transparent_1px)] [background-size:24px_24px] opacity-15 pointer-events-none" />
 
-  const filteredLocations = locations.filter((location) => {
-    if (activeFilter === 'all') return true
-    if (activeFilter === 'near') return true
-    if (activeFilter === 'virtual') {
-      const content = `${location.description ?? ''} ${location.name ?? ''}`.toLowerCase()
-      return content.includes('ar') || content.includes('360') || content.includes('tour')
-    }
-    if (activeFilter === 'dynasty') {
-      const content = `${location.description ?? ''} ${location.name ?? ''}`.toLowerCase()
-      return content.includes('triều') || content.includes('đế') || content.includes('hoàng')
-    }
-    return true
-  })
-  const [brokenCovers, setBrokenCovers] = useState<Record<string, true>>({})
-  const coverFallback = (location: Location, index: number) =>
-    resolveLocationCoverFallback(location.name, index)
-  const coverSrc = (location: Location, index: number) =>
-    pickLocationCover(location.coverImage, location.name, index, Boolean(brokenCovers[location.id]))
-  const onCoverError = (locationId: string) => () => {
-    setBrokenCovers((prev) => ({ ...prev, [locationId]: true }))
-  }
-  const distanceLabel = (location: Location, index: number) => {
-    if (typeof location.distanceKm === 'number') return `${location.distanceKm.toFixed(1)} km`
-    return `${(2.4 + index * 2.7).toFixed(1)} km`
-  }
-  const ratingLabel = (location: Location, index: number) => {
-    if (typeof location.rating === 'number') return location.rating.toFixed(1)
-    return (4.9 - index * 0.1).toFixed(1)
-  }
+                    <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
 
-  const displayedLocations = showAllFeatured ? filteredLocations : filteredLocations.slice(0, 3)
-
-  return (
-    <AppLayout activeBorder="right" mobileBackTo="/home" mobileTitle="Khám phá" topNav={<ExploreTopNav backTo="/home" backLabel="Trang chủ" />}>
-      <main className="w-full mt-14 md:mt-16 p-md md:p-lg flex flex-col xl:flex-row gap-lg relative min-h-[calc(100dvh-4rem)]">
-        {/* Map first on mobile (< lg), sidebar first on desktop */}
-        <ExploreMapPanel
-          className="order-1 xl:order-2 flex-1 min-h-[280px] lg:min-h-0"
-          locations={mapLocations.length > 0 ? mapLocations : filteredLocations}
-          visitedIds={visitedIds}
-          user={user}
-          onLockedLocationClick={setLockedHint}
-        />
-
-        <section className="order-2 xl:order-1 w-full xl:w-[min(440px,38vw)] xl:max-w-[480px] xl:min-w-[320px] flex flex-col gap-md z-10 shrink-0 min-h-0 xl:max-h-[calc(100vh-5rem)]">
-          <div className="bg-surface/80 backdrop-blur-xl border border-outline-variant rounded-xl p-md shadow-lg flex flex-col gap-md shrink-0">
-            <div className="flex items-center justify-between">
-              <h2 className="font-title-md text-title-md text-on-surface flex items-center gap-2">
-                <MaterialIcon name="filter_list" className="text-primary" />
-                Bộ lọc bản đồ
-              </h2>
-            </div>
-            <div className="flex overflow-x-auto gap-2 hide-scrollbar pb-1">
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveFilter('near')
-                  showToast({ message: 'Bộ lọc “Gần đây” cần quyền vị trí — đang phát triển.', type: 'info' })
-                }}
-                className={`shrink-0 px-3 py-1.5 rounded-full border text-sm flex items-center gap-1 ${
-                  activeFilter === 'near' ? 'border-secondary bg-secondary/10 text-secondary' : 'border-outline-variant bg-surface-container text-on-surface-variant'
-                }`}
-              >
-                <MaterialIcon name="my_location" className="text-[16px]" />
-                Gần đây
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveFilter('virtual')}
-                className={`shrink-0 px-3 py-1.5 rounded-full border text-sm ${
-                  activeFilter === 'virtual' ? 'border-secondary bg-secondary/10 text-secondary' : 'border-outline-variant bg-surface-container text-on-surface-variant'
-                }`}
-              >
-                Du lịch ảo
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveFilter('dynasty')}
-                className={`shrink-0 px-3 py-1.5 rounded-full border text-sm ${
-                  activeFilter === 'dynasty' ? 'border-secondary bg-secondary/10 text-secondary' : 'border-outline-variant bg-surface-container text-on-surface-variant'
-                }`}
-              >
-                Triều đại
-              </button>
-              <button type="button" onClick={() => setActiveFilter('all')} className="shrink-0 px-3 py-1.5 rounded-full border border-outline-variant bg-surface-container text-on-surface-variant text-sm">
-                Xóa lọc
-              </button>
-            </div>
-          </div>
-
-          {isAuthenticated && <RecommendationCard locationId={focusLocationId} />}
-
-          <div className="flex flex-col flex-1 min-h-0">
-            <h3 className="shrink-0 font-title-md text-title-md text-on-surface-variant px-1 mb-md">Di tích nổi bật</h3>
-            <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden custom-scrollbar pr-2 pb-md">
-              {loading && <p className="text-on-surface-variant text-sm px-1">Đang tải dữ liệu địa điểm...</p>}
-              {!loading && failed && <p className="text-red-400 text-sm px-1">Không tải được dữ liệu địa điểm.</p>}
-              <div className="flex flex-col gap-md">
-                {!loading &&
-                  !failed &&
-                  displayedLocations.map((location, index) => {
-                    const locked = isLocationLocked(location, user)
-                    return (
-                    <article
-                      key={location.id}
-                      className={`group shrink-0 bg-surface-container-low border border-outline-variant rounded-xl overflow-hidden card-interactive ${
-                        locked ? 'opacity-60' : 'hover:border-primary/50 hover:bg-surface-container shadow-elev-1 hover:shadow-elev-2'
-                      }`}
-                    >
-                      {locked ? (
-                        <button
-                          type="button"
-                          onClick={() => setLockedHint(location)}
-                          className="block w-full text-left"
-                        >
-                          <div className="h-36 relative overflow-hidden bg-surface-container-high shrink-0">
-                            <SmartImage
-                              alt={location.name || 'Di tích lịch sử'}
-                              fill
-                              className="group-hover:scale-105 transition-transform duration-500 grayscale"
-                              src={coverSrc(location, index)}
-                              fallback={coverFallback(location, index)}
-                              onFailed={onCoverError(location.id)}
-                            />
-                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                              <span className="text-2xl" aria-hidden>🔒</span>
+                        {/* Cột trái 7 phần: Cốt truyện & Giới thiệu vai trò Đại sứ */}
+                        <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
+                            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2.5">
+                                <span className="px-3.5 py-1 rounded-full bg-gradient-to-r from-[#fe951c] to-[#fdb438] text-black font-black text-[10px] uppercase tracking-wider shadow-[0_0_15px_rgba(254,149,28,0.4)]">
+                                    ✦ ĐẠI SỨ DI SẢN TIMELENS
+                                </span>
+                                <span className="px-3.5 py-1 rounded-full bg-white/10 text-gray-200 font-bold text-[10px] uppercase border border-white/15 backdrop-blur-md">
+                                    ĐỊA ĐẠO CỦ CHI
+                                </span>
                             </div>
-                          </div>
-                          <div className="p-md">
-                            <h4 className="font-title-md text-title-md text-on-surface-variant">
-                              {normalizeHeritageName(location.name || 'Địa điểm chưa đặt tên')}
-                            </h4>
-                            <p className="text-xs text-on-surface-variant mt-1">Hoàn thành quest trước để mở khoá</p>
-                          </div>
-                        </button>
-                      ) : (
-                      <Link to={`/explore/${location.id}`} className="block">
-                        <div className="h-36 relative overflow-hidden bg-surface-container-high shrink-0">
-                          <SmartImage
-                            alt={location.name || 'Di tích lịch sử'}
-                            fill
-                            className="group-hover:scale-105 transition-transform duration-500"
-                            src={coverSrc(location, index)}
-                            fallback={coverFallback(location, index)}
-                            onFailed={onCoverError(location.id)}
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
-                          <div className="absolute bottom-2 left-3 flex flex-wrap gap-1">
-                            <span className="px-2 py-0.5 rounded-full bg-surface/80 backdrop-blur-sm border border-outline-variant text-[10px] font-label-sm text-primary">
-                              {location.city || (index === 0 ? 'Triều Nguyễn' : 'Di tích')}
-                            </span>
-                            {(location.isArAvailable || index === 0) && (
-                              <span className="px-2 py-0.5 rounded-full bg-surface/80 backdrop-blur-sm border border-outline-variant text-[10px] font-label-sm text-secondary">
-                                Có AR
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <div className="p-md">
-                          <h4 className="font-title-md text-title-md text-on-surface group-hover:text-primary transition-colors">
-                            {normalizeHeritageName(location.name || 'Địa điểm chưa đặt tên')}
-                          </h4>
-                          <p className="font-body-md text-body-md text-on-surface-variant mt-1 line-clamp-2">
-                            {exploreCardDescription(location.description)}
-                          </p>
-                          <div className="mt-3 flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm">
-                            <span className="flex items-center gap-1">
-                              <MaterialIcon name="location_on" className="text-sm" />
-                              {distanceLabel(location, index)}
-                            </span>
-                            <span className="flex items-center gap-1 text-primary">
-                              <MaterialIcon name="star" className="text-sm" />
-                              {ratingLabel(location, index)}
-                            </span>
-                          </div>
-                        </div>
-                      </Link>
-                      )}
-                      {!locked && mode === 'online' && (
-                        <div className="px-md pb-md flex flex-wrap gap-2 -mt-1">
-                          <Link
-                            to={`/artifacts?locationId=${location.id}`}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border border-primary/50 bg-primary/10 text-primary text-xs font-label-sm hover:bg-primary/20"
-                          >
-                            <MaterialIcon name="history_edu" className="text-sm" />
-                            Cổ vật
-                          </Link>
-                          <Link
-                            to={`/tour/360/${location.id}`}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border border-secondary/50 bg-secondary/10 text-secondary text-xs font-label-sm hover:bg-secondary/20"
-                          >
-                            <MaterialIcon name="view_in_ar" className="text-sm" />
-                            Tham quan 360°
-                          </Link>
-                          {location.id === CU_CHI_LOCATION_ID && (
-                            <Link
-                              to={buildArUrl({ locationId: location.id, mode: 'sim' })}
-                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border border-primary/50 bg-primary/10 text-primary text-xs font-label-sm hover:bg-primary/20"
-                            >
-                              <MaterialIcon name="view_in_ar" className="text-sm" />
-                              Cổng AR
-                            </Link>
-                          )}
-                          <Link
-                            to={`/chat?locationId=${location.id}`}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border border-primary/50 bg-primary/10 text-primary text-xs font-label-sm hover:bg-primary/20"
-                          >
-                            <MaterialIcon name="chat_bubble" className="text-sm" />
-                            Trò chuyện AI
-                          </Link>
-                        </div>
-                      )}
-                    </article>
-                    )
-                  })}
-              </div>
-              {!loading && !failed && filteredLocations.length > 3 && !showAllFeatured && (
-                <button
-                  type="button"
-                  onClick={() => setShowAllFeatured(true)}
-                  className="shrink-0 mt-md w-full py-2 rounded-lg border border-outline-variant bg-surface-container text-on-surface-variant hover:border-primary hover:text-primary transition-colors"
-                >
-                  Xem tất cả ({filteredLocations.length})
-                </button>
-              )}
-              {!loading && !failed && page + 1 < totalPages && showAllFeatured && (
-                <button
-                  type="button"
-                  disabled={loadingMore}
-                  onClick={() => loadPage(page + 1, true)}
-                  className="shrink-0 mt-md w-full py-2 rounded-lg border border-outline-variant bg-surface-container text-on-surface-variant hover:border-secondary hover:text-secondary transition-colors disabled:opacity-60"
-                >
-                  {loadingMore ? 'Đang tải thêm...' : 'Xem thêm di tích'}
-                </button>
-              )}
-            </div>
-          </div>
-        </section>
 
-        {lockedHint && (
-          <div className="fixed inset-0 z-[70] flex items-center justify-center p-md bg-black/60">
-            <div className="bg-surface-container border border-outline-variant rounded-2xl p-lg max-w-sm w-full shadow-xl">
-              <p className="font-title-md text-on-surface">🔒 {normalizeHeritageName(lockedHint.name)}</p>
-              <p className="text-sm text-on-surface-variant mt-sm">
-                {lockedHint.unlockNarrative ??
-                  'Hoàn thành nhiệm vụ tại di tích trước để mở khoá điểm đến này trên bản đồ.'}
-              </p>
-              <div className="flex gap-sm mt-md justify-end">
-                <button
-                  type="button"
-                  onClick={() => setLockedHint(null)}
-                  className="px-4 py-2 rounded-full border border-outline-variant text-on-surface-variant"
-                >
-                  Đóng
-                </button>
-                <Link
-                  to="/quests"
-                  onClick={() => setLockedHint(null)}
-                  className="px-4 py-2 rounded-full bg-secondary text-on-secondary font-title-sm"
-                >
-                  Xem nhiệm vụ
-                </Link>
-              </div>
-            </div>
-          </div>
-        )}
-      </main>
-    </AppLayout>
-  )
+                            <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-white leading-tight">
+                                Gặp Gỡ Người Dẫn Đường <br />
+                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#fe951c] via-[#fff2a1] to-[#388cf1]">
+                                    Chị Năm & Anh Ba
+                                </span>
+                            </h1>
+
+                            {/* Thẻ giới thiệu cốt truyện gần gũi */}
+                            <div className="bg-black/40 border border-white/10 rounded-2xl p-4 sm:p-5 space-y-3 backdrop-blur-md shadow-inner text-left">
+                                <p className="text-xs sm:text-sm text-gray-200 leading-relaxed font-normal">
+                                    Chào mừng bạn đến với vùng Đất Thép! Hãy để hai đại sứ AI đồng hành cùng bạn xuyên suốt hành trình khám phá:
+                                </p>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-white/10">
+                                    <div className="flex items-start gap-2.5">
+                                        <span className="w-2 h-2 rounded-full bg-[#fdb438] shrink-0 mt-1.5 shadow-[0_0_8px_#fdb438]" />
+                                        <p className="text-xs text-gray-300 leading-normal">
+                                            <strong className="text-[#fff2a1] font-bold">Chị Năm (Nữ du kích):</strong> Người con gái kiên trung, am hiểu từng ngóc ngách địa đạo. Chị sẽ kể cho bạn nghe những câu chuyện sinh hoạt, nghĩa tình quân dân ấm áp dưới lòng đất.
+                                        </p>
+                                    </div>
+                                    <div className="flex items-start gap-2.5">
+                                        <span className="w-2 h-2 rounded-full bg-[#388cf1] shrink-0 mt-1.5 shadow-[0_0_8px_#388cf1]" />
+                                        <p className="text-xs text-gray-300 leading-normal">
+                                            <strong className="text-cyan-300 font-bold">Anh Ba (Chiến sĩ):</strong> Chuyên gia sa bàn và kỹ thuật quân sự. Anh sẽ hướng dẫn bạn giải mã cấu trúc hầm chông, bẫy du kích và chiến thuật chiến tranh nhân dân độc đáo.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Các nút thao tác nhanh */}
+                            <div className="flex flex-wrap gap-3 justify-center lg:justify-start pt-1">
+                                <button
+                                    onClick={() => navigate('/chat')}
+                                    className="px-6 py-3.5 rounded-xl bg-gradient-to-r from-[#fe951c] via-[#fdb438] to-[#e07d0b] hover:scale-105 text-black font-black text-xs uppercase tracking-wider transition-all shadow-[0_0_25px_rgba(254,149,28,0.5)] flex items-center gap-2 cursor-pointer"
+                                >
+                                    <MaterialIcon name="forum" className="text-lg" />
+                                    <span>Trò Chuyện Cùng Đại Sứ</span>
+                                </button>
+
+                                <button
+                                    onClick={() => navigate(`/tour/360/${CU_CHI_LOCATION_ID}`)}
+                                    className="px-5 py-3.5 rounded-xl bg-[#388cf1]/20 hover:bg-[#388cf1]/30 border border-[#388cf1]/50 text-white font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer shadow-md"
+                                >
+                                    <MaterialIcon name="360" className="text-base text-[#388cf1]" />
+                                    <span>Vào Tour 360° Thực Tế</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Cột phải 5 phần: Sân khấu 2 Nhân vật đứng kề vai sát cánh */}
+                        <div className="lg:col-span-5 relative flex items-center justify-center pt-8 lg:pt-0">
+
+                            {/* Thảm hào quang nền mờ dưới chân (Chỉ giữ ánh sáng blur mờ, ĐÃ XÓA SẠCH thanh khung ngang có viền) */}
+                            <div className="absolute bottom-10 w-64 sm:w-80 h-16 bg-gradient-to-r from-[#fe951c]/25 via-transparent to-[#388cf1]/25 rounded-full blur-2xl pointer-events-none" />
+
+                            {/* Khối chứa 2 nhân vật kề sát nhau */}
+                            <div className="relative z-10 flex items-end justify-center gap-4 sm:gap-8 h-64 sm:h-72 pb-2">
+
+                                {/* Nhân vật Nữ (Chị Năm Du Kích - VÀNG CAM) */}
+                                <div
+                                    onClick={() => navigate('/chat?persona=chi-nam')}
+                                    className="relative group cursor-pointer flex flex-col items-center transform transition-all duration-500 hover:scale-110 hover:-translate-y-2 z-10"
+                                >
+                                    {/* Bong bóng thoại */}
+                                    <div className="absolute -top-11 bg-[#1b1e2c]/95 border border-[#fdb438]/60 text-[#fff2a1] text-[11px] font-bold px-3 py-1.5 rounded-2xl shadow-2xl opacity-0 group-hover:opacity-100 transition-all duration-300 whitespace-nowrap z-30 pointer-events-none">
+                                        Hỏi Chị chuyện về địa đạo nha!
+                                    </div>
+
+                                    {/* Ảnh nhân vật */}
+                                    <img
+                                        src="/media/characters/nu-du-kich.png"
+                                        alt="Chị Năm Du Kích"
+                                        className="h-56 sm:h-64 object-contain drop-shadow-[0_12px_20px_rgba(0,0,0,0.9)] filter contrast-105 transition-transform duration-500 group-hover:drop-shadow-[0_0_25px_rgba(253,180,56,0.5)] relative z-10"
+                                        onError={(e) => { e.currentTarget.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80' }}
+                                    />
+
+                                    {/* Đốm hào quang ngay dưới bàn chân Chị Năm */}
+                                    <div className="absolute bottom-7 w-20 sm:w-24 h-3 bg-[#fe951c]/50 rounded-full blur-md z-0 group-hover:bg-[#fe951c]/80 transition-all" />
+
+                                    {/* Thẻ tên màu Vàng Cam (Độc lập, không bị thanh nào đè phía sau) */}
+                                    <div className="mt-2 px-3 py-1 rounded-lg bg-[#161824]/95 border border-[#fdb438]/60 shadow-lg flex items-center gap-1.5 z-20">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-[#fdb438] animate-ping" />
+                                        <span className="text-[10px] font-black text-[#fdb438] tracking-wide">
+                                            CHỊ NĂM DU KÍCH
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* Nhân vật Nam (Anh Ba Chiến Sĩ - XANH CÔNG NGHỆ) */}
+                                <div
+                                    onClick={() => navigate('/chat?persona=anh-ba')}
+                                    className="relative group cursor-pointer flex flex-col items-center transform transition-all duration-500 hover:scale-110 hover:-translate-y-2 z-10"
+                                >
+                                    {/* Bong bóng thoại */}
+                                    <div className="absolute -top-11 bg-[#1b1e2c]/95 border border-[#388cf1]/60 text-cyan-300 text-[11px] font-bold px-3 py-1.5 rounded-2xl shadow-2xl opacity-0 group-hover:opacity-100 transition-all duration-300 whitespace-nowrap z-30 pointer-events-none">
+                                        Xem sa bàn tác chiến cùng Anh!
+                                    </div>
+
+                                    {/* Ảnh nhân vật */}
+                                    <img
+                                        src="/media/characters/nam-du-kich.png"
+                                        alt="Anh Ba Chiến Sĩ"
+                                        className="h-56 sm:h-64 object-contain drop-shadow-[0_12px_20px_rgba(0,0,0,0.9)] filter contrast-105 transition-transform duration-500 group-hover:drop-shadow-[0_0_25px_rgba(56,140,241,0.5)] relative z-10"
+                                        onError={(e) => { e.currentTarget.src = '/media/characters/nam-du-kich.jpg' }}
+                                    />
+
+                                    {/* Đốm hào quang ngay dưới bàn chân Anh Ba */}
+                                    <div className="absolute bottom-7 w-20 sm:w-24 h-3 bg-[#388cf1]/50 rounded-full blur-md z-0 group-hover:bg-[#388cf1]/80 transition-all" />
+
+                                    {/* Thẻ tên màu Xanh Cyan (Độc lập, sắc nét) */}
+                                    <div className="mt-2 px-3 py-1 rounded-lg bg-[#161824]/95 border border-[#388cf1]/60 shadow-lg flex items-center gap-1.5 z-20">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-[#388cf1] animate-ping" />
+                                        <span className="text-[10px] font-black text-[#388cf1] tracking-wide">
+                                            ANH BA CHIẾN SĨ
+                                        </span>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+
+                    </div>
+                </section>
+
+                {/* --- BỘ LỌC PHÂN KHU DI TÍCH --- */}
+                <section className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#161824] p-4 rounded-2xl border border-white/10 shadow-md">
+                    <div className="flex items-center gap-2 text-xs font-bold text-gray-300">
+                        <MaterialIcon name="filter_list" className="text-base text-[#fe951c]" />
+                        <span>Phân khu điểm chạm:</span>
+                    </div>
+
+                    <div className="flex overflow-x-auto gap-2 pb-1 sm:pb-0 custom-scrollbar">
+                        {ZONE_BUTTONS.map((btn) => (
+                            <button
+                                key={btn.id}
+                                onClick={() => setZoneFilter(btn.id)}
+                                className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+                                    zoneFilter === btn.id
+                                        ? 'bg-[#fe951c] text-black shadow-[0_0_15px_rgba(254,149,28,0.4)] scale-105'
+                                        : 'bg-white/5 hover:bg-white/10 text-gray-300'
+                                }`}
+                            >
+                                {btn.label}
+                            </button>
+                        ))}
+                    </div>
+                </section>
+
+                {/* --- DANH SÁCH HOTSPOTS CỦ CHI --- */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredHotspots.map((item) => (
+                        <article
+                            key={item.id}
+                            className="bg-[#161824] hover:bg-[#1a1d2c] border border-white/10 hover:border-[#fe951c]/60 rounded-3xl overflow-hidden shadow-xl transition-all duration-300 flex flex-col justify-between group"
+                        >
+                            <div>
+                                <div className="h-48 relative overflow-hidden bg-black">
+                                    <img src={item.image} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-[#161824] via-transparent to-transparent" />
+                                    <span className="absolute top-3 right-3 px-3 py-1 rounded-full bg-black/70 backdrop-blur-md border border-white/15 text-xs font-black text-emerald-400 shadow-md">
+                                        +{item.xp} XP
+                                    </span>
+                                </div>
+
+                                <div className="p-6 space-y-2.5">
+                                    <h3 className="text-lg font-black text-white group-hover:text-[#fdb438] transition-colors leading-snug">
+                                        {item.name}
+                                    </h3>
+                                    <p className="text-xs text-gray-300 leading-relaxed font-medium line-clamp-3">
+                                        {item.desc}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* CÁC NÚT THAO TÁC CÔNG NGHỆ CHUẨN TRÊN MỖI HOTSPOT */}
+                            <div className="p-6 pt-0 flex flex-wrap gap-2">
+                                <button
+                                    onClick={() => navigate(`/tour/360/${CU_CHI_LOCATION_ID}`)}
+                                    className="flex-1 px-3 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold text-gray-200 hover:text-white transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                                >
+                                    <MaterialIcon name="360" className="text-sm text-[#fdb438]" />
+                                    <span>360°</span>
+                                </button>
+
+                                <button
+                                    onClick={() => navigate(`/time-portal/${CU_CHI_LOCATION_ID}`)}
+                                    className="flex-1 px-3 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold text-gray-200 hover:text-white transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                                >
+                                    <MaterialIcon name="compare" className="text-sm text-[#388cf1]" />
+                                    <span>Time Portal</span>
+                                </button>
+
+                                <button
+                                    onClick={() => navigate('/chat')}
+                                    className="flex-1 px-3 py-2.5 rounded-xl bg-gradient-to-r from-[#fe951c]/20 to-[#fdb438]/20 border border-[#fe951c]/40 hover:border-[#fe951c] text-xs font-bold text-[#fdb438] transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+                                >
+                                    <MaterialIcon name="forum" className="text-sm" />
+                                    <span>Hỏi AI</span>
+                                </button>
+                            </div>
+                        </article>
+                    ))}
+                </div>
+
+            </main>
+        </AppLayout>
+    )
 }

@@ -373,7 +373,7 @@ export function CuChiTourLeafletMap({
       <div className="absolute right-4 bottom-4 flex flex-col items-end gap-3 z-[500] pointer-events-auto">
         <div className="flex flex-col gap-1.5 rounded-xl border border-outline-variant/60 bg-surface-container/92 backdrop-blur-md px-3 py-2.5 shadow-lg min-w-[168px]">
           <p className="text-[10px] uppercase tracking-wider text-on-surface-variant font-label-sm mb-0.5">
-            Khu Bến Dước
+            Khu Bến Dược
           </p>
           <div className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full shrink-0 ring-2 ring-white/40 bg-[#dc2626]" />
@@ -435,7 +435,7 @@ export function CuChiTourLeafletMap({
         </span>
         <div className="min-w-0">
           <span className="font-title-md text-on-surface text-sm block truncate">
-            Bản đồ Địa đạo Củ Chi — Bến Dước
+            Bản đồ Địa đạo Củ Chi — Bến Dược
           </span>
           <span className="text-[10px] text-on-surface-variant">
             {markers.length} điểm 360° • Vệ tinh Esri / OpenTopoMap

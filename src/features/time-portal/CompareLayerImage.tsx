@@ -1,3 +1,4 @@
+// src/features/time-portal/CompareLayerImage.tsx
 import { useEffect, useState } from 'react'
 import { images } from '../../assets/images'
 

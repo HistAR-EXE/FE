@@ -1,383 +1,400 @@
 // src/pages/Tour360Page.tsx
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-
 import { useParams, useSearchParams } from 'react-router-dom'
-
 import { AppLayout } from '../components/layout/AppLayout'
-
 import { VirtualTourViewer } from '../components/panorama/VirtualTourViewer'
-
 import { CuChiTourLeafletMap } from '../components/panorama/CuChiTourLeafletMap'
-
 import { CuChiIllustratedMap } from '../components/panorama/CuChiIllustratedMap'
-
 import { Tour360Hud } from '../components/panorama/Tour360Hud'
-
 import { MaterialIcon } from '../components/ui/MaterialIcon'
-
 import { panoramaApi, type Hotspot, type Panorama } from '../features/panorama/api'
-
 import { recordDiscoveryEngagement, preloadDiscoveryBindings } from '../features/gamification/discoveryRouting'
 import { showDiscoveryRecordError } from '../features/gamification/discoveryEngagementToast'
 import { notifyEngagementOutcome } from '../features/gamification/handleEngagement'
 import { analyticsApi } from '../features/analytics/api'
 import { useUserProgress } from '../shared/context/UserProgressProvider'
-
 import { useAuth } from '../shared/auth/useAuth'
-
 import { ApiError } from '../shared/api/contracts'
-
 import { useToast } from '../shared/ui/toast/useToast'
-
 import { appEnv } from '../shared/config/env'
 import { CU_CHI_LOCATION_ID } from '../shared/config/constants'
 import { useVisitSessionForLocation, useVisitSession } from '../features/visit/VisitSessionProvider'
 
-const CU_CHI_ENTRANCE_ID = '22222222-2222-2222-2222-222222222222'
+// ĐÃ SỬA THÀNH ĐIỂM SỐ 1 (Bãi gửi xe gắn máy số 1 / Cổng vào)
+const CU_CHI_ENTRANCE_ID = '22222222-2222-2222-2222-222222222221'
 
 type TourViewMode = 'illustrated' | 'map' | 'panorama'
 
 export function Tour360Page() {
-  const { locationId } = useParams<{ locationId?: string }>()
-  const [searchParams] = useSearchParams()
-  const panoramaParam = searchParams.get('panorama')
-  const { isAuthenticated, user } = useAuth()
-  const activeLocationId = locationId ?? CU_CHI_LOCATION_ID
-  const isCuChi = activeLocationId === CU_CHI_LOCATION_ID
-  useVisitSessionForLocation(activeLocationId, isAuthenticated)
-  const { getSessionId } = useVisitSession()
-  const visitSessionId = getSessionId(activeLocationId)
+    const { locationId } = useParams<{ locationId?: string }>()
+    const [searchParams] = useSearchParams()
+    const panoramaParam = searchParams.get('panorama')
+    const { isAuthenticated, user } = useAuth()
+    const activeLocationId = locationId ?? CU_CHI_LOCATION_ID
+    const isCuChi = activeLocationId === CU_CHI_LOCATION_ID
+    useVisitSessionForLocation(activeLocationId, isAuthenticated)
+    const { getSessionId } = useVisitSession()
+    const visitSessionId = getSessionId(activeLocationId)
 
-  const [panoramas, setPanoramas] = useState<Panorama[]>([])
-  const [hotspotsByPanorama, setHotspotsByPanorama] = useState<Record<string, Hotspot[]>>({})
-  const [activePanoramaId, setActivePanoramaId] = useState<string | null>(panoramaParam)
-  const [viewMode, setViewMode] = useState<TourViewMode>(
-    isCuChi && !panoramaParam ? 'illustrated' : 'panorama',
-  )
-  const [infoModal, setInfoModal] = useState<Hotspot | null>(null)
-  const [menuOpen, setMenuOpen] = useState(false)
-  const [immersive, setImmersive] = useState(false)
-  const [layoutRevision, setLayoutRevision] = useState(0)
-  const [loading, setLoading] = useState(true)
-  const { showToast } = useToast()
-  const { applyEngagement } = useUserProgress()
+    const [panoramas, setPanoramas] = useState<Panorama[]>([])
+    const [hotspotsByPanorama, setHotspotsByPanorama] = useState<Record<string, Hotspot[]>>({})
+    const [activePanoramaId, setActivePanoramaId] = useState<string | null>(panoramaParam)
+    const [viewMode, setViewMode] = useState<TourViewMode>(
+        isCuChi && !panoramaParam ? 'illustrated' : 'panorama',
+    )
+    const [infoModal, setInfoModal] = useState<Hotspot | null>(null)
+    const [menuOpen, setMenuOpen] = useState(false)
+    const [immersive, setImmersive] = useState(false)
+    const [layoutRevision, setLayoutRevision] = useState(0)
+    const [loading, setLoading] = useState(true)
+    const { showToast } = useToast()
+    const { applyEngagement } = useUserProgress()
 
-  const recordedScenes = useRef(new Set<string>())
-  const dwellTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
-  const hotspotDwellTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
+    const recordedScenes = useRef(new Set<string>())
+    const dwellTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
+    const hotspotDwellTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
 
-  const recordScene = useCallback(
-    (panoramaId: string) => {
-      if (!isAuthenticated || recordedScenes.current.has(panoramaId)) return
-      recordedScenes.current.add(panoramaId)
-      void recordDiscoveryEngagement({
-        recordKey: `scene:${panoramaId}`,
-        locationId: locationId ?? CU_CHI_LOCATION_ID,
-        source: 'tour_panorama',
-        onSuccess: (response) => {
-          notifyEngagementOutcome(response, showToast, applyEngagement, {
-            locationId: locationId ?? CU_CHI_LOCATION_ID,
-            visitSessionId,
-          })
-          void analyticsApi.recordEvent({
-            locationId: locationId ?? CU_CHI_LOCATION_ID,
-            visitSessionId,
-            eventType: 'TOUR_SCENE_VIEWED',
-            eventKey: `scene:${panoramaId}`,
-            source: 'tour_panorama',
-          })
-        },
-        onError: () => showDiscoveryRecordError(showToast, { role: user?.role }),
-      })
-    },
-    [isAuthenticated, locationId, showToast, applyEngagement, user?.role],
-  )
-
-  const onPanoramaEnter = useCallback(
-    (panoramaId: string) => {
-      setActivePanoramaId(panoramaId)
-      const existing = dwellTimers.current.get(panoramaId)
-      if (existing) clearTimeout(existing)
-      const dwellMs = appEnv.discoveryDwellMs
-      if (dwellMs > 0) {
-        const timer = setTimeout(() => {
-          dwellTimers.current.delete(panoramaId)
-          recordScene(panoramaId)
-        }, dwellMs)
-        dwellTimers.current.set(panoramaId, timer)
-      } else {
-        recordScene(panoramaId)
-      }
-    },
-    [recordScene],
-  )
-
-  useEffect(() => {
-    if (!locationId || !isAuthenticated) return
-    void preloadDiscoveryBindings(locationId)
-  }, [locationId, isAuthenticated])
-
-  useEffect(() => {
-    if (!locationId) return
-
-    const run = async () => {
-      try {
-        setLoading(true)
-        const list = await panoramaApi.byLocation(locationId)
-        let merged = list
-        if (panoramaParam && !list.some((p) => p.id === panoramaParam)) {
-          try {
-            const single = await panoramaApi.getById(panoramaParam)
-            merged = [...list, single]
-          } catch {
-            // panorama id not in location list — deep-link fallback failed
-          }
-        }
-        setPanoramas(merged)
-
-        const hotspotEntries = await Promise.all(
-          merged.map(async (panorama) => {
-            const hotspots = await panoramaApi.hotspotsByPanorama(panorama.id)
-            return [panorama.id, hotspots] as const
-          }),
-        )
-        setHotspotsByPanorama(Object.fromEntries(hotspotEntries))
-
-        const preferred =
-          panoramaParam && merged.some((p) => p.id === panoramaParam)
-            ? panoramaParam
-            : (merged.find((p) => p.id === CU_CHI_ENTRANCE_ID)?.id ?? merged[0]?.id ?? null)
-        setActivePanoramaId(preferred)
-      } catch (e) {
-        showToast({
-          message: e instanceof ApiError ? e.message : 'Không tải được dữ liệu tour 360.',
-          type: 'error',
-        })
-        setPanoramas([])
-        setHotspotsByPanorama({})
-        setActivePanoramaId(null)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    run()
-  }, [locationId, panoramaParam, showToast])
-
-  const onHotspotSelect = useCallback(
-    (hotspot: Hotspot) => {
-      if (hotspot.type === 'info' && (hotspot.title || hotspot.description)) {
-        setInfoModal(hotspot)
-        if (!isAuthenticated || !hotspot.unlockKey) return
-
-        const recordKey = hotspot.unlockKey
-        const existing = hotspotDwellTimers.current.get(recordKey)
-        if (existing) clearTimeout(existing)
-
-        const recordHotspot = () => {
-          hotspotDwellTimers.current.delete(recordKey)
-          void recordDiscoveryEngagement({
-            recordKey,
-            locationId: locationId ?? CU_CHI_LOCATION_ID,
-            source: 'hotspot_info',
-            onSuccess: (response) =>
-              notifyEngagementOutcome(response, showToast, applyEngagement, {
+    const recordScene = useCallback(
+        (panoramaId: string) => {
+            if (!isAuthenticated || recordedScenes.current.has(panoramaId)) return
+            recordedScenes.current.add(panoramaId)
+            void recordDiscoveryEngagement({
+                recordKey: `scene:${panoramaId}`,
                 locationId: locationId ?? CU_CHI_LOCATION_ID,
-                visitSessionId,
-              }),
-            onError: () => showDiscoveryRecordError(showToast, { role: user?.role }),
-          })
+                source: 'tour_panorama',
+                onSuccess: (response) => {
+                    notifyEngagementOutcome(response, showToast, applyEngagement, {
+                        locationId: locationId ?? CU_CHI_LOCATION_ID,
+                        visitSessionId,
+                    })
+                    void analyticsApi.recordEvent({
+                        locationId: locationId ?? CU_CHI_LOCATION_ID,
+                        visitSessionId,
+                        eventType: 'TOUR_SCENE_VIEWED',
+                        eventKey: `scene:${panoramaId}`,
+                        source: 'tour_panorama',
+                    })
+                },
+                onError: () => showDiscoveryRecordError(showToast, { role: user?.role }),
+            })
+        },
+        [isAuthenticated, locationId, showToast, applyEngagement, user?.role, visitSessionId],
+    )
+
+    const onPanoramaEnter = useCallback(
+        (panoramaId: string) => {
+            setActivePanoramaId(panoramaId)
+            const existing = dwellTimers.current.get(panoramaId)
+            if (existing) clearTimeout(existing)
+            const dwellMs = appEnv.discoveryDwellMs
+            if (dwellMs > 0) {
+                const timer = setTimeout(() => {
+                    dwellTimers.current.delete(panoramaId)
+                    recordScene(panoramaId)
+                }, dwellMs)
+                dwellTimers.current.set(panoramaId, timer)
+            } else {
+                recordScene(panoramaId)
+            }
+        },
+        [recordScene],
+    )
+
+    useEffect(() => {
+        if (!locationId || !isAuthenticated) return
+        void preloadDiscoveryBindings(locationId)
+    }, [locationId, isAuthenticated])
+
+    useEffect(() => {
+        if (!locationId) return
+
+        const run = async () => {
+            try {
+                setLoading(true)
+                const list = await panoramaApi.byLocation(locationId)
+                let merged = list
+                if (panoramaParam && !list.some((p) => p.id === panoramaParam)) {
+                    try {
+                        const single = await panoramaApi.getById(panoramaParam)
+                        merged = [...list, single]
+                    } catch {
+                        // ignore fallback
+                    }
+                }
+                setPanoramas(merged)
+
+                const hotspotEntries = await Promise.all(
+                    merged.map(async (panorama) => {
+                        const hotspots = await panoramaApi.hotspotsByPanorama(panorama.id)
+                        return [panorama.id, hotspots] as const
+                    }),
+                )
+                setHotspotsByPanorama(Object.fromEntries(hotspotEntries))
+
+                const preferred =
+                    panoramaParam && merged.some((p) => p.id === panoramaParam)
+                        ? panoramaParam
+                        : (merged.find((p) => p.id === CU_CHI_ENTRANCE_ID)?.id ?? merged[0]?.id ?? null)
+                setActivePanoramaId(preferred)
+            } catch (e) {
+                showToast({
+                    message: e instanceof ApiError ? e.message : 'Không tải được dữ liệu tour 360.',
+                    type: 'error',
+                })
+                setPanoramas([])
+                setHotspotsByPanorama({})
+                setActivePanoramaId(null)
+            } finally {
+                setLoading(false)
+            }
         }
 
-        const dwellMs = appEnv.hotspotDwellMs
-        if (dwellMs > 0) {
-          const timer = setTimeout(recordHotspot, dwellMs)
-          hotspotDwellTimers.current.set(recordKey, timer)
-        } else {
-          recordHotspot()
+        run()
+    }, [locationId, panoramaParam, showToast])
+
+    const onHotspotSelect = useCallback(
+        (hotspot: Hotspot) => {
+            if (hotspot.type === 'info' && (hotspot.title || hotspot.description)) {
+                setInfoModal(hotspot)
+                if (!isAuthenticated || !hotspot.unlockKey) return
+
+                const recordKey = hotspot.unlockKey
+                const existing = hotspotDwellTimers.current.get(recordKey)
+                if (existing) clearTimeout(existing)
+
+                const recordHotspot = () => {
+                    hotspotDwellTimers.current.delete(recordKey)
+                    void recordDiscoveryEngagement({
+                        recordKey,
+                        locationId: locationId ?? CU_CHI_LOCATION_ID,
+                        source: 'hotspot_info',
+                        onSuccess: (response) =>
+                            notifyEngagementOutcome(response, showToast, applyEngagement, {
+                                locationId: locationId ?? CU_CHI_LOCATION_ID,
+                                visitSessionId,
+                            }),
+                        onError: () => showDiscoveryRecordError(showToast, { role: user?.role }),
+                    })
+                }
+
+                const dwellMs = appEnv.hotspotDwellMs
+                if (dwellMs > 0) {
+                    const timer = setTimeout(recordHotspot, dwellMs)
+                    hotspotDwellTimers.current.set(recordKey, timer)
+                } else {
+                    recordHotspot()
+                }
+            }
+        },
+        [isAuthenticated, locationId, showToast, applyEngagement, visitSessionId, user?.role],
+    )
+
+    const closeInfoModal = useCallback(() => {
+        setInfoModal(null)
+        hotspotDwellTimers.current.forEach((timer) => clearTimeout(timer))
+        hotspotDwellTimers.current.clear()
+    }, [])
+
+    const onLoadError = useCallback(
+        (message: string) => {
+            showToast({ message, type: 'error' })
+        },
+        [showToast],
+    )
+
+    const activePanorama = useMemo(
+        () => panoramas.find((p) => p.id === activePanoramaId) ?? panoramas[0],
+        [panoramas, activePanoramaId],
+    )
+
+    const activeInfoHotspots = useMemo(() => {
+        if (!activePanorama) return []
+        return (hotspotsByPanorama[activePanorama.id] ?? []).filter((h) => h.type === 'info')
+    }, [activePanorama, hotspotsByPanorama])
+
+    const handleSelectPanorama = useCallback((id: string) => {
+        setActivePanoramaId(id)
+        setViewMode('panorama')
+        setMenuOpen(false)
+    }, [])
+
+    const handleOpenMap = useCallback(() => {
+        setViewMode(isCuChi ? 'illustrated' : 'map')
+        setMenuOpen(false)
+    }, [isCuChi])
+
+    useEffect(() => {
+        if (viewMode === 'panorama') {
+            setLayoutRevision((n) => n + 1)
         }
-      }
-    },
-    [isAuthenticated, locationId, showToast, applyEngagement, visitSessionId, user?.role],
-  )
+    }, [viewMode])
 
-  const closeInfoModal = useCallback(() => {
-    setInfoModal(null)
-    hotspotDwellTimers.current.forEach((timer) => clearTimeout(timer))
-    hotspotDwellTimers.current.clear()
-  }, [])
+    const isMapMode = viewMode === 'illustrated' || viewMode === 'map'
 
-  const onLoadError = useCallback(
-    (message: string) => {
-      showToast({ message, type: 'error' })
-    },
-    [showToast],
-  )
+    const handleToggleImmersive = useCallback(() => {
+        setImmersive((v) => !v)
+        setLayoutRevision((n) => n + 1)
+    }, [])
 
-  const activePanorama = useMemo(
-    () => panoramas.find((p) => p.id === activePanoramaId) ?? panoramas[0],
-    [panoramas, activePanoramaId],
-  )
+    return (
+        <AppLayout
+            activeBorder="left"
+            hideSideNav={immersive}
+            hideMobileChrome={immersive}
+            mobileBackTo={locationId ? `/explore/${locationId}` : '/explore'}
+            mobileTitle="Tour 360°"
+            className={immersive ? 'tour360-layout tour360-layout--immersive' : 'tour360-layout'}
+        >
+            <main className={`tour360-main bg-[#0f1015] ${immersive ? '' : 'tour360-main--with-nav'}`}>
 
-  const activeInfoHotspots = useMemo(() => {
-    if (!activePanorama) return []
-    return (hotspotsByPanorama[activePanorama.id] ?? []).filter((h) => h.type === 'info')
-  }, [activePanorama, hotspotsByPanorama])
+                {!immersive && !loading && panoramas.length > 0 && isCuChi && (
+                    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 bg-[#161824]/95 border border-white/15 p-1.5 rounded-full shadow-[0_10px_30px_rgba(0,0,0,0.8)] backdrop-blur-2xl">
+                        <button
+                            type="button"
+                            onClick={() => setViewMode('illustrated')}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-black transition-all cursor-pointer ${
+                                viewMode === 'illustrated'
+                                    ? 'bg-gradient-to-r from-[#fe951c] to-[#fdb438] text-black shadow-md scale-105'
+                                    : 'text-gray-300 hover:text-white hover:bg-white/5'
+                            }`}
+                        >
+                            <MaterialIcon name="map" className="text-base" />
+                            <span>Sơ Đồ Bản Vẽ</span>
+                        </button>
 
-  const handleSelectPanorama = useCallback((id: string) => {
-    setActivePanoramaId(id)
-    setViewMode('panorama')
-    setMenuOpen(false)
-  }, [])
+                        <button
+                            type="button"
+                            onClick={() => setViewMode('map')}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-black transition-all cursor-pointer ${
+                                viewMode === 'map'
+                                    ? 'bg-gradient-to-r from-[#388cf1] to-cyan-400 text-white shadow-md scale-105'
+                                    : 'text-gray-300 hover:text-white hover:bg-white/5'
+                            }`}
+                        >
+                            <MaterialIcon name="satellite_alt" className="text-base" />
+                            <span>Bản Đồ Vệ Tinh</span>
+                        </button>
 
-  const handleOpenMap = useCallback(() => {
-    setViewMode(isCuChi ? 'illustrated' : 'map')
-    setMenuOpen(false)
-  }, [isCuChi])
+                        {viewMode !== 'panorama' && activePanorama && (
+                            <button
+                                type="button"
+                                onClick={() => setViewMode('panorama')}
+                                className="flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500 hover:bg-emerald-400 text-black font-black text-xs transition-all shadow-[0_0_15px_rgba(16,185,129,0.5)] cursor-pointer ml-1 animate-pulse"
+                            >
+                                <MaterialIcon name="360" className="text-base animate-spin" />
+                                <span>Vào Khung Gian 360°</span>
+                            </button>
+                        )}
+                    </div>
+                )}
 
-  useEffect(() => {
-    if (viewMode === 'panorama') {
-      setLayoutRevision((n) => n + 1)
-    }
-  }, [viewMode])
+                {loading && (
+                    <div className="tour360-loading">
+                        <div className="tour360-loading__pulse" />
+                        <p className="text-sm font-bold text-gray-400 mt-3 animate-pulse">Đang số hóa không gian 360° độ phân giải cao...</p>
+                    </div>
+                )}
 
-  const isMapMode = viewMode === 'illustrated' || viewMode === 'map'
+                {!loading && panoramas.length === 0 && (
+                    <p className="tour360-empty text-gray-400">Chưa có dữ liệu tham quan 360° cho địa điểm này.</p>
+                )}
 
-  const handleToggleImmersive = useCallback(() => {
-    setImmersive((v) => !v)
-    setLayoutRevision((n) => n + 1)
-  }, [])
+                {!loading && panoramas.length > 0 && locationId && (
+                    <>
+                        {isCuChi && viewMode === 'illustrated' && (
+                            <div className="tour360-viewport">
+                                <CuChiIllustratedMap
+                                    panoramas={panoramas}
+                                    activePanoramaId={activePanoramaId}
+                                    onSelectPanorama={handleSelectPanorama}
+                                />
+                            </div>
+                        )}
 
-  return (
-    <AppLayout
-      activeBorder="left"
-      hideSideNav={immersive}
-      hideMobileChrome={immersive}
-      mobileBackTo={locationId ? `/explore/${locationId}` : '/explore'}
-      mobileTitle="Tour 360°"
-      className={immersive ? 'tour360-layout tour360-layout--immersive' : 'tour360-layout'}
-    >
-      <main className={`tour360-main ${immersive ? '' : 'tour360-main--with-nav'}`}>
-        {loading && (
-          <div className="tour360-loading">
-            <div className="tour360-loading__pulse" />
-            <p>Đang tải không gian 360°...</p>
-          </div>
-        )}
+                        {isCuChi && viewMode === 'map' && (
+                            <div className="tour360-viewport">
+                                <CuChiTourLeafletMap
+                                    panoramas={panoramas}
+                                    activePanoramaId={activePanoramaId}
+                                    onSelectPanorama={handleSelectPanorama}
+                                    layoutRevision={layoutRevision}
+                                />
+                            </div>
+                        )}
 
-        {!loading && panoramas.length === 0 && (
-          <p className="tour360-empty">Chưa có dữ liệu tham quan 360° cho địa điểm này.</p>
-        )}
+                        <div
+                            className={`tour360-viewport ${isMapMode && isCuChi ? 'tour360-viewport--hidden' : ''}`}
+                            aria-hidden={isMapMode && isCuChi}
+                        >
+                            <VirtualTourViewer
+                                panoramas={panoramas}
+                                hotspotsByPanorama={hotspotsByPanorama}
+                                initialPanoramaId={panoramaParam ?? activePanoramaId}
+                                activePanoramaId={activePanoramaId}
+                                layoutRevision={layoutRevision}
+                                onHotspotSelect={onHotspotSelect}
+                                onPanoramaEnter={onPanoramaEnter}
+                                onLoadError={onLoadError}
+                            />
+                        </div>
 
-        {!loading && panoramas.length > 0 && locationId && (
-          <>
-            {isCuChi && viewMode === 'illustrated' && (
-              <div className="tour360-viewport">
-                <CuChiIllustratedMap
-                  panoramas={panoramas}
-                  activePanoramaId={activePanoramaId}
-                  onSelectPanorama={handleSelectPanorama}
-                />
-              </div>
-            )}
+                        <Tour360Hud
+                            locationId={locationId}
+                            panoramas={panoramas}
+                            activePanorama={activePanorama}
+                            activePanoramaId={activePanoramaId}
+                            activeInfoHotspots={activeInfoHotspots}
+                            viewMode={viewMode === 'panorama' ? 'panorama' : 'map'}
+                            immersive={immersive}
+                            onSelectPanorama={handleSelectPanorama}
+                            onInfoHotspot={onHotspotSelect}
+                            onOpenMap={handleOpenMap}
+                            onToggleImmersive={handleToggleImmersive}
+                            menuOpen={menuOpen}
+                            onToggleMenu={() => setMenuOpen((v) => !v)}
+                        />
 
-            {isCuChi && viewMode === 'map' && (
-              <div className="tour360-viewport">
-                <CuChiTourLeafletMap
-                  panoramas={panoramas}
-                  activePanoramaId={activePanoramaId}
-                  onSelectPanorama={handleSelectPanorama}
-                  layoutRevision={layoutRevision}
-                />
-              </div>
-            )}
-
-            {isCuChi && isMapMode && (
-              <div className="tour360-map-switch" role="group" aria-label="Kiểu bản đồ">
-                <button
-                  type="button"
-                  className={`tour360-map-switch__btn ${viewMode === 'illustrated' ? 'is-active' : ''}`}
-                  onClick={() => setViewMode('illustrated')}
-                >
-                  <MaterialIcon name="map" className="text-base" />
-                  Sơ đồ
-                </button>
-                <button
-                  type="button"
-                  className={`tour360-map-switch__btn ${viewMode === 'map' ? 'is-active' : ''}`}
-                  onClick={() => setViewMode('map')}
-                >
-                  <MaterialIcon name="satellite_alt" className="text-base" />
-                  Vệ tinh
-                </button>
-              </div>
-            )}
-
-            <div
-              className={`tour360-viewport ${isMapMode && isCuChi ? 'tour360-viewport--hidden' : ''}`}
-              aria-hidden={isMapMode && isCuChi}
-            >
-              <VirtualTourViewer
-                panoramas={panoramas}
-                hotspotsByPanorama={hotspotsByPanorama}
-                initialPanoramaId={panoramaParam ?? activePanoramaId}
-                activePanoramaId={activePanoramaId}
-                layoutRevision={layoutRevision}
-                onHotspotSelect={onHotspotSelect}
-                onPanoramaEnter={onPanoramaEnter}
-                onLoadError={onLoadError}
-              />
-            </div>
-
-            <Tour360Hud
-              locationId={locationId}
-              panoramas={panoramas}
-              activePanorama={activePanorama}
-              activePanoramaId={activePanoramaId}
-              activeInfoHotspots={activeInfoHotspots}
-              viewMode={viewMode === 'panorama' ? 'panorama' : 'map'}
-              immersive={immersive}
-              onSelectPanorama={handleSelectPanorama}
-              onInfoHotspot={onHotspotSelect}
-              onOpenMap={handleOpenMap}
-              onToggleImmersive={handleToggleImmersive}
-              menuOpen={menuOpen}
-              onToggleMenu={() => setMenuOpen((v) => !v)}
-            />
-
-            {infoModal && (
-              <div
-                className="fixed inset-0 z-[60] flex items-end md:items-center justify-center p-md bg-black/50"
-                onClick={closeInfoModal}
-              >
-                <div
-                  className="glass-panel w-full max-w-md rounded-xl border border-outline-variant p-md pointer-events-auto"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {infoModal.imageUrl && (
-                    <img
-                      src={infoModal.imageUrl}
-                      alt={infoModal.title ?? infoModal.label}
-                      className="w-full h-40 object-cover rounded-lg mb-md"
-                    />
-                  )}
-                  <h3 className="font-title-md text-primary">{infoModal.title ?? infoModal.label}</h3>
-                  <p className="text-sm text-on-surface-variant mt-sm">
-                    {infoModal.description ?? 'Thông tin điểm tham quan.'}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={closeInfoModal}
-                    className="mt-md px-4 py-2 rounded-full border border-outline-variant text-on-surface-variant"
-                  >
-                    Đóng
-                  </button>
-                </div>
-              </div>
-            )}
-          </>
-        )}
-      </main>
-    </AppLayout>
-  )
+                        {infoModal && (
+                            <div
+                                className="fixed inset-0 z-[60] flex items-end md:items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-[fadeIn_0.2s_ease-out]"
+                                onClick={closeInfoModal}
+                            >
+                                <div
+                                    className="w-full max-w-md rounded-3xl border border-white/20 bg-[#161824] p-6 shadow-[0_25px_60px_rgba(0,0,0,0.9)] pointer-events-auto text-left space-y-4"
+                                    onClick={(e) => e.stopPropagation()}
+                                >
+                                    {infoModal.imageUrl && (
+                                        <div className="h-44 w-full rounded-2xl overflow-hidden relative">
+                                            <img
+                                                src={infoModal.imageUrl}
+                                                alt={infoModal.title ?? infoModal.label}
+                                                className="w-full h-full object-cover"
+                                            />
+                                            <div className="absolute inset-0 bg-gradient-to-t from-[#161824] via-transparent to-transparent" />
+                                        </div>
+                                    )}
+                                    <div>
+                    <span className="text-[10px] font-black text-[#fe951c] uppercase tracking-widest">
+                      ✦ CHI TIẾT ĐIỂM CHẠM 360°
+                    </span>
+                                        <h3 className="text-xl font-black text-white mt-1">{infoModal.title ?? infoModal.label}</h3>
+                                    </div>
+                                    <p className="text-xs sm:text-sm text-gray-300 leading-relaxed font-medium">
+                                        {infoModal.description ?? 'Thông tin chi tiết về hiện vật và kiến trúc tại vị trí này.'}
+                                    </p>
+                                    <button
+                                        type="button"
+                                        onClick={closeInfoModal}
+                                        className="w-full py-3 rounded-xl bg-gradient-to-r from-[#fe951c] to-[#fdb438] text-black font-black text-xs uppercase tracking-wider shadow-lg hover:scale-[1.02] transition-all cursor-pointer"
+                                    >
+                                        Đã Hiểu & Tiếp Tục Tham Quan
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </>
+                )}
+            </main>
+        </AppLayout>
+    )
 }

@@ -1,3 +1,4 @@
+// src/features/time-portal/TimePortalViewSwitch.tsx
 import { MaterialIcon } from '../../components/ui/MaterialIcon'
 
 type PortalViewMode = 'compare' | 'ar'

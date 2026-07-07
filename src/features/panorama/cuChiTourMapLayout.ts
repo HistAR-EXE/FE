@@ -120,8 +120,8 @@ export type CuChiLandmark = {
 
 /** Điểm tham quan trên ảnh Google Maps (không phải điểm 360°) */
 export const CU_CHI_LANDMARKS: CuChiLandmark[] = [
-  { lat: 11.141, lng: 106.4642, label: 'Nhà hàng Bến Dước', color: '#f59e0b', kind: 'site' },
-  { lat: 11.1455, lng: 106.464, label: 'Địa đạo Bến Dước (cổng Bắc)', color: '#8b5cf6', kind: 'site' },
+  { lat: 11.141, lng: 106.4642, label: 'Nhà hàng Bến Dược', color: '#f59e0b', kind: 'site' },
+  { lat: 11.1455, lng: 106.464, label: 'Địa đạo Bến Dược (cổng Bắc)', color: '#8b5cf6', kind: 'site' },
   { lat: 11.143, lng: 106.462, label: 'Khu di tích trung tâm', color: '#ef4444', kind: 'site' },
   { lat: 11.1404, lng: 106.462, label: 'Bếp Hoàng Cầm / tham quan hầm', color: '#a855f7', kind: 'site' },
   { lat: 11.1447, lng: 106.4636, label: 'Khu tái hiện Vùng Giải Phóng', color: '#84cc16', kind: 'site' },
