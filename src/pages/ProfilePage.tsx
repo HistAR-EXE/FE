@@ -14,6 +14,9 @@ import { images } from '../assets/images'
 import { ProgressSummaryCard } from '../features/gamification/ProgressSummaryCard'
 import { normalizeHeritageName } from '../features/explore/vietnamMap'
 import { viralApi, type UserCreation } from '../features/viral/api'
+import { useAuth } from '../shared/auth/useAuth'
+import { hasFullGamificationAccess } from '../shared/access/contentAccess'
+import { UpgradePrompt } from '../components/monetization/UpgradePrompt'
 
 type ProfileTab = 'overview' | 'passport'
 
@@ -23,6 +26,8 @@ const PROFILE_TABS: { id: ProfileTab; label: string }[] = [
 ]
 
 export function ProfilePage() {
+  const { user } = useAuth()
+  const gamificationUnlocked = hasFullGamificationAccess(user)
   const [profile, setProfile] = useState<ProfileMe | null>(null)
   const [badges, setBadges] = useState<MyBadge[]>([])
   const [quests, setQuests] = useState<QuestProgress[]>([])
@@ -222,7 +227,20 @@ export function ProfilePage() {
 
             {activeTab === 'passport' && (
               <>
-        <section className="bg-surface-container border border-outline-variant rounded-xl p-lg">
+        {!gamificationUnlocked && (
+          <UpgradePrompt
+            title="Digital Passport — Premium"
+            message="Nâng cấp Premium để mở khóa Gamification toàn diện: Rankings, Badges hiếm và đóng dấu Hộ chiếu Di sản khi check-in AR tại di tích."
+          />
+        )}
+        <section className={`bg-surface-container border border-outline-variant rounded-xl p-lg ${!gamificationUnlocked ? 'relative overflow-hidden' : ''}`}>
+          {!gamificationUnlocked && (
+            <div className="absolute inset-0 z-10 bg-surface/70 backdrop-blur-sm flex items-center justify-center p-md">
+              <p className="text-sm text-on-surface-variant text-center max-w-sm">
+                Preview bị khóa — Premium mở đầy đủ Digital Passport & stamp AR.
+              </p>
+            </div>
+          )}
           <h2 className="font-title-md mb-sm inline-flex items-center gap-1">
             <MaterialIcon name="menu_book" className="text-primary" />
             Hộ chiếu Di sản

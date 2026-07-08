@@ -46,8 +46,8 @@ test.describe('E2E · Location unlock', () => {
       headers,
       data: {
         locationId: SEED.cuChiLocationId,
-        latitude: 11.143,
-        longitude: 106.461,
+        latitude: 11.141591,
+        longitude: 106.4615963,
         qrCode: `timelens:location:${SEED.cuChiLocationId}`,
       },
     })

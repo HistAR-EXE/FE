@@ -1,37 +1,59 @@
 // src/pages/LoginPage.tsx
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { AuthLayout } from '../components/layout/AuthLayout'
 import { useAuth } from '../shared/auth/useAuth'
-import { getAlreadyLoggedInRedirect, getPostLoginRedirect, isSafeRedirect } from '../shared/auth/types'
+import {
+  getPostLoginRedirect,
+  needsEmailVerification,
+  type AuthUser,
+} from '../shared/auth/types'
 import { ApiError } from '../shared/api/contracts'
 import { useToast } from '../shared/ui/toast/useToast'
 import { Footer } from '../components/layout/Footer'
 import { images } from '../assets/images'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { Button } from '../components/ui/Button'
+import { signInWithPopup } from 'firebase/auth'
+import { firebaseAuth, firebaseEnabled, googleProvider } from '../shared/auth/firebase'
+import { popReturnTo, peekReturnTo, readReturnTo, resolveReturnTo, stashReturnTo } from '../shared/router/returnTo'
 
-export function LoginPage() {
+type LoginPageProps = {
+  defaultMode?: 'login' | 'register'
+}
+
+export function LoginPage({ defaultMode = 'login' }: LoginPageProps) {
     const navigate = useNavigate()
     const location = useLocation()
-    const { login, register, user } = useAuth()
+    const [searchParams] = useSearchParams()
+    const { login, register, loginWithGoogle } = useAuth()
 
-    // State quản lý chế độ và UX
-    const [mode, setMode] = useState<'login' | 'register'>('login')
+    const [mode, setMode] = useState<'login' | 'register'>(defaultMode)
     const [loading, setLoading] = useState(false)
     const [showPassword, setShowPassword] = useState(false)
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
     const { showToast } = useToast()
 
     const pendingFrom = useMemo(() => {
-        const from = (location.state as { from?: string } | null)?.from
-        return from && from.startsWith('/') && from !== '/mode-select' && isSafeRedirect(from) ? from : null
-    }, [location.state])
+        const legacyFrom = (location.state as { from?: string } | null)?.from
+        return resolveReturnTo(searchParams, legacyFrom)
+    }, [location.state, searchParams])
 
     useEffect(() => {
-        if (!user) return
-        navigate(getAlreadyLoggedInRedirect(user), { replace: true })
-    }, [user, navigate])
+        if (pendingFrom) {
+            stashReturnTo(pendingFrom)
+        }
+    }, [pendingFrom])
+
+    const navigateAfterAuth = (loggedInUser: AuthUser) => {
+        const returnTo = readReturnTo(searchParams) ?? pendingFrom ?? peekReturnTo() ?? popReturnTo()
+        if (needsEmailVerification(loggedInUser)) {
+            stashReturnTo(returnTo)
+            navigate('/verify-email/pending', { replace: true })
+            return
+        }
+        navigate(getPostLoginRedirect(loggedInUser, returnTo), { replace: true })
+    }
 
     const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault()
@@ -56,20 +78,53 @@ export function LoginPage() {
         try {
             setLoading(true)
             setFieldErrors({})
+            const returnTo = readReturnTo(searchParams) ?? pendingFrom
+            stashReturnTo(returnTo)
             const loggedInUser =
                 mode === 'login'
                     ? await login({ email, password })
                     : await register({ email, password, displayName })
-            const destination = getPostLoginRedirect(loggedInUser, pendingFrom)
-            navigate(destination, {
-                replace: true,
-                state: destination === '/mode-select' && pendingFrom ? { from: pendingFrom } : undefined,
-            })
+            navigateAfterAuth(loggedInUser)
+            if (mode === 'register') {
+                showToast({
+                    message: 'Kiểm tra email để kích hoạt tài khoản trước khi khám phá TimeLens.',
+                    type: 'info',
+                })
+            }
         } catch (e) {
             if (e instanceof ApiError && e.code === 'VALIDATION_ERROR' && e.fieldErrors) {
                 setFieldErrors(e.fieldErrors)
             }
             const message = e instanceof ApiError ? e.message : 'Xác thực không thành công. Vui lòng kiểm tra lại thông tin.'
+            showToast({ message, type: 'error' })
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const handleGoogleLogin = async () => {
+        if (!firebaseEnabled || !firebaseAuth) {
+            showToast({
+                message: 'Chưa cấu hình Firebase. Xem docs/FIREBASE_AUTH_SETUP.md để bật đăng nhập Google.',
+                type: 'info',
+            })
+            return
+        }
+        try {
+            setLoading(true)
+            const returnTo = readReturnTo(searchParams) ?? pendingFrom
+            stashReturnTo(returnTo)
+            const credential = await signInWithPopup(firebaseAuth, googleProvider)
+            const idToken = await credential.user.getIdToken()
+            const loggedInUser = await loginWithGoogle(idToken)
+            navigateAfterAuth({ ...loggedInUser, emailVerified: true, provider: 'google' })
+        } catch (e) {
+            const message =
+                e instanceof ApiError
+                    ? e.message
+                    : e instanceof Error
+                      ? e.message
+                      : 'Đăng nhập Google thất bại.'
             showToast({ message, type: 'error' })
         } finally {
             setLoading(false)
@@ -106,13 +161,9 @@ export function LoginPage() {
                             </div>
                         </Link>
 
-                        <Link
-                            to="/explore"
-                            className="text-xs sm:text-sm font-bold text-gray-300 hover:text-[#fdb438] transition-colors flex items-center gap-1.5"
-                        >
-                            <span>Khám phá không cần tài khoản</span>
-                            <MaterialIcon name="arrow_forward" className="text-base" />
-                        </Link>
+                        <div className="text-xs sm:text-sm font-bold text-gray-300">
+                            Đăng nhập để tiếp tục hành trình
+                        </div>
                     </div>
                 </header>
 
@@ -325,8 +376,9 @@ export function LoginPage() {
                             {/* Social Login Button */}
                             <button
                                 type="button"
-                                onClick={() => showToast({ message: 'Đăng nhập nhanh Google sẽ được mở ở phiên bản Production chính thức.', type: 'info' })}
-                                className="w-full h-11 bg-[#1b1e2c] hover:bg-white/10 border border-white/10 rounded-xl text-sm font-bold text-gray-200 hover:text-white transition-all flex items-center justify-center gap-3 cursor-pointer shadow-sm"
+                                disabled={loading}
+                                onClick={() => void handleGoogleLogin()}
+                                className="w-full h-11 bg-[#1b1e2c] hover:bg-white/10 border border-white/10 rounded-xl text-sm font-bold text-gray-200 hover:text-white transition-all flex items-center justify-center gap-3 cursor-pointer shadow-sm disabled:opacity-60"
                             >
                                 <svg className="w-4 h-4" viewBox="0 0 24 24">
                                     <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />

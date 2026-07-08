@@ -1,6 +1,7 @@
 // tests/global.setup.ts
 import { expect, test as setup } from '@playwright/test'
-import { BE_URL } from './helpers/constants'
+import { ADMIN_USER, BE_URL, DEMO_USER, TEACHER_USER } from './helpers/constants'
+import { login, verifyUserEmail } from './helpers/api'
 
 /**
  * Gate chạy trước mọi tầng: xác nhận BE Spring Boot đang sống ở :8080.
@@ -24,4 +25,13 @@ setup('backend health gate', async ({ request }) => {
         reachable,
         `Backend không phản hồi tại ${BE_URL}. Hãy chạy: cd BE && mvn spring-boot:run trước khi test.`,
     ).toBeTruthy()
+
+    for (const creds of [DEMO_USER, ADMIN_USER, TEACHER_USER]) {
+        try {
+            const session = await login(request, creds)
+            await verifyUserEmail(request, session.token)
+        } catch {
+            // Seed users may not exist in all environments
+        }
+    }
 })

@@ -1,10 +1,12 @@
 // // src/shared/router/AdminRoute.tsx
-import { Navigate, Outlet } from 'react-router-dom'
+import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
 import { isAdmin, isTeacher } from '../auth/types'
+import { buildLoginRedirect } from './returnTo'
 
 export function AdminRoute() {
   const { isAuthenticated, isLoading, user } = useAuth()
+  const location = useLocation()
 
   if (isLoading) {
     return (
@@ -15,7 +17,7 @@ export function AdminRoute() {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />
+    return <Navigate to={buildLoginRedirect(location.pathname, location.search)} replace />
   }
 
   if (!isAdmin(user)) {

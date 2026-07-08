@@ -20,10 +20,10 @@ test.describe('E2E · Chat sources', () => {
     await seedSession(page, s, { mode: 'online' })
     await page.goto(`/chat/${characterId}?locationId=${SEED.cuChiLocationId}`)
 
-    const input = page.locator('textarea, input[type="text"]').filter({ hasNot: page.locator('[type="search"]') }).last()
+    const input = page.getByPlaceholder(/Nhắn tin cho/i)
     await expect(input).toBeVisible({ timeout: 15_000 })
     await input.fill('Củ Chi là gì?')
-    await page.getByRole('button', { name: /gửi|send/i }).click()
+    await page.getByRole('button', { name: 'send', exact: true }).click()
 
     // Chờ reply assistant (có thể mất 30-60s với Ollama)
     await expect(page.locator('[data-role="assistant"], .chat-message-assistant, .text-on-surface').nth(1)).toBeVisible({

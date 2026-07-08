@@ -8,7 +8,7 @@ test.describe('UI · Quests nav online', () => {
     await seedSession(page, s, { mode: 'online' })
     await page.setViewportSize({ width: 1280, height: 800 })
     await page.goto('/explore')
-    const questsLink = page.locator('nav').getByRole('link', { name: 'Nhiệm vụ' })
+    const questsLink = page.getByRole('complementary').getByRole('link', { name: 'Nhiệm vụ' })
     await expect(questsLink.first()).toBeVisible({ timeout: 15_000 })
     await expect(questsLink.first()).not.toHaveClass(/opacity-50/)
   })

@@ -1,10 +1,12 @@
-import { useEffect, useState, type FormEvent } from 'react'
+﻿import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { SimpleTopNav } from '../components/layout/TopNav'
 import { groupApi, type GroupSummary } from '../features/group/api'
 import { Button } from '../components/ui/Button'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
+import { MultiplayerLockedModal } from '../components/monetization/MultiplayerLockedModal'
+import { getData, httpClient } from '../shared/api/httpClient'
 import { useToast } from '../shared/ui/toast/useToast'
 import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
 
@@ -15,18 +17,27 @@ export function GroupHubPage() {
   const [createName, setCreateName] = useState('')
   const [joinCode, setJoinCode] = useState('')
   const [loading, setLoading] = useState(false)
+  const [multiplayerAllowed, setMultiplayerAllowed] = useState<boolean | null>(null)
+  const [paywallOpen, setPaywallOpen] = useState(false)
 
   const reload = () => {
     groupApi.mine().then(setGroups).catch(() => setGroups([]))
   }
 
   useEffect(() => {
+    getData<boolean>(httpClient.get('/api/groups/multiplayer-access'))
+      .then(setMultiplayerAllowed)
+      .catch(() => setMultiplayerAllowed(false))
     reload()
   }, [])
 
   const onCreate = async (e: FormEvent) => {
     e.preventDefault()
     if (!createName.trim()) return
+    if (multiplayerAllowed === false) {
+      setPaywallOpen(true)
+      return
+    }
     try {
       setLoading(true)
       const created = await groupApi.create(createName.trim())
@@ -43,6 +54,10 @@ export function GroupHubPage() {
   const onJoin = async (e: FormEvent) => {
     e.preventDefault()
     if (!joinCode.trim()) return
+    if (multiplayerAllowed === false) {
+      setPaywallOpen(true)
+      return
+    }
     try {
       setLoading(true)
       await groupApi.join(joinCode.trim().toUpperCase())
@@ -62,7 +77,7 @@ export function GroupHubPage() {
         <div>
           <h1 className="font-display-md text-on-surface">Nhóm học tập</h1>
           <p className="text-sm text-on-surface-variant mt-1">
-            Tạo hoặc tham gia nhóm để cùng theo dõi tiến độ quest với bạn bè hoặc lớp học.
+            Tạo Team-based Quest Room để chia đội, vào bằng mã phòng và theo dõi tiến độ quest theo lớp học.
           </p>
         </div>
 
@@ -132,6 +147,7 @@ export function GroupHubPage() {
           ))}
         </section>
       </main>
+      <MultiplayerLockedModal open={paywallOpen} onClose={() => setPaywallOpen(false)} />
     </AppLayout>
   )
 }

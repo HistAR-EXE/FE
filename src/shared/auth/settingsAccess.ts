@@ -4,14 +4,14 @@ export type SettingsSection = 'profile' | 'classroom' | 'teacher' | 'premium' | 
 
 export function getSettingsSections(
   role: UserRole,
-  tier: UserTier,
-  _orgId: string | null,
+  _tier: UserTier,
+  orgId: string | null,
 ): SettingsSection[] {
   const sections: SettingsSection[] = ['profile']
 
   if (role === 'USER' || role === 'ORG_MEMBER') {
     sections.push('classroom')
-    if (tier !== 'PREMIUM') {
+    if (!orgId) {
       sections.push('premium')
     }
   }

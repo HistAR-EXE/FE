@@ -1,4 +1,5 @@
 //src/shared/auth/session.ts
+import { clearReturnTo } from '../router/returnTo'
 import {
   normalizeOrgSubscription,
   normalizeRole,
@@ -25,8 +26,11 @@ const ORG_ID_KEY = 'timelens_org_id'
 const ORG_SUBSCRIPTION_KEY = 'timelens_org_subscription'
 const TOKEN_ISSUED_AT_KEY = 'timelens_token_issued_at'
 
+const EMAIL_VERIFIED_KEY = 'timelens_email_verified'
+
 export const SESSION_CLEARED_EVENT = 'histar:session-cleared'
 export const SESSION_REFRESHED_EVENT = 'histar:session-refreshed'
+export const EMAIL_VERIFIED_EVENT = 'histar:email-verified'
 
 export type SessionData = {
   token: string
@@ -41,6 +45,7 @@ export type SessionData = {
   orgId?: string | null
   orgSubscription?: OrgSubscription
   avatarUrl?: string | null
+  emailVerified?: boolean
 }
 
 export function saveSession(data: SessionData) {
@@ -81,6 +86,16 @@ export function saveSession(data: SessionData) {
       localStorage.removeItem(AVATAR_URL_KEY)
     }
   }
+  if (typeof data.emailVerified === 'boolean') {
+    localStorage.setItem(EMAIL_VERIFIED_KEY, data.emailVerified ? '1' : '0')
+  }
+}
+
+export function markEmailVerifiedInStorage(): void {
+  localStorage.setItem(EMAIL_VERIFIED_KEY, '1')
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(EMAIL_VERIFIED_EVENT))
+  }
 }
 
 export function clearSession() {
@@ -97,6 +112,8 @@ export function clearSession() {
   localStorage.removeItem(ORG_ID_KEY)
   localStorage.removeItem(ORG_SUBSCRIPTION_KEY)
   localStorage.removeItem(AVATAR_URL_KEY)
+  localStorage.removeItem(EMAIL_VERIFIED_KEY)
+  clearReturnTo()
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent(SESSION_CLEARED_EVENT))
   }
@@ -114,6 +131,7 @@ export function getSessionMeta() {
   const role = localStorage.getItem(ROLE_KEY)
   const tier = localStorage.getItem(TIER_KEY)
   const orgSub = localStorage.getItem(ORG_SUBSCRIPTION_KEY)
+  const emailVerifiedRaw = localStorage.getItem(EMAIL_VERIFIED_KEY)
   return {
     userId: localStorage.getItem(USER_ID_KEY),
     displayName: localStorage.getItem(DISPLAY_NAME_KEY),
@@ -123,6 +141,7 @@ export function getSessionMeta() {
     orgId: localStorage.getItem(ORG_ID_KEY),
     orgSubscription: orgSub ? normalizeOrgSubscription(orgSub) : null,
     avatarUrl: localStorage.getItem(AVATAR_URL_KEY),
+    emailVerified: emailVerifiedRaw === '1' ? true : emailVerifiedRaw === '0' ? false : undefined,
   }
 }
 
@@ -150,5 +169,6 @@ export function readStoredUser(): AuthUser | null {
     orgId: meta.orgId,
     orgSubscription: meta.orgSubscription ?? 'NONE',
     avatarUrl: meta.avatarUrl,
+    emailVerified: meta.emailVerified,
   }
 }

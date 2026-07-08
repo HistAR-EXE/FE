@@ -10,7 +10,7 @@ test.describe('UI · Mode navigation', () => {
     await page.goto('/home')
 
     await expect(page.getByRole('link', { name: 'Khám phá' })).toBeVisible()
-    await expect(page.getByRole('link', { name: 'Quét mã' })).toHaveCount(0)
+    await expect(page.getByRole('link', { name: /Quét/i })).toHaveCount(0)
   })
 
   test('offline mode shows Quét mã and hides Khám phá in desktop sidebar', async ({ page, request }) => {
@@ -19,7 +19,7 @@ test.describe('UI · Mode navigation', () => {
     await page.setViewportSize({ width: 1280, height: 800 })
     await page.goto('/home')
 
-    await expect(page.getByRole('link', { name: 'Quét mã' })).toBeVisible()
+    await expect(page.getByRole('complementary').getByRole('link', { name: 'Quét thực địa' }).first()).toBeVisible()
     await expect(page.getByRole('link', { name: 'Khám phá' })).toHaveCount(0)
   })
 })

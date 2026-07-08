@@ -27,6 +27,8 @@ export type AuthPayload = {
   orgSubscription?: OrgSubscription
   email?: string
   avatarUrl?: string | null
+  emailVerified?: boolean
+  provider?: string | null
 }
 
 export const authApi = {
@@ -37,4 +39,6 @@ export const authApi = {
       httpClient.post('/api/auth/refresh', { refreshToken }),
     ),
   logout: (refreshToken?: string | null) => getData<{ success?: boolean }>(httpClient.post('/api/auth/logout', { refreshToken })),
+  googleLogin: (idToken: string) =>
+    getData<AuthPayload>(httpClient.post('/api/auth/google', { idToken })),
 }

@@ -1,6 +1,10 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { EraLockedModal } from '../../components/monetization/EraLockedModal'
 import { MaterialIcon } from '../../components/ui/MaterialIcon'
+import { analyticsApi } from '../analytics/api'
+import { shouldShowB2CPaywall } from '../../shared/access/contentAccess'
+import { useAuth } from '../../shared/auth/useAuth'
 import { useAppMode } from '../../shared/context/useAppMode'
 import {
   actionIcon,
@@ -29,6 +33,12 @@ function stepTypeBadge(actionType: QuestStepMeta['actionType']): string {
   return 'flag'
 }
 
+function isPremiumPortalStep(step: QuestStepMeta): boolean {
+  if (step.actionType !== 'portal') return false
+  const era = step.portalEra
+  return era === 1948 || era === 1968
+}
+
 export function QuestJourneyPanel({
   steps,
   questId,
@@ -39,10 +49,39 @@ export function QuestJourneyPanel({
   stepImages,
 }: QuestJourneyPanelProps) {
   const { mode } = useAppMode()
+  const { user } = useAuth()
+  const showPaywall = shouldShowB2CPaywall(user)
   const [expandedAll, setExpandedAll] = useState(false)
+  const [eraModalOpen, setEraModalOpen] = useState(false)
+  const [paywallEra, setPaywallEra] = useState<number>(1948)
   const firstOpenIndex = steps.findIndex(
     (step, index) => !isStepDone(step, currentStep, index, status, hasCheckin),
   )
+
+  const openStepperPaywall = useCallback(
+    (era: number) => {
+      setPaywallEra(era)
+      setEraModalOpen(true)
+      void analyticsApi.recordEvent({
+        eventType: 'PAYWALL_ERA_LOCKED_VIEW',
+        locationId: locationId || undefined,
+        source: 'quest_stepper',
+      })
+    },
+    [locationId],
+  )
+
+  const onUpgradeClick = useCallback(() => {
+    void analyticsApi.recordEvent({
+      eventType: 'PAYWALL_ERA_UPGRADE_CLICK',
+      locationId: locationId || undefined,
+      source: 'quest_stepper',
+    })
+  }, [locationId])
+
+  const pricingHref = `/pricing?next=${encodeURIComponent(
+    typeof window !== 'undefined' ? `${window.location.pathname}${window.location.search}` : '/quests',
+  )}`
 
   return (
     <div className="border border-outline-variant rounded-xl p-md bg-surface-container">
@@ -80,6 +119,7 @@ export function QuestJourneyPanel({
           const collapsed = !expandedAll && !done && !active
           const imageUrl = resolveStepImage(step, stepImages)
           const ctaLabel = stepActionLabel(step, mode)
+          const portalLocked = showPaywall && isPremiumPortalStep(step) && !done
 
           return (
             <div
@@ -101,7 +141,7 @@ export function QuestJourneyPanel({
                     alt=""
                     className={`w-20 h-20 rounded-lg object-cover border ${
                       active ? 'border-primary/60' : 'border-outline-variant/60'
-                    } ${locked ? 'blur-[2px] brightness-75' : ''}`}
+                    } ${locked || portalLocked ? 'blur-[2px] brightness-75' : ''}`}
                   />
                 ) : (
                   <div
@@ -115,7 +155,7 @@ export function QuestJourneyPanel({
                     />
                   </div>
                 )}
-                {locked && expandedAll && (
+                {(locked || portalLocked) && expandedAll && (
                   <div className="absolute inset-0 rounded-lg bg-background/40 flex items-center justify-center">
                     <MaterialIcon name="lock" className="text-lg text-on-surface-variant" />
                   </div>
@@ -163,7 +203,15 @@ export function QuestJourneyPanel({
                     )}
                     <div className="flex items-center gap-2 mt-2 flex-wrap">
                       <span className="text-xs text-on-surface-variant">
-                        {done ? 'Hoàn tất' : active ? 'Đang thực hiện' : locked ? 'Chưa mở' : 'Sẵn sàng'}
+                        {done
+                          ? 'Hoàn tất'
+                          : portalLocked
+                            ? 'Premium'
+                            : active
+                              ? 'Đang thực hiện'
+                              : locked
+                                ? 'Chưa mở'
+                                : 'Sẵn sàng'}
                       </span>
                       {step.xpPartial && (
                         <span className="text-xs px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">
@@ -171,22 +219,39 @@ export function QuestJourneyPanel({
                         </span>
                       )}
                     </div>
-                    {!done && !locked && locationId && (status === 'in_progress' || status === 'completed') && (
-                      <Link
-                        to={stepHref(locationId, step, questId)}
-                        className={`inline-flex items-center gap-1 mt-sm px-md py-xs rounded-full text-sm ${
-                          active
-                            ? 'bg-primary text-on-primary'
-                            : 'border border-secondary text-secondary'
-                        }`}
-                      >
-                        {ctaLabel}
-                        <MaterialIcon
-                          name={step.actionType === 'checkin' ? 'my_location' : 'arrow_forward'}
-                          className="text-sm"
-                        />
-                      </Link>
-                    )}
+                    {!done &&
+                      locationId &&
+                      (status === 'in_progress' || status === 'completed') &&
+                      (portalLocked && (active || expandedAll) ? (
+                        <button
+                          type="button"
+                          data-testid="quest-stepper-era-paywall-cta"
+                          onClick={() => openStepperPaywall(step.portalEra ?? 1948)}
+                          className={`inline-flex items-center gap-1 mt-sm px-md py-xs rounded-full text-sm ${
+                            active
+                              ? 'bg-primary text-on-primary'
+                              : 'border border-secondary text-secondary'
+                          }`}
+                        >
+                          Mở khoá Era {step.portalEra ?? 1948}
+                          <MaterialIcon name="lock" className="text-sm" />
+                        </button>
+                      ) : !locked && !portalLocked ? (
+                        <Link
+                          to={stepHref(locationId, step, questId)}
+                          className={`inline-flex items-center gap-1 mt-sm px-md py-xs rounded-full text-sm ${
+                            active
+                              ? 'bg-primary text-on-primary'
+                              : 'border border-secondary text-secondary'
+                          }`}
+                        >
+                          {ctaLabel}
+                          <MaterialIcon
+                            name={step.actionType === 'checkin' ? 'my_location' : 'arrow_forward'}
+                            className="text-sm"
+                          />
+                        </Link>
+                      ) : null)}
                   </>
                 )}
               </div>
@@ -194,6 +259,14 @@ export function QuestJourneyPanel({
           )
         })}
       </div>
+      <EraLockedModal
+        open={eraModalOpen}
+        onClose={() => setEraModalOpen(false)}
+        eraLabel={paywallEra}
+        xpBonus={50}
+        pricingHref={pricingHref}
+        onUpgradeClick={onUpgradeClick}
+      />
     </div>
   )
 }

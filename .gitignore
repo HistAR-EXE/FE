@@ -12,6 +12,11 @@ dist
 dist-ssr
 *.local
 
+# Environment (secrets — dùng .env.example / .env.production.example)
+.env
+.env.local
+.env.production
+
 # Playwright
 /playwright-report
 /test-results

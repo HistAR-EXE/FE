@@ -1,6 +1,7 @@
 // src/shared/router/ProtectedRoute.tsx
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
+import { buildLoginRedirect } from './returnTo'
 
 export function ProtectedRoute() {
   const { isAuthenticated, isLoading } = useAuth()
@@ -11,7 +12,7 @@ export function ProtectedRoute() {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace state={{ from: `${location.pathname}${location.search}` }} />
+    return <Navigate to={buildLoginRedirect(location.pathname, location.search)} replace />
   }
 
   return <Outlet />

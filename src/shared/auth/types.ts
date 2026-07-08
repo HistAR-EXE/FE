@@ -1,6 +1,6 @@
 export type UserRole = 'USER' | 'ORG_MEMBER' | 'ADMIN' | 'TEACHER'
 export type UserTier = 'FREE' | 'PREMIUM'
-export type OrgSubscription = 'NONE' | 'ORG_BASIC' | 'ORG_PRO'
+export type OrgSubscription = 'NONE' | 'MICRO' | 'STANDARD' | 'PREMIUM' | 'ORG_BASIC' | 'ORG_PRO'
 
 export type AuthUser = {
   id: string
@@ -13,6 +13,19 @@ export type AuthUser = {
   orgName?: string | null
   orgRole?: string | null
   avatarUrl: string | null
+  emailVerified?: boolean
+  provider?: 'local' | 'google' | string | null
+}
+
+export function needsEmailVerification(user: AuthUser | null | undefined): boolean {
+  if (!user) return false
+  if (user.provider === 'google') return false
+  if (user.emailVerified === true) return false
+  // Right after confirm, storage is updated before React state commits — avoid redirect loops.
+  if (typeof window !== 'undefined' && localStorage.getItem('timelens_email_verified') === '1') {
+    return false
+  }
+  return true
 }
 
 export function normalizeRole(raw?: string | null): UserRole {
@@ -30,8 +43,9 @@ export function normalizeTier(raw?: string | null): UserTier {
 
 export function normalizeOrgSubscription(raw?: string | null): OrgSubscription {
   const v = raw?.trim().toUpperCase()
-  if (v === 'ORG_BASIC') return 'ORG_BASIC'
-  if (v === 'ORG_PRO') return 'ORG_PRO'
+  if (v === 'MICRO' || v === 'ORG_BASIC') return 'MICRO'
+  if (v === 'STANDARD' || v === 'ORG_PRO') return 'STANDARD'
+  if (v === 'PREMIUM') return 'PREMIUM'
   return 'NONE'
 }
 
@@ -50,9 +64,14 @@ const SAFE_REDIRECT_PREFIXES = [
   '/scan',
   '/photo-frame',
   '/teacher',
+  '/pricing',
+  '/checkout',
+  '/join',
   '/admin',
   '/characters',
   '/groups',
+  '/mode-select',
+  '/verify-email/pending',
 ] as const
 
 export function isSafeRedirect(path: string): boolean {
@@ -78,15 +97,17 @@ export function isPremium(user: AuthUser | null | undefined): boolean {
 }
 
 export function getPostLoginRedirect(user: AuthUser, from?: string | null): string {
+  if (needsEmailVerification(user)) return '/verify-email/pending'
   if (user.role === 'ADMIN') return '/admin/content'
   if (user.role === 'TEACHER') return '/teacher'
-  if (from && from !== '/login' && from !== '/' && from !== '/mode-select' && isSafeRedirect(from)) {
+  if (from && from !== '/login' && from !== '/' && from !== '/mode-select' && from !== '/verify-email/pending' && isSafeRedirect(from)) {
     return from
   }
   return '/mode-select'
 }
 
 export function getAlreadyLoggedInRedirect(user: AuthUser): string {
+  if (needsEmailVerification(user)) return '/verify-email/pending'
   if (user.role === 'ADMIN') return '/admin/content'
   if (user.role === 'TEACHER') return '/teacher'
   return '/home'

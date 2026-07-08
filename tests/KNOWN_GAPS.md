@@ -27,8 +27,8 @@
 | Admin users pagination | API hỗ trợ page/size; UI chỉ page 0 |
 | Admin analytics location | Hardcode Củ Chi; chưa location picker |
 | Admin org analytics | Hardcode demo org UUID |
-| `orgSubscription` | JWT/session có; **chưa UI badge, chưa content gate B2B** |
-| `TierGate.tsx` | Component tồn tại nhưng **chưa wire** — pages dùng inline `isPremium` |
+| `orgSubscription` | JWT/session có; org members dùng `hasPremiumAccess` — B2C paywall suppressed |
+| `TierGate.tsx` | Component tồn tại nhưng **chưa wire** — pages dùng `hasPremiumAccess` / `hasFullGamificationAccess` inline |
 | Org join at register | Chỉ Profile settings, không form đăng ký |
 | `/groups` discoverability | Link từ Profile, chưa TopNav chính |
 | Logout | Chỉ Profile; `refreshToken` null có thể BE 400 |

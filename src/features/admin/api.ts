@@ -165,6 +165,19 @@ export type OrganizationAnalytics = {
   note: string
 }
 
+export type AdminBillingSettings = {
+  b2cPremiumPriceVnd: number
+  chatFreeDailyLimit: number
+  orgVolumeDiscountPercent: number
+  orgVolumeDiscountMinLicenses: number
+  bankCode: string
+  accountNumber: string
+  accountName: string
+  qrTemplate: string
+  qrShowInfo: boolean
+  updatedAt: string | null
+}
+
 export const adminApi = {
   listUsers: (page = 0, size = 20) =>
     getPageData<AdminUserSummary>(httpClient.get('/api/admin/users', { params: { page, size } })),
@@ -207,6 +220,16 @@ export const adminApi = {
 
   organizationAnalytics: (orgId: string) =>
     getData<OrganizationAnalytics>(httpClient.get(`/api/admin/organizations/${orgId}/analytics`)),
+
+  getBillingSettings: () =>
+    getData<AdminBillingSettings>(httpClient.get('/api/admin/billing/settings')),
+  updateBillingSettings: (body: {
+    b2cPremiumPriceVnd?: number
+    chatFreeDailyLimit?: number
+    orgVolumeDiscountPercent?: number
+    orgVolumeDiscountMinLicenses?: number
+  }) =>
+    getData<AdminBillingSettings>(httpClient.patch('/api/admin/billing/settings', body)),
 
   eraCount: (locationId: string) =>
     getData<{ eraCount: number; sufficient: boolean }>(

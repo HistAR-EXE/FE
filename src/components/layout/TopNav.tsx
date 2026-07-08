@@ -6,6 +6,7 @@ import { images } from '../../assets/images'
 import { useAppMode } from '../../shared/context/useAppMode'
 import { modeBadgeLabel } from '../../shared/context/appModeUtils'
 import { OfflineSyncBadge } from './OfflineSyncBadge'
+import { AppSettingsBar } from './AppSettingsBar'
 import { useAuth } from '../../shared/auth/useAuth'
 import { useUserAvatar } from '../../shared/auth/useUserAvatar'
 import { isAdmin, isTeacher } from '../../shared/auth/types'
@@ -258,6 +259,7 @@ export function ExploreTopNav({ avatarSrc, backTo = '/home', backLabel = 'Trang 
                 </div>
             </div>
             <div className="flex items-center gap-3 shrink-0">
+                <AppSettingsBar className="hidden sm:flex" />
                 <ModeBadge className="hidden sm:inline-flex" />
                 <UserAvatarDropdown avatarSrc={resolvedAvatar} />
             </div>
@@ -276,6 +278,7 @@ export function DetailTopNav({ avatarSrc }: { avatarSrc?: string }) {
                 <span>TimeLens</span>
             </Link>
             <div className="flex items-center gap-3">
+                <AppSettingsBar />
                 <ModeBadge />
                 <button type="button" className="text-gray-400 hover:text-white transition-all p-2 rounded-full hover:bg-white/10 cursor-pointer" title="Thông báo">
                     <MaterialIcon name="notifications" />
@@ -310,6 +313,7 @@ export function SimpleTopNav({ title, avatarSrc, showSearch = false, backTo, bac
                 )}
             </div>
             <div className="flex items-center gap-3">
+                <AppSettingsBar />
                 <ModeBadge />
                 {showSearch && (
                     <div className="relative">

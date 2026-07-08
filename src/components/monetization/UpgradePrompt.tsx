@@ -19,7 +19,7 @@ export function UpgradePrompt({
     return (
       <div className="rounded-lg border border-primary/30 bg-primary/5 p-md text-sm text-on-surface-variant">
         <p>{message}</p>
-        <Link to="/settings" className="inline-block mt-sm text-primary underline font-medium">
+        <Link to="/pricing" className="inline-block mt-sm text-primary underline font-medium">
           Xem gói Premium
         </Link>
       </div>
@@ -38,7 +38,7 @@ export function UpgradePrompt({
           Nâng cấp Premium
         </Button>
       ) : (
-        <Link to="/settings">
+        <Link to="/pricing">
           <Button type="button">Nâng cấp Premium</Button>
         </Link>
       )}

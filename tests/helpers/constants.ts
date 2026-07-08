@@ -33,7 +33,9 @@ export const SEED = {
   denHungLocationId: '22222222-2222-2222-2222-222222222209',
 } as const
 
-/** Khoá localStorage FE dùng để lưu phiên (khớp shared/auth/session.ts). */
+/** Secret for BE test hooks (`POST /api/test/org/{orgId}/quota`). */
+export const TEST_HOOK_SECRET_HEADER = 'X-Test-Hook-Secret'
+export const TEST_HOOK_SECRET = process.env.HISTAR_TEST_HOOKS_SECRET ?? 'dev-test-hook-secret'
 export const STORAGE_KEYS = {
   token: 'timelens_token',
   refreshToken: 'timelens_refresh_token',

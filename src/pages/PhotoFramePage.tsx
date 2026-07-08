@@ -9,14 +9,14 @@ import { useToast } from '../shared/ui/toast/useToast'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { images } from '../assets/images'
 import { useAuth } from '../shared/auth/useAuth'
-import { isPremium } from '../shared/auth/types'
+import { hasPremiumAccess } from '../shared/access/contentAccess'
 import { UpgradePrompt } from '../components/monetization/UpgradePrompt'
 import { resizeImageForUpload } from '../shared/utils/resizeImage'
 
 export function PhotoFramePage() {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const premium = isPremium(user)
+  const premium = hasPremiumAccess(user)
   const [frames, setFrames] = useState<PhotoFrame[]>([])
   const [frameId, setFrameId] = useState('')
   const [variant, setVariant] = useState<'square' | 'story'>('square')

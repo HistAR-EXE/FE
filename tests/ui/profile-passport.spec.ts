@@ -7,6 +7,7 @@ test.describe('UI · Hộ chiếu Di sản', () => {
     const s = await login(request)
     await seedSession(page, s, { mode: 'online' })
     await page.goto('/profile')
+    await page.getByRole('button', { name: /Hộ chiếu & Huy hiệu/i }).click()
     await expect(page.getByRole('heading', { name: /Hộ chiếu Di sản/i })).toBeVisible({ timeout: 15_000 })
   })
 })

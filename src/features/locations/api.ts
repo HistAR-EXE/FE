@@ -8,6 +8,8 @@ export type Location = {
   latitude: number
   longitude: number
   city: string
+  formattedAddress?: string | null
+  googleMapsUrl?: string | null
   coverImage: string
   rating?: number
   distanceKm?: number

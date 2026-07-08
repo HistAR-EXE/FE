@@ -161,12 +161,12 @@ export function CuChiIllustratedMap({
                     <MaterialIcon name="map" className="text-lg" />
                 </div>
                 <div>
-          <span className="font-black text-white text-xs sm:text-sm block leading-none">
-            Sơ Đồ Khu Di Tích Bến Dược
-          </span>
+                    <span className="font-black text-white text-xs sm:text-sm block leading-none">
+                        Sơ Đồ Khu Di Tích Bến Dược
+                    </span>
                     <span className="text-[10px] font-semibold text-gray-400 mt-1 block">
-            {pins.length} Trạm thực tế ảo • Lộ trình khép kín 1 → {pins.length}
-          </span>
+                        {pins.length} Trạm thực tế ảo • Lộ trình khép kín 1 → {pins.length}
+                    </span>
                 </div>
             </div>
 

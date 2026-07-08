@@ -1,0 +1,46 @@
+{
+  "nav": {
+    "back": "Back",
+    "searchPlaceholder": "Search heritage sites, eras...",
+    "themeLight": "Light mode",
+    "themeDark": "Dark mode",
+    "langVi": "Tiếng Việt",
+    "langEn": "English"
+  },
+  "map": {
+    "title": "Vietnam Heritage Map",
+    "points": "{{count}} sites",
+    "layerMap": "Map",
+    "layerSatellite": "Satellite",
+    "hintMap": "Google Maps — labels follow language",
+    "hintHybrid": "Google Hybrid — satellite + labels",
+    "regionLegend": "Regions",
+    "islandsLegend": "Islands",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "resetView": "View all of Vietnam",
+    "lockedHint": "Complete the quest first to unlock",
+    "missingApiKey": "Missing VITE_GOOGLE_MAPS_API_KEY — add to .env.local to load Google Maps.",
+    "attribution": "© Google Maps"
+  },
+  "modeSelect": {
+    "step1Title": "Choose Experience Mode",
+    "step2Title": "Choose Destination to Explore",
+    "onlineBadge": "Learn & Explore Remotely",
+    "offlineBadge": "On-site O2O Companion",
+    "continue": "Continue",
+    "back": "Back",
+    "confirm": "Confirm & Start"
+  },
+  "regions": {
+    "north": "Northern Vietnam",
+    "central": "Central Vietnam",
+    "south": "Southern Vietnam"
+  },
+  "islands": {
+    "hoangSa": "Paracel Islands",
+    "truongSa": "Spratly Islands",
+    "hoangSaHover": "Paracel Islands — sovereign territory of Vietnam",
+    "truongSaHover": "Spratly Islands — sovereign territory of Vietnam"
+  }
+}

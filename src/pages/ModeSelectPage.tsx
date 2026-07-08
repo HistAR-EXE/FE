@@ -1,13 +1,21 @@
 // src/pages/ModeSelectPage.tsx
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import type { AppMode } from '../shared/context/modeContext'
 import { useAppMode } from '../shared/context/useAppMode'
 import { CU_CHI_LOCATION_ID } from '../shared/config/constants'
+import { HERITAGE_SITE_GEO } from '../shared/config/heritageSites'
 import { ExploreMapPanel } from '../features/explore/ExploreMapPanel'
+import {
+    findMergedByLocationId,
+    mergeDestinations,
+    mergedToMapLocations,
+    type StaticDestination,
+} from '../features/explore/destinationMerge'
 import { locationsApi, type Location as HeritageLocation } from '../features/locations/api'
+import { useToast } from '../shared/ui/toast/useToast'
 
 // ============================================================================
 // DỮ LIỆU BƯỚC 1: PHƯƠNG THỨC TRẢI NGHIỆM
@@ -60,133 +68,92 @@ const MODE_OPTIONS: {
 // ============================================================================
 type Region = 'all' | 'mien-bac' | 'mien-trung' | 'mien-nam'
 
-const DESTINATIONS = [
-    {
-        id: CU_CHI_LOCATION_ID,
-        name: 'Địa Đạo Củ Chi',
-        city: 'TP. Hồ Chí Minh',
-        region: 'mien-nam' as Region,
+const DEST_UI: Record<string, { desc: string; image: string; fallback: string; isReady: boolean }> = {
+    [CU_CHI_LOCATION_ID]: {
         desc: 'Hệ thống phòng thủ ngầm 3 tầng huyền thoại, tái hiện sống động không gian chiến đấu và sinh hoạt lịch sử.',
         image: '/media/destinations/cu-chi.jpg',
         fallback: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=800&q=80',
         isReady: true,
-        latitude: 11.1422,
-        longitude: 106.4620
     },
-    {
-        id: 'den-hung-vuong',
-        name: 'Đền Hùng Vương',
-        city: 'Phú Thọ',
-        region: 'mien-bac' as Region,
+    'den-hung-vuong': {
         desc: 'Nơi thờ cúng các Vua Hùng có công dựng nước, biểu tượng tâm linh và cội nguồn của muôn triệu người Việt Nam.',
         image: 'https://images.unsplash.com/photo-1599708153386-62bf3f0b2bd6?auto=format&fit=crop&w=800&q=80',
         fallback: 'https://images.unsplash.com/photo-1599708153386-62bf3f0b2bd6?auto=format&fit=crop&w=800&q=80',
         isReady: false,
-        latitude: 21.3687,
-        longitude: 105.3215
     },
-    {
-        id: 'van-mieu-quoc-tu-giam',
-        name: 'Văn Miếu Quốc Tử Giám',
-        city: 'Hà Nội',
-        region: 'mien-bac' as Region,
+    'van-mieu-quoc-tu-giam': {
         desc: 'Trường đại học đầu tiên của Việt Nam, biểu tượng truyền thống hiếu học và tôn sư trọng đạo nghìn năm.',
         image: 'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?auto=format&fit=crop&w=800&q=80',
         fallback: 'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?auto=format&fit=crop&w=800&q=80',
         isReady: false,
-        latitude: 21.0293,
-        longitude: 105.8355
     },
-    {
-        id: 'hoang-thang-thang-long',
-        name: 'Hoàng Thành Thăng Long',
-        city: 'Hà Nội',
-        region: 'mien-bac' as Region,
+    'hoang-thang-thang-long': {
         desc: 'Quần thể di tích hoàng gia gắn liền với lịch sử kinh đô Thăng Long - Hà Nội bắt đầu từ thời kỳ trước Thăng Long.',
         image: '/media/destinations/thang-long.jpg',
         fallback: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=800&q=80',
         isReady: false,
-        latitude: 21.0367,
-        longitude: 105.8346
     },
-    {
-        id: 'co-do-hoa-lu',
-        name: 'Cố Đô Hoa Lư',
-        city: 'Ninh Bình',
-        region: 'mien-bac' as Region,
+    'co-do-hoa-lu': {
         desc: 'Kinh đô đầu tiên của nhà nước phong kiến trung ương tập quyền Việt Nam dưới triều Đinh, Tiền Lê.',
         image: 'https://images.unsplash.com/photo-1508804185872-d7badad00f7d?auto=format&fit=crop&w=800&q=80',
         fallback: 'https://images.unsplash.com/photo-1508804185872-d7badad00f7d?auto=format&fit=crop&w=800&q=80',
         isReady: false,
-        latitude: 20.2852,
-        longitude: 105.9080
     },
-    {
-        id: 'thanh-nha-ho',
-        name: 'Thành Nhà Hồ',
-        city: 'Thanh Hóa',
-        region: 'mien-trung' as Region,
+    'thanh-nha-ho': {
         desc: 'Kỳ quan kiến trúc đá độc nhất vô nhị tại Việt Nam thế kỷ 15, di sản văn hóa thế giới được UNESCO công nhận.',
         image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80',
         fallback: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80',
         isReady: false,
-        latitude: 20.0768,
-        longitude: 105.6053
     },
-    {
-        id: 'chua-thien-mu',
-        name: 'Chùa Thiên Mụ',
-        city: 'Thừa Thiên Huế',
-        region: 'mien-trung' as Region,
+    'chua-thien-mu': {
         desc: 'Ngôi cổ tự linh thiêng và cổ kính bậc nhất xứ Huế nằm hiền hòa bên dòng sông Hương thơ mộng.',
         image: 'https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=800&q=80',
         fallback: 'https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=800&q=80',
         isReady: false,
-        latitude: 16.4534,
-        longitude: 107.5448
     },
-    {
-        id: 'dai-noi-hue',
-        name: 'Đại Nội Huế',
-        city: 'Thừa Thiên Huế',
-        region: 'mien-trung' as Region,
+    'dai-noi-hue': {
         desc: 'Trung tâm hành chính và chính trị của triều đình nhà Nguyễn, hội tụ đỉnh cao nghệ thuật kiến trúc cung đình.',
         image: 'https://images.unsplash.com/photo-1518684079-3c830dcef090?auto=format&fit=crop&w=800&q=80',
         fallback: 'https://images.unsplash.com/photo-1518684079-3c830dcef090?auto=format&fit=crop&w=800&q=80',
         isReady: false,
-        latitude: 16.4682,
-        longitude: 107.5785
     },
-    {
-        id: 'pho-co-hoi-an',
-        name: 'Phố Cổ Hội An',
-        city: 'Quảng Nam',
-        region: 'mien-trung' as Region,
+    'pho-co-hoi-an': {
         desc: 'Thương cảng sầm uất thế kỷ 16-17, lưu giữ trọn vẹn nét kiến trúc giao thoa Đông Tây trầm mặc rực rỡ.',
         image: 'https://images.unsplash.com/photo-1518998053901-5348d3961a04?auto=format&fit=crop&w=800&q=80',
         fallback: 'https://images.unsplash.com/photo-1518998053901-5348d3961a04?auto=format&fit=crop&w=800&q=80',
         isReady: false,
-        latitude: 15.8801,
-        longitude: 108.3380
     },
-    {
-        id: 'ben-nha-rong',
-        name: 'Bến Cảng Nhà Rồng',
-        city: 'TP. Hồ Chí Minh',
-        region: 'mien-nam' as Region,
+    'ben-nha-rong': {
         desc: 'Nơi Bác Hồ ra đi tìm đường cứu nước năm 1911, tích hợp kho tư liệu giáo dục số hóa chuyên sâu.',
         image: '/media/destinations/ben-nha-rong.jpg',
         fallback: 'https://images.unsplash.com/photo-1583417319070-4a69db38a482?auto=format&fit=crop&w=800&q=80',
         isReady: false,
-        latitude: 10.7684,
-        longitude: 106.7068
     },
-]
+}
+
+const DESTINATIONS: StaticDestination[] = HERITAGE_SITE_GEO.map((site) => {
+    const ui = DEST_UI[site.slug]
+    return {
+        id: site.slug,
+        name: site.name,
+        city: site.city,
+        region: site.region,
+        desc: ui.desc,
+        image: ui.image,
+        fallback: ui.fallback,
+        isReady: ui.isReady,
+        latitude: site.latitude,
+        longitude: site.longitude,
+        formattedAddress: site.formattedAddress,
+        googleMapsUrl: site.googleMapsUrl,
+    }
+})
 
 export function ModeSelectPage() {
     const { setMode } = useAppMode()
     const navigate = useNavigate()
     const location = useLocation()
+    const { showToast } = useToast()
 
     const [step, setStep] = useState<1 | 2 | 3>(1)
     const [selectedMode, setSelectedMode] = useState<AppMode>('online')
@@ -206,25 +173,53 @@ export function ModeSelectPage() {
             .catch(() => setApiLocations([]))
     }, [])
 
-    const mapLocations: HeritageLocation[] = useMemo(() => {
-        if (apiLocations.length > 0) return apiLocations
-        return DESTINATIONS.map(d => ({
-            id: d.id,
-            name: d.name,
-            city: d.city,
-            description: d.desc,
-            coverImage: d.image,
-            latitude: d.latitude,
-            longitude: d.longitude,
-            isArAvailable: d.isReady,
-            createdAt: new Date().toISOString()
-        }))
-    }, [apiLocations])
+    const mergedDestinations = useMemo(
+        () => mergeDestinations(DESTINATIONS, apiLocations),
+        [apiLocations],
+    )
+
+    const mapLocations: HeritageLocation[] = useMemo(
+        () => mergedToMapLocations(mergedDestinations),
+        [mergedDestinations],
+    )
 
     const filteredDestinations = useMemo(() => {
-        if (regionFilter === 'all') return DESTINATIONS
-        return DESTINATIONS.filter((d) => d.region === regionFilter)
-    }, [regionFilter])
+        if (regionFilter === 'all') return mergedDestinations
+        return mergedDestinations.filter((d) => d.region === regionFilter)
+    }, [mergedDestinations, regionFilter])
+
+    const notifyDigitizing = useCallback((name: string) => {
+        showToast({
+            message: `Địa điểm "${name}" đang được số hóa, vui lòng quay lại sau.`,
+            type: 'info',
+        })
+    }, [showToast])
+
+    const selectDestination = useCallback((locationId: string) => {
+        const dest = findMergedByLocationId(mergedDestinations, locationId)
+        if (!dest) return false
+        if (!dest.isReady) {
+            notifyDigitizing(dest.name)
+            return false
+        }
+        setSelectedDestination(dest.locationId)
+        if (dest.region !== 'all') {
+            setRegionFilter(dest.region)
+        }
+        return true
+    }, [mergedDestinations, notifyDigitizing])
+
+    const handleMapPinClick = useCallback((loc: HeritageLocation) => {
+        const dest = findMergedByLocationId(mergedDestinations, loc.id)
+        if (!dest) return
+
+        const isCuChi = dest.locationId === CU_CHI_LOCATION_ID
+        if (!selectDestination(dest.locationId)) return
+
+        if (isCuChi) {
+            setStep(3)
+        }
+    }, [mergedDestinations, selectDestination])
 
     const handleGoToStep2 = (mode: AppMode) => {
         setSelectedMode(mode)
@@ -374,7 +369,9 @@ export function ModeSelectPage() {
                                     <ExploreMapPanel
                                         locations={mapLocations}
                                         selectedLocationId={selectedDestination}
-                                        onPinClick={(loc) => setSelectedDestination(loc.id)}
+                                        digitizationLock
+                                        onLockedLocationClick={(loc) => notifyDigitizing(loc.name)}
+                                        onPinClick={handleMapPinClick}
                                         className="h-full w-full border-0 rounded-none"
                                     />
                                     <div className="absolute top-4 right-4 z-[500] hidden sm:flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-black/70 backdrop-blur-md border border-white/15 pointer-events-none">
@@ -416,11 +413,17 @@ export function ModeSelectPage() {
                             {/* DANH SÁCH 10 DI TÍCH BÊN DƯỚI */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {filteredDestinations.map((dest) => {
-                                    const isSelected = selectedDestination === dest.id
+                                    const isSelected = selectedDestination === dest.locationId
                                     return (
                                         <div
-                                            key={dest.id}
-                                            onClick={() => dest.isReady && setSelectedDestination(dest.id)}
+                                            key={dest.locationId}
+                                            onClick={() => {
+                                                if (!dest.isReady) {
+                                                    notifyDigitizing(dest.name)
+                                                    return
+                                                }
+                                                setSelectedDestination(dest.locationId)
+                                            }}
                                             className={`rounded-3xl overflow-hidden bg-white/[0.04] border transition-all duration-300 flex flex-col justify-between backdrop-blur-md ${
                                                 !dest.isReady
                                                     ? 'opacity-50 border-white/5 cursor-not-allowed'
@@ -469,6 +472,24 @@ export function ModeSelectPage() {
                                                         <span className="text-gray-500 flex items-center gap-1"><MaterialIcon name="lock" className="text-sm" /> Đang số hóa 3D</span>
                                                     )}
                                                 </div>
+                                                {dest.formattedAddress && (
+                                                    <p className="text-[10px] text-gray-500 line-clamp-2 flex items-start gap-1 pt-1">
+                                                        <MaterialIcon name="location_on" className="text-xs shrink-0 mt-0.5" />
+                                                        {dest.formattedAddress}
+                                                    </p>
+                                                )}
+                                                {dest.googleMapsUrl && (
+                                                    <a
+                                                        href={dest.googleMapsUrl}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        onClick={(e) => e.stopPropagation()}
+                                                        className="text-[10px] text-[#388cf1] hover:underline pt-1 inline-flex items-center gap-1"
+                                                    >
+                                                        <MaterialIcon name="map" className="text-xs" />
+                                                        Mở trên Google Maps
+                                                    </a>
+                                                )}
                                             </div>
                                         </div>
                                     )

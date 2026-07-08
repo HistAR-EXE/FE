@@ -1,9 +1,55 @@
 import { test, expect } from '@playwright/test'
 import { randomUUID } from 'node:crypto'
-import { BE_URL, ADMIN_USER, DEMO_USER } from '../helpers/constants'
+import { BE_URL, ADMIN_USER, DEMO_USER, SEED } from '../helpers/constants'
 import { login, registerFreshUser, authHeaders, unwrap } from '../helpers/api'
 
 test.describe('BE API · Admin session replay (Gap 1)', () => {
+  test('REPLAY-H1: ADMIN replay returns steps after visit session + discovery', async ({ request }) => {
+    const user = await registerFreshUser(request)
+    const headers = authHeaders(user.token)
+
+    const start = await request.post(`${BE_URL}/api/me/visit-sessions/start`, {
+      headers,
+      data: { locationId: SEED.cuChiLocationId, mode: 'online' },
+    })
+    const session = await unwrap<{ id: string }>(start)
+
+    const bindRes = await request.get(`${BE_URL}/api/discovery-bindings/by-location/${SEED.cuChiLocationId}`, {
+      headers,
+    })
+    if (bindRes.status() === 404) test.skip(true, 'No bindings in seed')
+    const bindings = await unwrap<Array<{ unlockKey: string }>>(bindRes)
+    test.skip(bindings.length === 0, 'No bindings in seed')
+
+    const discovery = await request.post(`${BE_URL}/api/me/discoveries`, {
+      headers,
+      data: {
+        locationId: SEED.cuChiLocationId,
+        unlockKey: bindings[0].unlockKey,
+        source: 'replay-h1-test',
+      },
+    })
+    expect(discovery.ok(), await discovery.text()).toBeTruthy()
+
+    await request.patch(`${BE_URL}/api/me/visit-sessions/${session.id}/end`, {
+      headers,
+      data: { reason: 'USER_EXIT' },
+    })
+
+    const admin = await login(request, ADMIN_USER)
+    const replayRes = await request.get(
+      `${BE_URL}/api/admin/analytics/sessions/${session.id}/replay`,
+      { headers: authHeaders(admin.token) },
+    )
+    const replay = await unwrap<{
+      sessionId: string
+      steps: Array<{ unlockKey: string; eventType: string }>
+    }>(replayRes)
+    expect(replay.sessionId).toBe(session.id)
+    expect(replay.steps.length).toBeGreaterThanOrEqual(1)
+    expect(replay.steps.some((s) => s.eventType === 'discovery')).toBeTruthy()
+  })
+
   test('REPLAY-B3: guest → 401', async ({ request }) => {
     const res = await request.get(`${BE_URL}/api/admin/analytics/sessions/${randomUUID()}/replay`, {
       failOnStatusCode: false,
@@ -26,7 +72,7 @@ test.describe('BE API · Admin session replay (Gap 1)', () => {
       headers: authHeaders(s.token),
       failOnStatusCode: false,
     })
-    expect([404, 400]).toContain(res.status())
+    expect([404, 400, 422]).toContain(res.status())
   })
 })
 

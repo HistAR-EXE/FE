@@ -16,6 +16,7 @@ import { ERA_VALUES, type EraValue } from '../features/time-portal/eraLabels'
 import { ApiError } from '../shared/api/contracts'
 import { useToast } from '../shared/ui/toast/useToast'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
+import { EraLockedModal } from '../components/monetization/EraLockedModal'
 import { hasPremiumAccess } from '../shared/access/contentAccess'
 import { CU_CHI_LOCATION_ID } from '../shared/config/constants'
 import { useVisitSessionForLocation, useVisitSession } from '../features/visit/VisitSessionProvider'
@@ -67,6 +68,7 @@ export function TimePortalPage() {
     const [pairs, setPairs] = useState<PhotoPair[]>([])
     const [index, setIndex] = useState(0)
     const [loading, setLoading] = useState(true)
+    const [eraModalOpen, setEraModalOpen] = useState(false)
     const { showToast } = useToast()
     const { applyEngagement } = useUserProgress()
 
@@ -147,6 +149,35 @@ export function TimePortalPage() {
         },
         [isAuthenticated, scenes, flushPendingDiscoverKey, recordEngagement],
     )
+
+    const openEraPaywall = useCallback(() => {
+        if (sessionStorage.getItem('timePortalEraModalDismissed') === '1') return
+        setEraModalOpen(true)
+    }, [])
+
+    const closeEraPaywall = useCallback(() => {
+        sessionStorage.setItem('timePortalEraModalDismissed', '1')
+        setEraModalOpen(false)
+    }, [])
+
+    useEffect(() => {
+        if (!eraModalOpen) return
+        void analyticsApi.recordEvent({
+            eventType: 'PAYWALL_ERA_LOCKED_VIEW',
+            locationId: activeLocationId,
+            visitSessionId: visitSessionId ?? undefined,
+            source: 'time_portal',
+        })
+    }, [eraModalOpen, activeLocationId, visitSessionId])
+
+    const onEraUpgradeClick = useCallback(() => {
+        void analyticsApi.recordEvent({
+            eventType: 'PAYWALL_ERA_UPGRADE_CLICK',
+            locationId: activeLocationId,
+            visitSessionId: visitSessionId ?? undefined,
+            source: 'time_portal',
+        })
+    }, [activeLocationId, visitSessionId])
 
     useEffect(() => {
         if (!locationId) return
@@ -337,12 +368,7 @@ export function TimePortalPage() {
                             onEngagement={onPortalEngagement}
                             initialEra={initialEra}
                             isPremium={isPremium}
-                            onPremiumRequired={() =>
-                                showToast({
-                                    message: 'Era này dành cho Premium. Nâng cấp tại Hồ sơ để mở đầy đủ Time Portal.',
-                                    type: 'info',
-                                })
-                            }
+                            onPremiumRequired={openEraPaywall}
                         />
                     )}
 
@@ -364,6 +390,14 @@ export function TimePortalPage() {
                     )}
                 </section>
             </main>
+            <EraLockedModal
+                open={eraModalOpen}
+                onClose={closeEraPaywall}
+                onUpgradeClick={onEraUpgradeClick}
+                eraLabel={1948}
+                xpBonus={50}
+                pricingHref={`/pricing?next=${encodeURIComponent(`${window.location.pathname}${window.location.search}`)}`}
+            />
         </AppLayout>
     )
 }

@@ -9,6 +9,10 @@ export type AnalyticsEventType =
   | 'CHARACTER_CHAT_STARTED'
   | 'SHARE_CREATED'
   | 'CHECKIN_SUCCESS'
+  | 'PAYWALL_ERA_LOCKED_VIEW'
+  | 'PAYWALL_ERA_UPGRADE_CLICK'
+  | 'PAYWALL_CHAT_QUOTA_VIEW'
+  | 'PAYWALL_CHAT_UPGRADE_CLICK'
 
 export type RecordAnalyticsEventPayload = {
   locationId?: string

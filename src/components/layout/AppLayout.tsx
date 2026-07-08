@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom'
 import { SideNav, SideNavMobile, SideNavTablet } from './SideNav'
 import { TopNavCompact } from './TopNav'
 import { useAppMode } from '../../shared/context/useAppMode'
+import { useCcuHeartbeat } from '../../shared/hooks/useCcuHeartbeat'
+import { CcuLimitModal } from '../monetization/CcuLimitModal'
 
 type AppLayoutProps = {
   children: ReactNode
@@ -31,6 +33,7 @@ export function AppLayout({
 }: AppLayoutProps) {
   const navigate = useNavigate()
   const { mode } = useAppMode()
+  const { ccuLimitOpen, dismissCcuLimit } = useCcuHeartbeat()
   const ctaPath = mode === 'offline' ? '/scan' : '/explore'
 
   return (
@@ -52,6 +55,7 @@ export function AppLayout({
         {children}
       </div>
       {!hideSideNav && !hideMobileChrome && <SideNavMobile />}
+      <CcuLimitModal open={ccuLimitOpen} onClose={dismissCcuLimit} />
     </div>
   )
 }

@@ -76,7 +76,7 @@ export function TimePortalViewer({
   const scene = scenes?.[sceneIndex]
   const pair = pairs?.[sceneIndex]
   const tabs = scenes?.length ? scenes : pairs ?? []
-  const [era, setEra] = useState<EraValue>(initialEra ?? 1968)
+  const [era, setEra] = useState<EraValue>(initialEra ?? 2026)
   const [sliderPct, setSliderPct] = useState(50)
   const [vortex, setVortex] = useState(false)
   const dragging = useRef(false)
@@ -93,7 +93,7 @@ export function TimePortalViewer({
     if (initialEra) setEra(initialEra)
   }, [initialEra])
 
-  const defaultEra: EraValue = 1968
+  const defaultEra: EraValue = 2026
 
   const triggerVortex = useCallback(
     (nextEra: EraValue) => {

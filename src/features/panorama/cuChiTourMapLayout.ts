@@ -12,8 +12,8 @@ export type CuChiTourMapPin = {
   routeOrder: number
 }
 
-/** Trung tâm — Khu di tích lịch sử (theo GPS thật từ ảnh chuyến đi 06/2026) */
-export const CU_CHI_TOUR_CENTER: [number, number] = [11.1422, 106.462]
+/** Trung tâm — Khu di tích lịch sử (đồng bộ heritageSites / BE V8) */
+export const CU_CHI_TOUR_CENTER: [number, number] = [11.141591, 106.4615963]
 export const CU_CHI_TOUR_ZOOM = 16
 
 /** Giới hạn pan — bao trọn vùng tham quan thực tế */

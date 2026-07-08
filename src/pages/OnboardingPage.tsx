@@ -1,4 +1,4 @@
-// src/pages/OnboardingPage.tsx
+﻿// src/pages/OnboardingPage.tsx
 import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
@@ -563,7 +563,7 @@ export const OnboardingPage: React.FC = () => {
                                     </div>
                                     <ul className="space-y-3 text-xs font-semibold text-[#334155] pt-2">
                                         <li className="flex items-start gap-2.5"><MaterialIcon name="check_circle" className="text-[#1A79E5] text-lg shrink-0 mt-0.5" /><span><strong>Toàn bộ tính năng Core</strong> di sản số hóa của nền tảng</span></li>
-                                        <li className="flex items-start gap-2.5"><MaterialIcon name="check_circle" className="text-[#1A79E5] text-lg shrink-0 mt-0.5" /><span>Tích hợp không gian tương tác nhóm <strong>Multiplayer Experience</strong></span></li>
+                                        <li className="flex items-start gap-2.5"><MaterialIcon name="check_circle" className="text-[#1A79E5] text-lg shrink-0 mt-0.5" /><span>Tích hợp hoạt động chia đội theo mã phòng <strong>Team-based Quest Room</strong></span></li>
                                         <li className="flex items-start gap-2.5"><MaterialIcon name="check_circle" className="text-[#1A79E5] text-lg shrink-0 mt-0.5" /><span>Trợ lý Lịch sử AI Guide nâng cao (<strong className="text-[#1E293B]">Giới hạn 30.000 queries/tháng</strong>)</span></li>
                                     </ul>
                                 </div>

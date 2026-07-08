@@ -8,20 +8,24 @@ import { type LoginResult } from './api'
  */
 export async function seedSession(
   page: Page,
-  session: LoginResult,
-  opts: { mode?: 'online' | 'offline' } = {},
+  session: LoginResult & { orgId?: string | null; orgSubscription?: string },
+  opts: { mode?: 'online' | 'offline'; emailVerified?: boolean } = {},
 ) {
   const keys = STORAGE_KEYS
   const mode = opts.mode ?? 'online'
+  const emailVerified = opts.emailVerified !== false
   await page.addInitScript(
-    ({ keys, session, mode }) => {
+    ({ keys, session, mode, emailVerified }) => {
       localStorage.setItem(keys.token, session.token)
       localStorage.setItem(keys.userId, session.userId || 'e2e-user')
       localStorage.setItem(keys.displayName, session.displayName || 'E2E Tester')
       if (session.role) localStorage.setItem(keys.role, session.role)
       if (session.tier) localStorage.setItem(keys.tier, session.tier)
+      if (session.orgId) localStorage.setItem('timelens_org_id', session.orgId)
+      if (session.orgSubscription) localStorage.setItem('timelens_org_subscription', session.orgSubscription)
+      localStorage.setItem('timelens_email_verified', emailVerified ? '1' : '0')
       localStorage.setItem(keys.mode, mode)
     },
-    { keys, session, mode },
+    { keys, session, mode, emailVerified },
   )
 }

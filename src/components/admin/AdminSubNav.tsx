@@ -6,6 +6,7 @@ const ADMIN_TABS = [
   { to: '/admin/analytics', label: 'Thống kê', icon: 'analytics' as const },
   { to: '/admin/users', label: 'Người dùng', icon: 'group' as const },
   { to: '/admin/organizations', label: 'Tổ chức', icon: 'business' as const },
+  { to: '/admin/billing', label: 'Billing', icon: 'payments' as const },
 ]
 
 export function AdminSubNav() {

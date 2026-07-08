@@ -13,8 +13,8 @@ test.describe('BE API · Check-in', () => {
       headers: authHeaders(user.token),
       data: {
         locationId: SEED.cuChiLocationId,
-        latitude: 11.143,
-        longitude: 106.461,
+        latitude: 11.141591,
+        longitude: 106.4615963,
         qrCode: `timelens:location:${SEED.cuChiLocationId}`,
       },
     })
@@ -42,8 +42,8 @@ test.describe('BE API · Check-in', () => {
     const res = await request.post(`${BE_URL}/api/checkins`, {
       data: {
         locationId: SEED.cuChiLocationId,
-        latitude: 11.143,
-        longitude: 106.461,
+        latitude: 11.141591,
+        longitude: 106.4615963,
         qrCode: `timelens:location:${SEED.cuChiLocationId}`,
       },
       failOnStatusCode: false,

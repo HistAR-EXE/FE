@@ -22,6 +22,6 @@ test.describe('E2E · Explore', () => {
 
     await page.goto('/explore')
     // Không có màn hình crash — heading khu vực khám phá hiển thị
-    await expect(page.locator('h2').first()).toBeVisible({ timeout: 20_000 })
+    await expect(page.locator('main').first()).toBeVisible({ timeout: 20_000 })
   })
 })

@@ -1,34 +1,28 @@
 // src/features/explore/exploreMapTiles.ts
-import type { TileLayerOptions } from 'leaflet'
 
 export type ExploreMapLayer = 'vi' | 'hybrid'
 
-/** Voyager đầy đủ — nhãn gắn trong tile, hiển thị ổn định đến zoom 19. */
-export const VOYAGER_MAP_URL =
-  'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png'
-export const SATELLITE_TILE_URL =
-  'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
-export const REFERENCE_LABELS_TILE_URL =
-  'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}'
+export const GOOGLE_ATTRIBUTION = '© Google Maps'
 
-export const TILE_COMMON: TileLayerOptions = {
+export const TILE_COMMON = {
   maxZoom: 19,
-  maxNativeZoom: 19,
-  detectRetina: false,
-  keepBuffer: 4,
-  subdomains: 'abcd',
+  attribution: GOOGLE_ATTRIBUTION,
+  subdomains: ['0', '1', '2', '3'] as string[],
 }
 
-export const VI_ATTRIBUTION =
-  'Bản đồ &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
-export const HYBRID_ATTRIBUTION = 'Ảnh &copy; Esri · Nhãn &copy; Esri'
+/** Google Maps raster tiles via Leaflet (no JS API key). */
+export function googleTileUrl(layer: ExploreMapLayer, locale: string): string {
+  const lyrs = layer === 'vi' ? 'm' : 'y'
+  const hl = locale.startsWith('en') ? 'en' : 'vi'
+  return `https://mt{s}.google.com/vt/lyrs=${lyrs}&x={x}&y={y}&z={z}&hl=${hl}`
+}
 
-export const EXPLORE_MAP_LAYERS: { id: ExploreMapLayer; label: string }[] = [
-  { id: 'vi', label: 'Bản đồ' },
-  { id: 'hybrid', label: 'Vệ tinh' },
-]
+export const EXPLORE_MAP_LAYER_IDS: ExploreMapLayer[] = ['vi', 'hybrid']
 
-export function exploreLayerHint(layer: ExploreMapLayer): string {
-  if (layer === 'vi') return 'Nhãn hiển thị mọi mức zoom'
-  return 'Ảnh vệ tinh Esri + tên đường'
+export function exploreLayerLabelKey(layer: ExploreMapLayer): string {
+  return layer === 'vi' ? 'map.layerMap' : 'map.layerSatellite'
+}
+
+export function exploreLayerHintKey(layer: ExploreMapLayer): string {
+  return layer === 'vi' ? 'map.hintMap' : 'map.hintHybrid'
 }

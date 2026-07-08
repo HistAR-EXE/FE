@@ -19,6 +19,7 @@ export type ProfileMe = {
   levelName?: string
   pointsToNextLevel?: number
   levelProgressPercent?: number
+  emailVerified?: boolean
 }
 
 export type BadgeCatalogItem = {

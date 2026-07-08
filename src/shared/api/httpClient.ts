@@ -96,6 +96,9 @@ httpClient.interceptors.response.use(
       code,
       status,
       fieldErrors: payload?.fieldErrors,
+      upgradeUrl: payload?.upgradeUrl,
+      quotaType: payload?.type,
+      upgradePackage: payload?.upgradePackage,
     })
   },
 )

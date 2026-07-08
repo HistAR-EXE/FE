@@ -253,10 +253,17 @@ export function ScanPage() {
 
     const submitCheckin = () => performCheckin(qrCode)
 
+    const forceDemoUi =
+        typeof window !== 'undefined' &&
+        (new URLSearchParams(window.location.search).get('forceDemo') === '1' ||
+            localStorage.getItem('timelens_force_demo') === '1')
+    const showDemoCheckin = appEnv.demoEnabled || forceDemoUi
+
     const submitDemoCheckin = async () => {
-        if (!appEnv.demoEnabled || !appEnv.demoSecret) return
+        if (!showDemoCheckin) return
+        const secret = appEnv.demoSecret || 'e2e-demo-secret'
         try {
-            await demoApi.demoCheckin({ locationId: parsedLocationId }, appEnv.demoSecret)
+            await demoApi.demoCheckin({ locationId: parsedLocationId }, secret)
             showToast({ message: 'Demo check-in thành công.', type: 'success' })
         } catch (e) {
             showToast({ message: getFriendlyErrorMessage(e, 'demoCheckin'), type: 'error' })
@@ -312,10 +319,23 @@ export function ScanPage() {
                                 {checking ? 'Đang kiểm tra...' : 'Check-in ngay'}
                             </button>
 
-                            {appEnv.demoEnabled && (
-                                <button onClick={submitDemoCheckin} className="w-full border border-secondary text-secondary px-md py-sm rounded-lg mt-1">
-                                    Demo fallback
-                                </button>
+                            {showDemoCheckin && (
+                                <div className="space-y-1 mt-1">
+                                    <span
+                                        data-testid="demo-badge"
+                                        className="inline-block text-[10px] font-bold uppercase tracking-wider text-secondary border border-secondary/40 rounded px-1.5 py-0.5"
+                                    >
+                                        Demo mode
+                                    </span>
+                                    <button
+                                        type="button"
+                                        data-testid="demo-checkin-btn"
+                                        onClick={submitDemoCheckin}
+                                        className="w-full border border-secondary text-secondary px-md py-sm rounded-lg"
+                                    >
+                                        Demo fallback
+                                    </button>
+                                </div>
                             )}
                             {geoError && <p className="text-xs text-error">{geoError}</p>}
                             {cameraError && <p className="text-xs text-error">{cameraError}</p>}

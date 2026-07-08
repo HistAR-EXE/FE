@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
 import { BE_URL, SEED } from '../helpers/constants'
-import { login, authHeaders, unwrap } from '../helpers/api'
+import { authHeaders, registerFreshUser, unwrap } from '../helpers/api'
 import { expectStatus } from '../helpers/errors'
 import { isRagAiReady } from '../helpers/ai'
 
@@ -12,7 +12,7 @@ test.describe('BE API · Chat orchestrated', () => {
     const charList = await unwrap<Array<{ id: string }>>(chars)
     expect(charList.length).toBeGreaterThan(0)
 
-    const s = await login(request)
+    const s = await registerFreshUser(request)
     const res = await request.post(`${BE_URL}/api/chat/messages`, {
       headers: authHeaders(s.token),
       data: { characterId: charList[0].id, message: 'Củ Chi là gì?' },

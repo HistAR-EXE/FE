@@ -1,8 +1,10 @@
 // src/features/explore/ExploreMapPanel.tsx
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+
 import type { Location as HeritageLocation } from '../locations/api'
 import { MaterialIcon } from '../../components/ui/MaterialIcon'
 import {
@@ -13,18 +15,14 @@ import {
     VIETNAM_DEFAULT_ZOOM,
     VIETNAM_MAP_BOUNDS,
     VIETNAM_MAP_CENTER,
-    VIETNAM_SOVEREIGN_ARCHIPELAGOS,
 } from './vietnamMap'
 import { REGION_META, type VietnamRegion } from './vietnamGeo'
 import {
-    EXPLORE_MAP_LAYERS,
-    exploreLayerHint,
-    HYBRID_ATTRIBUTION,
-    REFERENCE_LABELS_TILE_URL,
-    SATELLITE_TILE_URL,
+    EXPLORE_MAP_LAYER_IDS,
+    exploreLayerHintKey,
+    exploreLayerLabelKey,
+    googleTileUrl,
     TILE_COMMON,
-    VI_ATTRIBUTION,
-    VOYAGER_MAP_URL,
     type ExploreMapLayer,
 } from './exploreMapTiles'
 import { isLocationLocked } from './locationUnlock'
@@ -37,262 +35,245 @@ type ExploreMapPanelProps = {
     onLockedLocationClick?: (location: HeritageLocation) => void
     onPinClick?: (location: HeritageLocation) => void
     selectedLocationId?: string
+    /** Khoá pin chưa số hoá (mode-select): dùng isArAvailable thay vì quest lock. */
+    digitizationLock?: boolean
     className?: string
 }
 
 function RegionLegend() {
+    const { t } = useTranslation()
     const regions: VietnamRegion[] = ['north', 'central', 'south']
     return (
         <div className="flex flex-col gap-1.5 rounded-xl border border-outline-variant/60 bg-surface-container/92 backdrop-blur-md px-3 py-2.5 shadow-lg">
-            <p className="text-[10px] uppercase tracking-wider text-on-surface-variant font-label-sm mb-0.5">Vùng miền</p>
+            <p className="text-[10px] uppercase tracking-wider text-on-surface-variant font-label-sm mb-0.5">{t('map.regionLegend')}</p>
             {regions.map((key) => (
                 <div key={key} className="flex items-center gap-2">
-          <span
-              className="w-2.5 h-2.5 rounded-full shrink-0 ring-2 ring-white/40"
-              style={{ backgroundColor: REGION_META[key].marker }}
-          />
-                    <span className="text-xs text-on-surface">{REGION_META[key].label}</span>
+                    <span
+                        className="w-2.5 h-2.5 rounded-full shrink-0 ring-2 ring-white/40"
+                        style={{ backgroundColor: REGION_META[key].marker }}
+                    />
+                    <span className="text-xs text-on-surface">{t(`regions.${key}`)}</span>
                 </div>
             ))}
-            <div className="border-t border-outline-variant/50 pt-1.5 mt-0.5">
-                <p className="text-[10px] uppercase tracking-wider text-on-surface-variant font-label-sm mb-1">Biển đảo</p>
-                {VIETNAM_SOVEREIGN_ARCHIPELAGOS.map((arch) => (
-                    <div key={arch.id} className="flex items-center gap-2">
-                        <span className="text-xs text-[#da251d] shrink-0">★</span>
-                        <span className="text-xs text-on-surface">{arch.label}</span>
-                    </div>
-                ))}
-            </div>
         </div>
     )
 }
 
-function createSovereignIcon(label: string): L.DivIcon {
-    return L.divIcon({
-        className: 'vn-sovereign-pin-wrap',
-        html: `
-      <div class="vn-sovereign-pin">
-        <span class="vn-sovereign-pin__star">★</span>
-        <span class="vn-sovereign-pin__label">${label}</span>
-      </div>
-    `,
-        iconSize: [168, 28],
-        iconAnchor: [7, 14],
-    })
-}
-
-function fitVietnamView(map: L.Map, markerList: MapMarker[], animate: boolean) {
-    const points = buildVietnamFitPoints(markerList)
-    if (points.length === 0) {
-        map.setView(VIETNAM_MAP_CENTER, VIETNAM_DEFAULT_ZOOM, { animate })
-        return
-    }
-    const bounds = L.latLngBounds(points)
-    map.fitBounds(bounds.pad(0.1), { animate, maxZoom: 6 })
-}
-
-function createPinIcon(region: VietnamRegion, active: boolean, visited: boolean, locked: boolean): L.DivIcon {
-    const color = locked ? '#6b7280' : REGION_META[region].marker
-    const size = 32
+function createHeritagePinIcon(active: boolean, visited: boolean, locked: boolean, color: string): L.DivIcon {
     const visitedClass = visited ? ' heritage-map-pin--visited' : ''
     const lockedClass = locked ? ' heritage-map-pin--locked' : ''
+    const activeClass = active ? ' heritage-map-pin--active' : ''
+    const badge = locked ? '🔒' : visited ? '✓' : ''
+    const badgeHtml = badge
+        ? `<span class="heritage-map-pin__visited-badge">${badge}</span>`
+        : ''
     return L.divIcon({
         className: 'heritage-map-pin-wrap',
         html: `
-      <div class="heritage-map-pin ${active ? 'heritage-map-pin--active' : ''}${visitedClass}${lockedClass}" style="--pin-color:${color};${locked ? 'opacity:0.45;' : ''}">
+      <div class="heritage-map-pin${activeClass}${visitedClass}${lockedClass}" style="--pin-color:${color};opacity:${locked ? 0.45 : 1}">
         <span class="heritage-map-pin__glow"></span>
         <span class="heritage-map-pin__head"></span>
         <span class="heritage-map-pin__tail"></span>
-        ${locked ? '<span class="heritage-map-pin__visited-badge">🔒</span>' : visited ? '<span class="heritage-map-pin__visited-badge">✓</span>' : ''}
+        ${badgeHtml}
       </div>
     `,
-        iconSize: [size, size],
-        iconAnchor: [size / 2, size],
-        popupAnchor: [0, -size],
+        iconSize: [40, 40],
+        iconAnchor: [20, 40],
     })
 }
 
 export function ExploreMapPanel({
-                                    locations,
-                                    visitedIds,
-                                    user,
-                                    onLockedLocationClick,
-                                    onPinClick,
-                                    selectedLocationId,
-                                    className = '',
-                                }: ExploreMapPanelProps) {
+    locations,
+    visitedIds,
+    user,
+    onLockedLocationClick,
+    onPinClick,
+    selectedLocationId,
+    digitizationLock = false,
+    className = '',
+}: ExploreMapPanelProps) {
     const navigate = useNavigate()
-    const containerRef = useRef<HTMLDivElement | null>(null)
-    const mapRef = useRef<L.Map | null>(null)
-    const layerRef = useRef<L.LayerGroup | null>(null)
-    const sovereignLayerRef = useRef<L.LayerGroup | null>(null)
-    const viMapLayerRef = useRef<L.TileLayer | null>(null)
-    const satelliteLayerRef = useRef<L.TileLayer | null>(null)
-    const referenceLabelsRef = useRef<L.TileLayer | null>(null)
-    const markerRefs = useRef<Map<string, L.Marker>>(new Map())
-
+    const { t } = useTranslation()
     const [hoveredId, setHoveredId] = useState<string | null>(null)
     const [mapLayer, setMapLayer] = useState<ExploreMapLayer>('vi')
+
+    const mapContainerRef = useRef<HTMLDivElement>(null)
+    const mapRef = useRef<L.Map | null>(null)
+    const tileLayerRef = useRef<L.TileLayer | null>(null)
+    const markersLayerRef = useRef<L.LayerGroup | null>(null)
+    const hasFittedRef = useRef(false)
+
+    const onPinClickRef = useRef(onPinClick)
+    const onLockedLocationClickRef = useRef(onLockedLocationClick)
+    const userRef = useRef(user)
+    const navigateRef = useRef(navigate)
+
+    useEffect(() => { onPinClickRef.current = onPinClick }, [onPinClick])
+    useEffect(() => { onLockedLocationClickRef.current = onLockedLocationClick }, [onLockedLocationClick])
+    useEffect(() => { userRef.current = user }, [user])
+    useEffect(() => { navigateRef.current = navigate }, [navigate])
 
     const markers = useMemo(() => buildMapMarkers(locations), [locations])
     const markerCount = markers.length
     const hoveredMarker = markers.find((m) => m.location.id === hoveredId)
 
-    useEffect(() => {
-        if (!containerRef.current || mapRef.current) return
+    const handleMarkerClick = useCallback((marker: MapMarker) => {
+        if (digitizationLock && !marker.location.isArAvailable) {
+            onLockedLocationClickRef.current?.(marker.location)
+            return
+        }
+        const locked = isLocationLocked(marker.location, userRef.current)
+        if (locked) {
+            onLockedLocationClickRef.current?.(marker.location)
+            return
+        }
+        if (onPinClickRef.current) {
+            onPinClickRef.current(marker.location)
+        } else {
+            navigateRef.current(`/explore/${marker.location.id}`)
+        }
+    }, [digitizationLock])
 
-        const map = L.map(containerRef.current, {
+    const fitVietnamView = useCallback((map: L.Map, markerList: MapMarker[]) => {
+        const points = buildVietnamFitPoints(markerList)
+        if (points.length > 0) {
+            const bounds = L.latLngBounds(points)
+            map.fitBounds(bounds, { padding: [48, 48], maxZoom: 6 })
+        } else {
+            map.setView(VIETNAM_MAP_CENTER, VIETNAM_DEFAULT_ZOOM)
+        }
+    }, [])
+
+    useEffect(() => {
+        if (!mapContainerRef.current || mapRef.current) return
+
+        const map = L.map(mapContainerRef.current, {
             center: VIETNAM_MAP_CENTER,
             zoom: VIETNAM_DEFAULT_ZOOM,
-            minZoom: 5,
-            maxZoom: 19,
-            maxBounds: VIETNAM_MAP_BOUNDS,
-            maxBoundsViscosity: 0.35,
             zoomControl: false,
             attributionControl: true,
+            maxBounds: L.latLngBounds(VIETNAM_MAP_BOUNDS),
+            maxBoundsViscosity: 0.85,
         })
 
-        viMapLayerRef.current = L.tileLayer(VOYAGER_MAP_URL, {
-            ...TILE_COMMON,
-            attribution: VI_ATTRIBUTION,
-        })
-        satelliteLayerRef.current = L.tileLayer(SATELLITE_TILE_URL, {
-            ...TILE_COMMON,
-            attribution: HYBRID_ATTRIBUTION,
-        })
-        referenceLabelsRef.current = L.tileLayer(REFERENCE_LABELS_TILE_URL, {
-            ...TILE_COMMON,
-            attribution: '',
-            pane: 'overlayPane',
-        })
+        const tile = L.tileLayer(googleTileUrl('vi', 'vi'), TILE_COMMON).addTo(map)
+        const markersLayer = L.layerGroup().addTo(map)
 
-        viMapLayerRef.current.addTo(map)
-
-        const sovereignLayer = L.layerGroup().addTo(map)
-        VIETNAM_SOVEREIGN_ARCHIPELAGOS.forEach((arch) => {
-            const marker = L.marker([arch.lat, arch.lng], {
-                icon: createSovereignIcon(arch.label),
-            })
-            marker.bindTooltip(arch.hoverText, {
-                direction: 'top',
-                offset: [0, -10],
-                opacity: 0.95,
-                className: 'vn-sovereign-tooltip',
-            })
-            marker.addTo(sovereignLayer)
-        })
-        sovereignLayerRef.current = sovereignLayer
-
-        layerRef.current = L.layerGroup().addTo(map)
         mapRef.current = map
+        tileLayerRef.current = tile
+        markersLayerRef.current = markersLayer
 
         return () => {
             map.remove()
             mapRef.current = null
-            layerRef.current = null
-            sovereignLayerRef.current = null
-            viMapLayerRef.current = null
-            satelliteLayerRef.current = null
-            referenceLabelsRef.current = null
-            markerRefs.current.clear()
+            tileLayerRef.current = null
+            markersLayerRef.current = null
+            hasFittedRef.current = false
         }
     }, [])
 
     useEffect(() => {
         const map = mapRef.current
-        const viMap = viMapLayerRef.current
-        const satellite = satelliteLayerRef.current
-        const refLabels = referenceLabelsRef.current
-        if (!map || !viMap || !satellite || !refLabels) return
-
-            ;[viMap, satellite, refLabels].forEach((layer) => {
-            if (map.hasLayer(layer)) map.removeLayer(layer)
-        })
-
-        if (mapLayer === 'vi') {
-            viMap.addTo(map)
-        } else {
-            satellite.addTo(map)
-            refLabels.addTo(map)
-        }
+        const tile = tileLayerRef.current
+        if (!map || !tile) return
+        tile.setUrl(googleTileUrl(mapLayer, 'vi'))
     }, [mapLayer])
 
     useEffect(() => {
         const map = mapRef.current
-        const layer = layerRef.current
-        if (!map || !layer) return
+        const markersLayer = markersLayerRef.current
+        if (!map || !markersLayer) return
 
-        layer.clearLayers()
-        markerRefs.current.clear()
+        markersLayer.clearLayers()
 
         markers.forEach((marker) => {
-            const name = normalizeHeritageName(marker.location.name)
             const visited = visitedIds?.has(marker.location.id) ?? false
-            const locked = isLocationLocked(marker.location, user)
+            const digitizationLocked = digitizationLock && !marker.location.isArAvailable
+            const questLocked = !digitizationLock && isLocationLocked(marker.location, user)
+            const locked = digitizationLocked || questLocked
             const active = hoveredId === marker.location.id || selectedLocationId === marker.location.id
-            const icon = createPinIcon(marker.region, active, visited, locked)
-            const leafletMarker = L.marker([marker.lat, marker.lng], { icon })
+            const color = locked ? '#6b7280' : REGION_META[marker.region].marker
 
-            leafletMarker.on('mouseover', () => setHoveredId(marker.location.id))
-            leafletMarker.on('mouseout', () => setHoveredId(null))
-            leafletMarker.on('click', () => {
-                if (locked) {
-                    onLockedLocationClick?.(marker.location)
-                    return
-                }
-                if (onPinClick) {
-                    onPinClick(marker.location)
-                } else {
-                    navigate(`/explore/${marker.location.id}`)
-                }
+            const leafletMarker = L.marker([marker.lat, marker.lng], {
+                icon: createHeritagePinIcon(active, visited, locked, color),
+                riseOnHover: true,
             })
 
-            const tooltipSuffix = locked ? '<br/><em>🔒 Hoàn thành quest trước để mở khoá</em>' : ''
-            leafletMarker.bindTooltip(
-                `<strong>${name}</strong><br/><span>${marker.location.city}</span>${tooltipSuffix}`,
-                {
-                    direction: 'top',
-                    offset: [0, -34],
-                    opacity: 0.95,
-                    className: 'heritage-map-tooltip',
-                },
-            )
-
-            leafletMarker.addTo(layer)
-            markerRefs.current.set(marker.location.id, leafletMarker)
+            leafletMarker.on('click', () => handleMarkerClick(marker))
+            leafletMarker.on('mouseover', () => setHoveredId(marker.location.id))
+            leafletMarker.on('mouseout', () => setHoveredId((id) => (id === marker.location.id ? null : id)))
+            leafletMarker.addTo(markersLayer)
         })
 
-        if (markers.length > 0) {
-            fitVietnamView(map, markers, false)
+        if (!hasFittedRef.current && markers.length > 0) {
+            fitVietnamView(map, markers)
+            hasFittedRef.current = true
         }
-    }, [markers, navigate, visitedIds, onLockedLocationClick, user, onPinClick, selectedLocationId])
+    }, [markers, visitedIds, user, hoveredId, selectedLocationId, handleMarkerClick, fitVietnamView, digitizationLock])
 
-    useEffect(() => {
-        markers.forEach((marker) => {
-            const leafletMarker = markerRefs.current.get(marker.location.id)
-            if (!leafletMarker) return
-            const visited = visitedIds?.has(marker.location.id) ?? false
-            const locked = isLocationLocked(marker.location, user)
-            const active = hoveredId === marker.location.id || selectedLocationId === marker.location.id
-            leafletMarker.setIcon(createPinIcon(marker.region, active, visited, locked))
-        })
-    }, [hoveredId, markers, visitedIds, user, selectedLocationId])
-
-    const zoomIn = () => mapRef.current?.zoomIn()
-    const zoomOut = () => mapRef.current?.zoomOut()
     const resetView = () => {
         const map = mapRef.current
         if (!map) return
-        fitVietnamView(map, markers, true)
+        fitVietnamView(map, markers)
+    }
+
+    const zoomBy = (delta: number) => {
+        const map = mapRef.current
+        if (!map) return
+        map.setZoom(Math.max(5, Math.min(19, map.getZoom() + delta)))
     }
 
     return (
         <section className={`flex-1 h-64 lg:h-full min-h-[16rem] lg:min-h-0 rounded-2xl overflow-hidden border border-outline-variant relative shadow-inner bg-[#0b1628] ${className}`}>
-            <div ref={containerRef} className="heritage-leaflet-map absolute inset-0 z-0" />
+            <div ref={mapContainerRef} className="absolute inset-0 w-full h-full z-0" />
+
+            <div className="absolute right-md bottom-md flex flex-col items-end gap-sm z-[500] pointer-events-none">
+                <div className="pointer-events-auto">
+                    <RegionLegend />
+                </div>
+                <div className="grid grid-cols-2 gap-1.5 w-full min-w-[168px] pointer-events-auto">
+                    {EXPLORE_MAP_LAYER_IDS.map((id) => (
+                        <button
+                            key={id}
+                            type="button"
+                            onClick={() => setMapLayer(id)}
+                            className={`tour360-map-layer-btn ${mapLayer === id ? 'is-active' : ''}`}
+                        >
+                            {t(exploreLayerLabelKey(id))}
+                        </button>
+                    ))}
+                </div>
+                <div className="flex flex-col gap-sm pointer-events-auto">
+                    <button
+                        type="button"
+                        onClick={resetView}
+                        className="w-10 h-10 bg-surface/95 border border-outline-variant rounded-full flex items-center justify-center text-on-surface hover:border-primary hover:text-primary transition-colors shadow-lg cursor-pointer"
+                        aria-label={t('map.resetView')}
+                        title={t('map.resetView')}
+                    >
+                        <MaterialIcon name="my_location" />
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => zoomBy(1)}
+                        className="w-10 h-10 bg-surface/95 border border-outline-variant rounded-full flex items-center justify-center text-on-surface hover:border-secondary hover:text-secondary transition-colors shadow-lg cursor-pointer"
+                        aria-label={t('map.zoomIn')}
+                    >
+                        <MaterialIcon name="add" />
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => zoomBy(-1)}
+                        className="w-10 h-10 bg-surface/95 border border-outline-variant rounded-full flex items-center justify-center text-on-surface hover:border-secondary hover:text-secondary transition-colors shadow-lg cursor-pointer"
+                        aria-label={t('map.zoomOut')}
+                    >
+                        <MaterialIcon name="remove" />
+                    </button>
+                </div>
+            </div>
 
             <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-[#091420]/50 via-transparent to-transparent z-[1]" />
 
-            {/* THẺ THÔNG TIN ĐÃ ĐƯỢC CHUYỂN SANG GÓC DƯỚI BÊN TRÁI (HOÀN TOÀN ĐỘC LẬP & KHÔNG ĐÈ LÊN CHÚ THÍCH BÊN PHẢI) */}
             {hoveredMarker && (
                 <div className="absolute bottom-4 left-4 z-[600] w-[min(260px,45%)] rounded-xl border border-outline-variant bg-surface-container/95 backdrop-blur-md shadow-2xl overflow-hidden pointer-events-none animate-[fadeIn_0.15s_ease-out]">
                     {hoveredMarker.location.coverImage && (
@@ -311,65 +292,20 @@ export function ExploreMapPanel({
                             <MaterialIcon name="location_on" className="text-sm text-secondary" />
                             {hoveredMarker.location.city}
                         </p>
-                        <p className="text-[10px] text-primary mt-1.5">{REGION_META[hoveredMarker.region].label}</p>
+                        <p className="text-[10px] text-primary mt-1.5">{t(`regions.${hoveredMarker.region}`)}</p>
                     </div>
                 </div>
             )}
 
-            <div className="absolute right-md bottom-md flex flex-col items-end gap-sm z-[500] pointer-events-auto">
-                <RegionLegend />
-
-                <div className="grid grid-cols-2 gap-1.5 w-full min-w-[168px]">
-                    {EXPLORE_MAP_LAYERS.map(({ id, label }) => (
-                        <button
-                            key={id}
-                            type="button"
-                            onClick={() => setMapLayer(id)}
-                            className={`tour360-map-layer-btn ${mapLayer === id ? 'is-active' : ''}`}
-                        >
-                            {label}
-                        </button>
-                    ))}
-                </div>
-
-                <div className="flex flex-col gap-sm">
-                    <button
-                        type="button"
-                        onClick={resetView}
-                        className="w-10 h-10 bg-surface/95 border border-outline-variant rounded-full flex items-center justify-center text-on-surface hover:border-primary hover:text-primary transition-colors shadow-lg cursor-pointer"
-                        aria-label="Xem toàn bộ Việt Nam"
-                        title="Xem toàn bộ"
-                    >
-                        <MaterialIcon name="my_location" />
-                    </button>
-                    <button
-                        type="button"
-                        onClick={zoomIn}
-                        className="w-10 h-10 bg-surface/95 border border-outline-variant rounded-full flex items-center justify-center text-on-surface hover:border-secondary hover:text-secondary transition-colors shadow-lg cursor-pointer"
-                        aria-label="Phóng to bản đồ"
-                    >
-                        <MaterialIcon name="add" />
-                    </button>
-                    <button
-                        type="button"
-                        onClick={zoomOut}
-                        className="w-10 h-10 bg-surface/95 border border-outline-variant rounded-full flex items-center justify-center text-on-surface hover:border-secondary hover:text-secondary transition-colors shadow-lg cursor-pointer"
-                        aria-label="Thu nhỏ bản đồ"
-                    >
-                        <MaterialIcon name="remove" />
-                    </button>
-                </div>
-            </div>
-
             <div className="absolute top-md left-md bg-surface-container-high/92 backdrop-blur-md border border-primary/30 px-4 py-2 rounded-full flex items-center gap-2 z-[500] max-w-[90%] shadow-lg pointer-events-none">
-        <span className="flex items-center justify-center w-7 h-7 rounded-full bg-primary/15">
-          <MaterialIcon name="map" className="text-primary text-base" />
-        </span>
+                <span className="flex items-center justify-center w-7 h-7 rounded-full bg-primary/15">
+                    <MaterialIcon name="map" className="text-primary text-base" />
+                </span>
                 <div className="min-w-0">
-                    <span className="font-title-md text-on-surface text-sm block truncate">Bản đồ di tích Việt Nam</span>
+                    <span className="font-title-md text-on-surface text-sm block truncate">{t('map.title')}</span>
                     <span className="text-[10px] text-on-surface-variant">
-            {markerCount} điểm • {exploreLayerHint(mapLayer)}
-          </span>
+                        {t('map.points', { count: markerCount })} • {t(exploreLayerHintKey(mapLayer))}
+                    </span>
                 </div>
             </div>
         </section>

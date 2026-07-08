@@ -1,9 +1,11 @@
-import { Navigate, Outlet } from 'react-router-dom'
+import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
 import { isTeacher } from '../auth/types'
+import { buildLoginRedirect } from './returnTo'
 
 export function TeacherRoute() {
   const { isAuthenticated, isLoading, user } = useAuth()
+  const location = useLocation()
 
   if (isLoading) {
     return (
@@ -14,7 +16,7 @@ export function TeacherRoute() {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />
+    return <Navigate to={buildLoginRedirect(location.pathname, location.search)} replace />
   }
 
   if (!isTeacher(user)) {

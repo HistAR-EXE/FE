@@ -14,6 +14,7 @@ import {
   SESSION_CLEARED_EVENT,
   SESSION_REFRESHED_EVENT,
 } from './session'
+import { clearReturnTo } from '../router/returnTo'
 
 function toUser(payload: AuthPayload): AuthUser {
   return {
@@ -25,6 +26,8 @@ function toUser(payload: AuthPayload): AuthUser {
     orgId: payload.orgId ?? null,
     orgSubscription: normalizeOrgSubscription(payload.orgSubscription),
     avatarUrl: payload.avatarUrl ?? null,
+    emailVerified: payload.emailVerified,
+    provider: payload.provider === 'google' ? 'google' : 'local',
   }
 }
 
@@ -39,6 +42,7 @@ function profileToUser(profile: {
   orgName?: string | null
   orgSubscription?: string
   orgRole?: string | null
+  emailVerified?: boolean
 }): AuthUser {
   return {
     id: profile.id,
@@ -51,6 +55,8 @@ function profileToUser(profile: {
     orgName: profile.orgName ?? null,
     orgRole: profile.orgRole ?? null,
     avatarUrl: profile.avatarUrl,
+    emailVerified: profile.emailVerified,
+    provider: 'local',
   }
 }
 
@@ -68,6 +74,7 @@ function persistUserSession(next: AuthUser) {
     orgId: next.orgId,
     orgSubscription: next.orgSubscription,
     avatarUrl: next.avatarUrl,
+    emailVerified: next.emailVerified,
   })
 }
 
@@ -124,6 +131,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const storeAuth = (payload: AuthPayload): AuthUser => {
     const accessToken = payload.accessToken ?? payload.token
     const next = toUser(payload)
+    const prevId = user?.id
+    if (prevId && prevId !== next.id) {
+      clearReturnTo()
+    }
     saveSession({
       token: accessToken,
       refreshToken: payload.refreshToken,
@@ -137,6 +148,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       orgId: next.orgId,
       orgSubscription: next.orgSubscription,
       avatarUrl: next.avatarUrl,
+      emailVerified: next.emailVerified,
     })
     setUser(next)
     return next
@@ -152,20 +164,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return storeAuth(payload)
   }
 
+  const loginWithGoogle = async (idToken: string): Promise<AuthUser> => {
+    const payload = await authApi.googleLogin(idToken)
+    return storeAuth({
+      ...payload,
+      email: payload.email,
+      provider: 'google',
+      emailVerified: payload.emailVerified ?? true,
+    })
+  }
+
   const logout = () => {
     authApi.logout(getRefreshToken()).catch(() => undefined)
     clearSession()
     setUser(null)
   }
 
-  const updateUser = (patch: Partial<AuthUser>) => {
+  const updateUser = useCallback((patch: Partial<AuthUser>) => {
     setUser((current) => {
       if (!current) return current
       const next: AuthUser = { ...current, ...patch }
       persistUserSession(next)
       return next
     })
-  }
+  }, [])
 
   const value: AuthContextValue = {
     isAuthenticated: Boolean(user && getToken()),
@@ -173,6 +195,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user,
     login,
     register,
+    loginWithGoogle,
     logout,
     updateUser,
   }

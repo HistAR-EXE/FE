@@ -9,6 +9,7 @@ export type AuthContextValue = {
   user: AuthUser | null
   login: (input: LoginInput) => Promise<AuthUser>
   register: (input: RegisterInput) => Promise<AuthUser>
+  loginWithGoogle: (idToken: string) => Promise<AuthUser>
   logout: () => void
   updateUser: (patch: Partial<AuthUser>) => void
 }

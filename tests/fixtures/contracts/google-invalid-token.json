@@ -1,0 +1,7 @@
+{
+  "request": {
+    "idToken": "invalid-smoke-token-not-from-google"
+  },
+  "expectedStatusMin": 400,
+  "expectedMessagePattern": "token google|không hợp lệ|cấu hình"
+}

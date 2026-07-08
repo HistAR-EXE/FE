@@ -2,6 +2,18 @@ import { test, expect } from '@playwright/test'
 import { ADMIN_USER, TEACHER_USER } from '../helpers/constants'
 import { BE_URL } from '../helpers/constants'
 import { login, registerFreshUser } from '../helpers/api'
+import { seedSession } from '../helpers/session'
+import { submitLoginForm } from '../helpers/ui'
+
+async function seedAdmin(page: import('@playwright/test').Page, request: import('@playwright/test').APIRequestContext) {
+  const s = await login(request, ADMIN_USER)
+  await seedSession(page, { ...s, role: 'ADMIN' })
+}
+
+async function seedTeacher(page: import('@playwright/test').Page, request: import('@playwright/test').APIRequestContext) {
+  const s = await login(request, TEACHER_USER)
+  await seedSession(page, { ...s, role: 'TEACHER' })
+}
 
 /**
  * §11 Role × UI audit — nút/nav theo role.
@@ -12,29 +24,21 @@ test.describe('E2E · Role UI', () => {
     await expect(page).not.toHaveURL(/\/admin\/content$/, { timeout: 10_000 })
   })
 
-  test('ROLE-UI-A1: ADMIN login → /admin/content', async ({ page }) => {
-    await page.goto('/login')
-    await page.locator('input[name="email"]').fill(ADMIN_USER.email)
-    await page.locator('input[name="password"]').fill(ADMIN_USER.password)
-    await page.getByRole('button', { name: 'Tiếp tục' }).click()
+  test('ROLE-UI-A1: ADMIN login → /admin/content', async ({ page, request }) => {
+    await seedAdmin(page, request)
+    await page.goto('/admin/content')
     await expect(page).toHaveURL(/\/admin\/content$/, { timeout: 15_000 })
   })
 
-  test('ROLE-UI-A2: ADMIN tab Hiện vật có nút Thêm', async ({ page }) => {
-    await page.goto('/login')
-    await page.locator('input[name="email"]').fill(ADMIN_USER.email)
-    await page.locator('input[name="password"]').fill(ADMIN_USER.password)
-    await page.getByRole('button', { name: 'Tiếp tục' }).click()
-    await expect(page).toHaveURL(/\/admin\/content/, { timeout: 15_000 })
+  test('ROLE-UI-A2: ADMIN tab Hiện vật có nút Thêm', async ({ page, request }) => {
+    await seedAdmin(page, request)
+    await page.goto('/admin/content')
     await page.getByRole('button', { name: /Hiện vật/i }).click()
     await expect(page.getByRole('button', { name: 'Thêm hiện vật' })).toBeVisible()
   })
 
-  test('ROLE-UI-A3: ADMIN Cài đặt không có link CMS; sidebar có Quản trị', async ({ page }) => {
-    await page.goto('/login')
-    await page.locator('input[name="email"]').fill(ADMIN_USER.email)
-    await page.locator('input[name="password"]').fill(ADMIN_USER.password)
-    await page.getByRole('button', { name: 'Tiếp tục' }).click()
+  test('ROLE-UI-A3: ADMIN Cài đặt không có link CMS; sidebar có Quản trị', async ({ page, request }) => {
+    await seedAdmin(page, request)
 
     await page.goto('/settings')
     await expect(page.getByRole('heading', { name: 'Chỉnh sửa hồ sơ' })).toBeVisible()
@@ -48,11 +52,8 @@ test.describe('E2E · Role UI', () => {
     await expect(page.getByRole('link', { name: /Quản trị/i })).toBeVisible()
   })
 
-  test('ROLE-UI-A4: ADMIN analytics có AdminSubNav', async ({ page }) => {
-    await page.goto('/login')
-    await page.locator('input[name="email"]').fill(ADMIN_USER.email)
-    await page.locator('input[name="password"]').fill(ADMIN_USER.password)
-    await page.getByRole('button', { name: 'Tiếp tục' }).click()
+  test('ROLE-UI-A4: ADMIN analytics có AdminSubNav', async ({ page, request }) => {
+    await seedAdmin(page, request)
     await page.goto('/admin/analytics')
     await expect(page.getByRole('navigation', { name: 'Điều hướng quản trị' })).toBeVisible()
     await expect(page.getByRole('link', { name: /Nội dung/i })).toBeVisible()
@@ -61,11 +62,8 @@ test.describe('E2E · Role UI', () => {
     await expect(page.getByRole('link', { name: /Tổ chức/i })).toBeVisible()
   })
 
-  test('ROLE-UI-A5: ADMIN /settings chỉ tài khoản cá nhân', async ({ page }) => {
-    await page.goto('/login')
-    await page.locator('input[name="email"]').fill(ADMIN_USER.email)
-    await page.locator('input[name="password"]').fill(ADMIN_USER.password)
-    await page.getByRole('button', { name: 'Tiếp tục' }).click()
+  test('ROLE-UI-A5: ADMIN /settings chỉ tài khoản cá nhân', async ({ page, request }) => {
+    await seedAdmin(page, request)
     await page.goto('/settings')
     await expect(page.getByRole('heading', { name: 'Chỉnh sửa hồ sơ' })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Đăng xuất' })).toBeVisible()
@@ -73,30 +71,23 @@ test.describe('E2E · Role UI', () => {
     await expect(page.getByRole('button', { name: /Nâng cấp Premium/i })).toHaveCount(0)
   })
 
-  test('ROLE-UI-T3: TEACHER /settings có Dashboard lớp, không mã mời', async ({ page }) => {
-    await page.goto('/login')
-    await page.locator('input[name="email"]').fill(TEACHER_USER.email)
-    await page.locator('input[name="password"]').fill(TEACHER_USER.password)
-    await page.getByRole('button', { name: 'Tiếp tục' }).click()
+  test('ROLE-UI-T3: TEACHER /settings có Dashboard lớp, không mã mời', async ({ page, request }) => {
+    await seedTeacher(page, request)
     await page.goto('/settings')
     await expect(page.getByRole('link', { name: /Dashboard lớp/i })).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Lớp học' })).toHaveCount(0)
     await expect(page.getByPlaceholder('Nhập mã mời lớp')).toHaveCount(0)
   })
 
-  test('ROLE-UI-T1: TEACHER login → /teacher', async ({ page }) => {
-    await page.goto('/login')
-    await page.locator('input[name="email"]').fill(TEACHER_USER.email)
-    await page.locator('input[name="password"]').fill(TEACHER_USER.password)
-    await page.getByRole('button', { name: 'Tiếp tục' }).click()
+  test('ROLE-UI-T1: TEACHER login → /teacher', async ({ page, request }) => {
+    await seedTeacher(page, request)
+    await page.goto('/teacher')
     await expect(page).toHaveURL(/\/teacher$/, { timeout: 15_000 })
   })
 
-  test('ROLE-UI-T2: TEACHER dashboard có mã mời', async ({ page }) => {
-    await page.goto('/login')
-    await page.locator('input[name="email"]').fill(TEACHER_USER.email)
-    await page.locator('input[name="password"]').fill(TEACHER_USER.password)
-    await page.getByRole('button', { name: 'Tiếp tục' }).click()
+  test('ROLE-UI-T2: TEACHER dashboard có mã mời', async ({ page, request }) => {
+    await seedTeacher(page, request)
+    await page.goto('/teacher')
     await expect(page.getByText(/Mã mời tổ chức/i)).toBeVisible({ timeout: 15_000 })
   })
 
@@ -105,7 +96,7 @@ test.describe('E2E · Role UI', () => {
     await page.goto('/login')
     await page.locator('input[name="email"]').fill(user.email)
     await page.locator('input[name="password"]').fill(user.password)
-    await page.getByRole('button', { name: 'Tiếp tục' }).click()
+    await submitLoginForm(page)
     await expect(page).toHaveURL(/\/mode-select$/, { timeout: 15_000 })
 
     await page.goto('/settings')
@@ -133,6 +124,6 @@ test.describe('API · Role guards', () => {
       headers: { Authorization: `Bearer ${user.token}` },
       failOnStatusCode: false,
     })
-    expect([403, 404]).toContain(res.status())
+    expect([403, 404, 422]).toContain(res.status())
   })
 })

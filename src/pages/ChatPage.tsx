@@ -1,6 +1,6 @@
 // src/pages/ChatPage.tsx
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useParams, useSearchParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { SimpleTopNav } from '../components/layout/TopNav'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
@@ -15,10 +15,14 @@ import { locationsApi, type Character } from '../features/locations/api'
 import { questRecordFromSearch, recordQuestStepEngagement } from '../features/gamification/questEngagement'
 import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
 import { ApiError } from '../shared/api/contracts'
-import { profileApi } from '../features/profile/api'
 import { ChatMessageContent } from '../shared/ui/ChatMessageContent'
 import { useAuth } from '../shared/auth/useAuth'
+import { shouldShowB2CPaywall } from '../shared/access/contentAccess'
+import { QuotaExceededModal } from '../components/monetization/QuotaExceededModal'
+import { OrgQuotaModal } from '../components/monetization/OrgQuotaModal'
+import { billingApi } from '../features/billing/api'
 import { useToast } from '../shared/ui/toast/useToast'
+import { probeRagAiHealth } from '../shared/api/aiHealth'
 
 const MESSAGE_PAGE_SIZE = 20
 
@@ -93,6 +97,22 @@ function mergeMessages(existing: ChatMessage[], incoming: ChatMessage[]): ChatMe
     return sortChronological([...map.values()])
 }
 
+/** BE chỉ nhận UUID character — map Đại sứ FE sang nhân vật API theo location. */
+const PERSONA_KEYS = new Set(['chi-nam', 'anh-ba'])
+
+function resolveChatCharacterId(
+    characterId: string,
+    characters: Character[],
+    activePersonaKey: 'chi-nam' | 'anh-ba',
+): string | null {
+    if (characterId && !PERSONA_KEYS.has(characterId)) return characterId
+    if (characters.length === 0) return null
+    if (activePersonaKey === 'chi-nam') {
+        return characters.find((c) => /chị năm/i.test(c.name))?.id ?? characters[0].id
+    }
+    return characters.find((c) => /anh ba|chiến sĩ/i.test(c.name))?.id ?? characters[0].id
+}
+
 function TimelineDivider({ label }: { label: string }) {
     return (
         <div className="flex justify-center py-2">
@@ -106,13 +126,14 @@ function TimelineDivider({ label }: { label: string }) {
 export function ChatPage() {
     const { characterId: routeCharacterId } = useParams<{ characterId?: string }>()
     const [params] = useSearchParams()
+    const navigate = useNavigate()
     const locationId = params.get('locationId') ?? ''
     const personaParam = params.get('persona') // Nhận 'chi-nam' hoặc 'anh-ba' từ ExplorePage
     const initialCharacterId = routeCharacterId ?? params.get('characterId') ?? ''
     const questRecordKey = questRecordFromSearch(params)
     const questPrompt = params.get('questPrompt') ?? params.get('prompt') ?? ''
 
-    const { isAuthenticated, user, updateUser } = useAuth()
+    const { isAuthenticated, user } = useAuth()
     const questDialogueRecorded = useRef(false)
     const prefilledQuestPrompt = useRef(false)
 
@@ -131,11 +152,16 @@ export function ChatPage() {
     const [hasOlder, setHasOlder] = useState(false)
     const [sending, setSending] = useState(false)
     const [chatLimitReached, setChatLimitReached] = useState(false)
-    const [premiumBannerDismissed] = useState(
+    const [quotaModalOpen, setQuotaModalOpen] = useState(false)
+    const [orgQuotaModalOpen, setOrgQuotaModalOpen] = useState(false)
+    const [orgUpgradePackage, setOrgUpgradePackage] = useState<string | null>(null)
+    const [b2cPriceVnd, setB2cPriceVnd] = useState(49_000)
+    const [dailyChatLimit, setDailyChatLimit] = useState(10)
+    const [premiumBannerDismissed, setPremiumBannerDismissed] = useState(
         () => sessionStorage.getItem('premiumBannerDismissed') === '1',
     )
-    const [upgrading, setUpgrading] = useState(false)
     const [voicePhase, setVoicePhase] = useState<VoicePhase>('idle')
+    const [aiServiceOnline, setAiServiceOnline] = useState<boolean | null>(null)
     const recorderRef = useRef<MediaRecorder | null>(null)
     const recordPromiseRef = useRef<Promise<Blob> | null>(null)
     const messagesScrollRef = useRef<HTMLDivElement | null>(null)
@@ -144,6 +170,44 @@ export function ChatPage() {
     const shouldStickToBottomRef = useRef(true)
     const chatStartedRef = useRef<string | null>(null)
     const { showToast } = useToast()
+
+    useEffect(() => {
+        if (!quotaModalOpen || !shouldShowB2CPaywall(user)) return
+        void analyticsApi.recordEvent({
+            eventType: 'PAYWALL_CHAT_QUOTA_VIEW',
+            source: 'chat',
+        })
+    }, [quotaModalOpen, user])
+
+    useEffect(() => {
+        billingApi
+            .getPublicPricing()
+            .then((data) => {
+                setB2cPriceVnd(data.b2cPremiumPriceVnd)
+                setDailyChatLimit(data.chatFreeDailyLimit ?? 10)
+            })
+            .catch(() => undefined)
+    }, [])
+
+    useEffect(() => {
+        let cancelled = false
+        void probeRagAiHealth().then((ok) => {
+            if (!cancelled) setAiServiceOnline(ok)
+        })
+        return () => {
+            cancelled = true
+        }
+    }, [])
+
+    useEffect(() => {
+        if (!isAuthenticated) return
+        billingApi
+            .getMeQuota()
+            .then((data) => {
+                if (data.dailyLimit > 0) setDailyChatLimit(data.dailyLimit)
+            })
+            .catch(() => undefined)
+    }, [isAuthenticated])
 
     // Chọn Persona hiển thị (Ưu tiên Đại sứ Củ Chi, fallback API)
     const currentAmbassador = useMemo(() => AMBASSADORS[activePersonaKey], [activePersonaKey])
@@ -169,18 +233,28 @@ export function ChatPage() {
     const voiceBusy = voicePhase !== 'idle' && voicePhase !== 'recording'
     const busy = sending || voiceBusy
 
-    const handleUpgrade = async () => {
-        try {
-            setUpgrading(true)
-            await profileApi.upgrade()
-            updateUser({ tier: 'PREMIUM' })
-            setChatLimitReached(false)
-            showToast({ message: 'Đã nâng cấp Premium — trò chuyện không giới hạn!', type: 'success' })
-        } catch (e) {
-            showToast({ message: getFriendlyErrorMessage(e, 'chat'), type: 'error' })
-        } finally {
-            setUpgrading(false)
-        }
+    const resolvedCharacterId = useMemo(
+        () => resolveChatCharacterId(characterId, characters, activePersonaKey),
+        [characterId, characters, activePersonaKey],
+    )
+
+    const dismissPremiumBanner = () => {
+        sessionStorage.setItem('premiumBannerDismissed', '1')
+        setPremiumBannerDismissed(true)
+    }
+
+    const dismissQuotaModal = () => {
+        sessionStorage.setItem('chatQuotaModalDismissed', '1')
+        setQuotaModalOpen(false)
+    }
+
+    const openPricing = () => {
+        void analyticsApi.recordEvent({
+            eventType: 'PAYWALL_CHAT_UPGRADE_CLICK',
+            source: 'chat',
+        })
+        const next = `${window.location.pathname}${window.location.search}`
+        navigate(`/pricing?next=${encodeURIComponent(next)}`)
     }
 
     const timeline = useMemo(() => buildChatTimeline(messages), [messages])
@@ -254,7 +328,7 @@ export function ChatPage() {
     }, [locationId, characterId, showToast])
 
     useEffect(() => {
-        if (!characterId && !activePersonaKey) {
+        if (!resolvedCharacterId) {
             setConversationId(null)
             setMessages([])
             setHasOlder(false)
@@ -269,8 +343,7 @@ export function ChatPage() {
             setHasOlder(false)
 
             try {
-                const targetId = characterId || activePersonaKey
-                const ctx = await chatApi.getContext(targetId)
+                const ctx = await chatApi.getContext(resolvedCharacterId)
                 if (cancelled) return
                 if (ctx.conversationId) {
                     setConversationId(ctx.conversationId)
@@ -287,7 +360,7 @@ export function ChatPage() {
         return () => {
             cancelled = true
         }
-    }, [characterId, activePersonaKey, loadLatestMessages])
+    }, [resolvedCharacterId, loadLatestMessages])
 
     useEffect(() => {
         if (questPrompt && !prefilledQuestPrompt.current) {
@@ -349,8 +422,17 @@ export function ChatPage() {
     }
 
     const send = async () => {
-        const targetId = characterId || activePersonaKey
-        if (!targetId || !input.trim() || busy) return
+        if (!resolvedCharacterId) {
+            showToast({
+                message: locationId
+                    ? 'Chưa tải được nhân vật cho địa điểm này.'
+                    : 'Chọn địa điểm trước khi trò chuyện.',
+                type: 'error',
+            })
+            return
+        }
+        if (!input.trim() || busy) return
+        const targetId = resolvedCharacterId
         const userText = input.trim()
         setInput('')
         shouldStickToBottomRef.current = true
@@ -413,18 +495,44 @@ export function ChatPage() {
             })
         } catch (e) {
             setMessages((prev) => prev.filter((m) => m.id !== optimistic.id))
-            if (e instanceof ApiError && e.status === 422 && /giới hạn/i.test(e.message)) {
+            if (e instanceof ApiError && (e.code === 'QUOTA_EXCEEDED' || (e.status === 403 && /quota/i.test(e.code)))) {
                 setChatLimitReached(true)
+                if (e.quotaType === 'ORG_MONTHLY' || user?.orgId) {
+                    setOrgUpgradePackage(e.upgradePackage ?? 'STANDARD')
+                    if (sessionStorage.getItem('orgQuotaModalDismissed') !== '1') {
+                        setOrgQuotaModalOpen(true)
+                    }
+                } else if (sessionStorage.getItem('chatQuotaModalDismissed') !== '1') {
+                    setQuotaModalOpen(true)
+                }
+            } else if (e instanceof ApiError && e.status === 422 && /giới hạn/i.test(e.message)) {
+                setChatLimitReached(true)
+                if (sessionStorage.getItem('chatQuotaModalDismissed') !== '1') {
+                    setQuotaModalOpen(true)
+                }
+            } else if (e instanceof ApiError && (e.status === 503 || e.status === 500)) {
+                showToast({ message: getFriendlyErrorMessage(e, 'chat'), type: 'error' })
+            } else if (e instanceof ApiError && e.status === 401) {
+                showToast({ message: 'Vui lòng đăng nhập để chat với trợ lý AI.', type: 'error' })
+            } else {
+                showToast({ message: getFriendlyErrorMessage(e, 'chat'), type: 'error' })
             }
-            showToast({ message: getFriendlyErrorMessage(e, 'chat'), type: 'error' })
         } finally {
             setSending(false)
         }
     }
 
     const toggleVoice = async () => {
-        const targetId = characterId || activePersonaKey
-        if (!targetId) return
+        if (!resolvedCharacterId) {
+            showToast({
+                message: locationId
+                    ? 'Chưa tải được nhân vật cho địa điểm này.'
+                    : 'Chọn địa điểm trước khi trò chuyện.',
+                type: 'error',
+            })
+            return
+        }
+        const targetId = resolvedCharacterId
 
         if (voicePhase === 'recording') {
             stopActiveRecorder(recorderRef.current)
@@ -539,8 +647,12 @@ export function ChatPage() {
 
                         <div className="absolute bottom-4 left-4 right-4 z-20 text-left">
                             <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border mb-2 backdrop-blur-md shadow-sm text-[10px] font-black uppercase tracking-wider bg-black/60 border-white/20 text-[#fdb438]">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-                                <span>Ollama 3B RAG Engine · Active</span>
+                                <span className={`w-1.5 h-1.5 rounded-full ${aiServiceOnline === false ? 'bg-amber-400' : 'bg-emerald-400 animate-ping'}`} />
+                                <span>
+                                    {aiServiceOnline === false
+                                        ? 'BE fallback · RAG offline'
+                                        : 'Ollama 3B RAG Engine · Active'}
+                                </span>
                             </div>
                             <h2 className="text-2xl font-black text-white leading-tight drop-shadow-md">{displayProfile.name}</h2>
                             <p className={`text-xs font-bold ${displayProfile.themeColor}`}>{displayProfile.era} — {displayProfile.role}</p>
@@ -594,6 +706,14 @@ export function ChatPage() {
                             <button onClick={() => setActivePersonaKey('anh-ba')} className={`px-2.5 py-1 rounded-lg text-[10px] font-bold ${activePersonaKey === 'anh-ba' ? 'bg-[#388cf1] text-white' : 'bg-white/10 text-white'}`}>Anh Ba</button>
                         </div>
                     </div>
+
+                    {aiServiceOnline === false && (
+                        <div className="px-4 py-2 border-b border-amber-500/30 bg-amber-500/10 text-xs text-amber-200 shrink-0">
+                            <MaterialIcon name="warning" className="text-sm align-middle mr-1" />
+                            AI service (:8100) hoặc Ollama chưa sẵn sàng — chat vẫn thử qua BE fallback. Chạy{' '}
+                            <code className="text-amber-100">scripts/diagnose-chat.ps1</code>
+                        </div>
+                    )}
 
                     {voiceHint && (
                         <div className="px-4 py-2.5 border-b border-white/10 bg-gradient-to-r from-[#fe951c]/20 to-[#388cf1]/20 text-xs font-bold text-white flex items-center gap-2 shrink-0 animate-pulse">
@@ -678,6 +798,13 @@ export function ChatPage() {
                                                 <ChatSourcesBlock sources={m.sources} />
                                             </div>
                                         )}
+                                        {m.role === 'assistant' &&
+                                            shouldShowB2CPaywall(user) &&
+                                            (!m.sources || m.sources.length === 0) && (
+                                                <p className="mt-3 pt-3 border-t border-white/10 text-xs text-[#fdb438]/90">
+                                                    Nâng cấp Premium để xem nguồn tài liệu chính thống kèm câu trả lời.
+                                                </p>
+                                            )}
                                         <span className="text-[10px] font-bold text-gray-400 mt-2 block text-right">
                       {new Date(m.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
                     </span>
@@ -756,24 +883,49 @@ export function ChatPage() {
                             </div>
                         </div>
 
-                        {chatLimitReached && user?.tier !== 'PREMIUM' && !premiumBannerDismissed && (
+                        {chatLimitReached && shouldShowB2CPaywall(user) && !premiumBannerDismissed && (
                             <div className="mt-3 p-4 rounded-2xl border border-[#fe951c]/50 bg-[#fe951c]/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-left">
                                 <p className="text-xs sm:text-sm text-gray-200 font-bold">
                                     ⚠️ Bạn đã hết lượt thoại miễn phí hôm nay. Nâng cấp Premium để trò chuyện không giới hạn!
                                 </p>
-                                <Button
-                                    type="button"
-                                    onClick={() => void handleUpgrade()}
-                                    disabled={upgrading}
-                                    className="text-xs shrink-0 font-black bg-[#fe951c] text-black"
-                                >
-                                    Nâng Cấp Premium
-                                </Button>
+                                <div className="flex gap-2 shrink-0">
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={dismissPremiumBanner}
+                                        className="text-xs font-bold text-gray-300"
+                                    >
+                                        Để sau
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        onClick={openPricing}
+                                        className="text-xs font-black bg-[#fe951c] text-black"
+                                    >
+                                        Nâng Cấp Premium
+                                    </Button>
+                                </div>
                             </div>
                         )}
                     </div>
                 </section>
             </main>
+            <QuotaExceededModal
+                open={quotaModalOpen && shouldShowB2CPaywall(user)}
+                onClose={dismissQuotaModal}
+                onUpgrade={openPricing}
+                dailyLimit={dailyChatLimit}
+                priceVnd={b2cPriceVnd}
+                pricingHref={`/pricing?next=${encodeURIComponent(`${window.location.pathname}${window.location.search}`)}`}
+            />
+            <OrgQuotaModal
+                open={orgQuotaModalOpen}
+                onClose={() => {
+                    sessionStorage.setItem('orgQuotaModalDismissed', '1')
+                    setOrgQuotaModalOpen(false)
+                }}
+                upgradePackage={orgUpgradePackage}
+            />
         </AppLayout>
     )
 }

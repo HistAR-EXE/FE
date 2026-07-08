@@ -1,0 +1,46 @@
+{
+  "nav": {
+    "back": "Quay lại",
+    "searchPlaceholder": "Tìm kiếm di tích, triều đại...",
+    "themeLight": "Chế độ sáng",
+    "themeDark": "Chế độ tối",
+    "langVi": "Tiếng Việt",
+    "langEn": "English"
+  },
+  "map": {
+    "title": "Bản đồ di tích Việt Nam",
+    "points": "{{count}} điểm",
+    "layerMap": "Bản đồ",
+    "layerSatellite": "Vệ tinh",
+    "hintMap": "Google Maps — nhãn theo ngôn ngữ",
+    "hintHybrid": "Google Hybrid — ảnh vệ tinh + nhãn",
+    "regionLegend": "Vùng miền",
+    "islandsLegend": "Biển đảo",
+    "zoomIn": "Phóng to bản đồ",
+    "zoomOut": "Thu nhỏ bản đồ",
+    "resetView": "Xem toàn bộ Việt Nam",
+    "lockedHint": "Hoàn thành quest trước để mở khoá",
+    "missingApiKey": "Thiếu VITE_GOOGLE_MAPS_API_KEY — thêm vào .env.local để hiển thị bản đồ Google.",
+    "attribution": "© Google Maps"
+  },
+  "modeSelect": {
+    "step1Title": "Chọn Phương Thức Trải Nghiệm",
+    "step2Title": "Chọn Điểm Đến Khám Phá",
+    "onlineBadge": "Học Tập & Khám Phá Từ Xa",
+    "offlineBadge": "Đồng Hành Thực Địa O2O",
+    "continue": "Tiếp tục",
+    "back": "Quay lại",
+    "confirm": "Xác nhận & Bắt đầu"
+  },
+  "regions": {
+    "north": "Miền Bắc",
+    "central": "Miền Trung",
+    "south": "Miền Nam"
+  },
+  "islands": {
+    "hoangSa": "Quần đảo Hoàng Sa",
+    "truongSa": "Quần đảo Trường Sa",
+    "hoangSaHover": "Quần đảo Hoàng Sa thuộc chủ quyền Việt Nam",
+    "truongSaHover": "Quần đảo Trường Sa thuộc chủ quyền Việt Nam"
+  }
+}

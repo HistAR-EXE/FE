@@ -4,30 +4,50 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { SimpleTopNav } from '../components/layout/TopNav'
 import { viralApi, type LeaderboardResponse } from '../features/viral/api'
+import { ApiError } from '../shared/api/contracts'
 import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
 import { useToast } from '../shared/ui/toast/useToast'
 import { images } from '../assets/images'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { useAppMode } from '../shared/context/useAppMode'
+import { useAuth } from '../shared/auth/useAuth'
+import { hasFullGamificationAccess } from '../shared/access/contentAccess'
+import { UpgradePrompt } from '../components/monetization/UpgradePrompt'
 
 export function LeaderboardPage() {
   const { mode: appMode } = useAppMode()
+  const { user } = useAuth()
+  const gamificationUnlocked = hasFullGamificationAccess(user)
   const [searchParams] = useSearchParams()
   const groupId = searchParams.get('groupId')
   const [scope, setScope] = useState<'all' | 'city' | 'week'>('all')
   const [city, setCity] = useState('TP.HCM')
   const [data, setData] = useState<LeaderboardResponse | null>(null)
+  const [archivedMessage, setArchivedMessage] = useState<string | null>(null)
   const { showToast } = useToast()
   const podium = data?.entries.slice(0, 3) ?? []
   const others = data?.entries.slice(3) ?? []
   const currentUserEntry = data?.entries.find((entry) => entry.currentUser) ?? null
 
   useEffect(() => {
+    const handleLeaderboardError = (error: unknown) => {
+      if (error instanceof ApiError && (error.code === 'TRIAL_EXPIRED' || error.status === 403)) {
+        setArchivedMessage(error.message || 'Gói của trường đã hết hạn, bảng xếp hạng hiện ở chế độ lưu trữ.')
+        setData({ scope: groupId ? 'group' : scope, city: scope === 'city' ? city.trim() || null : null, entries: [] })
+        return
+      }
+      setArchivedMessage(null)
+      showToast({ message: getFriendlyErrorMessage(error, 'leaderboard'), type: 'error' })
+    }
+
     if (groupId) {
       viralApi
         .leaderboard('all', undefined, groupId)
-        .then((res) => setData(res))
-        .catch((e) => showToast({ message: getFriendlyErrorMessage(e, 'leaderboard'), type: 'error' }))
+        .then((res) => {
+          setArchivedMessage(null)
+          setData(res)
+        })
+        .catch(handleLeaderboardError)
       return
     }
     if (scope === 'city' && !city.trim()) {
@@ -35,8 +55,11 @@ export function LeaderboardPage() {
     }
     viralApi
       .leaderboard(scope, scope === 'city' ? city.trim() : undefined)
-      .then((res) => setData(res))
-      .catch((e) => showToast({ message: getFriendlyErrorMessage(e, 'leaderboard'), type: 'error' }))
+      .then((res) => {
+        setArchivedMessage(null)
+        setData(res)
+      })
+      .catch(handleLeaderboardError)
   }, [scope, city, groupId, showToast])
 
   return (
@@ -54,6 +77,12 @@ export function LeaderboardPage() {
             ? 'Xếp hạng XP trong nhóm học tập của bạn.'
             : 'Những nhà du hành xuất sắc nhất trong kỷ nguyên Neo-Heritage.'}
         </p>
+
+        {archivedMessage && (
+          <div className="mb-md rounded-xl border border-secondary/30 bg-secondary/10 px-md py-sm text-sm text-on-surface">
+            {archivedMessage}
+          </div>
+        )}
 
         {!groupId && (
         <div className="flex items-center gap-lg border-b border-outline-variant/50 mb-lg overflow-x-auto">
@@ -76,6 +105,18 @@ export function LeaderboardPage() {
             {!city.trim() && <p className="text-xs text-red-400 mb-md">Vui lòng nhập city khi chọn scope=city.</p>}
           </>
         )}
+
+        {!gamificationUnlocked && (
+          <UpgradePrompt
+            title="Bảng xếp hạng toàn cộng đồng"
+            message="Nâng cấp Premium để mở khóa Rankings global, so tài XP với cộng đồng và Digital Passport đầy đủ."
+          />
+        )}
+
+        <div className={!gamificationUnlocked ? 'relative overflow-hidden rounded-xl' : ''}>
+          {!gamificationUnlocked && (
+            <div className="absolute inset-0 z-10 bg-surface/75 backdrop-blur-md pointer-events-none" aria-hidden />
+          )}
 
         {data && data.entries.length === 0 && (
           <div className="text-center py-xl border border-dashed border-outline-variant rounded-xl mb-lg">
@@ -145,6 +186,7 @@ export function LeaderboardPage() {
               <p className="font-title-md text-secondary">{currentUserEntry.totalPoints.toLocaleString()} XP</p>
             </div>
           )}
+        </div>
         </div>
       </main>
     </AppLayout>

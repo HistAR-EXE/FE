@@ -19,19 +19,36 @@ export type ApiErrorPayload = {
   message: string
   timestamp?: string
   fieldErrors?: Record<string, string>
+  upgradeUrl?: string
+  type?: string
+  upgradePackage?: string
 }
 
 export class ApiError extends Error {
   code: string
   status: number
   fieldErrors?: Record<string, string>
+  upgradeUrl?: string
+  quotaType?: string
+  upgradePackage?: string
 
-  constructor(payload: { message: string; code?: string; status?: number; fieldErrors?: Record<string, string> }) {
+  constructor(payload: {
+    message: string
+    code?: string
+    status?: number
+    fieldErrors?: Record<string, string>
+    upgradeUrl?: string
+    quotaType?: string
+    upgradePackage?: string
+  }) {
     super(payload.message)
     this.name = 'ApiError'
     this.code = payload.code ?? 'INTERNAL_ERROR'
     this.status = payload.status ?? 500
     this.fieldErrors = payload.fieldErrors
+    this.upgradeUrl = payload.upgradeUrl
+    this.quotaType = payload.quotaType
+    this.upgradePackage = payload.upgradePackage
   }
 }
 

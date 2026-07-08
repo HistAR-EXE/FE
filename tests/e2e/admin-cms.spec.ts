@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test'
 import { ADMIN_USER, SEED } from '../helpers/constants'
 import { registerFreshUser } from '../helpers/api'
+import { submitLoginForm } from '../helpers/ui'
 
 /**
  * E2E-AUTH-1 / E2E-CMS-1 — Admin login → CMS → tạo hiện vật.
@@ -10,7 +11,7 @@ test.describe('E2E · Admin CMS', () => {
     await page.goto('/login')
     await page.locator('input[name="email"]').fill(ADMIN_USER.email)
     await page.locator('input[name="password"]').fill(ADMIN_USER.password)
-    await page.getByRole('button', { name: 'Tiếp tục' }).click()
+    await submitLoginForm(page)
 
     await expect(page).toHaveURL(/\/admin\/content$/, { timeout: 15_000 })
 
@@ -30,7 +31,7 @@ test.describe('E2E · Admin CMS', () => {
     await page.goto('/login')
     await page.locator('input[name="email"]').fill(user.email)
     await page.locator('input[name="password"]').fill(user.password)
-    await page.getByRole('button', { name: 'Tiếp tục' }).click()
+    await submitLoginForm(page)
     await expect(page).toHaveURL(/\/mode-select$/, { timeout: 15_000 })
 
     await page.goto('/admin/content')
@@ -43,7 +44,7 @@ test.describe('E2E · Admin panorama upload UX', () => {
     await page.goto('/login')
     await page.locator('input[name="email"]').fill(ADMIN_USER.email)
     await page.locator('input[name="password"]').fill(ADMIN_USER.password)
-    await page.getByRole('button', { name: 'Tiếp tục' }).click()
+    await submitLoginForm(page)
     await expect(page).toHaveURL(/\/admin\/content/, { timeout: 15_000 })
 
     await page.getByRole('button', { name: /Panorama 360/i }).click()
@@ -51,7 +52,7 @@ test.describe('E2E · Admin panorama upload UX', () => {
 
     await expect(page.getByText('Ảnh hiện tại')).toBeVisible()
     await expect(page.getByText('Ảnh thay thế')).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Chọn ảnh từ máy' })).toBeVisible()
+    await expect(page.getByRole('button', { name: /Chọn ảnh từ máy/i }).last()).toBeVisible()
   })
 })
 
@@ -60,7 +61,7 @@ test.describe('E2E · Admin CMS location context', () => {
     await page.goto('/login')
     await page.locator('input[name="email"]').fill(ADMIN_USER.email)
     await page.locator('input[name="password"]').fill(ADMIN_USER.password)
-    await page.getByRole('button', { name: 'Tiếp tục' }).click()
+    await submitLoginForm(page)
     await expect(page).toHaveURL(/\/admin\/content/, { timeout: 15_000 })
 
     const select = page.locator('select').first()
