@@ -22,6 +22,9 @@ dist-ssr
 /test-results
 /playwright/.cache
 
+# Test suite
+/tests
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
