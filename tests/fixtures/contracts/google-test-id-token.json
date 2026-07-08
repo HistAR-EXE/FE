@@ -1,5 +1,0 @@
-{
-  "idToken": "histar-test-hook-google-id-token-fixture",
-  "expectedEmail": "google-hook-test@histar.vn",
-  "expectedUid": "histar-test-hook-firebase-uid"
-}
