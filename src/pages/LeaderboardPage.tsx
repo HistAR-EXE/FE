@@ -37,7 +37,6 @@ export function LeaderboardPage() {
     useEffect(() => {
         setLoading(true)
 
-        // Cập nhật Logic Xử lý lỗi (Hết hạn gói / Không có quyền)
         const handleLeaderboardError = (error: unknown) => {
             if (error instanceof ApiError && (error.code === 'TRIAL_EXPIRED' || error.status === 403)) {
                 setArchivedMessage(error.message || 'Gói của trường đã hết hạn, bảng xếp hạng hiện ở chế độ lưu trữ.')
@@ -90,7 +89,6 @@ export function LeaderboardPage() {
         >
             <main className="mt-14 md:mt-16 pb-24">
 
-                {/* BẢNG THÔNG BÁO LƯU TRỮ (NẾU API TRẢ VỀ LỖI EXPIRED) */}
                 {archivedMessage && (
                     <div className="max-w-7xl mx-auto px-4 md:px-12 mt-8">
                         <div className="rounded-2xl border border-red-500/40 bg-red-500/10 px-6 py-4 text-sm font-bold text-red-300 shadow-[0_0_20px_rgba(239,68,68,0.2)] flex items-center gap-3 backdrop-blur-md">
@@ -103,7 +101,7 @@ export function LeaderboardPage() {
                 {/* ========================================= */}
                 {/* HERO BANNER - SÂN KHẤU HOLOGRAM ĐẲNG CẤP */}
                 {/* ========================================= */}
-                <section className="relative overflow-hidden border-b border-[#fe951c]/10 shadow-[0_20px_60px_rgba(0,0,0,0.8)] bg-[#0B1120] pt-8 pb-16 md:pt-12 md:pb-24">
+                <section className="relative overflow-hidden border-b border-[#fe951c]/10 shadow-[0_20px_60px_rgba(0,0,0,0.8)] bg-[#0B1120] pt-2 pb-14 md:pt-4 md:pb-20">
                     <div className="absolute inset-0 bg-[url('/media/grid.svg')] opacity-[0.05] pointer-events-none" />
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(254,149,28,0.05)_0%,transparent_70%)]" />
 
@@ -129,7 +127,7 @@ export function LeaderboardPage() {
                             </h1>
 
                             <h1 className="text-[3.5rem] md:text-[5rem] lg:text-[5.5rem] font-black tracking-tighter leading-[1] mb-8 uppercase">
-                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#1a79e5] via-[#fdb438] to-[#fe951c] drop-shadow-[0_0_30px_rgba(254,149,28,0.4)]">
+                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#1a79e5] via-[#fff2a1] to-[#fe951c] drop-shadow-[0_0_30px_rgba(254,149,28,0.4)]">
                                     TIMELENS
                                 </span>
                             </h1>
@@ -141,62 +139,143 @@ export function LeaderboardPage() {
                             </p>
 
                             <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4">
-                                <button className="px-6 py-3.5 rounded-xl bg-[#161824] hover:bg-[#1a1c29] border border-white/10 text-[11px] font-black text-white uppercase tracking-[0.15em] transition-all flex items-center gap-2.5 cursor-pointer shadow-lg hover:shadow-[0_5px_15px_rgba(253,180,56,0.3)] hover:-translate-y-1 hover:border-[#fdb438]/50 group">
+                                <button className="px-6 py-3.5 rounded-xl bg-[#161824] hover:bg-[#1a1c29] border border-white/10 text-[11px] font-black text-white uppercase tracking-widest transition-all flex items-center gap-2.5 cursor-pointer shadow-lg hover:shadow-[0_5px_15px_rgba(253,180,56,0.3)] hover:-translate-y-1 hover:border-[#fdb438]/50 group">
                                     <MaterialIcon name="military_tech" className="text-lg text-[#fdb438] group-hover:scale-110 transition-transform" /> Phần Thưởng
                                 </button>
-                                <button className="px-6 py-3.5 rounded-xl bg-[#161824] hover:bg-[#1a1c29] border border-white/10 text-[11px] font-black text-white uppercase tracking-[0.15em] transition-all flex items-center gap-2.5 cursor-pointer shadow-lg hover:shadow-[0_5px_15px_rgba(56,140,241,0.3)] hover:-translate-y-1 hover:border-[#388cf1]/50 group">
+                                <button className="px-6 py-3.5 rounded-xl bg-[#161824] hover:bg-[#1a1c29] border border-white/10 text-[11px] font-black text-white uppercase tracking-widest transition-all flex items-center gap-2.5 cursor-pointer shadow-lg hover:shadow-[0_5px_15px_rgba(56,140,241,0.3)] hover:-translate-y-1 hover:border-[#388cf1]/50 group">
                                     <MaterialIcon name="gavel" className="text-lg text-[#388cf1] group-hover:scale-110 transition-transform" /> Thể Lệ
                                 </button>
-                                <button className="px-6 py-3.5 rounded-xl bg-[#161824] hover:bg-[#1a1c29] border border-white/10 text-[11px] font-black text-white uppercase tracking-[0.15em] transition-all flex items-center gap-2.5 cursor-pointer shadow-lg hover:shadow-[0_5px_15px_rgba(16,185,129,0.3)] hover:-translate-y-1 hover:border-emerald-500/50 group">
+                                <button className="px-6 py-3.5 rounded-xl bg-[#161824] hover:bg-[#1a1c29] border border-white/10 text-[11px] font-black text-white uppercase tracking-widest transition-all flex items-center gap-2.5 cursor-pointer shadow-lg hover:shadow-[0_5px_15px_rgba(16,185,129,0.3)] hover:-translate-y-1 hover:border-emerald-500/50 group">
                                     <MaterialIcon name="history" className="text-lg text-emerald-400 group-hover:scale-110 transition-transform" /> Mùa Giải Cũ
                                 </button>
                             </div>
                         </div>
 
-                        {/* KHỐI PHẢI: HOLOGRAM SÂN KHẤU CÚP VÀNG */}
-                        <div className="w-full lg:w-[45%] relative h-[320px] md:h-[400px] flex items-center justify-center shrink-0 mt-12 lg:mt-0">
+                        {/* ======================================================== */}
+                        {/* KHỐI PHẢI: HOLOGRAM SÂN KHẤU CÚP VÀNG (PURE CSS ART) */}
+                        {/* ======================================================== */}
+                        <div className="w-full lg:w-[45%] relative h-[380px] md:h-[450px] flex items-center justify-center shrink-0 mt-12 lg:mt-0 select-none">
 
-                            <div className="relative w-[300px] h-[300px] md:w-[400px] md:h-[400px] flex items-center justify-center transform transition-transform duration-700 hover:scale-105">
-                                <div className="absolute inset-0 bg-gradient-to-tr from-[#fe951c]/30 to-[#388cf1]/20 rounded-full blur-[80px] animate-pulse" />
+                            <div className="relative w-[340px] h-[340px] md:w-[450px] md:h-[450px] flex items-center justify-center transform transition-transform duration-700 hover:scale-105">
 
-                                <div className="absolute w-[90%] h-[90%] rounded-full border border-white/5 border-t-[#388cf1]/80 border-r-[#1a79e5]/40 animate-[spin_15s_linear_infinite]" />
-                                <div className="absolute w-[75%] h-[75%] rounded-full border-[2px] border-dashed border-[#fe951c]/40 animate-[spin_25s_linear_infinite_reverse]" />
+                                {/* 1. ÁNH SÁNG NỀN HÀO QUANG */}
+                                <div className="absolute inset-0 bg-gradient-to-tr from-[#fe951c]/30 via-[#fdb438]/10 to-[#388cf1]/20 rounded-full blur-[80px] animate-[pulse_4s_ease-in-out_infinite]" />
+
+                                {/* 2. CÁC VÒNG ORBIT (QUỸ ĐẠO CÔNG NGHỆ) */}
+                                <div className="absolute w-[95%] h-[95%] rounded-full border border-white/5 border-t-[#388cf1]/80 border-r-[#1a79e5]/40 animate-[spin_15s_linear_infinite]" />
+                                <div className="absolute w-[80%] h-[80%] rounded-full border-[2px] border-dashed border-[#fe951c]/30 animate-[spin_25s_linear_infinite_reverse]" />
                                 <div className="absolute w-[60%] h-[60%] rounded-full border border-white/5 border-b-[#fdb438]/80 animate-[spin_10s_linear_infinite]" />
 
-                                <div className="absolute bottom-10 md:bottom-16 w-48 h-12 bg-gradient-to-t from-[#fe951c]/40 to-transparent rounded-[100%] blur-[4px] border-b border-[#fe951c]" />
+                                {/* Sàn Hologram phản chiếu dưới đáy cúp */}
+                                <div className="absolute bottom-12 md:bottom-16 w-56 h-12 bg-gradient-to-t from-[#fe951c]/40 to-transparent rounded-[100%] blur-[6px] border-b-2 border-[#fe951c]" />
 
-                                <div className="relative z-20 animate-[bounce_4s_ease-in-out_infinite] flex flex-col items-center">
-                                    <div className="w-32 h-32 md:w-40 md:h-40 relative flex items-center justify-center">
-                                        <div className="absolute inset-4 bg-[#fdb438]/40 rounded-full blur-xl" />
-                                        <MaterialIcon name="emoji_events" className="text-[7rem] md:text-[9rem] text-transparent bg-clip-text bg-gradient-to-br from-[#fff2a1] via-[#fdb438] to-[#b45309] drop-shadow-[0_10px_20px_rgba(254,149,28,0.8)] relative z-10" />
-                                    </div>
-                                    <div className="mt-4 px-4 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-[#fdb438]/50 text-[10px] font-black tracking-[0.2em] text-[#fdb438] shadow-[0_0_15px_rgba(254,149,28,0.3)]">
-                                        MÙA GIẢI: KHỞI NGUYÊN
+                                {/* 3. HUY CHƯƠNG BAY XUNG QUANH (ORBITAL SATELLITES) */}
+                                {/* Hành tinh 1: Huy hiệu Kim cương (Xanh dương) - Quỹ đạo ngoài */}
+                                <div className="absolute inset-2 animate-[spin_18s_linear_infinite]">
+                                    {/* Đã neo đúng chính giữa cạnh TRÊN (Top-Center) */}
+                                    <div className="absolute top-[-10px] left-1/2 -translate-x-1/2 w-12 h-12 bg-gradient-to-br from-[#1a79e5] to-[#0B1120] rounded-xl rotate-45 border-2 border-cyan-400 shadow-[0_0_25px_rgba(56,140,241,0.8)] flex items-center justify-center animate-[spin_18s_linear_infinite_reverse] backdrop-blur-md">
+                                        <MaterialIcon name="diamond" className="text-cyan-300 -rotate-45 text-xl drop-shadow-[0_0_8px_#22d3ee]" />
                                     </div>
                                 </div>
 
-                                <div className="absolute top-10 left-10 w-3 h-3 bg-cyan-400 rounded-full shadow-[0_0_15px_#22d3ee] animate-[ping_3s_infinite]" />
-                                <div className="absolute bottom-20 right-10 w-2 h-2 bg-[#fe951c] rounded-full shadow-[0_0_10px_#fe951c] animate-[ping_4s_infinite_reverse]" />
-                                <div className="absolute top-1/2 right-4 w-4 h-4 bg-emerald-400 rounded-full shadow-[0_0_20px_#34d399] animate-[bounce_5s_infinite]" />
-                            </div>
+                                {/* Hành tinh 2: Huy hiệu Ngôi sao (Cam) - Quỹ đạo giữa */}
+                                <div className="absolute inset-8 animate-[spin_22s_linear_infinite_reverse]">
+                                    {/* Đã neo đúng chính giữa cạnh PHẢI (Right-Center) */}
+                                    <div className="absolute top-1/2 right-[-20px] -translate-y-1/2 w-10 h-10 bg-gradient-to-br from-[#fe951c] to-[#9a3412] rounded-full border-2 border-[#fff2a1] shadow-[0_0_20px_rgba(254,149,28,0.8)] flex items-center justify-center animate-[spin_22s_linear_infinite] backdrop-blur-md">
+                                        <MaterialIcon name="military_tech" className="text-[#fff2a1] text-lg drop-shadow-[0_0_8px_#fff2a1]" />
+                                    </div>
+                                </div>
 
+                                {/* Hành tinh 3: Huy hiệu Khiên bảo vệ (Xanh lá) - Quỹ đạo trong */}
+                                <div className="absolute inset-16 animate-[spin_14s_linear_infinite]">
+                                    {/* Đã neo đúng chính giữa cạnh DƯỚI (Bottom-Center) */}
+                                    <div className="absolute bottom-[-15px] left-1/2 -translate-x-1/2 w-9 h-9 bg-gradient-to-br from-emerald-500 to-[#0B1120] rounded-lg border border-emerald-300 shadow-[0_0_15px_rgba(16,185,129,0.6)] flex items-center justify-center animate-[spin_14s_linear_infinite_reverse] backdrop-blur-md">
+                                        <MaterialIcon name="shield" className="text-emerald-200 text-base drop-shadow-[0_0_5px_#34d399]" />
+                                    </div>
+                                </div>
+
+                                {/* 4. CHIẾC CÚP VÀNG PURE CSS TẠI TRUNG TÂM */}
+                                <div className="relative z-20 animate-[bounce_4s_ease-in-out_infinite] flex flex-col items-center mt-4">
+
+                                    {/* Ánh sáng lõi sau lưng cúp */}
+                                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 bg-[#fdb438]/50 blur-[50px] rounded-full pointer-events-none" />
+
+                                    {/* Thêm scale-[0.85] cho Mobile và scale-90 cho Desktop để thu nhỏ tổng thể */}
+                                    <div className="relative flex flex-col items-center scale-[0.85] md:scale-90 origin-bottom">
+                                        {/* Hai cái tai cúp (Handles) */}
+                                        <div className="absolute top-6 left-[-35px] md:left-[-45px] w-16 h-20 md:w-20 md:h-24 border-[6px] md:border-[8px] border-[#fdb438] rounded-l-full rounded-tr-3xl border-r-0 blur-[0.5px] shadow-[-5px_0_15px_rgba(253,180,56,0.6)] z-0" />
+                                        <div className="absolute top-6 right-[-35px] md:right-[-45px] w-16 h-20 md:w-20 md:h-24 border-[6px] md:border-[8px] border-[#fdb438] rounded-r-full rounded-tl-3xl border-l-0 blur-[0.5px] shadow-[5px_0_15px_rgba(253,180,56,0.6)] z-0" />
+
+                                        {/* Thân cúp (Main Body) */}
+                                        <div className="relative z-10 w-36 h-28 md:w-44 md:h-36 bg-gradient-to-b from-[#fff2a1] via-[#fdb438] to-[#9a3412] rounded-b-[4rem] border-t-8 border-[#fff2a1] shadow-[0_15px_25px_rgba(154,52,18,0.8),inset_0_-10px_25px_rgba(0,0,0,0.5)] flex flex-col items-center pt-3 overflow-hidden">
+                                            {/* Hiệu ứng bóng bẩy kim loại (Reflection) */}
+                                            <div className="absolute top-0 left-[-20px] w-12 h-full bg-white/40 rotate-12 blur-[2px]" />
+                                            <div className="absolute top-2 right-4 w-6 h-16 bg-white/20 -rotate-12 blur-[1px] rounded-full" />
+                                            <div className="absolute top-4 w-12 h-12 bg-white/30 rounded-full blur-md" />
+
+                                            {/* Ngôi sao khắc chìm giữa cúp */}
+                                            <MaterialIcon name="star" className="text-4xl md:text-5xl text-[#fff2a1] drop-shadow-[0_0_12px_#ffffff] mt-1 opacity-90" />
+                                        </div>
+
+                                        {/* Cổ cúp (Stem) */}
+                                        <div className="relative z-0 w-10 h-12 md:w-12 md:h-16 bg-gradient-to-b from-[#78350f] via-[#b45309] to-[#fdb438] mt-[-5px] shadow-[inset_0_5px_15px_rgba(0,0,0,0.7)] flex justify-center">
+                                            <div className="w-1.5 h-full bg-white/30 blur-[1px]" />
+                                        </div>
+
+                                        {/* Đế cúp (Base) */}
+                                        <div className="relative z-10 w-40 h-10 md:w-48 md:h-12 bg-gradient-to-b from-[#fdb438] to-[#451a03] rounded-t-xl rounded-b-[2rem] border-t-[3px] border-[#fff2a1] shadow-[0_20px_40px_rgba(0,0,0,0.9),inset_0_5px_10px_rgba(255,255,255,0.4)] flex justify-center items-center overflow-hidden">
+                                            {/* Bóng viền đế */}
+                                            <div className="absolute top-0 w-full h-1/2 bg-gradient-to-b from-white/20 to-transparent" />
+                                            <div className="w-24 h-1.5 bg-black/40 rounded-full blur-[1px] mt-2" />
+                                        </div>
+                                    </div>
+
+                                    {/* Thẻ Label tên mùa giải (Đã giảm mt-8 xuống mt-4 để xích lại gần cúp hơn) */}
+                                    <div className="mt-4 md:mt-6 px-6 py-2.5 rounded-full bg-[#0B1120]/90 backdrop-blur-xl border-2 border-[#fdb438]/60 text-[10px] md:text-xs font-black tracking-widest text-[#fff2a1] shadow-[0_0_25px_rgba(254,149,28,0.5)] relative z-30 uppercase">
+                                        MÙA GIẢI: KHỞI NGUYÊN
+                                    </div>
+                                </div>
+                            </div>
                         </div>
+
                     </div>
                 </section>
 
-                {/* KHUNG CẢNH BÁO UPGRADE B2C */}
-                <div className="max-w-7xl mx-auto px-4 md:px-12 mt-8">
-                    {!gamificationUnlocked && (
-                        <div className="mb-8">
-                            <UpgradePrompt
-                                title="BẢNG XẾP HẠNG TOÀN CỘNG ĐỒNG"
-                                message="Nâng cấp Premium để mở khóa Rankings Global, so tài Điểm kinh nghiệm (XP) với hàng ngàn người chơi khác và hoàn thiện Digital Passport của riêng bạn."
-                            />
+                {/* 1. THANH CHỈ SỐ MÙA GIẢI (Đã dời lên ngay dưới Banner để đè lên mép) */}
+                {!groupId && (
+                    <div className="max-w-7xl mx-auto px-4 md:px-12 -mt-12 md:-mt-16 mb-8 relative z-30">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-[#161b29]/95 backdrop-blur-xl border border-white/10 p-6 rounded-3xl shadow-[0_20px_40px_rgba(0,0,0,0.5)]">
+                            <div className="text-center border-r border-white/10 last:border-0 px-2">
+                                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Đặc Vụ Tham Gia</p>
+                                <p className="text-2xl md:text-3xl font-black text-white drop-shadow-md">24,592</p>
+                            </div>
+                            <div className="text-center border-r border-white/10 md:border-r last:border-0 px-2">
+                                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Tổng XP Cày Được</p>
+                                <p className="text-2xl md:text-3xl font-black text-[#fdb438] drop-shadow-[0_0_10px_rgba(253,180,56,0.3)]">8.2M</p>
+                            </div>
+                            <div className="text-center border-r border-white/10 last:border-0 px-2">
+                                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Kết Thúc Sau</p>
+                                <p className="text-2xl md:text-3xl font-black text-cyan-400 drop-shadow-[0_0_10px_rgba(56,140,241,0.3)]">14 Ngày</p>
+                            </div>
+                            <div className="text-center px-2">
+                                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Tọa Độ Cạnh Tranh</p>
+                                <p className="text-2xl md:text-3xl font-black text-white truncate">Củ Chi</p>
+                            </div>
                         </div>
-                    )}
-                </div>
+                    </div>
+                )}
 
-                {/* LỚP PHỦ KÍNH MỜ BẢO VỆ (KHI CHƯA UNLOCK) */}
+                {/* 2. KHUNG CẢNH BÁO UPGRADE B2C (Nằm gọn gàng bên dưới) */}
+                {!gamificationUnlocked && (
+                    <div className="max-w-7xl mx-auto px-4 md:px-12 mb-8 relative z-20">
+                        <UpgradePrompt
+                            title="BẢNG XẾP HẠNG TOÀN CỘNG ĐỒNG"
+                            message="Nâng cấp Premium để mở khóa Rankings Global, so tài Điểm kinh nghiệm (XP) với hàng ngàn người chơi khác và hoàn thiện Digital Passport của riêng bạn."
+                        />
+                    </div>
+                )}
+
+                {/* 3. LỚP PHỦ KÍNH MỜ BẢO VỆ (KHI CHƯA UNLOCK) */}
                 <div className={`relative max-w-7xl mx-auto ${!gamificationUnlocked ? 'overflow-hidden rounded-[3rem]' : ''}`}>
                     {!gamificationUnlocked && (
                         <div className="absolute inset-0 z-50 bg-[#0B1120]/80 backdrop-blur-xl pointer-events-none flex flex-col items-center pt-32" aria-hidden>
@@ -204,30 +283,6 @@ export function LeaderboardPage() {
                                 <MaterialIcon name="lock" className="text-5xl text-[#388cf1] drop-shadow-md" />
                             </div>
                             <h3 className="text-2xl font-black text-white uppercase tracking-widest drop-shadow-md">KHU VỰC ĐÃ BỊ KHÓA</h3>
-                        </div>
-                    )}
-
-                    {/* THANH CHỈ SỐ MÙA GIẢI (SEASON STATS) */}
-                    {!groupId && (
-                        <div className="px-4 md:px-12 -mt-10 mb-12 relative z-20">
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-[#161b29]/95 backdrop-blur-xl border border-white/10 p-6 rounded-3xl shadow-[0_20px_40px_rgba(0,0,0,0.5)]">
-                                <div className="text-center border-r border-white/10 last:border-0 px-2">
-                                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Đặc Vụ Tham Gia</p>
-                                    <p className="text-2xl md:text-3xl font-black text-white drop-shadow-md">24,592</p>
-                                </div>
-                                <div className="text-center border-r border-white/10 md:border-r last:border-0 px-2">
-                                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Tổng XP Cày Được</p>
-                                    <p className="text-2xl md:text-3xl font-black text-[#fdb438] drop-shadow-[0_0_10px_rgba(253,180,56,0.3)]">8.2M</p>
-                                </div>
-                                <div className="text-center border-r border-white/10 last:border-0 px-2">
-                                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Kết Thúc Sau</p>
-                                    <p className="text-2xl md:text-3xl font-black text-cyan-400 drop-shadow-[0_0_10px_rgba(56,140,241,0.3)]">14 Ngày</p>
-                                </div>
-                                <div className="text-center px-2">
-                                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Tọa Độ Cạnh Tranh</p>
-                                    <p className="text-2xl md:text-3xl font-black text-white truncate">Củ Chi</p>
-                                </div>
-                            </div>
                         </div>
                     )}
 
@@ -247,7 +302,7 @@ export function LeaderboardPage() {
                                             <button
                                                 key={s}
                                                 onClick={() => setScope(s)}
-                                                className={`flex-1 md:flex-none px-6 md:px-8 py-3 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-[0.15em] transition-all cursor-pointer whitespace-nowrap ${
+                                                className={`flex-1 md:flex-none px-6 md:px-8 py-3 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest transition-all cursor-pointer whitespace-nowrap ${
                                                     isActive
                                                         ? 'bg-gradient-to-r from-[#1a79e5] to-[#388cf1] text-white shadow-[0_0_20px_rgba(56,140,241,0.5)]'
                                                         : 'text-gray-500 hover:text-gray-300'
@@ -297,7 +352,7 @@ export function LeaderboardPage() {
                             </div>
                         )}
 
-                        {/* BỆ PHÓNG 3D PODIUM (TOP 3) - CẤU TRÚC ĐÃ FIX LỖI ESLINT */}
+                        {/* BỆ PHÓNG 3D PODIUM (TOP 3) */}
                         {!loading && podium.length > 0 && (
                             <div className="flex items-end justify-center gap-2 sm:gap-6 mb-16 pt-16 relative">
                                 <div className="absolute bottom-0 w-full max-w-2xl h-1 bg-gradient-to-r from-transparent via-white/20 to-transparent blur-sm" />

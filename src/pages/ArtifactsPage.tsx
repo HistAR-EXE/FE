@@ -146,14 +146,14 @@ export function ArtifactsPage() {
                 {/* ========================================= */}
                 {/* HERO BANNER - AR SCANNER & INSTRUCTIONS */}
                 {/* ========================================= */}
-                <section className="relative overflow-hidden border-b border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] bg-[#0B1120] pt-10 pb-16 md:pt-14 md:pb-24">
+                <section className="relative overflow-hidden border-b border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] bg-[#0B1120] pt-0 pb-8 md:pb-12">
                     <div className="absolute inset-0 bg-[url('/media/grid.svg')] opacity-10 pointer-events-none" />
 
                     {/* Hào quang Ambient Lighting */}
                     <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#1a79e5]/10 rounded-full blur-[120px] pointer-events-none" />
                     <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-[#fe951c]/10 rounded-full blur-[100px] pointer-events-none" />
 
-                    <div className="relative max-w-7xl mx-auto px-6 md:px-12 w-full flex flex-col lg:flex-row items-center justify-between gap-12 lg:gap-16 z-10">
+                    <div className="relative max-w-7xl mx-auto px-6 md:px-12 w-full flex flex-col lg:flex-row items-start justify-between gap-12 lg:gap-16 z-10 pt-2 lg:pt-4">
 
                         {/* ===================================== */}
                         {/* KHỐI TRÁI: TEXT & HƯỚNG DẪN CHI TIẾT */}
@@ -162,12 +162,12 @@ export function ArtifactsPage() {
 
                             <div className="flex items-center gap-3 mb-3">
                                 <span className="w-2.5 h-2.5 rounded-full bg-[#fdb438] animate-pulse shadow-[0_0_15px_#fe951c]" />
-                                <p className="text-[10px] md:text-xs font-black uppercase tracking-[0.3em] text-[#fdb438]">
+                                <p className="text-[10px] md:text-xs font-black uppercase tracking-widest text-[#fdb438]">
                                     HỆ THỐNG TRUY VẾT DI SẢN
                                 </p>
                             </div>
 
-                            <h1 className="text-4xl md:text-5xl lg:text-[3.2rem] xl:text-[3.6rem] font-black text-white drop-shadow-2xl tracking-tighter leading-tight mb-4 whitespace-nowrap">
+                            <h1 className="text-4xl md:text-5xl lg:text-[3.2rem] xl:text-[3.6rem] font-black text-transparent bg-clip-text bg-gradient-to-r from-[#fe951c] via-[#fff2a1] to-[#388cf1] tracking-tighter leading-tight mb-4 whitespace-nowrap pt-3 pb-2">
                                 KHO LƯU TRỮ CỔ VẬT
                             </h1>
 
@@ -197,7 +197,7 @@ export function ArtifactsPage() {
                         {/* ===================================== */}
                         {/* KHỐI PHẢI: MÔ HÌNH 3D CAMERA AR BẰNG CSS */}
                         {/* ===================================== */}
-                        <div className="w-full lg:w-[45%] relative h-[260px] md:h-[300px] flex items-start justify-center shrink-0 mt-8 lg:mt-6">
+                        <div className="w-full lg:w-[45%] relative h-[260px] md:h-[300px] flex items-center justify-center shrink-0 mt-10 lg:mt-12">
 
                             {/* --- ỐNG KÍNH CAMERA AR THU NHỎ --- */}
                             <div className="relative w-[220px] h-[220px] md:w-[260px] md:h-[260px] flex items-center justify-center transform hover:scale-105 transition-transform duration-700">
@@ -260,8 +260,8 @@ export function ArtifactsPage() {
                                 </div>
                             </div>
 
-                            {/* --- BẢNG HUD TIẾN ĐỘ TRÔI NỔI (ĐÃ ĐẨY XUỐNG DƯỚI ĐỂ KHÔNG ĐÈ RADAR) --- */}
-                            <div className="absolute -bottom-8 md:-bottom-12 right-0 md:right-4 z-30 transform hover:scale-105 transition-transform">
+                            {/* --- BẢNG HUD TIẾN ĐỘ TRÔI NỔI --- */}
+                            <div className="absolute -bottom-24 left-1/2 -translate-x-1/2 z-30 transform hover:scale-105 transition-transform w-max">
                                 <CollectionProgress collected={collected} total={total} />
                             </div>
                         </div>

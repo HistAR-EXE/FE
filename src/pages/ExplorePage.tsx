@@ -89,7 +89,7 @@ export function ExplorePage() {
 
     return (
         <AppLayout activeBorder="right" topNav={<ExploreTopNav backTo="/home" backLabel="Trang chủ" />}>
-            <main className="flex-grow pt-[88px] px-4 md:px-8 pb-20 max-w-7xl w-full mx-auto space-y-8 bg-[#0f1015] text-white selection:bg-[#fe951c] selection:text-black">
+            <main className="flex-grow pt-[88px] px-4 md:px-8 pb-20 w-full space-y-8 bg-[#0f1015] text-white selection:bg-[#fe951c] selection:text-black">
 
                 {/* --- HERO BANNER CỦ CHI VỚI SÂN KHẤU ĐẠI SỨ DU KÍCH 3D --- */}
                 <section className="relative rounded-3xl overflow-hidden border border-white/15 bg-gradient-to-r from-[#1a1d2c] via-[#161824] to-[#0f1015] p-6 sm:p-10 shadow-[0_20px_50px_rgba(0,0,0,0.7)]">
