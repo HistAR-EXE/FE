@@ -1,470 +1,362 @@
 // src/pages/QuestsPage.tsx
 import { useCallback, useEffect, useMemo, useState, type MouseEvent } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams, useNavigate } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { SimpleTopNav } from '../components/layout/TopNav'
 import { gamificationApi, type Quest, type QuestProgress } from '../features/gamification/api'
 import { DISCOVERY_RECORDED_EVENT } from '../features/gamification/discoveryRouting'
-import { HERITAGE_QUEST_META } from '../features/gamification/heritageQuestSteps'
-import { isReadyToStart } from '../features/gamification/questProgress'
 import { locationsApi, type Location } from '../features/locations/api'
 import { ApiError } from '../shared/api/contracts'
 import { useAuth } from '../shared/auth/useAuth'
 import { useToast } from '../shared/ui/toast/useToast'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
-import { Button } from '../components/ui/Button'
-import { images } from '../assets/images'
 import { isLocationLocked } from '../features/explore/locationUnlock'
-import { appEnv } from '../shared/config/env'
-import { pickQuestCover, resolveLocationCoverFallback } from '../shared/media/resolveMedia'
+import { pickQuestCover } from '../shared/media/resolveMedia'
 import { SmartImage } from '../shared/ui/SmartImage'
+import { CU_CHI_LOCATION_ID } from '../shared/config/constants'
+import { HERITAGE_QUEST_META } from '../features/gamification/heritageQuestSteps'
 
 export function QuestsPage() {
-  const { isAuthenticated, user } = useAuth()
-  const [searchParams] = useSearchParams()
-  const urlLocationId = searchParams.get('locationId') ?? ''
-  const [locations, setLocations] = useState<Location[]>([])
-  const [activeLocationId, setActiveLocationId] = useState('')
-  const [quests, setQuests] = useState<Quest[]>([])
-  const [progresses, setProgresses] = useState<QuestProgress[]>([])
-  const [loading, setLoading] = useState(true)
-  const [statusFilter, setStatusFilter] = useState<'all' | 'not_started' | 'in_progress' | 'completed'>('all')
-  const { showToast } = useToast()
+    const { isAuthenticated, user } = useAuth()
+    const [searchParams] = useSearchParams()
+    const navigate = useNavigate()
 
-  useEffect(() => {
-    locationsApi.list({ size: 50 }).then(setLocations).catch(() => setLocations([]))
-  }, [])
+    const lockedLocationId = searchParams.get('locationId') || CU_CHI_LOCATION_ID
 
-  useEffect(() => {
-    if (urlLocationId) {
-      setActiveLocationId(urlLocationId)
-      return
+    const [locationInfo, setLocationInfo] = useState<Location | null>(null)
+    const [quests, setQuests] = useState<Quest[]>([])
+    const [progresses, setProgresses] = useState<QuestProgress[]>([])
+    const [loading, setLoading] = useState(true)
+    const [statusFilter, setStatusFilter] = useState<'all' | 'not_started' | 'in_progress' | 'completed'>('all')
+    const { showToast } = useToast()
+
+    useEffect(() => {
+        locationsApi.getById(lockedLocationId)
+            .then(setLocationInfo)
+            .catch(() => setLocationInfo(null))
+    }, [lockedLocationId])
+
+    const refetchQuests = useCallback(async () => {
+        try {
+            setLoading(true)
+            const list = await gamificationApi.quests(lockedLocationId)
+            const sortedList = [...list].sort((a, b) => {
+                const orderA = HERITAGE_QUEST_META[a.id]?.difficulty === 'thử thách' ? 1 : 2;
+                const orderB = HERITAGE_QUEST_META[b.id]?.difficulty === 'thử thách' ? 1 : 2;
+                return orderA - orderB;
+            });
+            setQuests(sortedList)
+
+            if (isAuthenticated) {
+                const mine = await gamificationApi.myQuests(lockedLocationId)
+                setProgresses(mine)
+            } else {
+                setProgresses([])
+            }
+        } catch (e) {
+            showToast({ message: 'Không tải được danh sách chiến dịch.', type: 'error' })
+        } finally {
+            setLoading(false)
+        }
+    }, [isAuthenticated, lockedLocationId, showToast])
+
+    useEffect(() => {
+        void refetchQuests()
+    }, [refetchQuests])
+
+    useEffect(() => {
+        if (!isAuthenticated) return
+        const onDiscoveryRecorded = () => { void refetchQuests() }
+        window.addEventListener(DISCOVERY_RECORDED_EVENT, onDiscoveryRecorded)
+        return () => window.removeEventListener(DISCOVERY_RECORDED_EVENT, onDiscoveryRecorded)
+    }, [isAuthenticated, refetchQuests])
+
+    const getStatus = (questId: string) =>
+        isAuthenticated ? progresses.find((p) => p.questId === questId)?.status ?? 'not_started' : 'not_started'
+
+    const statusCounts = useMemo(() => {
+        const counts = { all: quests.length, not_started: 0, in_progress: 0, completed: 0 }
+        quests.forEach((q) => {
+            const s = getStatus(q.id)
+            if (s === 'not_started') counts.not_started += 1
+            else if (s === 'in_progress') counts.in_progress += 1
+            else if (s === 'completed') counts.completed += 1
+        })
+        return counts
+    }, [quests, progresses, isAuthenticated])
+
+    const filteredQuests = quests.filter((q) => statusFilter === 'all' ? true : getStatus(q.id) === statusFilter)
+
+    const progressPct = (status: string, currentStep?: number, stepsTotal?: number) => {
+        if (typeof currentStep === 'number' && typeof stepsTotal === 'number' && stepsTotal > 0) {
+            return Math.max(0, Math.min(100, Math.round((currentStep / stepsTotal) * 100)))
+        }
+        return status === 'completed' ? 100 : status === 'in_progress' ? 58 : 0
     }
-    setActiveLocationId('all')
-  }, [urlLocationId])
 
-  const refetchQuests = useCallback(async () => {
-    try {
-      setLoading(true)
-      if (!activeLocationId) {
-        setQuests([])
-        setProgresses([])
-        return
-      }
-      const list = await gamificationApi.quests(activeLocationId === 'all' ? undefined : activeLocationId)
-      setQuests(list)
-      if (isAuthenticated) {
-        const mine = await gamificationApi.myQuests(activeLocationId === 'all' ? undefined : activeLocationId)
-        setProgresses(mine)
-      } else {
-        setProgresses([])
-      }
-    } catch (e) {
-      showToast({
-        message: e instanceof ApiError ? e.message : 'Không tải được danh sách nhiệm vụ.',
-        type: 'error',
-      })
-    } finally {
-      setLoading(false)
+    const getProgress = (questId: string) => progresses.find((p) => p.questId === questId)
+
+    const handleStartQuest = async (questId: string, e: MouseEvent) => {
+        e.preventDefault()
+        e.stopPropagation()
+        if (!isAuthenticated) {
+            navigate('/login')
+            return
+        }
+        try {
+            const started = await gamificationApi.startQuest(questId)
+            setProgresses((prev) => [...prev.filter((p) => p.questId !== questId), started])
+            showToast({ message: 'Mật lệnh đã được kích hoạt. Chúc may mắn!', type: 'success' })
+            setStatusFilter('in_progress')
+            void refetchQuests()
+        } catch (err) {
+            showToast({ message: err instanceof ApiError ? err.message : 'Không thể bắt đầu.', type: 'error' })
+        }
     }
-  }, [isAuthenticated, activeLocationId, showToast])
 
-  useEffect(() => {
-    void refetchQuests()
-  }, [refetchQuests])
-
-  useEffect(() => {
-    if (!isAuthenticated || !activeLocationId) return
-    const onDiscoveryRecorded = () => {
-      void refetchQuests()
-    }
-    window.addEventListener(DISCOVERY_RECORDED_EVENT, onDiscoveryRecorded)
-    return () => window.removeEventListener(DISCOVERY_RECORDED_EVENT, onDiscoveryRecorded)
-  }, [isAuthenticated, activeLocationId, refetchQuests])
-
-  const getStatus = (questId: string) =>
-    isAuthenticated ? progresses.find((p) => p.questId === questId)?.status ?? 'not_started' : 'not_started'
-
-  const statusCounts = useMemo(() => {
-    const counts = { all: quests.length, not_started: 0, in_progress: 0, completed: 0 }
-    quests.forEach((q) => {
-      const s = getStatus(q.id)
-      if (s === 'not_started') counts.not_started += 1
-      else if (s === 'in_progress') counts.in_progress += 1
-      else if (s === 'completed') counts.completed += 1
-    })
-    return counts
-  }, [quests, progresses, isAuthenticated])
-
-  const filteredQuests = quests.filter((q) =>
-    statusFilter === 'all'
-      ? true
-      : statusFilter === 'not_started'
-        ? getStatus(q.id) === 'not_started'
-        : getStatus(q.id) === statusFilter,
-  )
-  const progressPct = (status: string, currentStep?: number, stepsTotal?: number) => {
-    if (typeof currentStep === 'number' && typeof stepsTotal === 'number' && stepsTotal > 0) {
-      return Math.max(0, Math.min(100, Math.round((currentStep / stepsTotal) * 100)))
-    }
-    return status === 'completed' ? 100 : status === 'in_progress' ? 58 : 12
-  }
-  const getProgress = (questId: string) => progresses.find((p) => p.questId === questId)
-
-  const handleStartQuest = async (questId: string, e: MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    if (!isAuthenticated) return
-    try {
-      const started = await gamificationApi.startQuest(questId)
-      setProgresses((prev) => {
-        const rest = prev.filter((p) => p.questId !== questId)
-        return [...rest, started]
-      })
-      showToast({ message: 'Bắt đầu nhiệm vụ thành công.', type: 'success' })
-      setStatusFilter('in_progress')
-      void refetchQuests()
-    } catch (err) {
-      showToast({
-        message: err instanceof ApiError ? err.message : 'Không thể bắt đầu nhiệm vụ.',
-        type: 'error',
-      })
-    }
-  }
-
-  const locationById = useMemo(() => new Map(locations.map((l) => [l.id, l])), [locations])
-
-  const questsForDisplay: Array<{
-    id: string
-    to: string
-    title: string
-    description: string
-    missionHook: string
-    city: string
-    difficulty: string
-    estimatedMinutes: number
-    pointsReward: number
-    status: string
-    image: string
-    coverFallback: string
-    currentStep?: number
-    stepsTotal?: number
-    readyToStart?: boolean
-    completionTrigger?: string | null
-    requireOnsiteCheckin?: boolean
-    locationLocked?: boolean
-  }> = filteredQuests.map((q, index) => {
-    const meta = HERITAGE_QUEST_META[q.id]
-    const progress = getProgress(q.id)
-    const loc = locationById.get(q.locationId)
-    const coverLabel = loc?.name ?? q.title
-    return {
-      id: q.id,
-      to: `/quests/${q.id}`,
-      title: q.title,
-      description: q.description,
-      missionHook: meta?.missionHook ?? q.description,
-      city: meta?.city ?? '',
-      difficulty: meta?.difficulty ?? 'trung bình',
-      estimatedMinutes: meta?.estimatedMinutes ?? 15,
-      pointsReward: q.pointsReward,
-      status: getStatus(q.id),
-      image: pickQuestCover(q.coverImage, loc?.coverImage, coverLabel, index),
-      coverFallback: resolveLocationCoverFallback(coverLabel, index),
-      currentStep: progress?.currentStep,
-      stepsTotal: progress?.stepsTotal ?? q.stepsTotal,
-      readyToStart: (() => {
-        if (progress) return isReadyToStart(progress)
-        return q.completionTrigger === 'discovery'
-      })(),
-      completionTrigger: q.completionTrigger,
-      requireOnsiteCheckin: progress?.requireOnsiteCheckin ?? q.requireOnsiteCheckin ?? q.completionTrigger === 'checkin',
-      locationLocked: loc ? isLocationLocked(loc, user) : false,
-    }
-  })
-
-  if (appEnv.demoMode && questsForDisplay.length === 0) {
-    const seed = [
-      {
-        id: 'seed-quest-1',
-        to: '/explore',
-        title: 'Dấu ấn Hoàng Thành',
-        description: 'Giải mã các tầng lịch sử tại trung tâm Thăng Long.',
-        missionHook: 'Khai quật 13 thế kỷ quyền lực — từng chương một.',
-        city: 'Hà Nội',
-        difficulty: 'trung bình',
-        estimatedMinutes: 15,
-        pointsReward: 500,
-        status: 'in_progress',
-        image: images.questDauAnHoangThanh,
-        coverFallback: images.questDauAnHoangThanh,
-        currentStep: 2,
-        stepsTotal: 3,
-      },
-      {
-        id: 'seed-quest-2',
-        to: '/explore',
-        title: 'Bí ẩn Chùa Cầu',
-        description: 'Hành trình thương nhân phố cổ Hội An.',
-        missionHook: 'Tìm dấu vết giao thoa trên sông Thu Bồn.',
-        city: 'Quảng Nam',
-        difficulty: 'dễ',
-        estimatedMinutes: 12,
-        pointsReward: 200,
-        status: 'not_started',
-        image: images.questBiAnChuaCau,
-        coverFallback: images.questBiAnChuaCau,
-        currentStep: 0,
-        stepsTotal: 3,
-      },
-    ]
-    seed.forEach((item) => {
-      questsForDisplay.push(item)
-    })
-  }
-
-  const displayCards = questsForDisplay.map((q, index) => ({
-    ...q,
-    borderClass: index === 0 ? 'border-primary/30 hover:border-primary/60' : 'border-outline-variant hover:border-secondary/60',
-    xpClass: index === 0 ? 'border-primary/50 text-primary' : 'border-outline-variant text-on-surface-variant',
-  }))
-
-  return (
-    <AppLayout
-      activeBorder="left"
-      mobileBackTo="/explore"
-      mobileTitle="Nhiệm vụ"
-      topNav={<SimpleTopNav title="Nhiệm vụ" backTo="/explore" backLabel="Khám phá" />}
-    >
-      <main className="mt-14 md:mt-16 p-md md:p-lg max-w-7xl mx-auto w-full">
-        <Link to="/explore" className="inline-flex items-center gap-1 text-secondary text-sm mb-sm hover:underline md:hidden">
-          <MaterialIcon name="arrow_back" className="text-base" />
-          Quay lại Khám phá
-        </Link>
-        <h1 className="font-display-lg text-display-lg text-primary mb-sm">Nhiệm vụ</h1>
-        <p className="text-sm text-on-surface-variant leading-relaxed mb-lg max-w-2xl">
-          Hành trình hybrid thị giác — online: hiện vật, Time Portal, tour 360°. Offline: check-in onsite nhận thưởng +25 XP.
-        </p>
-        {!isAuthenticated && (
-          <p className="text-on-surface-variant mb-md">
-            Bạn đang xem ở chế độ guest. Đăng nhập để nhận nhiệm vụ và lưu tiến trình.
-          </p>
-        )}
-        <div className="flex flex-wrap gap-sm mb-md overflow-x-auto pb-1">
-          <button
-            type="button"
-            onClick={() => setActiveLocationId('all')}
-            className={`px-3 py-1.5 rounded-full text-sm border whitespace-nowrap ${
-              activeLocationId === 'all'
-                ? 'border-primary text-primary bg-primary/10'
-                : 'border-outline-variant text-on-surface-variant hover:border-secondary'
-            }`}
-          >
-            Tất cả di tích
-          </button>
-          {locations.map((loc) => (
-            <button
-              key={loc.id}
-              type="button"
-              onClick={() => setActiveLocationId(loc.id)}
-              className={`px-3 py-1.5 rounded-full text-sm border whitespace-nowrap ${
-                activeLocationId === loc.id
-                  ? 'border-primary text-primary bg-primary/10'
-                  : 'border-outline-variant text-on-surface-variant hover:border-secondary'
-              }`}
-            >
-              {loc.city} · {loc.name}
-            </button>
-          ))}
-        </div>
-        <div className="flex flex-wrap gap-md border-b border-surface-container-highest pb-sm mb-lg overflow-x-auto">
-          {[
-            { id: 'all', label: 'Tất cả', count: statusCounts.all },
-            { id: 'not_started', label: 'Chưa bắt đầu', count: statusCounts.not_started },
-            { id: 'in_progress', label: 'Đang làm', count: statusCounts.in_progress },
-            { id: 'completed', label: 'Hoàn thành', count: statusCounts.completed },
-          ].map((item) => (
-            <button
-              key={`${item.id}-${item.label}`}
-              type="button"
-              onClick={() => setStatusFilter(item.id as typeof statusFilter)}
-              className={`pb-1 px-2 font-title-md transition-colors border-b-2 flex items-center gap-1.5 ${
-                statusFilter === item.id ? 'text-secondary border-secondary' : 'text-on-surface-variant border-transparent hover:text-on-surface'
-              }`}
-            >
-              {item.label}
-              <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-                statusFilter === item.id ? 'bg-secondary/20 text-secondary' : 'bg-surface-container-high text-on-surface-variant'
-              }`}>
-                {item.count}
-              </span>
-            </button>
-          ))}
-        </div>
-        {loading && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-md mb-sm">
-            {[0, 1, 2].map((i) => (
-              <div key={i} className="h-64 rounded-xl bg-surface-container animate-pulse border border-outline-variant" />
-            ))}
-          </div>
-        )}
-        {!loading && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-lg">
-          {displayCards.map((q) =>
-            q.locationLocked ? (
-              <div
-                key={q.id}
-                className="block bg-surface-container border border-outline-variant rounded-xl overflow-hidden opacity-60 cursor-not-allowed"
-                title="Hoàn thành quest trước để mở khoá di tích này"
-              >
-                <div className="h-48 relative">
-                  <SmartImage src={q.image} fallback={q.coverFallback} alt={q.title} fill className="grayscale" />
-                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-3xl">🔒</div>
-                </div>
-                <div className="p-md">
-                  <h2 className="font-headline-lg text-on-surface-variant">{q.title}</h2>
-                  <p className="text-xs text-on-surface-variant mt-sm">Hoàn thành nhiệm vụ Củ Chi để mở khoá</p>
-                </div>
-              </div>
-            ) : (
-            <Link
-              key={q.id}
-              to={q.to}
-              className={`block bg-surface-container border rounded-xl overflow-hidden card-interactive ${q.borderClass}`}
-            >
-              <div className="h-48 relative">
+    return (
+        <AppLayout
+            activeBorder="left"
+            mobileBackTo={`/explore/${lockedLocationId}`}
+            mobileTitle="Chiến Dịch"
+            topNav={<SimpleTopNav title="Chiến Dịch" backTo={`/explore/${lockedLocationId}`} backLabel="Quay lại Di tích" />}
+            className="bg-[#0a0b10] min-h-screen text-white"
+        >
+            {/* HERO BANNER - CHRONOS CORE (LÕI NĂNG LƯỢNG THỜI GIAN) */}
+            <div className="relative w-full h-[320px] md:h-[400px] overflow-hidden border-b border-white/5 shadow-[0_20px_50px_rgba(0,0,0,0.8)]">
+                {/* Nền ảnh */}
                 <SmartImage
-                  src={q.image}
-                  fallback={q.coverFallback}
-                  alt={q.title}
-                  fill
-                  placeholderIcon={<MaterialIcon name="assignment" className="text-4xl text-on-surface-variant/50" />}
+                    src={locationInfo?.coverImage || '/media/banner-main.jpg'}
+                    fallback="/media/banner-main.jpg"
+                    alt="Campaign Hub"
+                    fill
+                    className="filter contrast-125 brightness-50 object-cover"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-surface-container to-transparent" />
-                <span className={`absolute right-sm top-sm px-3 py-1 rounded-full border bg-surface-container-high/80 backdrop-blur-md text-xs inline-flex items-center gap-1 ${q.xpClass}`}>
-                  <MaterialIcon name="stars" className="text-base" />
-                  +{q.pointsReward} XP
-                </span>
-              </div>
-              <div className="p-md relative z-10 -mt-10">
-                <div className="flex items-center gap-2 mb-xs flex-wrap">
-                  {q.city && (
-                    <span className="text-xs text-on-surface-variant flex items-center gap-0.5">
-                      <MaterialIcon name="location_on" className="text-sm" /> {q.city}
-                    </span>
-                  )}
-                  <span className="text-xs px-1.5 py-0.5 rounded-full border border-outline-variant text-on-surface-variant">
-                    {q.difficulty} · ~{q.estimatedMinutes} phút
-                  </span>
-                  {q.requireOnsiteCheckin ? (
-                    <span className="text-xs px-1.5 py-0.5 rounded-full border border-secondary/50 text-secondary inline-flex items-center gap-0.5">
-                      <MaterialIcon name="location_on" className="text-sm" /> Cần đến tận nơi
-                    </span>
-                  ) : (
-                    <span className="text-xs px-1.5 py-0.5 rounded-full border border-primary/40 text-primary inline-flex items-center gap-0.5">
-                      <MaterialIcon name="museum" className="text-sm" /> Remote-friendly
-                    </span>
-                  )}
-                </div>
-                <div className="flex items-end justify-between gap-sm mb-sm">
-                  <h2 className="font-headline-lg text-on-surface leading-tight">{q.title}</h2>
-                  <span className="px-2 py-1 rounded bg-surface text-xs text-on-surface-variant whitespace-nowrap">
-                    {q.currentStep ?? 0}/{q.stepsTotal ?? 3} chương
-                  </span>
-                </div>
-                <p className="text-sm text-primary/90 mb-1 line-clamp-2">{q.missionHook}</p>
-                {q.missionHook !== q.description && (
-                  <p className="text-sm text-on-surface-variant mb-md line-clamp-2">{q.description}</p>
-                )}
-                {q.missionHook === q.description && <div className="mb-md" />}
-                {q.status === 'in_progress' && (
-                  <p className="text-xs text-secondary mb-sm inline-flex items-center gap-1">
-                    <MaterialIcon name="pending" className="text-sm" /> Đang thực hiện
-                  </p>
-                )}
-                {q.status === 'completed' && (
-                  <p className="text-xs text-primary mb-sm inline-flex items-center gap-1">
-                    <MaterialIcon name="check_circle" className="text-sm" /> Đã hoàn thành
-                  </p>
-                )}
-                {q.status === 'not_started' && (q.readyToStart || q.completionTrigger === 'discovery') && (
-                  <div className="mb-md rounded-lg border border-secondary/40 bg-secondary/10 p-sm">
-                    <p className="text-sm text-on-surface mb-sm">
-                      {q.completionTrigger === 'discovery'
-                        ? 'Bắt đầu và mở từng hiện vật trong tủ sưu tập.'
-                        : getProgress(q.id)?.hasCheckinAtLocation
-                          ? 'Sẵn sàng check-in hiện trường Củ Chi'
-                          : 'Tour 360° + Time Portal, sau đó check-in tại địa đạo'}
-                    </p>
-                    {isAuthenticated && (
-                      <Button
-                        type="button"
-                        onClick={(e) => void handleStartQuest(q.id, e)}
-                        className="px-sm py-xs text-sm"
-                      >
-                        Bắt đầu ngay
-                      </Button>
-                    )}
-                  </div>
-                )}
-                <div className="h-2 bg-neutral-200 rounded-full overflow-hidden">
-                  <div className="h-full bg-gradient-to-r from-primary-500 to-accent-500" style={{ width: `${progressPct(q.status, q.currentStep, q.stepsTotal)}%` }} />
-                </div>
-              </div>
-            </Link>
-            ),
-          )}
-        </div>
-        )}
-        {!loading && questsForDisplay.length === 0 && (
-          <div className="mt-md text-center py-xl border border-dashed border-outline-variant rounded-xl">
-            <MaterialIcon name="assignment" className="text-4xl text-on-surface-variant mb-sm" />
-            <p className="text-on-surface-variant">
-              {statusFilter === 'in_progress'
-                ? 'Bạn chưa có nhiệm vụ đang làm. Chọn tab "Chưa bắt đầu" hoặc "Tất cả" để bắt đầu.'
-                : statusFilter === 'completed'
-                  ? 'Chưa hoàn thành nhiệm vụ nào. Hoàn tất từng chương để nhận XP và danh hiệu.'
-                  : statusFilter === 'not_started'
-                    ? 'Tất cả nhiệm vụ đã được bắt đầu hoặc hoàn thành.'
-                    : 'Chưa có nhiệm vụ cho bộ lọc này.'}
-            </p>
-            {statusFilter !== 'all' && (
-              <button
-                type="button"
-                onClick={() => setStatusFilter('all')}
-                className="inline-flex items-center gap-1 mt-md text-secondary underline"
-              >
-                Xem tất cả nhiệm vụ
-              </button>
-            )}
-            {statusFilter === 'in_progress' && (
-              <Link to="/quests" className="inline-flex items-center gap-1 mt-md ml-md text-secondary underline">
-                Mở nhiệm vụ đang làm <MaterialIcon name="assignment" className="text-sm" />
-              </Link>
-            )}
-          </div>
-        )}
-        <section className="mt-xl border border-outline-variant rounded-xl p-md bg-surface-container-low opacity-80">
-          <h3 className="font-title-md mb-md flex items-center gap-2 text-on-surface-variant">
-            <MaterialIcon name="lock" /> Nhiệm vụ sắp tới
-          </h3>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-md">
-              <div className="w-16 h-16 rounded-lg bg-surface-container-high flex items-center justify-center border border-outline-variant">
-                <MaterialIcon name="groups" className="text-outline text-3xl" />
-              </div>
-              <div>
-                <p className="font-title-md">Nhiệm vụ nhóm & AR onsite</p>
-                <p className="text-sm text-on-surface-variant">Sắp ra mắt — khám phá theo nhóm tại di tích</p>
-              </div>
-            </div>
-            <Link to="/explore" className="inline-flex items-center gap-1 border border-secondary text-secondary px-md py-sm rounded-lg">
-              <MaterialIcon name="explore" className="text-base" /> Xem bản đồ
-            </Link>
-          </div>
-        </section>
-      </main>
-    </AppLayout>
-  )
-}
 
+                {/* Lớp phủ Gradient Tối */}
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0a0b10] via-[#0a0b10]/80 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-r from-[#0a0b10] via-[#0a0b10]/60 to-transparent" />
+                <div className="absolute inset-0 bg-[url('/media/grid.svg')] opacity-10 pointer-events-none" />
+
+                {/* ======================================================= */}
+                {/* LÕI NĂNG LƯỢNG ĐỒ HỌA 3D BÊN PHẢI (CHRONOS CORE) */}
+                {/* ======================================================= */}
+                <div className="absolute top-1/2 right-4 md:right-20 -translate-y-1/2 hidden lg:flex items-center justify-center w-80 h-80 pointer-events-none perspective-1000">
+                    <div className="absolute inset-0 bg-gradient-to-tr from-[#fe951c]/30 to-[#388cf1]/20 blur-[100px] rounded-full animate-pulse" />
+                    <div className="absolute inset-0 rounded-full border border-white/5 border-t-[#388cf1]/60 border-l-[#388cf1]/20 animate-[spin_15s_linear_infinite]" />
+                    <div className="absolute inset-6 rounded-full border border-white/5 border-b-[#fe951c]/60 border-r-[#fe951c]/20 animate-[spin_10s_linear_infinite_reverse] scale-y-75 rotate-45" />
+                    <div className="absolute inset-16 rounded-full border-2 border-dashed border-[#fdb438]/40 animate-[spin_20s_linear_infinite]" />
+                    <div className="relative z-10 w-24 h-24 bg-gradient-to-br from-[#fe951c] via-[#e07d0b] to-[#b45309] rounded-full flex items-center justify-center shadow-[0_0_60px_rgba(254,149,28,0.8)] animate-[pulse_2s_ease-in-out_infinite]">
+                        <div className="absolute inset-1 bg-black/20 rounded-full blur-sm" />
+                        <MaterialIcon name="api" className="text-5xl text-[#fff2a1] drop-shadow-[0_0_10px_#fff]" />
+                    </div>
+                    <div className="absolute top-10 right-20 w-2 h-2 bg-cyan-400 rounded-full shadow-[0_0_10px_#22d3ee] animate-ping" />
+                    <div className="absolute bottom-20 left-10 w-1.5 h-1.5 bg-[#fdb438] rounded-full shadow-[0_0_10px_#fdb438] animate-ping" style={{ animationDelay: '1s' }} />
+                </div>
+                {/* ======================================================= */}
+
+                {/* Nội dung Text Bên Trái */}
+                <div className="absolute inset-0 flex flex-col justify-center md:justify-end p-6 md:p-12 max-w-7xl mx-auto w-full z-10">
+                    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#388cf1]/40 bg-[#388cf1]/10 backdrop-blur-md text-cyan-300 text-[10px] md:text-xs font-black uppercase tracking-widest w-max mb-4 shadow-lg">
+                        <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_#22d3ee]" />
+                        TỌA ĐỘ HIỆN TẠI: <span className="text-white">{locationInfo?.name?.toUpperCase() || 'ĐANG TRUY XUẤT...'}</span>
+                    </div>
+                    <h1 className="font-black text-5xl md:text-7xl text-white drop-shadow-2xl mb-4 tracking-tighter">
+                        Hồ Sơ Mật Lệnh
+                    </h1>
+                    <p className="text-sm md:text-base text-gray-400 max-w-2xl font-medium leading-relaxed">
+                        Hóa thân thành Đặc vụ Không gian. Giải mã các đoạn ghi âm, thâm nhập không gian 360°, quét AR hiện trường để khôi phục toàn bộ dòng thời gian bị mất tại <strong className="text-cyan-400">{locationInfo?.name}</strong>.
+                    </p>
+                </div>
+            </div>
+
+            <main className="p-4 md:p-8 max-w-7xl mx-auto w-full relative z-20">
+
+                {/* THANH LỌC TRẠNG THÁI */}
+                <div className="flex gap-6 md:gap-10 border-b border-white/10 pb-2 mb-10 overflow-x-auto custom-scrollbar">
+                    {[
+                        { id: 'all', label: 'Tất Cả Mật Lệnh', count: statusCounts.all },
+                        { id: 'not_started', label: 'Mật Lệnh Mới', count: statusCounts.not_started },
+                        { id: 'in_progress', label: 'Đang Giải Mã', count: statusCounts.in_progress },
+                        { id: 'completed', label: 'Đã Phá Đảo', count: statusCounts.completed },
+                    ].map((item) => (
+                        <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => setStatusFilter(item.id as typeof statusFilter)}
+                            className={`pb-4 px-2 font-black transition-all border-b-[3px] flex items-center gap-2.5 cursor-pointer whitespace-nowrap ${
+                                statusFilter === item.id
+                                    ? 'text-[#fdb438] border-[#fdb438] text-sm md:text-base'
+                                    : 'text-gray-500 border-transparent hover:text-gray-300 text-sm md:text-base'
+                            }`}
+                        >
+                            {item.label}
+                            <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-black ${
+                                statusFilter === item.id ? 'bg-[#fe951c]/20 text-[#fdb438]' : 'bg-white/5 text-gray-500'
+                            }`}>
+                                {item.count}
+                            </span>
+                        </button>
+                    ))}
+                </div>
+
+                {loading && (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-6">
+                        {[1, 2].map((i) => (
+                            <div key={i} className="h-[280px] rounded-3xl bg-[#161824] animate-pulse border border-white/5" />
+                        ))}
+                    </div>
+                )}
+
+                {/* LƯỚI THẺ CHIẾN DỊCH CHUẨN UX/UI MỚI NHẤT */}
+                {!loading && (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
+                        {filteredQuests.map((q, index) => {
+                            const progress = getProgress(q.id)
+                            const status = getStatus(q.id)
+                            const meta = HERITAGE_QUEST_META[q.id]
+                            const isLocked = locationInfo ? isLocationLocked(locationInfo, user) : false
+                            const coverImg = pickQuestCover(q.coverImage, locationInfo?.coverImage, q.title, index)
+
+                            // BỌC THÉP CHỐNG CRASH TẠI ĐÂY (An toàn tuyệt đối với optional chaining)
+                            const totalNodes = progress?.stepsTotal ?? q.stepsTotal ?? q.steps?.length ?? meta?.steps?.length ?? 3;
+                            const pct = progressPct(status, progress?.currentStep, totalNodes);
+
+                            // Trạng thái bị khóa
+                            if (isLocked) {
+                                return (
+                                    <div key={q.id} className="relative rounded-3xl overflow-hidden border border-white/5 bg-[#12141f] opacity-60 flex flex-col lg:flex-row h-auto lg:h-[260px]">
+                                        <div className="w-full lg:w-2/5 h-48 lg:h-full relative shrink-0 grayscale blur-[4px]">
+                                            <SmartImage src={coverImg} fallback={coverImg} alt={q.title} fill className="object-cover" />
+                                            <div className="absolute inset-0 bg-black/80" />
+                                        </div>
+                                        <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center z-10">
+                                            <div className="w-16 h-16 rounded-full bg-black/60 border border-white/10 flex items-center justify-center backdrop-blur-md mb-4 shadow-2xl">
+                                                <MaterialIcon name="lock" className="text-3xl text-gray-500" />
+                                            </div>
+                                            <h2 className="text-xl font-black text-white">{q.title}</h2>
+                                            <p className="text-xs text-gray-400 mt-2 font-medium bg-black/40 px-4 py-1.5 rounded-full">Yêu cầu hoàn thành nhiệm vụ trước</p>
+                                        </div>
+                                    </div>
+                                )
+                            }
+
+                            // Trạng thái mở
+                            return (
+                                <Link
+                                    key={q.id}
+                                    to={`/quests/${q.id}`}
+                                    className="group relative rounded-3xl overflow-hidden border border-white/10 bg-[#161824] hover:bg-[#1a1d2c] hover:border-[#388cf1]/50 transition-all duration-500 hover:-translate-y-2 shadow-[0_15px_40px_rgba(0,0,0,0.5)] flex flex-col lg:flex-row h-auto lg:h-[260px]"
+                                >
+                                    {/* CỘT TRÁI: ẢNH COVER */}
+                                    <div className="w-full lg:w-[35%] h-52 lg:h-full relative shrink-0 overflow-hidden">
+                                        <SmartImage src={coverImg} fallback={coverImg} alt={q.title} fill className="transition-transform duration-700 group-hover:scale-110 object-cover" />
+                                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#161824]/20 to-[#161824] hidden lg:block" />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-[#161824] via-[#161824]/40 to-transparent lg:hidden" />
+
+                                        {/* Overlay Tags Trái */}
+                                        <div className="absolute top-4 left-4 flex flex-col gap-2">
+                                            <span className="w-max px-2.5 py-1 rounded-lg bg-black/70 backdrop-blur-md border border-white/10 text-[10px] font-black text-[#fe951c] flex items-center gap-1.5 shadow-lg">
+                                                <MaterialIcon name="stars" className="text-sm" /> +{q.pointsReward} XP
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {/* CỘT PHẢI: THÔNG TIN CHIẾN DỊCH (LORE & LỘT) */}
+                                    <div className="flex-1 p-6 flex flex-col justify-between relative z-10 min-w-0">
+
+                                        <div>
+                                            {/* Tag Nguồn Gốc & Onsite */}
+                                            <div className="flex items-center gap-2 mb-3 flex-wrap">
+                                                <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-1 bg-white/5 px-2 py-0.5 rounded border border-white/5">
+                                                    <MaterialIcon name="flag" className="text-[12px] text-gray-500" /> MISSION
+                                                </span>
+                                                {q.requireOnsiteCheckin ? (
+                                                    <span className="text-[9px] font-black text-emerald-300 uppercase tracking-widest flex items-center gap-1 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/30">
+                                                        <MaterialIcon name="radar" className="text-[12px] animate-pulse" /> OFFLINE ONSITE
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-[9px] font-black text-[#388cf1] uppercase tracking-widest flex items-center gap-1 bg-[#388cf1]/10 px-2 py-0.5 rounded border border-[#388cf1]/30">
+                                                        <MaterialIcon name="public" className="text-[12px]" /> ONLINE REMOTE
+                                                    </span>
+                                                )}
+                                            </div>
+
+                                            <h2 className="text-xl sm:text-2xl font-black text-white leading-tight mb-3 group-hover:text-[#388cf1] transition-colors line-clamp-2">{q.title}</h2>
+
+                                            {/* Mission Hook / Briefing */}
+                                            <div className="relative pl-3 border-l-2 border-[#fdb438]/50">
+                                                <p className="text-sm text-gray-300 line-clamp-2 leading-relaxed font-medium italic">
+                                                    "{meta?.missionHook || q.description}"
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        {/* KHU VỰC TRẠNG THÁI VÀ NÚT BẤM DƯỚI CÙNG */}
+                                        <div className="mt-5 pt-4 border-t border-white/5 flex-shrink-0">
+                                            {status === 'not_started' && (
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-1.5 text-xs font-bold text-gray-500">
+                                                        <MaterialIcon name="lock" className="text-sm" /> <span>Đang khóa</span>
+                                                    </div>
+                                                    <button
+                                                        onClick={(e) => handleStartQuest(q.id, e)}
+                                                        className="px-5 py-2.5 rounded-xl bg-white/5 hover:bg-[#388cf1] text-white font-black text-xs uppercase tracking-wider transition-all hover:scale-105 border border-white/10 hover:border-[#388cf1] flex items-center gap-2 cursor-pointer shadow-md"
+                                                    >
+                                                        Mở Hồ Sơ <MaterialIcon name="folder_open" className="text-sm" />
+                                                    </button>
+                                                </div>
+                                            )}
+
+                                            {status === 'in_progress' && (
+                                                <div>
+                                                    <div className="flex justify-between items-end mb-2">
+                                                        <span className="text-[10px] font-black text-cyan-400 uppercase tracking-widest flex items-center gap-1">
+                                                            <MaterialIcon name="data_usage" className="text-sm animate-spin-slow" /> Đang giải mã...
+                                                        </span>
+                                                        {/* Áp dụng biến totalNodes bọc thép để không bị crash length */}
+                                                        <span className="text-[11px] font-bold text-white bg-white/10 px-2 py-0.5 rounded border border-white/10">
+                                                            {progress?.currentStep ?? 0} / {totalNodes} Node
+                                                        </span>
+                                                    </div>
+                                                    <div className="h-1.5 bg-black rounded-full overflow-hidden border border-white/5 relative">
+                                                        <div className="absolute inset-y-0 left-0 bg-gradient-to-r from-[#388cf1] to-cyan-300 shadow-[0_0_10px_#388cf1] rounded-full transition-all duration-1000" style={{ width: `${pct}%` }} />
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {status === 'completed' && (
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 w-max">
+                                                        <MaterialIcon name="verified" className="text-emerald-400 text-base" />
+                                                        <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">ĐÃ PHÁ ĐẢO</span>
+                                                    </div>
+                                                    <span className="text-[10px] text-gray-500 font-bold uppercase flex items-center gap-1 hover:text-white transition-colors">
+                                                        Xem Lịch sử <MaterialIcon name="chevron_right" className="text-sm" />
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </Link>
+                            )
+                        })}
+                    </div>
+                )}
+
+                {!loading && filteredQuests.length === 0 && (
+                    <div className="mt-12 text-center py-24 border border-dashed border-white/10 rounded-3xl bg-[#161824]/40 backdrop-blur-xl shadow-2xl">
+                        <div className="relative w-24 h-24 mx-auto mb-6">
+                            <div className="absolute inset-0 rounded-full border border-white/10 animate-ping" />
+                            <div className="w-24 h-24 rounded-full bg-white/5 border border-white/5 flex items-center justify-center shadow-inner relative z-10">
+                                <MaterialIcon name="radar" className="text-5xl text-gray-600 animate-pulse" />
+                            </div>
+                        </div>
+                        <h3 className="text-2xl font-black text-white mb-2">Chưa có Mật lệnh nào</h3>
+                        <p className="text-sm text-gray-500 font-medium">Khu vực di tích này hiện tại chưa có chiến dịch nào được kích hoạt.</p>
+                    </div>
+                )}
+            </main>
+        </AppLayout>
+    )
+}

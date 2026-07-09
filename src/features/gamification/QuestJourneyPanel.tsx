@@ -1,3 +1,4 @@
+// src/features/gamification/QuestJourneyPanel.tsx
 import { useCallback, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { EraLockedModal } from '../../components/monetization/EraLockedModal'
@@ -6,267 +7,268 @@ import { analyticsApi } from '../analytics/api'
 import { shouldShowB2CPaywall } from '../../shared/access/contentAccess'
 import { useAuth } from '../../shared/auth/useAuth'
 import { useAppMode } from '../../shared/context/useAppMode'
-import {
-  actionIcon,
-  isStepDone,
-  resolveStepImage,
-  stepActionLabel,
-  stepHref,
-  type QuestStepMeta,
-} from './heritageQuestSteps'
+import type { QuestStep } from './api'
 
 type QuestJourneyPanelProps = {
-  steps: QuestStepMeta[]
-  questId: string
-  locationId: string
-  status: string
-  currentStep: number
-  hasCheckin?: boolean
-  stepImages?: Record<string, string>
+    steps: QuestStep[]
+    questId: string
+    locationId: string
+    status: string
+    currentStep: number
+    hasCheckin?: boolean
+    stepImages?: Record<string, string>
 }
 
-function stepTypeBadge(actionType: QuestStepMeta['actionType']): string {
-  if (actionType === 'artifact') return 'view_in_ar'
-  if (actionType === 'portal') return 'history'
-  if (actionType === 'tour') return '360'
-  if (actionType === 'checkin') return 'my_location'
-  return 'flag'
-}
-
-function isPremiumPortalStep(step: QuestStepMeta): boolean {
-  if (step.actionType !== 'portal') return false
-  const era = step.portalEra
-  return era === 1948 || era === 1968
+// Logic kiểm tra Node Premium từ Back-end
+function isPremiumPortalStep(step: QuestStep): boolean {
+    if (step.actionType !== 'portal') return false
+    const era = step.portalEra
+    return era === 1948 || era === 1968
 }
 
 export function QuestJourneyPanel({
-  steps,
-  questId,
-  locationId,
-  status,
-  currentStep,
-  hasCheckin,
-  stepImages,
-}: QuestJourneyPanelProps) {
-  const { mode } = useAppMode()
-  const { user } = useAuth()
-  const showPaywall = shouldShowB2CPaywall(user)
-  const [expandedAll, setExpandedAll] = useState(false)
-  const [eraModalOpen, setEraModalOpen] = useState(false)
-  const [paywallEra, setPaywallEra] = useState<number>(1948)
-  const firstOpenIndex = steps.findIndex(
-    (step, index) => !isStepDone(step, currentStep, index, status, hasCheckin),
-  )
+                                      steps,
+                                      questId,
+                                      locationId,
+                                      status,
+                                      currentStep,
+                                      stepImages, // Đã gỡ bỏ hasCheckin ở đây để fix lỗi TS6133
+                                  }: QuestJourneyPanelProps) {
+    const { mode } = useAppMode()
+    const { user } = useAuth()
+    const isOnline = mode !== 'offline'
 
-  const openStepperPaywall = useCallback(
-    (era: number) => {
-      setPaywallEra(era)
-      setEraModalOpen(true)
-      void analyticsApi.recordEvent({
-        eventType: 'PAYWALL_ERA_LOCKED_VIEW',
-        locationId: locationId || undefined,
-        source: 'quest_stepper',
-      })
-    },
-    [locationId],
-  )
+    // Logic hiển thị Paywall của đồng đội
+    const showPaywall = shouldShowB2CPaywall(user)
+    const [eraModalOpen, setEraModalOpen] = useState(false)
+    const [paywallEra, setPaywallEra] = useState<number>(1948)
 
-  const onUpgradeClick = useCallback(() => {
-    void analyticsApi.recordEvent({
-      eventType: 'PAYWALL_ERA_UPGRADE_CLICK',
-      locationId: locationId || undefined,
-      source: 'quest_stepper',
-    })
-  }, [locationId])
+    const openStepperPaywall = useCallback((era: number) => {
+        setPaywallEra(era)
+        setEraModalOpen(true)
+        void analyticsApi.recordEvent({
+            eventType: 'PAYWALL_ERA_LOCKED_VIEW',
+            locationId: locationId || undefined,
+            source: 'quest_stepper',
+        })
+    }, [locationId])
 
-  const pricingHref = `/pricing?next=${encodeURIComponent(
-    typeof window !== 'undefined' ? `${window.location.pathname}${window.location.search}` : '/quests',
-  )}`
+    const onUpgradeClick = useCallback(() => {
+        void analyticsApi.recordEvent({
+            eventType: 'PAYWALL_ERA_UPGRADE_CLICK',
+            locationId: locationId || undefined,
+            source: 'quest_stepper',
+        })
+    }, [locationId])
 
-  return (
-    <div className="border border-outline-variant rounded-xl p-md bg-surface-container">
-      <div className="flex items-center justify-between gap-sm mb-sm">
-        <h3 className="font-title-md flex items-center gap-2">
-          <MaterialIcon name="route" /> Hành trình
-        </h3>
-        {steps.length > 1 && (
-          <button
-            type="button"
-            onClick={() => setExpandedAll((v) => !v)}
-            className="text-xs text-primary hover:underline shrink-0"
-          >
-            {expandedAll ? 'Thu gọn' : 'Xem tất cả chương'}
-          </button>
-        )}
-      </div>
-      <p className="text-xs text-on-surface-variant mb-md">
-        Hoàn thành từng chương theo thứ tự — mỗi bước mở khóa phần tiếp theo.
-      </p>
-      <div className="space-y-md relative">
-        {steps.length > 1 && expandedAll && (
-          <div
-            className="absolute left-[58px] top-10 bottom-10 w-0.5 bg-outline-variant/50"
-            aria-hidden
-          />
-        )}
-        {steps.length === 0 && (
-          <p className="text-sm text-on-surface-variant">Đang cập nhật các bước nhiệm vụ.</p>
-        )}
-        {steps.map((step, index) => {
-          const done = isStepDone(step, currentStep, index, status, hasCheckin)
-          const active = !done && index === firstOpenIndex
-          const locked = !done && index > firstOpenIndex && firstOpenIndex >= 0
-          const collapsed = !expandedAll && !done && !active
-          const imageUrl = resolveStepImage(step, stepImages)
-          const ctaLabel = stepActionLabel(step, mode)
-          const portalLocked = showPaywall && isPremiumPortalStep(step) && !done
+    const pricingHref = `/pricing?next=${encodeURIComponent(
+        typeof window !== 'undefined' ? `${window.location.pathname}${window.location.search}` : '/quests',
+    )}`
 
-          return (
-            <div
-              key={step.unlockKey}
-              className={`relative rounded-lg p-sm border flex gap-sm transition-opacity ${
-                done
-                  ? 'border-secondary/40 bg-secondary/10'
-                  : active
-                    ? 'border-primary/50 bg-primary/5 shadow-sm'
-                    : collapsed
-                      ? 'border-outline-variant/40 opacity-50'
-                      : 'border-outline-variant/60 opacity-85'
-              }`}
-            >
-              <div className="relative shrink-0 w-20 h-20">
-                {imageUrl && !collapsed ? (
-                  <img
-                    src={imageUrl}
-                    alt=""
-                    className={`w-20 h-20 rounded-lg object-cover border ${
-                      active ? 'border-primary/60' : 'border-outline-variant/60'
-                    } ${locked || portalLocked ? 'blur-[2px] brightness-75' : ''}`}
-                  />
-                ) : (
-                  <div
-                    className={`w-20 h-20 rounded-lg border flex items-center justify-center bg-surface-container-highest ${
-                      active ? 'border-primary/60' : 'border-outline-variant/60'
-                    }`}
-                  >
-                    <MaterialIcon
-                      name={actionIcon(step.actionType)}
-                      className={`text-2xl ${active ? 'text-primary' : 'text-on-surface-variant'}`}
+    if (!steps || steps.length === 0) return null
+
+    return (
+        <div className="relative mt-12 mb-12">
+            <h3 className="font-black text-2xl text-white mb-8 flex items-center gap-3 border-b border-white/10 pb-4">
+                <MaterialIcon name="radar" className="text-[#fe951c] text-3xl drop-shadow-[0_0_8px_#fe951c]" />
+                TIẾN TRÌNH CHIẾN DỊCH
+            </h3>
+
+            <div className="relative space-y-6 md:space-y-10">
+                {/* Trục năng lượng chưa kích hoạt */}
+                <div className="absolute left-[39px] md:left-[47px] top-8 bottom-8 w-1 bg-[#1a1c29] rounded-full shadow-inner" aria-hidden />
+
+                {/* Trục năng lượng SÁNG LÊN */}
+                {status !== 'not_started' && steps.length > 0 && (
+                    <div
+                        className="absolute left-[39px] md:left-[47px] top-8 w-1 bg-gradient-to-b from-[#fe951c] via-[#fdb438] to-[#388cf1] shadow-[0_0_15px_#fdb438] transition-all duration-1000 ease-out rounded-full"
+                        style={{ height: `calc(${(currentStep / steps.length) * 100}% - 32px)` }}
+                        aria-hidden
                     />
-                  </div>
                 )}
-                {(locked || portalLocked) && expandedAll && (
-                  <div className="absolute inset-0 rounded-lg bg-background/40 flex items-center justify-center">
-                    <MaterialIcon name="lock" className="text-lg text-on-surface-variant" />
-                  </div>
-                )}
-                <span
-                  className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center border text-xs ${
-                    done
-                      ? 'border-secondary bg-secondary text-on-secondary'
-                      : active
-                        ? 'border-primary bg-primary text-on-primary'
-                        : 'border-outline-variant bg-surface-container text-on-surface-variant'
-                  }`}
-                >
-                  {done ? <MaterialIcon name="check" className="text-sm" /> : index + 1}
-                </span>
-              </div>
 
-              <div className="flex-1 min-w-0">
-                <div className="flex items-start gap-2 flex-wrap">
-                  {!collapsed && (
-                    <span className="inline-flex items-center gap-0.5 text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-surface-container-highest text-on-surface-variant">
-                      <MaterialIcon name={stepTypeBadge(step.actionType)} className="text-xs" />
-                      {step.actionType === 'artifact'
-                        ? 'Hiện vật'
-                        : step.actionType === 'portal'
-                          ? 'Portal'
-                          : step.actionType === 'tour'
-                            ? '360°'
-                            : step.actionType === 'checkin'
-                              ? 'Check-in'
-                              : 'Bước'}
-                    </span>
-                  )}
-                  <p className="font-title-md w-full">{step.title}</p>
-                </div>
-                {!collapsed && (
-                  <>
-                    <p className="text-xs text-primary/90 mt-0.5 font-medium">{step.objective}</p>
-                    <p className="text-sm text-on-surface-variant mt-1">{step.description}</p>
-                    {step.hint && (active || done) && (
-                      <p className="text-xs text-on-surface-variant/80 mt-1 flex items-start gap-1">
-                        <MaterialIcon name="lightbulb" className="text-sm text-secondary shrink-0" />
-                        {step.hint}
-                      </p>
-                    )}
-                    <div className="flex items-center gap-2 mt-2 flex-wrap">
-                      <span className="text-xs text-on-surface-variant">
-                        {done
-                          ? 'Hoàn tất'
-                          : portalLocked
-                            ? 'Premium'
-                            : active
-                              ? 'Đang thực hiện'
-                              : locked
-                                ? 'Chưa mở'
-                                : 'Sẵn sàng'}
-                      </span>
-                      {step.xpPartial && (
-                        <span className="text-xs px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">
-                          +{step.xpPartial} XP
-                        </span>
-                      )}
-                    </div>
-                    {!done &&
-                      locationId &&
-                      (status === 'in_progress' || status === 'completed') &&
-                      (portalLocked && (active || expandedAll) ? (
-                        <button
-                          type="button"
-                          data-testid="quest-stepper-era-paywall-cta"
-                          onClick={() => openStepperPaywall(step.portalEra ?? 1948)}
-                          className={`inline-flex items-center gap-1 mt-sm px-md py-xs rounded-full text-sm ${
-                            active
-                              ? 'bg-primary text-on-primary'
-                              : 'border border-secondary text-secondary'
-                          }`}
-                        >
-                          Mở khoá Era {step.portalEra ?? 1948}
-                          <MaterialIcon name="lock" className="text-sm" />
-                        </button>
-                      ) : !locked && !portalLocked ? (
-                        <Link
-                          to={stepHref(locationId, step, questId)}
-                          className={`inline-flex items-center gap-1 mt-sm px-md py-xs rounded-full text-sm ${
-                            active
-                              ? 'bg-primary text-on-primary'
-                              : 'border border-secondary text-secondary'
-                          }`}
-                        >
-                          {ctaLabel}
-                          <MaterialIcon
-                            name={step.actionType === 'checkin' ? 'my_location' : 'arrow_forward'}
-                            className="text-sm"
-                          />
-                        </Link>
-                      ) : null)}
-                  </>
-                )}
-              </div>
+                {steps.map((step, index) => {
+                    const isCompleted = status === 'completed' || currentStep > index
+                    const isActive = status === 'in_progress' && currentStep === index
+                    const isLocked = status === 'not_started' || (status === 'in_progress' && currentStep < index)
+
+                    // Kiểm tra Node này có dính Paywall hay không
+                    const portalLocked = showPaywall && isPremiumPortalStep(step) && !isCompleted
+
+                    const imageUrl = stepImages?.[step.unlockKey] || step.previewImage
+
+                    // Logic tạo Link truy xuất
+                    let href = `/explore/${locationId}`
+                    if (step.actionType === 'artifact') href = `/artifacts?locationId=${locationId}&discoverKey=${step.unlockKey}`
+                    if (step.actionType === 'tour') href = `/tour/360/${locationId}?panorama=${step.unlockKey.replace('scene:', '')}`
+                    if (step.actionType === 'portal') href = `/time-portal/${locationId}?era=${step.portalEra ?? 2026}`
+                    if (step.actionType === 'checkin') href = `/scan?locationId=${locationId}`
+                    if (step.actionType === 'dialogue') {
+                        const persona = step.unlockKey.replace('dialogue:', '')
+                        href = `/chat?locationId=${locationId}&persona=${persona}&questPrompt=${encodeURIComponent(step.chatPrompt || '')}&questId=${questId}`
+                    }
+
+                    // Tên Action Label thông minh phân biệt Online/Offline
+                    let ctaLabel = step.actionLabel || 'TRUY XUẤT'
+                    if (!step.actionLabel) {
+                        if (step.actionType === 'artifact') ctaLabel = isOnline ? 'CHIÊM NGƯỠNG HIỆN VẬT' : 'QUÉT AR MÔ HÌNH 3D'
+                        if (step.actionType === 'tour') ctaLabel = 'THÂM NHẬP TOUR 360°'
+                        if (step.actionType === 'portal') ctaLabel = 'MỞ CỔNG THỜI GIAN'
+                        if (step.actionType === 'dialogue') ctaLabel = 'THẨM VẤN ĐẠI SỨ'
+                    }
+
+                    const getIcon = () => {
+                        if (step.actionType === 'artifact') return isOnline ? 'view_in_ar' : 'document_scanner'
+                        if (step.actionType === 'tour') return '360'
+                        if (step.actionType === 'portal') return 'history'
+                        if (step.actionType === 'dialogue') return 'record_voice_over'
+                        if (step.actionType === 'checkin') return 'my_location'
+                        return 'diamond'
+                    }
+
+                    return (
+                        <div key={step.id || index} className={`relative flex items-start gap-4 md:gap-8 transition-all duration-700 ${isLocked || portalLocked ? 'opacity-40 grayscale' : 'opacity-100'}`}>
+
+                            {/* KHỐI NODE ICON */}
+                            <div className="relative z-10 shrink-0 mt-2 md:mt-0">
+                                {isActive && !portalLocked && (
+                                    <div className="absolute inset-0 rounded-3xl bg-[#fe951c]/20 animate-ping" />
+                                )}
+
+                                <div className={`relative w-20 h-20 md:w-24 md:h-24 rounded-3xl flex items-center justify-center border-2 shadow-2xl overflow-hidden bg-[#0f1015] transition-colors duration-500 ${
+                                    isCompleted ? 'border-emerald-500 shadow-[0_0_25px_rgba(16,185,129,0.3)]' :
+                                        isActive && !portalLocked ? 'border-[#fe951c] bg-[#fe951c]/10 shadow-[0_0_35px_rgba(254,149,28,0.5)]' :
+                                            'border-white/10'
+                                }`}>
+                                    {imageUrl ? (
+                                        <>
+                                            <img src={imageUrl} alt="" className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" />
+                                            <div className="absolute inset-0 bg-gradient-to-t from-[#0f1015]/90 to-transparent" />
+                                        </>
+                                    ) : (
+                                        <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent" />
+                                    )}
+
+                                    {!isCompleted && !isLocked && !portalLocked && (
+                                        <MaterialIcon name={getIcon()} className={`absolute text-4xl drop-shadow-2xl ${isActive ? 'text-[#fe951c]' : 'text-white'}`} />
+                                    )}
+
+                                    {isCompleted && (
+                                        <div className="absolute inset-0 bg-emerald-500/20 backdrop-blur-[2px] flex items-center justify-center">
+                                            <MaterialIcon name="check_circle" className="text-4xl md:text-5xl text-emerald-400 drop-shadow-[0_0_15px_#10b981]" />
+                                        </div>
+                                    )}
+                                    {(isLocked || portalLocked) && (
+                                        <div className="absolute inset-0 bg-black/80 flex items-center justify-center">
+                                            <MaterialIcon name="lock" className="text-3xl text-gray-500" />
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Node Number Badge */}
+                                <div className={`absolute -top-3 -left-3 w-8 h-8 rounded-full flex items-center justify-center font-black text-xs md:text-sm border-[3px] border-[#0f1015] shadow-lg transition-colors ${
+                                    isCompleted ? 'bg-emerald-500 text-black' :
+                                        isActive && !portalLocked ? 'bg-[#fe951c] text-black shadow-[0_0_15px_#fe951c]' :
+                                            'bg-[#1b1e2c] text-gray-400'
+                                }`}>
+                                    {index + 1}
+                                </div>
+                            </div>
+
+                            {/* KHỐI THÔNG TIN BƯỚC */}
+                            <div className={`flex-1 p-5 md:p-7 rounded-3xl border bg-[#161824]/80 backdrop-blur-md transition-all duration-500 ${
+                                isActive && !portalLocked ? 'border-[#fe951c]/50 shadow-[0_10px_40px_rgba(254,149,28,0.15)] transform md:-translate-y-1' : 'border-white/5'
+                            }`}>
+                                <div className="flex items-start justify-between gap-4 flex-col sm:flex-row sm:flex-wrap">
+                                    <div>
+                                        <div className="flex items-center gap-2 mb-2 flex-wrap">
+                                            <span className={`px-2.5 py-1 rounded text-[9px] md:text-[10px] font-black uppercase tracking-widest border ${
+                                                isCompleted ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' :
+                                                    isActive ? 'bg-[#fe951c]/10 border-[#fe951c]/30 text-[#fe951c]' :
+                                                        'bg-white/5 border-white/10 text-gray-500'
+                                            }`}>
+                                                NODE {index + 1}
+                                            </span>
+                                            {step.actionType === 'artifact' && !isOnline && (
+                                                <span className="px-2.5 py-1 rounded bg-purple-500/10 border border-purple-500/30 text-purple-300 text-[9px] font-black uppercase tracking-widest flex items-center gap-1 shadow-sm">
+                                                    <MaterialIcon name="document_scanner" className="text-[12px]" /> NHIỆM VỤ QUÉT AR (THỰC TẾ)
+                                                </span>
+                                            )}
+                                            {/* Hiện Tag Premium nếu bị khóa */}
+                                            {portalLocked && (
+                                                <span className="px-2.5 py-1 rounded bg-[#fdb438]/10 border border-[#fdb438]/30 text-[#fdb438] text-[9px] font-black uppercase tracking-widest flex items-center gap-1 shadow-sm">
+                                                    <MaterialIcon name="stars" className="text-[12px]" /> PREMIUM
+                                                </span>
+                                            )}
+                                        </div>
+                                        <h4 className={`text-xl md:text-2xl font-black leading-tight mb-1 ${isActive && !portalLocked ? 'text-white' : 'text-gray-300'}`}>{step.title}</h4>
+                                        <p className={`text-xs md:text-sm font-bold mt-1.5 uppercase tracking-wider ${isActive && !portalLocked ? 'text-[#388cf1]' : 'text-gray-500'}`}>
+                                            MỤC TIÊU: {step.objective}
+                                        </p>
+                                    </div>
+
+                                    {step.xpPartial && (
+                                        <div className="shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-black/40 border border-white/5 shadow-inner">
+                                            <MaterialIcon name="stars" className={`text-lg ${isCompleted ? 'text-emerald-400' : 'text-[#fdb438]'}`} />
+                                            <span className={`text-xs font-black ${isCompleted ? 'text-emerald-400' : 'text-white'}`}>
+                                                +{step.xpPartial} XP
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="mt-4 pt-4 border-t border-white/5">
+                                    <p className="text-sm md:text-base text-gray-400 leading-relaxed font-medium">
+                                        {step.description}
+                                    </p>
+                                </div>
+
+                                {step.hint && (isActive || isCompleted) && !portalLocked && (
+                                    <div className="mt-5 p-3 md:p-4 rounded-2xl bg-[#fe951c]/5 border border-[#fe951c]/20 flex items-start gap-3">
+                                        <div className="w-8 h-8 rounded-full bg-[#fe951c]/20 flex items-center justify-center shrink-0 mt-0.5">
+                                            <MaterialIcon name="lightbulb" className="text-base text-[#fdb438]" />
+                                        </div>
+                                        <div>
+                                            <span className="text-[10px] font-black text-[#fe951c] uppercase tracking-widest block mb-1">Gợi ý từ Hệ thống</span>
+                                            <span className="text-sm text-gray-300 font-medium leading-relaxed">{step.hint}</span>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* NÚT HÀNH ĐỘNG THÔNG MINH */}
+                                {isActive && (
+                                    <div className="mt-6">
+                                        {portalLocked ? (
+                                            <button
+                                                type="button"
+                                                onClick={() => openStepperPaywall(step.portalEra ?? 1948)}
+                                                className="inline-flex items-center justify-center w-full sm:w-auto gap-2 px-6 py-3.5 md:px-8 md:py-4 rounded-xl md:rounded-2xl bg-gradient-to-r from-gray-800 to-gray-700 text-white font-black text-xs md:text-sm uppercase tracking-widest border border-gray-600 transition-all hover:scale-105 hover:border-[#fdb438] hover:shadow-[0_0_20px_rgba(253,180,56,0.3)] cursor-pointer"
+                                            >
+                                                <MaterialIcon name="lock" className="text-base md:text-lg text-[#fdb438]" /> MỞ KHÓA ERA {step.portalEra}
+                                            </button>
+                                        ) : (
+                                            <Link to={href} className="inline-flex items-center justify-center w-full sm:w-auto gap-2 px-6 py-3.5 md:px-8 md:py-4 rounded-xl md:rounded-2xl bg-gradient-to-r from-[#fe951c] to-[#e07d0b] text-black font-black text-xs md:text-sm uppercase tracking-widest shadow-[0_5px_20px_rgba(254,149,28,0.4)] transition-all hover:scale-105 hover:shadow-[0_8px_30px_rgba(254,149,28,0.6)]">
+                                                <MaterialIcon name={getIcon()} className="text-base md:text-lg" /> {ctaLabel}
+                                            </Link>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+
+                        </div>
+                    )
+                })}
             </div>
-          )
-        })}
-      </div>
-      <EraLockedModal
-        open={eraModalOpen}
-        onClose={() => setEraModalOpen(false)}
-        eraLabel={paywallEra}
-        xpBonus={50}
-        pricingHref={pricingHref}
-        onUpgradeClick={onUpgradeClick}
-      />
-    </div>
-  )
+
+            {/* Modal Thanh toán được giữ lại nguyên vẹn từ logic Backend */}
+            <EraLockedModal
+                open={eraModalOpen}
+                onClose={() => setEraModalOpen(false)}
+                eraLabel={paywallEra}
+                xpBonus={50}
+                pricingHref={pricingHref}
+                onUpgradeClick={onUpgradeClick}
+            />
+        </div>
+    )
 }

@@ -1,6 +1,6 @@
-//src/pages/ArtifactsPage.tsx
+// src/pages/ArtifactsPage.tsx
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { SimpleTopNav } from '../components/layout/TopNav'
 import { collectionApi, type Artifact } from '../features/collection/api'
@@ -9,648 +9,590 @@ import { showDiscoveryRecordError } from '../features/gamification/discoveryEnga
 import { notifyEngagementOutcome } from '../features/gamification/handleEngagement'
 import { analyticsApi } from '../features/analytics/api'
 import { useUserProgress } from '../shared/context/UserProgressProvider'
-import { locationsApi, type Location } from '../features/locations/api'
-import { profileApi, type BadgeCatalogItem, type MyBadge } from '../features/profile/api'
-import { CU_CHI_LOCATION_ID, DEFAULT_ARTIFACTS_LOCATION_ID } from '../shared/config/constants'
+import { CU_CHI_LOCATION_ID } from '../shared/config/constants'
 import { useAuth } from '../shared/auth/useAuth'
 import { useToast } from '../shared/ui/toast/useToast'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { useVisitSessionForLocation, useVisitSession } from '../features/visit/VisitSessionProvider'
 import { buildArUrl } from '../features/ar/arDeepLink'
 import { getArSceneByUnlockKey } from '../features/ar/cuChiArScenes'
-import { isAdminPreview } from '../shared/access/contentAccess'
-import {
-  resolveArtifactImageFallback,
-  resolveArtifactImageSrc,
-} from '../shared/media/resolveMedia'
+import { useAppMode } from '../shared/context/useAppMode'
+import { resolveArtifactImageFallback, resolveArtifactImageSrc } from '../shared/media/resolveMedia'
 import { SmartImage } from '../shared/ui/SmartImage'
 
-type TierFilter = 'all' | 1 | 2 | 3
 type StatusFilter = 'all' | 'unlocked' | 'locked'
 
-const TIER_META = {
-  1: {
-    short: 'Tuyến đầu',
-    label: 'Tầng 1 — Tuyến đầu & Kháng cự',
-    depth: '3–4 m',
-    icon: 'shield' as const,
-    color: 'text-amber-400',
-    accent: 'from-amber-600/25 via-amber-900/10 to-[#14100c]',
-    ring: 'ring-amber-500/40',
-    chip: 'border-heritage-bronze/30 bg-heritage-bronze/10 text-heritage-bronze',
-    glow: 'shadow-amber-900/20',
-  },
-  2: {
-    short: 'Sinh hoạt',
-    label: 'Tầng 2 — Sinh hoạt & Chỉ huy',
-    depth: '5–8 m',
-    icon: 'groups' as const,
-    color: 'text-secondary',
-    accent: 'from-secondary/20 via-teal-950/20 to-[#14100c]',
-    ring: 'ring-secondary/40',
-    chip: 'border-secondary/30 bg-secondary/10 text-secondary',
-    glow: 'shadow-secondary/15',
-  },
-  3: {
-    short: 'Nguồn sống',
-    label: 'Tầng 3 — Kháng cự cuối',
-    depth: '8–12 m',
-    icon: 'water_drop' as const,
-    color: 'text-sky-400',
-    accent: 'from-sky-600/20 via-sky-950/15 to-[#14100c]',
-    ring: 'ring-sky-500/40',
-    chip: 'border-sky-500/30 bg-sky-500/10 text-sky-300',
-    glow: 'shadow-sky-900/20',
-  },
-} as const
-
-const ARTIFACT_TIER: Record<string, 1 | 2 | 3> = {
-  'artifact:cuoc-chim': 1,
-  'artifact:nap-ham': 1,
-  'artifact:chong-tre': 1,
-  'artifact:lao-tre': 1,
-  'artifact:bay': 1,
-  'hotspot:vent': 1,
-  'hotspot:kitchen': 2,
-  'scene:22222222-2222-2222-2222-222222222223': 2,
-  'artifact:vu-khi': 2,
-  'artifact:tram-xa': 2,
-  'artifact:den-dau': 2,
-  'artifact:min-gat': 2,
-  'artifact:cua-bom': 2,
-  'artifact:bao-giai-phong': 2,
-  'artifact:khan-ran': 2,
-  'artifact:ao-ba-ba': 2,
-  'artifact:mu-tai-beo': 2,
-  'artifact:dep-lop': 2,
-  'artifact:sung-dkz': 2,
-  'artifact:phao-105': 2,
-  'artifact:cuoc-song-duoi-long-dat': 2,
-  'artifact:coi-xay-thoc': 2,
-  'artifact:khoai-mi': 2,
-  'artifact:nguy-trang': 1,
-  'scene:gieng': 3,
-}
-
-const ARTIFACT_ICON: Record<string, string> = {
-  'hotspot:kitchen': 'outdoor_grill',
-  'artifact:cuoc-chim': 'hardware',
-  'artifact:chong-tre': 'warning',
-  'artifact:min-gat': 'explosion',
-  'artifact:nap-ham': 'door_front',
-  'hotspot:vent': 'air',
-  'scene:gieng': 'water_drop',
-  'artifact:lao-tre': 'fence',
-  'artifact:den-dau': 'light_mode',
-  'artifact:khan-ran': 'checkroom',
-  'artifact:vu-khi': 'build',
-  'artifact:tram-xa': 'medical_services',
-  'artifact:bay': 'dangerous',
-  'artifact:cuoc-song-duoi-long-dat': 'home',
-  'artifact:coi-xay-thoc': 'grain',
-  'artifact:khoai-mi': 'restaurant',
-  'artifact:nguy-trang': 'visibility_off',
-}
-
-function artifactTier(unlockKey: string): 1 | 2 | 3 {
-  return ARTIFACT_TIER[unlockKey] ?? 2
-}
-
-function resolveArtifactIcon(unlockKey: string): string {
-  return ARTIFACT_ICON[unlockKey] ?? 'museum'
-}
-
+// ==========================================
+// VÒNG TRÒN NĂNG LƯỢNG SƯU TẬP (HUD THU GỌN)
+// ==========================================
 function CollectionProgress({ collected, total }: { collected: number; total: number }) {
-  const pct = total > 0 ? Math.round((collected / total) * 100) : 0
-  const r = 36
-  const c = 2 * Math.PI * r
-  const offset = c - (pct / 100) * c
+    const pct = total > 0 ? Math.round((collected / total) * 100) : 0
+    const r = 24
+    const c = 2 * Math.PI * r
+    const offset = c - (pct / 100) * c
 
-  return (
-    <div className="flex items-center gap-md">
-      <div className="relative w-[88px] h-[88px] shrink-0">
-        <svg className="w-full h-full -rotate-90" viewBox="0 0 88 88" aria-hidden>
-          <circle cx="44" cy="44" r={r} fill="none" stroke="rgba(155,143,124,0.15)" strokeWidth="6" />
-          <circle
-            cx="44"
-            cy="44"
-            r={r}
-            fill="none"
-            stroke="url(#artifactProgress)"
-            strokeWidth="6"
-            strokeLinecap="round"
-            strokeDasharray={c}
-            strokeDashoffset={offset}
-            className="transition-all duration-700 ease-out"
-          />
-          <defs>
-            <linearGradient id="artifactProgress" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#d4a437" />
-              <stop offset="100%" stopColor="#44dbd5" />
-            </linearGradient>
-          </defs>
-        </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="font-display-sm text-primary tabular-nums leading-none">{pct}%</span>
-          <span className="text-[10px] text-on-surface-variant mt-0.5">{collected}/{total}</span>
-        </div>
-      </div>
-      <div>
-        <p className="font-title-md text-on-surface">Tiến độ sưu tập</p>
-        <p className="text-xs text-on-surface-variant mt-1 max-w-[220px]">
-          Khám phá địa đạo, tour 360° và check-in để mở khóa hiện vật & câu chuyện.
-        </p>
-      </div>
-    </div>
-  )
-}
-
-function ArtifactVisual({
-  artifact,
-  tier,
-  large,
-}: {
-  artifact: Artifact
-  tier: 1 | 2 | 3
-  large?: boolean
-}) {
-  const meta = TIER_META[tier]
-  const icon = resolveArtifactIcon(artifact.unlockKey)
-  const imageFallback = resolveArtifactImageFallback(artifact.unlockKey)
-
-  if (!artifact.unlocked) {
     return (
-      <div className={`relative w-full bg-gradient-to-br from-[#1a1410] to-[#0d0a08] flex items-center justify-center ${large ? 'h-44' : 'aspect-[4/3]'}`}>
-        <div className="text-center px-4">
-          <div className="w-14 h-14 mx-auto rounded-full border border-outline-variant/50 bg-surface-container/50 flex items-center justify-center mb-3">
-            <MaterialIcon name="lock" className="text-on-surface-variant text-2xl opacity-70" />
-          </div>
-          <p className="text-xs text-on-surface-variant">Chưa mở khóa</p>
+        <div className="flex items-center gap-4 bg-[#161824]/95 border border-white/10 pl-3 pr-6 py-3 rounded-2xl shadow-[0_20px_40px_rgba(0,0,0,0.6)] backdrop-blur-xl relative z-20">
+            <div className="relative w-[56px] h-[56px] shrink-0 bg-[#0f1015] rounded-full flex items-center justify-center shadow-inner">
+                <svg className="absolute inset-0 w-full h-full -rotate-90 drop-shadow-[0_0_8px_rgba(254,149,28,0.6)]" viewBox="0 0 56 56">
+                    <circle cx="28" cy="28" r={r} fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="4" />
+                    <circle cx="28" cy="28" r={r} fill="none" stroke="url(#artifactProgress)" strokeWidth="4" strokeLinecap="round" strokeDasharray={c} strokeDashoffset={offset} className="transition-all duration-1000 ease-out" />
+                    <defs>
+                        <linearGradient id="artifactProgress" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stopColor="#fe951c" />
+                            <stop offset="100%" stopColor="#fdb438" />
+                        </linearGradient>
+                    </defs>
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="font-black text-sm text-white drop-shadow-md leading-none">{pct}%</span>
+                </div>
+            </div>
+            <div>
+                <p className="font-black text-sm text-white uppercase tracking-widest flex items-center gap-2 mb-1.5">
+                    <MaterialIcon name="inventory_2" className="text-[#fdb438] text-lg" /> KHO DỮ LIỆU
+                </p>
+                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+                    Đã thu thập: <strong className="text-[#fdb438] text-xs mx-1">{collected} / {total}</strong> Kỷ vật
+                </p>
+            </div>
         </div>
-      </div>
     )
-  }
-
-  return (
-    <div className={`relative w-full overflow-hidden ${large ? 'h-44 md:h-full md:min-h-[280px]' : 'aspect-[4/3]'}`}>
-      <SmartImage
-        src={resolveArtifactImageSrc(artifact.imageUrl, artifact.unlockKey)}
-        fallback={imageFallback}
-        alt={artifact.name}
-        fill
-        className="transition-transform duration-500 group-hover:scale-105"
-        placeholderIcon={
-          <div className={`relative w-full h-full bg-gradient-to-br ${meta.accent} flex items-center justify-center`}>
-            <div className="absolute inset-0 opacity-30 dong-son-bg" />
-            <MaterialIcon name={icon} className={`${large ? 'text-6xl' : 'text-4xl'} ${meta.color} opacity-80`} />
-          </div>
-        }
-      />
-      <div className="absolute inset-0 bg-gradient-to-t from-[#0a0806] via-[#0a0806]/20 to-transparent pointer-events-none" />
-    </div>
-  )
 }
 
 export function ArtifactsPage() {
-  const [searchParams, setSearchParams] = useSearchParams()
-  const discoverKeyParam = searchParams.get('discoverKey')
-  const locationIdParam = searchParams.get('locationId')
-  const { isAuthenticated, user } = useAuth()
-  const { showToast } = useToast()
-  const { applyEngagement } = useUserProgress()
-  const recordedKeys = useRef(new Set<string>())
-  const [locations, setLocations] = useState<Location[]>([])
-  const [locationId, setLocationId] = useState(
-    locationIdParam && locationIdParam.length > 0 ? locationIdParam : DEFAULT_ARTIFACTS_LOCATION_ID,
-  )
-  const [artifacts, setArtifacts] = useState<Artifact[]>([])
-  const [collected, setCollected] = useState(0)
-  const [total, setTotal] = useState(0)
-  const [useBadgeFallback, setUseBadgeFallback] = useState(false)
-  const [catalog, setCatalog] = useState<BadgeCatalogItem[]>([])
-  const [myBadges, setMyBadges] = useState<MyBadge[]>([])
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
-  const [tierFilter, setTierFilter] = useState<TierFilter>('all')
-  const [selected, setSelected] = useState<Artifact | null>(null)
+    const { isAuthenticated, user } = useAuth()
+    const { mode } = useAppMode()
+    const { showToast } = useToast()
+    const { applyEngagement } = useUserProgress()
+    const recordedKeys = useRef(new Set<string>())
 
-  const isAdminPreviewUser = isAdminPreview(user?.role)
-  const isCuChi = locationId === CU_CHI_LOCATION_ID
-  const activeLocation = useMemo(
-    () => locations.find((l) => l.id === locationId),
-    [locations, locationId],
-  )
+    const locationId = CU_CHI_LOCATION_ID
 
-  useVisitSessionForLocation(locationId, isAuthenticated)
-  const { getSessionId } = useVisitSession()
-  const visitSessionId = getSessionId(locationId)
+    const [artifacts, setArtifacts] = useState<Artifact[]>([])
+    const [collected, setCollected] = useState(0)
+    const [total, setTotal] = useState(0)
+    const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
+    const [selected, setSelected] = useState<Artifact | null>(null)
 
-  useEffect(() => {
-    locationsApi
-      .list({ size: 50, sort: 'name,asc' })
-      .then(setLocations)
-      .catch(() => setLocations([]))
-  }, [])
+    useVisitSessionForLocation(locationId, isAuthenticated)
+    const { getSessionId } = useVisitSession()
+    const visitSessionId = getSessionId(locationId)
 
-  useEffect(() => {
-    if (!locationIdParam) return
-    if (locationIdParam !== locationId) setLocationId(locationIdParam)
-  }, [locationIdParam, locationId])
-
-  const selectLocation = useCallback(
-    (nextId: string) => {
-      setLocationId(nextId)
-      setSelected(null)
-      setTierFilter('all')
-      setStatusFilter('all')
-      recordedKeys.current.clear()
-      const next = new URLSearchParams(searchParams)
-      if (nextId === DEFAULT_ARTIFACTS_LOCATION_ID) next.delete('locationId')
-      else next.set('locationId', nextId)
-      setSearchParams(next, { replace: true })
-    },
-    [searchParams, setSearchParams],
-  )
-
-  useEffect(() => {
-    const loadArtifacts = async () => {
-      try {
-        if (isAuthenticated) {
-          const mine = await collectionApi.mine(locationId)
-          setArtifacts(mine.items)
-          setCollected(mine.collected)
-          setTotal(mine.total)
-          setUseBadgeFallback(mine.items.length === 0)
-        } else {
-          const list = await collectionApi.catalog(locationId)
-          setArtifacts(list.map((a) => ({ ...a, unlocked: false })))
-          setCollected(0)
-          setTotal(list.length)
-          setUseBadgeFallback(list.length === 0)
+    useEffect(() => {
+        const loadArtifacts = async () => {
+            try {
+                if (isAuthenticated) {
+                    const mine = await collectionApi.mine(locationId)
+                    setArtifacts(mine.items)
+                    setCollected(mine.collected)
+                    setTotal(mine.total)
+                } else {
+                    const list = await collectionApi.catalog(locationId)
+                    setArtifacts(list.map((a) => ({ ...a, unlocked: false })))
+                    setCollected(0)
+                    setTotal(list.length)
+                }
+            } catch {
+                // Fallback
+            }
         }
-      } catch {
-        setUseBadgeFallback(true)
-      }
-    }
-    loadArtifacts()
-  }, [isAuthenticated, locationId])
+        loadArtifacts()
+    }, [isAuthenticated, locationId])
 
-  useEffect(() => {
-    if (!useBadgeFallback) return
-    profileApi.badgesCatalog().then(setCatalog).catch(() => setCatalog([]))
-  }, [useBadgeFallback])
-
-  useEffect(() => {
-    if (!useBadgeFallback || !isAuthenticated) return
-    profileApi.myBadges().then(setMyBadges).catch(() => setMyBadges([]))
-  }, [useBadgeFallback, isAuthenticated])
-
-  const earnedMap = useMemo(() => new Map(myBadges.map((b) => [b.id, b.earned])), [myBadges])
-
-  const recordArtifactDiscovery = useCallback(
-    (unlockKey: string | undefined) => {
-      if (!isAuthenticated || !unlockKey?.startsWith('artifact:')) return
-      if (recordedKeys.current.has(unlockKey)) return
-      recordedKeys.current.add(unlockKey)
-      void recordDiscoveryEngagement({
-        recordKey: unlockKey,
-        locationId,
-        source: 'artifact',
-        onSuccess: (response) => {
-          notifyEngagementOutcome(response, showToast, applyEngagement)
-          void analyticsApi.recordEvent({
-            locationId,
-            visitSessionId,
-            eventType: 'ARTIFACT_VIEWED',
-            eventKey: unlockKey,
-            source: 'artifact',
-          })
+    const recordArtifactDiscovery = useCallback(
+        (unlockKey: string | undefined) => {
+            if (!isAuthenticated || !unlockKey?.startsWith('artifact:')) return
+            if (recordedKeys.current.has(unlockKey)) return
+            recordedKeys.current.add(unlockKey)
+            void recordDiscoveryEngagement({
+                recordKey: unlockKey, locationId, source: 'artifact',
+                onSuccess: (response) => {
+                    notifyEngagementOutcome(response, showToast, applyEngagement)
+                    void analyticsApi.recordEvent({
+                        locationId, visitSessionId, eventType: 'ARTIFACT_VIEWED', eventKey: unlockKey, source: 'artifact'
+                    })
+                },
+                onError: () => showDiscoveryRecordError(showToast, { role: user?.role }),
+            })
         },
-        onError: () => showDiscoveryRecordError(showToast, { role: user?.role }),
-      })
-    },
-    [isAuthenticated, locationId, visitSessionId, showToast, applyEngagement],
-  )
+        [isAuthenticated, locationId, visitSessionId, showToast, applyEngagement],
+    )
 
-  const filteredArtifacts = useMemo(
-    () =>
-      artifacts.filter((a) => {
-        if (statusFilter === 'unlocked' && !a.unlocked) return false
-        if (statusFilter === 'locked' && a.unlocked) return false
-        if (isCuChi && tierFilter !== 'all' && artifactTier(a.unlockKey) !== tierFilter) return false
-        return true
-      }),
-    [artifacts, statusFilter, tierFilter, isCuChi],
-  )
+    const filteredArtifacts = useMemo(
+        () => artifacts.filter((a) => {
+            if (statusFilter === 'unlocked' && !a.unlocked) return false
+            if (statusFilter === 'locked' && a.unlocked) return false
+            return true
+        }),
+        [artifacts, statusFilter]
+    )
 
-  const tierCounts = useMemo(() => {
-    const counts = { 1: 0, 2: 0, 3: 0 }
-    const totals = { 1: 0, 2: 0, 3: 0 }
-    for (const a of artifacts) {
-      const t = artifactTier(a.unlockKey)
-      totals[t] += 1
-      if (a.unlocked) counts[t] += 1
-    }
-    return { unlocked: counts, total: totals }
-  }, [artifacts])
+    const openArtifactDetail = useCallback((artifact: Artifact) => {
+        setSelected(artifact)
+        recordArtifactDiscovery(artifact.unlockKey)
+    }, [recordArtifactDiscovery])
 
-  const locationLabel = activeLocation?.name ?? (isCuChi ? 'Địa đạo Củ Chi' : 'Di tích lịch sử')
+    return (
+        <AppLayout
+            activeBorder="right"
+            mobileBackTo="/explore"
+            mobileTitle="Kỷ Vật"
+            topNav={<SimpleTopNav title="Hồ Sơ Kỷ Vật" backTo="/explore" backLabel="Khám phá" />}
+            className="bg-[#0B1120] min-h-screen text-white font-sans selection:bg-[#fe951c] selection:text-black"
+        >
+            <main className="mt-14 md:mt-16 pb-24">
 
-  const openArtifactDetail = useCallback(
-    (artifact: Artifact) => {
-      setSelected(artifact)
-      recordArtifactDiscovery(artifact.unlockKey)
-    },
-    [recordArtifactDiscovery],
-  )
+                {/* ========================================= */}
+                {/* HERO BANNER - AR SCANNER & INSTRUCTIONS */}
+                {/* ========================================= */}
+                <section className="relative overflow-hidden border-b border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] bg-[#0B1120] pt-10 pb-16 md:pt-14 md:pb-24">
+                    <div className="absolute inset-0 bg-[url('/media/grid.svg')] opacity-10 pointer-events-none" />
 
-  useEffect(() => {
-    if (!discoverKeyParam || artifacts.length === 0) return
-    const match = artifacts.find((a) => a.unlockKey === discoverKeyParam)
-    if (match) openArtifactDetail(match)
-  }, [discoverKeyParam, artifacts, openArtifactDetail])
+                    {/* Hào quang Ambient Lighting */}
+                    <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#1a79e5]/10 rounded-full blur-[120px] pointer-events-none" />
+                    <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-[#fe951c]/10 rounded-full blur-[100px] pointer-events-none" />
 
-  return (
-    <AppLayout
-      activeBorder="right"
-      mobileBackTo="/explore"
-      mobileTitle="Cổ vật"
-      topNav={<SimpleTopNav title="Cổ vật" backTo="/explore" backLabel="Khám phá" />}
-    >
-      <main className="mt-14 md:mt-16 pb-xl">
-        {/* Hero */}
-        <section className="relative overflow-hidden border-b border-outline-variant/40">
-          <div className="absolute inset-0 bg-gradient-to-br from-[#1a1510] via-[#12131b] to-[#0a0c12]" />
-          <div className="absolute inset-0 dong-son-bg opacity-60" />
-          <div className="absolute top-0 right-0 w-72 h-72 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
-          <div className="relative max-w-7xl mx-auto px-lg py-lg flex flex-wrap items-center justify-between gap-lg">
-            <div className="min-w-0 flex-1">
-              <Link
-                to="/explore"
-                className="inline-flex items-center gap-1 text-secondary text-sm mb-2 hover:underline"
-              >
-                <MaterialIcon name="arrow_back" className="text-base" />
-                Quay lại Khám phá
-              </Link>
-              <p className="text-xs uppercase tracking-[0.2em] text-on-surface-variant mb-1">{locationLabel}</p>
-              <h1 className="font-display-lg text-primary">
-                {useBadgeFallback ? 'Bộ sưu tập huy hiệu' : 'Tủ sưu tập cổ vật'}
-              </h1>
-              {locations.length > 0 && (
-                <label className="mt-3 flex flex-wrap items-center gap-2 text-sm text-on-surface-variant">
-                  <MaterialIcon name="temple_hindu" className="text-primary text-base" />
-                  <span className="shrink-0">Chọn di tích:</span>
-                  <select
-                    value={locationId}
-                    onChange={(e) => selectLocation(e.target.value)}
-                    className="min-w-[200px] max-w-full rounded-lg border border-outline-variant bg-surface-container px-3 py-2 text-on-surface text-sm"
-                  >
-                    {locations.map((loc) => (
-                      <option key={loc.id} value={loc.id}>
-                        {loc.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              )}
-            </div>
-            {!useBadgeFallback && <CollectionProgress collected={collected} total={total} />}
-            {isAdminPreviewUser && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs border border-primary/30 bg-primary/10 text-primary">
-                <MaterialIcon name="verified" className="text-sm" />
-                Admin · xem tất cả
-              </span>
-            )}
-          </div>
-        </section>
+                    <div className="relative max-w-7xl mx-auto px-6 md:px-12 w-full flex flex-col lg:flex-row items-center justify-between gap-12 lg:gap-16 z-10">
 
-        <div className="max-w-7xl mx-auto px-lg pt-lg">
-          {!isAuthenticated && (
-            <p className="text-on-surface-variant mb-lg bg-surface-container/80 border border-outline-variant rounded-xl p-md text-sm">
-              Đăng nhập để theo dõi cổ vật bạn đã mở khóa.
-            </p>
-          )}
+                        {/* ===================================== */}
+                        {/* KHỐI TRÁI: TEXT & HƯỚNG DẪN CHI TIẾT */}
+                        {/* ===================================== */}
+                        <div className="w-full lg:w-[55%] flex flex-col justify-start pt-2 lg:pt-4">
 
-          {!useBadgeFallback && (
-            <>
-              {/* Tier + status filters */}
-              <div className="flex flex-col gap-md mb-lg">
-                {isCuChi && (
-                <div className="flex gap-sm overflow-x-auto pb-1 scrollbar-none">
-                  <button
-                    type="button"
-                    onClick={() => setTierFilter('all')}
-                    className={`shrink-0 px-4 py-2 rounded-full text-xs font-medium border transition-colors ${
-                      tierFilter === 'all'
-                        ? 'border-primary/50 bg-primary/10 text-primary'
-                        : 'border-outline-variant text-on-surface-variant hover:border-outline'
-                    }`}
-                  >
-                    Tất cả tầng
-                  </button>
-                  {([1, 2, 3] as const).map((tier) => {
-                    const meta = TIER_META[tier]
-                    return (
-                      <button
-                        key={tier}
-                        type="button"
-                        onClick={() => setTierFilter(tierFilter === tier ? 'all' : tier)}
-                        className={`shrink-0 flex items-center gap-2 px-4 py-2 rounded-full text-xs font-medium border transition-all ${
-                          tierFilter === tier ? `${meta.chip} ring-1 ${meta.ring}` : 'border-outline-variant text-on-surface-variant hover:border-outline'
-                        }`}
-                      >
-                        <MaterialIcon name={meta.icon} className="text-sm" />
-                        Tầng {tier} · {meta.short}
-                        <span className="opacity-70">
-                          ({tierCounts.unlocked[tier]}/{tierCounts.total[tier]})
-                        </span>
-                      </button>
-                    )
-                  })}
-                </div>
-                )}
-                <div className="flex flex-wrap gap-xs">
-                  {(['all', 'unlocked', 'locked'] as const).map((f) => (
-                    <button
-                      key={f}
-                      type="button"
-                      onClick={() => setStatusFilter(f)}
-                      className={`px-3 py-1.5 rounded-lg text-xs transition-colors ${
-                        statusFilter === f
-                          ? 'bg-secondary/15 text-secondary border border-secondary/30'
-                          : 'text-on-surface-variant border border-transparent hover:bg-surface-container'
-                      }`}
-                    >
-                      {f === 'all' ? 'Tất cả' : f === 'unlocked' ? 'Đã mở khóa' : 'Chưa mở khóa'}
-                    </button>
-                  ))}
-                  <span className="text-xs text-on-surface-variant self-center ml-auto tabular-nums">
-                    {filteredArtifacts.length} hiện vật
-                  </span>
-                </div>
-              </div>
+                            <div className="flex items-center gap-3 mb-3">
+                                <span className="w-2.5 h-2.5 rounded-full bg-[#fdb438] animate-pulse shadow-[0_0_15px_#fe951c]" />
+                                <p className="text-[10px] md:text-xs font-black uppercase tracking-[0.3em] text-[#fdb438]">
+                                    HỆ THỐNG TRUY VẾT DI SẢN
+                                </p>
+                            </div>
 
-              {/* Gallery */}
-              {filteredArtifacts.length === 0 ? (
-                <div className="text-center py-2xl text-on-surface-variant">
-                  <MaterialIcon name="inventory_2" className="text-4xl mb-2 opacity-40" />
-                  <p>Không có cổ vật phù hợp bộ lọc.</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-md pb-lg">
-                  {filteredArtifacts.map((artifact) => {
-                    const tier = artifactTier(artifact.unlockKey)
-                    const meta = TIER_META[tier]
-                    const isSelected = selected?.id === artifact.id
-                    return (
-                      <button
-                        key={artifact.id}
-                        type="button"
-                        onClick={() => openArtifactDetail(artifact)}
-                        className={`group text-left rounded-2xl overflow-hidden border transition-all duration-300 ${
-                          artifact.unlocked
-                            ? `bg-[#16141c] hover:-translate-y-1 hover:shadow-xl ${meta.glow} border-outline-variant/50 hover:border-secondary/40`
-                            : 'bg-surface-container/40 border-outline-variant/30 opacity-85 hover:opacity-100'
-                        } ${isSelected ? `ring-2 ${meta.ring} border-secondary/50` : ''}`}
-                      >
-                        <div className="relative">
-                          <ArtifactVisual artifact={artifact} tier={tier} />
-                          {isCuChi && (
-                          <span className={`absolute top-2.5 left-2.5 text-[10px] font-medium px-2 py-0.5 rounded-full backdrop-blur-md ${meta.chip}`}>
-                            T{tier}
-                          </span>
-                          )}
-                          {artifact.unlocked && (
-                            <span className="absolute top-2.5 right-2.5 w-6 h-6 rounded-full bg-secondary/20 border border-secondary/40 flex items-center justify-center">
-                              <MaterialIcon name="check" className="text-secondary text-xs" />
-                            </span>
-                          )}
-                        </div>
-                        <div className="p-3 border-t border-outline-variant/30">
-                          <h3 className="font-title-md text-sm text-on-surface leading-snug line-clamp-2 min-h-[2.5rem]">
-                            {artifact.unlocked ? artifact.name : '???'}
-                          </h3>
-                          <p className="text-[11px] text-on-surface-variant mt-1 truncate">
-                            {artifact.unlocked ? (isCuChi ? meta.depth : activeLocation?.city ?? 'Di tích') : 'Khám phá để mở'}
-                          </p>
-                        </div>
-                      </button>
-                    )
-                  })}
-                </div>
-              )}
-            </>
-          )}
+                            <h1 className="text-4xl md:text-5xl lg:text-[3.2rem] xl:text-[3.6rem] font-black text-white drop-shadow-2xl tracking-tighter leading-tight mb-4 whitespace-nowrap">
+                                KHO LƯU TRỮ CỔ VẬT
+                            </h1>
 
-          {useBadgeFallback && (
-            <div className="rounded-2xl border border-outline-variant p-lg text-on-surface-variant">
-              Đang dùng catalog huy hiệu (fallback). Chạy migration CP3 để bật Pokédex cổ vật.
-              <div className="mt-md space-y-sm">
-                {catalog.map((badge) => {
-                  const earned = earnedMap.get(badge.id) ?? false
-                  return (
-                    <article key={badge.id} className={`border rounded-xl p-sm ${earned ? 'border-secondary bg-secondary/5' : 'border-outline-variant'}`}>
-                      <h3 className="font-title-md text-sm">{badge.name}</h3>
-                    </article>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Detail modal */}
-        {selected && (
-          <div
-            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-lg bg-black/75 backdrop-blur-sm"
-            onClick={() => setSelected(null)}
-            role="presentation"
-          >
-            <div
-              className="w-full sm:max-w-2xl max-h-[92vh] sm:max-h-[88vh] overflow-hidden rounded-t-2xl sm:rounded-2xl border border-outline-variant/60 bg-[#16141c] shadow-2xl flex flex-col"
-              onClick={(e) => e.stopPropagation()}
-              role="dialog"
-              aria-modal
-            >
-              <div className="h-1 bg-gradient-to-r from-primary-500 via-accent-500 to-primary-500 shrink-0" />
-              <div className="overflow-y-auto flex-1">
-                <div className="md:grid md:grid-cols-5">
-                  <div className="md:col-span-2 relative">
-                    <ArtifactVisual artifact={selected} tier={artifactTier(selected.unlockKey)} large />
-                    <button
-                      type="button"
-                      onClick={() => setSelected(null)}
-                      className="absolute top-3 right-3 sm:hidden w-9 h-9 rounded-full bg-black/50 border border-white/10 flex items-center justify-center"
-                      aria-label="Đóng"
-                    >
-                      <MaterialIcon name="close" className="text-on-surface" />
-                    </button>
-                  </div>
-                  <div className="md:col-span-3 p-lg">
-                    <div className="flex items-start justify-between gap-sm mb-sm">
-                      <div>
-                        {isCuChi && (
-                        <span className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded ${TIER_META[artifactTier(selected.unlockKey)].chip}`}>
-                          {TIER_META[artifactTier(selected.unlockKey)].label}
-                        </span>
-                        )}
-                        <h2 className={`font-display-lg text-primary ${isCuChi ? 'mt-2' : ''} leading-tight`}>
-                          {selected.unlocked ? selected.name : '???'}
-                        </h2>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setSelected(null)}
-                        className="hidden sm:flex w-9 h-9 rounded-full border border-outline-variant items-center justify-center text-on-surface-variant hover:bg-surface-container shrink-0"
-                        aria-label="Đóng"
-                      >
-                        <MaterialIcon name="close" />
-                      </button>
-                    </div>
-                    {selected.reliability === 'secondary' && (
-                      <p className="text-xs text-amber-400/90 mb-2 flex items-center gap-1">
-                        <MaterialIcon name="info" className="text-sm" />
-                        Theo tư liệu tham khảo
-                      </p>
-                    )}
-                    <p className="text-sm text-on-surface-variant leading-relaxed">
-                      {selected.unlocked ? selected.description : 'Khám phá thêm để mở khóa cổ vật này.'}
-                    </p>
-                    {isCuChi && selected.unlocked && getArSceneByUnlockKey(selected.unlockKey) && (
-                      <Link
-                        to={buildArUrl({
-                          locationId: CU_CHI_LOCATION_ID,
-                          mode: 'sim',
-                          scene: getArSceneByUnlockKey(selected.unlockKey)!.slug,
-                          discoverKey: selected.unlockKey,
-                        })}
-                        className="inline-flex items-center gap-1 mt-md text-secondary text-sm hover:underline"
-                      >
-                        <MaterialIcon name="view_in_ar" className="text-base" />
-                        Xem AR Cổng thời gian
-                      </Link>
-                    )}
-                    {selected.unlocked && selected.story && (
-                      <div className="mt-lg pt-lg border-t border-outline-variant/50">
-                        <h3 className="font-title-md text-sm text-on-surface mb-3 flex items-center gap-2">
-                          <MaterialIcon name="auto_stories" className="text-primary" />
-                          Câu chuyện lịch sử
-                        </h3>
-                        <div className="space-y-3 pl-3 border-l-2 border-primary/30">
-                          {selected.story.split('\n\n').map((para, i) => (
-                            <p key={i} className="text-sm text-on-surface-variant/95 leading-relaxed">
-                              {para}
+                            <p className="text-sm md:text-base text-gray-400 font-medium leading-relaxed mb-8 max-w-xl">
+                                Sử dụng <strong className="text-white">Ống Kính AR</strong> tại hiện trường hoặc <strong className="text-[#388cf1]">Trinh sát số</strong> từ xa để quét không gian. Phục dựng các di vật bị thất lạc và mở khóa dòng thời gian Củ Chi.
                             </p>
-                          ))}
+
+                            {/* Tính năng / How it works */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-xl">
+                                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md">
+                                    <div className="w-10 h-10 rounded-full bg-[#fe951c]/20 border border-[#fe951c]/40 flex items-center justify-center mb-3">
+                                        <MaterialIcon name="document_scanner" className="text-[#fdb438] text-lg" />
+                                    </div>
+                                    <h4 className="text-xs font-black text-white uppercase tracking-widest mb-1.5">QUÉT AR THỰC ĐỊA</h4>
+                                    <p className="text-[11px] text-gray-400 font-medium leading-relaxed">Hướng Camera vào khu vực trưng bày tại Củ Chi để hệ thống tự động bóc tách và thu thập mô hình 3D.</p>
+                                </div>
+                                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md">
+                                    <div className="w-10 h-10 rounded-full bg-[#388cf1]/20 border border-[#388cf1]/40 flex items-center justify-center mb-3">
+                                        <MaterialIcon name="explore" className="text-cyan-400 text-lg" />
+                                    </div>
+                                    <h4 className="text-xs font-black text-white uppercase tracking-widest mb-1.5">TRINH SÁT ONLINE</h4>
+                                    <p className="text-[11px] text-gray-400 font-medium leading-relaxed">Tìm Hotspot ẩn trong Tour 360°, so sánh Time Portal và Thẩm vấn AI Đại sứ để lấy manh mối.</p>
+                                </div>
+                            </div>
                         </div>
-                      </div>
+
+                        {/* ===================================== */}
+                        {/* KHỐI PHẢI: MÔ HÌNH 3D CAMERA AR BẰNG CSS */}
+                        {/* ===================================== */}
+                        <div className="w-full lg:w-[45%] relative h-[260px] md:h-[300px] flex items-start justify-center shrink-0 mt-8 lg:mt-6">
+
+                            {/* --- ỐNG KÍNH CAMERA AR THU NHỎ --- */}
+                            <div className="relative w-[220px] h-[220px] md:w-[260px] md:h-[260px] flex items-center justify-center transform hover:scale-105 transition-transform duration-700">
+
+                                {/* Vòng Radar sóng âm (Ping) */}
+                                <div className="absolute inset-[-30px] rounded-full border border-[#388cf1]/30 animate-[ping_4s_linear_infinite]" />
+
+                                {/* Tia quét sáng (Radar Sweep) */}
+                                <div className="absolute inset-[-15px] rounded-full bg-[conic-gradient(from_0deg,transparent_70%,rgba(56,140,241,0.5)_100%)] animate-[spin_3s_linear_infinite] rounded-full" />
+
+                                {/* Khung ngắm bên ngoài (Dashed Orbit) */}
+                                <div className="absolute inset-[-4px] rounded-full border-[2px] border-dashed border-[#1a79e5]/40 animate-[spin_30s_linear_infinite_reverse]" />
+
+                                {/* KHỐI VỎ CAMERA CHÍNH */}
+                                <div className="absolute inset-3 rounded-full bg-gradient-to-br from-[#1b1e2c] to-[#0B1120] border-[3px] border-[#161824] shadow-[0_20px_40px_rgba(0,0,0,0.9),inset_0_5px_15px_rgba(255,255,255,0.1)] flex items-center justify-center">
+
+                                    {/* Viền Kim Loại 1 */}
+                                    <div className="absolute inset-4 rounded-full border-t border-b border-gray-600 shadow-inner bg-gradient-to-tr from-gray-900 to-gray-800" />
+
+                                    {/* Viền Kim Loại 2 */}
+                                    <div className="absolute inset-7 rounded-full border-[4px] border-[#0a0f18] shadow-[0_0_15px_rgba(0,0,0,0.8)_inset]" />
+
+                                    {/* MẶT KÍNH ỐNG KÍNH (Lens) */}
+                                    <div className="absolute inset-9 rounded-full bg-gradient-to-br from-[#050814] to-[#01040a] border border-[#388cf1]/30 overflow-hidden shadow-[inset_0_0_30px_rgba(56,140,241,0.2)] flex items-center justify-center">
+
+                                        {/* Reflection mặt kính cong (Glare) */}
+                                        <div className="absolute top-1 left-4 w-[120%] h-8 bg-gradient-to-b from-white/10 to-transparent -rotate-45 transform -translate-x-4 blur-[1px]" />
+                                        <div className="absolute bottom-2 right-4 w-10 h-5 bg-[#388cf1]/20 rounded-full -rotate-45 blur-md" />
+
+                                        {/* Lưới tọa độ mục tiêu trong kính */}
+                                        <div className="absolute inset-0 flex items-center justify-center opacity-40">
+                                            <div className="w-full h-[1px] bg-[#388cf1]" />
+                                            <div className="absolute h-full w-[1px] bg-[#388cf1]" />
+                                            <div className="absolute w-8 h-8 border border-[#fdb438] rounded-full" />
+                                        </div>
+
+                                        {/* MẮT CẢM BIẾN LƯỢNG TỬ (Core Glow) */}
+                                        <div className="relative z-10 w-12 h-12 bg-gradient-to-br from-[#fe951c] to-[#d97706] rounded-full shadow-[0_0_30px_#fe951c,inset_0_0_10px_#000] border-2 border-[#fff2a1] flex items-center justify-center animate-[pulse_2s_ease-in-out_infinite]">
+                                            <div className="w-6 h-6 bg-black/40 rounded-full blur-[2px]" />
+                                            <div className="absolute w-2 h-2 bg-white rounded-full shadow-[0_0_8px_white]" />
+                                        </div>
+                                    </div>
+
+                                    {/* Đèn chỉ báo viền máy */}
+                                    <div className="absolute top-2.5 left-1/2 -translate-x-1/2 w-2 h-2 bg-red-500 rounded-full shadow-[0_0_6px_#ef4444] animate-pulse" />
+                                    <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-[#388cf1] rounded-full shadow-[0_0_5px_#388cf1]" />
+                                </div>
+
+                                {/* VỆ TINH NỔI */}
+                                <div className="absolute top-[-5px] right-[-10px] animate-[bounce_3s_ease-in-out_infinite]">
+                                    <div className="w-10 h-10 rounded-xl bg-[#0B1120]/80 border border-[#388cf1] shadow-[0_0_15px_rgba(56,140,241,0.5)] backdrop-blur-md flex items-center justify-center transform rotate-12">
+                                        <MaterialIcon name="military_tech" className="text-[#388cf1] text-lg drop-shadow-[0_0_5px_#388cf1]" />
+                                    </div>
+                                </div>
+
+                                <div className="absolute bottom-[10px] left-[-10px] animate-[bounce_4s_ease-in-out_infinite_reverse]">
+                                    <div className="w-8 h-8 rounded-lg bg-[#0B1120]/80 border border-[#fe951c] shadow-[0_0_15px_rgba(254,149,28,0.5)] backdrop-blur-md flex items-center justify-center transform -rotate-12">
+                                        <MaterialIcon name="diamond" className="text-[#fe951c] text-sm drop-shadow-[0_0_5px_#fe951c]" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* --- BẢNG HUD TIẾN ĐỘ TRÔI NỔI (ĐÃ ĐẨY XUỐNG DƯỚI ĐỂ KHÔNG ĐÈ RADAR) --- */}
+                            <div className="absolute -bottom-8 md:-bottom-12 right-0 md:right-4 z-30 transform hover:scale-105 transition-transform">
+                                <CollectionProgress collected={collected} total={total} />
+                            </div>
+                        </div>
+
+                    </div>
+                </section>
+
+                <div className="max-w-7xl mx-auto px-4 md:px-8 mt-10">
+
+                    {!isAuthenticated && (
+                        <div className="mb-10 bg-gradient-to-r from-[#1a79e5]/20 to-transparent border border-[#388cf1]/40 rounded-2xl p-5 flex items-start gap-4 shadow-lg backdrop-blur-sm">
+                            <MaterialIcon name="shield_locked" className="text-[#388cf1] text-3xl shrink-0" />
+                            <div>
+                                <p className="font-black text-white text-sm tracking-wider uppercase mb-1">Chế độ Khách (Guest Mode)</p>
+                                <p className="text-sm text-gray-300 font-medium">Dữ liệu thu thập sẽ không được lưu trữ vĩnh viễn. Hãy <Link to="/login" className="text-[#fdb438] underline font-black">Đăng nhập</Link> để đồng bộ Kho lưu trữ của bạn.</p>
+                            </div>
+                        </div>
                     )}
-                  </div>
+
+                    {/* ========================================= */}
+                    {/* BỘ LỌC TỐI GIẢN (SANG TRỌNG) */}
+                    {/* Đã giảm khoảng cách top (mt-10) để gần Banner hơn */}
+                    {/* ========================================= */}
+                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border-b border-white/10 pb-6 mb-10">
+                        <div className="flex gap-2 p-1.5 bg-[#161b29] rounded-2xl border border-white/5 shadow-inner">
+                            {(['all', 'unlocked', 'locked'] as const).map((f) => {
+                                const isActive = statusFilter === f;
+                                let label = 'TẤT CẢ';
+                                if(f === 'unlocked') label = 'ĐÃ GIẢI MÃ';
+                                if(f === 'locked') label = 'BỊ KHÓA';
+
+                                return (
+                                    <button
+                                        key={f}
+                                        onClick={() => setStatusFilter(f)}
+                                        className={`px-6 md:px-8 py-2.5 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-[0.15em] transition-all cursor-pointer ${
+                                            isActive
+                                                ? 'bg-gradient-to-r from-[#1a79e5] to-[#388cf1] text-white shadow-[0_0_20px_rgba(56,140,241,0.5)]'
+                                                : 'text-gray-500 hover:text-gray-300'
+                                        }`}
+                                    >
+                                        {label}
+                                    </button>
+                                )
+                            })}
+                        </div>
+
+                        <div className="text-[10px] md:text-xs font-black text-gray-500 uppercase tracking-[0.2em] px-5 py-3 bg-[#161b29] rounded-2xl border border-white/5 shadow-sm flex items-center gap-2">
+                            <MaterialIcon name="dataset" className="text-[#fdb438] text-lg" />
+                            SỐ LƯỢNG TÌM THẤY: <span className="text-white text-base mx-1">{filteredArtifacts.length}</span>
+                        </div>
+                    </div>
+
+                    {/* ========================================= */}
+                    {/* LƯỚI THẺ CỔ VẬT (POKÉDEX GRID) */}
+                    {/* ========================================= */}
+                    {filteredArtifacts.length === 0 ? (
+                        <div className="text-center py-32 border border-dashed border-white/10 rounded-[3rem] bg-[#161824]/40 backdrop-blur-xl shadow-2xl">
+                            <div className="w-24 h-24 mx-auto rounded-full bg-white/5 border border-white/10 flex items-center justify-center mb-6 shadow-inner">
+                                <MaterialIcon name="policy" className="text-6xl text-gray-600" />
+                            </div>
+                            <h3 className="text-3xl font-black text-white mb-3 tracking-tight">Không Có Dữ Liệu</h3>
+                            <p className="text-base text-gray-500 font-medium">Hồ sơ không khớp với phân loại hiện tại. Đề nghị thay đổi tùy chọn.</p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                            {filteredArtifacts.map((artifact) => {
+                                const isSelected = selected?.id === artifact.id
+
+                                // === THỂ LOẠI: BỊ KHÓA (BLUEPRINT SCI-FI) ===
+                                if (!artifact.unlocked) {
+                                    return (
+                                        <button
+                                            key={artifact.id}
+                                            onClick={() => openArtifactDetail(artifact)}
+                                            className={`group text-left rounded-[2rem] overflow-hidden border bg-[#0B1120] transition-all duration-500 hover:shadow-[0_15px_40px_rgba(56,140,241,0.2)] cursor-pointer h-full flex flex-col ${isSelected ? 'border-[#388cf1] ring-2 ring-[#388cf1]' : 'border-[#388cf1]/20 hover:border-[#388cf1]/60'}`}
+                                        >
+                                            <div className="aspect-[4/3] w-full relative bg-[#0B1120] flex items-center justify-center overflow-hidden">
+                                                <div className="absolute inset-0 bg-[linear-gradient(transparent_50%,rgba(56,140,241,0.1)_50%)] bg-[length:100%_4px] z-10 pointer-events-none" />
+                                                <div className="absolute inset-0 bg-[url('/media/grid.svg')] opacity-30 z-10" />
+
+                                                <img
+                                                    src={resolveArtifactImageSrc(artifact.imageUrl, artifact.unlockKey) || resolveArtifactImageFallback(artifact.unlockKey)}
+                                                    alt="Locked"
+                                                    className="absolute inset-0 w-full h-full object-cover grayscale opacity-20 blur-[5px] mix-blend-screen sepia hue-rotate-190 saturate-200"
+                                                />
+
+                                                <div className="relative z-20 w-16 h-16 rounded-full bg-[#1a79e5]/10 border border-[#388cf1]/40 flex items-center justify-center backdrop-blur-md shadow-[0_0_30px_rgba(56,140,241,0.3)] group-hover:scale-110 transition-transform">
+                                                    <MaterialIcon name="lock" className="text-3xl text-[#388cf1]" />
+                                                </div>
+                                            </div>
+                                            <div className="p-6 border-t border-[#388cf1]/20 bg-[#0B1120] flex-1 flex flex-col justify-center">
+                                                <h3 className="font-mono text-base font-bold text-[#388cf1] uppercase tracking-[0.2em] line-clamp-1 mb-2">
+                                                    [ ENCRYPTED DATA ]
+                                                </h3>
+                                                <p className="text-[10px] text-gray-500 uppercase tracking-widest font-black flex items-center gap-1.5">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" /> YÊU CẦU GIẢI MÃ
+                                                </p>
+                                            </div>
+                                        </button>
+                                    )
+                                }
+
+                                // === THỂ LOẠI: ĐÃ MỞ KHÓA (RỰC RỠ SANG TRỌNG) ===
+                                return (
+                                    <button
+                                        key={artifact.id}
+                                        onClick={() => openArtifactDetail(artifact)}
+                                        className={`group text-left rounded-[2rem] overflow-hidden border transition-all duration-500 bg-[#161824] hover:-translate-y-2 cursor-pointer h-full flex flex-col ${
+                                            isSelected ? `ring-2 ring-[#fe951c] border-[#fe951c]` : `border-white/10 hover:border-[#fe951c]/50 hover:shadow-[0_20px_50px_rgba(254,149,28,0.25)]`
+                                        }`}
+                                    >
+                                        <div className="aspect-[4/3] w-full relative overflow-hidden bg-black">
+                                            <SmartImage
+                                                src={resolveArtifactImageSrc(artifact.imageUrl, artifact.unlockKey)}
+                                                fallback={resolveArtifactImageFallback(artifact.unlockKey)}
+                                                alt={artifact.name}
+                                                fill
+                                                className="transition-transform duration-1000 group-hover:scale-110 object-cover opacity-90 group-hover:opacity-100"
+                                            />
+                                            <div className={`absolute inset-0 bg-gradient-to-t from-[#161824] via-[#161824]/10 to-transparent opacity-90 group-hover:opacity-60 transition-opacity`} />
+
+                                            <div className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center shadow-[0_0_15px_#10b981]">
+                                                <MaterialIcon name="check" className="text-lg font-black text-black" />
+                                            </div>
+                                        </div>
+
+                                        <div className="p-6 border-t border-white/5 bg-[#161824] flex-1 flex flex-col justify-center relative overflow-hidden">
+                                            <div className={`absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-[#fe951c]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none`} />
+
+                                            <h3 className="font-black text-xl text-white leading-snug line-clamp-2 relative z-10 group-hover:text-[#fdb438] transition-colors">
+                                                {artifact.name}
+                                            </h3>
+                                            <p className="text-[10px] text-gray-400 mt-3 uppercase tracking-[0.2em] font-black relative z-10 flex items-center gap-1.5">
+                                                <MaterialIcon name="place" className="text-[14px] text-[#fe951c]" /> ĐỊA ĐẠO CỦ CHI
+                                            </p>
+                                        </div>
+                                    </button>
+                                )
+                            })}
+                        </div>
+                    )}
                 </div>
-              </div>
-            </div>
-          </div>
-        )}
-      </main>
-    </AppLayout>
-  )
+
+                {/* ========================================= */}
+                {/* MODAL CHI TIẾT CỔ VẬT (ENCRYPTED DOSSIER) */}
+                {/* ========================================= */}
+                {selected && (
+                    <div
+                        className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-6 bg-black/80 backdrop-blur-xl transition-all"
+                        onClick={() => setSelected(null)}
+                        role="presentation"
+                    >
+                        <div
+                            className="w-full sm:max-w-4xl max-h-[92vh] sm:max-h-[85vh] overflow-hidden rounded-t-[2.5rem] sm:rounded-[2.5rem] border border-white/10 bg-[#0B1120] shadow-[0_0_80px_rgba(0,0,0,0.9)] flex flex-col animate-[fadeInUp_0.3s_ease-out]"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className={`h-1.5 w-full bg-gradient-to-r ${selected.unlocked ? 'from-[#fe951c] via-[#fdb438] to-[#fe951c]' : 'from-[#1a79e5] to-[#388cf1]'} shrink-0`} />
+
+                            <div className="overflow-y-auto flex-1 custom-scrollbar">
+                                <div className="flex flex-col md:flex-row h-full">
+
+                                    <div className="w-full md:w-[45%] h-72 md:h-auto relative shrink-0 bg-[#050810]">
+                                        {selected.unlocked ? (
+                                            <>
+                                                <SmartImage
+                                                    src={resolveArtifactImageSrc(selected.imageUrl, selected.unlockKey)}
+                                                    fallback={resolveArtifactImageFallback(selected.unlockKey)}
+                                                    alt={selected.name}
+                                                    fill
+                                                    className="object-cover"
+                                                />
+                                                <div className="absolute inset-4 border border-white/20 pointer-events-none mix-blend-overlay rounded-xl" />
+                                            </>
+                                        ) : (
+                                            <div className="absolute inset-0 bg-[#0a1526] flex items-center justify-center flex-col p-6 text-center">
+                                                <div className="absolute inset-0 bg-[linear-gradient(transparent_50%,rgba(56,140,241,0.1)_50%)] bg-[length:100%_4px] pointer-events-none" />
+                                                <div className="w-32 h-32 rounded-full bg-[#1a79e5]/10 border border-[#388cf1]/40 flex items-center justify-center mb-6 shadow-[0_0_40px_rgba(56,140,241,0.4)] animate-pulse relative z-10">
+                                                    <MaterialIcon name="lock" className="text-6xl text-[#388cf1]" />
+                                                </div>
+                                                <p className="font-mono text-[#388cf1] text-xl font-bold tracking-[0.4em] uppercase relative z-10">CLASSIFIED</p>
+                                            </div>
+                                        )}
+
+                                        <button
+                                            type="button"
+                                            onClick={() => setSelected(null)}
+                                            className="absolute top-4 right-4 md:hidden w-12 h-12 rounded-full bg-black/60 border border-white/20 flex items-center justify-center backdrop-blur-md z-50"
+                                        >
+                                            <MaterialIcon name="close" className="text-white text-2xl" />
+                                        </button>
+                                    </div>
+
+                                    <div className="w-full md:w-[55%] p-8 md:p-12 flex flex-col">
+
+                                        <div className="flex items-start justify-between gap-4 mb-8">
+                                            <div>
+                                                {selected.unlocked && (
+                                                    <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4 shadow-sm">
+                                                        TÀI LIỆU SỐ <span className="text-white">#{selected.id.slice(0, 6)}</span>
+                                                    </span>
+                                                )}
+                                                <h2 className={`text-4xl md:text-5xl font-black leading-tight tracking-tighter ${selected.unlocked ? 'text-white' : 'text-[#388cf1] font-mono drop-shadow-[0_0_10px_#388cf1]'}`}>
+                                                    {selected.unlocked ? selected.name : 'DỮ LIỆU BỊ MÃ HÓA'}
+                                                </h2>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => setSelected(null)}
+                                                className="hidden md:flex w-12 h-12 rounded-full bg-white/5 border border-white/10 items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-colors shrink-0"
+                                            >
+                                                <MaterialIcon name="close" className="text-2xl" />
+                                            </button>
+                                        </div>
+
+                                        <div className="flex-1">
+                                            {selected.unlocked ? (
+                                                <div className="space-y-8">
+                                                    <div>
+                                                        <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-3 flex items-center gap-2 border-b border-white/10 pb-2">
+                                                            <MaterialIcon name="text_snippet" className="text-base text-[#fe951c]" /> TRÍCH LỤC MÔ TẢ
+                                                        </h4>
+                                                        <p className="text-sm md:text-base text-gray-300 leading-relaxed font-medium bg-[#161824] p-5 rounded-2xl border border-white/5 shadow-inner">
+                                                            {selected.description}
+                                                        </p>
+                                                    </div>
+
+                                                    {selected.story && (
+                                                        <div className="p-6 rounded-3xl bg-gradient-to-br from-[#fe951c]/10 to-[#161824] border border-[#fe951c]/30 relative overflow-hidden shadow-xl">
+                                                            <div className="absolute -top-10 -right-10 w-40 h-40 bg-[#fe951c]/20 blur-3xl rounded-full pointer-events-none" />
+                                                            <h4 className="text-[10px] font-black text-[#fdb438] uppercase tracking-[0.2em] mb-4 flex items-center gap-2 relative z-10">
+                                                                <MaterialIcon name="auto_stories" className="text-lg" /> CÂU CHUYỆN LỊCH SỬ
+                                                            </h4>
+                                                            <div className="space-y-4 font-sans text-sm md:text-base text-gray-200 leading-relaxed font-medium relative z-10">
+                                                                {selected.story.split('\n\n').map((para, i) => <p key={i}>{para}</p>)}
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {getArSceneByUnlockKey(selected.unlockKey) && (
+                                                        <div className="pt-6 border-t border-white/10">
+                                                            <Link
+                                                                to={buildArUrl({
+                                                                    locationId: CU_CHI_LOCATION_ID,
+                                                                    mode: 'sim',
+                                                                    scene: getArSceneByUnlockKey(selected.unlockKey)!.slug,
+                                                                    discoverKey: selected.unlockKey,
+                                                                })}
+                                                                className="inline-flex items-center justify-center w-full md:w-auto gap-3 px-8 py-4 rounded-2xl bg-gradient-to-r from-[#1a79e5] to-[#388cf1] text-white font-black text-sm uppercase tracking-widest shadow-[0_5px_25px_rgba(26,121,229,0.5)] hover:shadow-[0_10px_35px_rgba(26,121,229,0.7)] transition-all hover:-translate-y-1"
+                                                            >
+                                                                <MaterialIcon name="view_in_ar" className="text-xl" />
+                                                                Khởi động AR Cổng thời gian
+                                                            </Link>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <div className="space-y-8 h-full flex flex-col">
+                                                    <p className="text-base text-gray-400 leading-relaxed font-medium">
+                                                        Kỷ vật này chưa được thu thập vào Kho lưu trữ của bạn. Hệ thống yêu cầu giải mã để cấp quyền truy cập.
+                                                    </p>
+
+                                                    <div className="p-8 rounded-3xl bg-[#161824] border border-white/10 mt-auto shadow-2xl relative overflow-hidden">
+                                                        <div className="absolute top-0 left-0 w-2 h-full bg-[#388cf1]" />
+
+                                                        <h4 className="text-xs font-black text-[#388cf1] uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+                                                            <MaterialIcon name="radar" className="text-lg animate-pulse" /> ĐỀ XUẤT TRUY VẾT
+                                                        </h4>
+
+                                                        <div className="space-y-6">
+                                                            {mode === 'offline' ? (
+                                                                <div className="flex gap-5">
+                                                                    <div className="w-12 h-12 rounded-full bg-[#fe951c]/20 flex items-center justify-center shrink-0 border border-[#fe951c]/40">
+                                                                        <MaterialIcon name="camera" className="text-xl text-[#fdb438]" />
+                                                                    </div>
+                                                                    <div>
+                                                                        <p className="text-xs font-black text-white mb-2 uppercase tracking-widest">Đặc Vụ Hiện Trường (Offline)</p>
+                                                                        <p className="text-sm text-gray-400 font-medium leading-relaxed">
+                                                                            Di chuyển đến khu vực trưng bày tại Củ Chi. Kích hoạt <strong className="text-[#fdb438]">Camera AR</strong> và hướng máy ảnh vào đúng hiện vật thực tế để thu thập dữ liệu.
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+                                                            ) : (
+                                                                <div className="flex gap-5">
+                                                                    <div className="w-12 h-12 rounded-full bg-[#1a79e5]/20 flex items-center justify-center shrink-0 border border-[#388cf1]/40">
+                                                                        <MaterialIcon name="public" className="text-xl text-[#388cf1]" />
+                                                                    </div>
+                                                                    <div>
+                                                                        <p className="text-xs font-black text-white mb-3 uppercase tracking-widest">Trinh Sát Từ Xa (Online)</p>
+                                                                        <ul className="text-sm text-gray-300 space-y-4 font-medium bg-black/30 p-5 rounded-2xl border border-white/5">
+                                                                            <li className="flex items-start gap-3">
+                                                                                <MaterialIcon name="360" className="text-[#388cf1] shrink-0 text-lg" />
+                                                                                <span>Tìm các <strong className="text-white">Hotspot ẩn</strong> trong Tour 360°.</span>
+                                                                            </li>
+                                                                            <li className="flex items-start gap-3">
+                                                                                <MaterialIcon name="history" className="text-[#388cf1] shrink-0 text-lg" />
+                                                                                <span>So sánh mốc thời gian trong Time Portal.</span>
+                                                                            </li>
+                                                                            <li className="flex items-start gap-3">
+                                                                                <MaterialIcon name="forum" className="text-[#388cf1] shrink-0 text-lg" />
+                                                                                <span>Vào Chat, <strong className="text-white">Thẩm vấn Đại sứ</strong> bằng từ khóa.</span>
+                                                                            </li>
+                                                                        </ul>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </div>
+
+                                                        <div className="mt-8 pt-6 border-t border-white/10">
+                                                            <Link
+                                                                to={mode === 'offline' ? '/scan' : `/explore`}
+                                                                onClick={() => setSelected(null)}
+                                                                className="inline-flex w-full sm:w-auto items-center justify-center gap-2 px-8 py-4 rounded-xl bg-gradient-to-r from-[#fe951c] to-[#e07d0b] text-black font-black text-xs uppercase tracking-[0.15em] shadow-[0_5px_20px_rgba(254,149,28,0.4)] transition-all hover:-translate-y-1"
+                                                            >
+                                                                <MaterialIcon name="explore" className="text-lg" />
+                                                                {mode === 'offline' ? 'MỞ BỘ QUÉT AR NGAY' : 'BẮT ĐẦU TRINH SÁT'}
+                                                            </Link>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+            </main>
+        </AppLayout>
+    )
 }

@@ -57,7 +57,7 @@ const EXECUTIVE_TEAM = [
         badgeText: 'text-[#0284c7]',
     },
     {
-        name: 'Lê Vĩnh Hào',
+        name: 'Lê Vĩnh Hảo',
         code: 'SS192485',
         role: 'Chief Marketing Officer (CMO)',
         desc: 'Xây dựng thương hiệu di sản & phát triển cộng đồng người dùng.',
