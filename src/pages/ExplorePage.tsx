@@ -24,7 +24,7 @@ const CU_CHI_HOTSPOTS: HotspotCard[] = [
         name: 'Đền Tưởng Niệm Liệt Sĩ Bến Dược',
         zone: 'memorial',
         desc: 'Công trình kiến trúc mang đậm bản sắc văn hóa Việt, nơi tưởng niệm 45.639 liệt sĩ đã hy sinh vì độc lập dân tộc.',
-        image: 'https://images.unsplash.com/photo-1599708153386-62bf3f0b2bd6?auto=format&fit=crop&w=800&q=80',
+        image: '/media/cu-chi/hotspots/ben-duoc.jpg',
         xp: 100
     },
     {
@@ -32,7 +32,7 @@ const CU_CHI_HOTSPOTS: HotspotCard[] = [
         name: 'Khu Trưng Bày Khí Tài Ngoài Trời',
         zone: 'military',
         desc: 'Trưng bày xác xe tăng M41, M48, pháo 105mm, máy bay C-130 chiến lợi phẩm thu được của quân đội Mỹ.',
-        image: 'https://images.unsplash.com/photo-1518998053901-5348d3961a04?auto=format&fit=crop&w=800&q=80',
+        image: '/media/cu-chi/hotspots/khi-tai.jpg',
         xp: 80,
         arSlug: 'xe-tang-m41'
     },
@@ -41,7 +41,7 @@ const CU_CHI_HOTSPOTS: HotspotCard[] = [
         name: 'Khu Tái Hiện Vùng Giải Phóng & Bếp Hoàng Cầm',
         zone: 'underground',
         desc: 'Trải nghiệm sinh hoạt dưới hầm ngầm, hệ thống thoát khói Hoàng Cầm trứ danh và thưởng thức khoai mì.',
-        image: '/media/cu-chi/scenes/bep-hoang-cam-2026.jpg',
+        image: '/media/cu-chi/hotspots/bep-hoang-cam.jpg',
         xp: 120
     },
     {
@@ -49,7 +49,7 @@ const CU_CHI_HOTSPOTS: HotspotCard[] = [
         name: 'Căn Cứ Bộ Tư Lệnh Quân Khu Sài Gòn - Gia Định',
         zone: 'military',
         desc: 'Sở chỉ huy ngầm với hệ thống hầm họp, phòng giải phẫu và sa bàn chỉ đạo chiến dịch.',
-        image: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=800&q=80',
+        image: '/media/cu-chi/hotspots/bo-tu-lenh.jpg',
         xp: 90
     },
     {
@@ -57,7 +57,7 @@ const CU_CHI_HOTSPOTS: HotspotCard[] = [
         name: 'Nhà Biểu Diễn Sa Bàn & Phim Lịch Sử 3D',
         zone: 'tech',
         desc: 'Không gian trình chiếu công nghệ cao mô phỏng chiến thuật đào hầm 3 tầng ngầm kỳ công của du kích.',
-        image: '/media/banner-main.jpg',
+        image: '/media/cu-chi/hotspots/sa-ban-3d.jpg',
         xp: 70
     },
     {
@@ -65,7 +65,7 @@ const CU_CHI_HOTSPOTS: HotspotCard[] = [
         name: 'Căn Cứ Khu Ủy Sài Gòn - Gia Định',
         zone: 'underground',
         desc: 'Hệ thống hầm ngầm sâu 8m ẩn giấu giữa rừng cây giáng hương già, kiên cố trước bom đạn B-52.',
-        image: 'https://images.unsplash.com/photo-1508804185872-d7badad00f7d?auto=format&fit=crop&w=800&q=80',
+        image: '/media/cu-chi/hotspots/khu-uy.jpg',
         xp: 85
     }
 ]
