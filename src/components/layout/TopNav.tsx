@@ -120,10 +120,10 @@ function UserAvatarDropdown({ avatarSrc }: { avatarSrc: string }) {
                 <div className="absolute right-0 mt-3 w-64 rounded-2xl bg-[#161824]/95 border border-white/15 shadow-[0_20px_50px_rgba(0,0,0,0.8)] backdrop-blur-2xl py-2 z-50 animate-[fadeIn_0.15s_ease-out]">
                     <div className="px-4 py-3 border-b border-white/10">
                         <p className="text-xs font-black text-white truncate">
-                            {user?.displayName || 'Nguyễn Quốc Huy'}
+                            {user?.displayName || 'Thành viên TimeLens'}
                         </p>
                         <p className="text-[11px] font-medium text-gray-400 truncate mt-0.5">
-                            {user?.email || 'huy.nguyen@fpt.edu.vn'}
+                            {user?.email || '—'}
                         </p>
                         <div className="mt-2 flex items-center gap-1.5">
               <span className="px-2 py-0.5 rounded bg-[#fe951c]/20 text-[#fdb438] text-[9px] font-black uppercase tracking-wider">

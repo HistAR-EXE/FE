@@ -71,9 +71,9 @@ export function VerifyEmailPendingPage() {
         <section className="bg-surface-container border border-outline-variant rounded-xl p-lg space-y-md text-center">
           <h1 className="font-title-md text-on-surface">Kích hoạt tài khoản</h1>
           <p className="text-sm text-on-surface-variant">
-            Tài khoản{user?.email ? ` ${user.email}` : ''} cần xác thực email trước khi dùng TimeLens. Bấm gửi lại bên
-            dưới: nếu môi trường local đang tắt SMTP (`MAIL_ENABLED=false`) sẽ hiện link xác thực ngay trên trang; nếu
-            bật SMTP thật thì kiểm tra hộp thư (kể cả thư rác).
+            Tài khoản{user?.email ? ` ${user.email}` : ''} cần xác thực email trước khi dùng TimeLens. Sau khi đăng ký,
+            hệ thống tự gửi email xác thực lần đầu — kiểm tra hộp thư (kể cả thư rác). Nếu không nhận được, bấm
+            &quot;Gửi lại&quot; ngay (cooldown 60 giây chỉ áp dụng sau khi gửi thành công).
           </p>
           <EmailVerificationBanner
             emailVerified={false}

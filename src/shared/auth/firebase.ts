@@ -18,3 +18,5 @@ export const firebaseEnabled = Boolean(
 export const firebaseApp: FirebaseApp | null = firebaseEnabled ? initializeApp(firebaseConfig) : null
 export const firebaseAuth: Auth | null = firebaseApp ? getAuth(firebaseApp) : null
 export const googleProvider = new GoogleAuthProvider()
+// Always show Google account picker (avoid auto-using browser's last signed-in account).
+googleProvider.setCustomParameters({ prompt: 'select_account' })

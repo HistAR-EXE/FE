@@ -161,6 +161,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = async (input: RegisterInput): Promise<AuthUser> => {
     const payload = await authApi.register(input)
+    if (payload.debugVerificationToken) {
+      sessionStorage.setItem('timelens_verify_debug_token', payload.debugVerificationToken)
+    }
     return storeAuth(payload)
   }
 

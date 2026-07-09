@@ -29,6 +29,7 @@ export type AuthPayload = {
   avatarUrl?: string | null
   emailVerified?: boolean
   provider?: string | null
+  debugVerificationToken?: string | null
 }
 
 export const authApi = {

@@ -14,7 +14,7 @@ import { Footer } from '../components/layout/Footer'
 import { images } from '../assets/images'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { Button } from '../components/ui/Button'
-import { signInWithPopup } from 'firebase/auth'
+import { signInWithPopup, signOut } from 'firebase/auth'
 import { firebaseAuth, firebaseEnabled, googleProvider } from '../shared/auth/firebase'
 import { popReturnTo, peekReturnTo, readReturnTo, resolveReturnTo, stashReturnTo } from '../shared/router/returnTo'
 
@@ -114,6 +114,8 @@ export function LoginPage({ defaultMode = 'login' }: LoginPageProps) {
             setLoading(true)
             const returnTo = readReturnTo(searchParams) ?? pendingFrom
             stashReturnTo(returnTo)
+            // Force Google account picker (clear Firebase session from prior login).
+            await signOut(firebaseAuth).catch(() => undefined)
             const credential = await signInWithPopup(firebaseAuth, googleProvider)
             const idToken = await credential.user.getIdToken()
             const loggedInUser = await loginWithGoogle(idToken)
