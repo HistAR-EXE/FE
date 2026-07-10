@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 // src/components/layout/SideNav.tsx
-import { useState, useMemo } from 'react'
+import { useMemo } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { MaterialIcon } from '../ui/MaterialIcon'
 import type { AppMode } from '../../shared/context/modeContext'
@@ -73,10 +73,13 @@ export function filterNavItems<T extends NavItem>(
     })
 }
 
+// BỔ SUNG 2 PROPS: isCollapsed và onToggle
 type SideNavProps = {
     activeBorder?: 'left' | 'right'
     showCta?: boolean
     onCtaClick?: () => void
+    isCollapsed: boolean
+    onToggle: () => void
 }
 
 function activeClasses(isActive: boolean, border: 'left' | 'right') {
@@ -94,6 +97,8 @@ export function SideNav({
                             activeBorder = 'right',
                             showCta = true,
                             onCtaClick,
+                            isCollapsed,
+                            onToggle,
                         }: SideNavProps) {
     const { pathname } = useLocation()
     const { mode } = useAppMode()
@@ -104,7 +109,6 @@ export function SideNav({
     const withChatPath = <T extends { to: string }>(items: readonly T[]) =>
         items.map((item) => (item.to === '/chat' ? { ...item, to: chatPath } : item))
 
-    const [isCollapsed, setIsCollapsed] = useState(false)
     const items = withChatPath(filterNavItems(navItems, mode, user?.role))
 
     return (
@@ -116,7 +120,7 @@ export function SideNav({
             <div className="absolute -right-3.5 top-7 z-50">
                 <button
                     type="button"
-                    onClick={() => setIsCollapsed(!isCollapsed)}
+                    onClick={onToggle}
                     className="w-7 h-7 rounded-full bg-[#1b1e2c] border border-[#fdb438]/50 text-gray-300 hover:text-[#fdb438] flex items-center justify-center shadow-lg transition-transform hover:scale-110 group relative cursor-pointer"
                     title={isCollapsed ? 'Mở rộng thanh bên' : 'Thu gọn thanh bên'}
                 >

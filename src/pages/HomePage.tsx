@@ -198,7 +198,7 @@ export function HomePage() {
 
     return (
         <AppLayout activeBorder="right" topNav={<HomeTopNav />}>
-            <main className="flex-grow pt-[88px] px-4 md:px-8 pb-20 max-w-7xl w-full mx-auto space-y-8 bg-[#0f1015] text-white selection:bg-[#fe951c] selection:text-black">
+            <main className="flex-grow pt-[88px] px-4 md:px-8 pb-20 w-full space-y-8 bg-[#0f1015] text-white selection:bg-[#fe951c] selection:text-black">
 
                 {/* --- MODULE BẢNG CẤU HÌNH CÁ NHÂN HÓA CHI TIẾT --- */}
                 <section className="bg-gradient-to-r from-[#161824] via-[#1a1d2c] to-[#161824] p-5 sm:p-6 rounded-3xl border border-white/10 shadow-xl space-y-4">
