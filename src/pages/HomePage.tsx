@@ -6,6 +6,7 @@ import { HomeTopNav } from '../components/layout/TopNav'
 import { demoApi, type Ready } from '../features/demo/api'
 import { profileApi, type ProfileMe } from '../features/profile/api'
 import { CU_CHI_LOCATION_ID } from '../shared/config/constants'
+import { buildChatPath } from '../features/chat/chatRoute'
 import { useAppMode } from '../shared/context/useAppMode'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 
@@ -355,7 +356,7 @@ export function HomePage() {
                                 <span>Cổng Thời Gian</span>
                             </button>
                             <button
-                                onClick={() => navigate('/chat')}
+                                onClick={() => navigate(buildChatPath())}
                                 className="px-5 py-3 rounded-xl bg-white/10 hover:bg-white/15 border border-white/20 text-white font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer"
                             >
                                 <MaterialIcon name="forum" className="text-base text-[#fdb438]" />
@@ -501,7 +502,7 @@ export function HomePage() {
                                     ].map((prompt, i) => (
                                         <button
                                             key={i}
-                                            onClick={() => navigate(`/chat?prompt=${encodeURIComponent(prompt)}`)}
+                                            onClick={() => navigate(buildChatPath({ prompt }))}
                                             className="text-left text-xs font-semibold text-gray-200 hover:text-white p-3 rounded-xl bg-white/5 hover:bg-[#388cf1]/20 border border-white/10 hover:border-[#388cf1]/50 transition-all flex items-center justify-between group cursor-pointer"
                                         >
                                             <span className="line-clamp-1">"{prompt}"</span>
@@ -513,7 +514,7 @@ export function HomePage() {
                         </div>
 
                         <button
-                            onClick={() => navigate('/chat')}
+                            onClick={() => navigate(buildChatPath())}
                             className="w-full py-4 rounded-xl bg-gradient-to-r from-[#388cf1] to-[#1a79e5] hover:scale-[1.02] text-white font-black text-xs uppercase tracking-wider shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer relative z-10"
                         >
                             <MaterialIcon name="forum" className="text-lg" />

@@ -6,6 +6,7 @@ import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { charactersApi, type CharacterDetail } from '../features/characters/api'
 import { useToast } from '../shared/ui/toast/useToast'
 import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
+import { buildChatPath } from '../features/chat/chatRoute'
 
 export function CharacterDetailPage() {
   const { characterId } = useParams<{ characterId: string }>()
@@ -26,7 +27,7 @@ export function CharacterDetailPage() {
   }, [characterId, showToast])
 
   const chatHref = character
-    ? `/chat/${character.id}?locationId=${character.locationId}`
+    ? buildChatPath({ locationId: character.locationId, characterId: character.id })
     : '/characters'
 
   return (

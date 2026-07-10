@@ -16,6 +16,7 @@ import {
 } from '../features/explore/destinationMerge'
 import { locationsApi, type Location as HeritageLocation } from '../features/locations/api'
 import { useToast } from '../shared/ui/toast/useToast'
+import { saveSelectedLocationId } from '../features/chat/chatRoute'
 
 // ============================================================================
 // DỮ LIỆU BƯỚC 1: PHƯƠNG THỨC TRẢI NGHIỆM
@@ -239,6 +240,7 @@ export function ModeSelectPage() {
         localStorage.setItem('timelens_pref_goal', personaGoal)
         localStorage.setItem('timelens_pref_duration', sessionDuration)
         localStorage.setItem('timelens_pref_ai_tone', aiTone)
+        saveSelectedLocationId(selectedDestination)
 
         try {
             const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token')

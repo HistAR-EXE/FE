@@ -18,6 +18,7 @@ import { useAuth } from '../shared/auth/useAuth'
 import { CU_CHI_LOCATION_ID } from '../shared/config/constants'
 import { useVisitSessionForLocation, useVisitSession } from '../features/visit/VisitSessionProvider'
 import { buildArUrl } from '../features/ar/arDeepLink'
+import { saveSelectedLocationId } from '../features/chat/chatRoute'
 
 const UUID_REGEX = /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/i
 
@@ -124,6 +125,7 @@ export function ScanPage() {
                 })
                 setResult(res)
                 setQrCode(normalizedQr)
+                saveSelectedLocationId(locationId)
                 notifyEngagementOutcome(res, showToast, applyEngagement, {
                     locationId,
                     visitSessionId,

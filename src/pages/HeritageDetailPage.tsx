@@ -12,6 +12,7 @@ import { ApiError } from '../shared/api/contracts'
 import { useAppMode } from '../shared/context/useAppMode'
 import { useToast } from '../shared/ui/toast/useToast'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
+import { buildChatPath } from '../features/chat/chatRoute'
 import { ProgressSummaryCard } from '../features/gamification/ProgressSummaryCard'
 import { isAdminPreview } from '../shared/access/contentAccess'
 import { CU_CHI_LOCATION_ID } from '../shared/config/constants'
@@ -295,7 +296,7 @@ export function HeritageDetailPage() {
                   <div className="w-12 h-12 rounded-full bg-surface-variant flex items-center justify-center text-on-surface"><MaterialIcon name="assignment" className="text-2xl" /></div>
                   <div className="text-left flex-1"><h3 className="font-title-md text-title-md text-on-surface mb-1">Nhiệm vụ</h3><p className="font-label-sm text-label-sm text-on-surface-variant">Xem nhiệm vụ tại địa điểm</p></div>
                 </Link>
-                <Link to={characters[0]?.id ? `/chat/${characters[0].id}?locationId=${location.id}` : `/chat?locationId=${location.id}`} className={`group relative w-full h-[100px] rounded-xl overflow-hidden bg-surface-container border border-outline-variant hover:border-secondary/50 transition-colors flex items-center p-md gap-md ${onlineHighlight(true)}`}>
+                <Link to={buildChatPath({ locationId: location.id, characterId: characters[0]?.id })} className={`group relative w-full h-[100px] rounded-xl overflow-hidden bg-surface-container border border-outline-variant hover:border-secondary/50 transition-colors flex items-center p-md gap-md ${onlineHighlight(true)}`}>
                   <div className="w-12 h-12 rounded-full bg-surface-variant flex items-center justify-center text-on-surface"><MaterialIcon name="chat_bubble" className="text-2xl" /></div>
                   <div className="text-left flex-1"><h3 className="font-title-md text-title-md text-on-surface mb-1">Trò chuyện AI</h3><p className="font-label-sm text-label-sm text-on-surface-variant">Hỏi đáp với nhân vật lịch sử</p></div>
                 </Link>
@@ -317,7 +318,7 @@ export function HeritageDetailPage() {
                       <p className="text-sm text-on-surface-variant">{character.era}</p>
                     </div>
                     <Link
-                      to={`/chat/${character.id}?locationId=${location.id}`}
+                      to={buildChatPath({ locationId: location.id, characterId: character.id })}
                       className="inline-flex items-center gap-1 text-secondary underline text-sm shrink-0"
                     >
                       Trò chuyện

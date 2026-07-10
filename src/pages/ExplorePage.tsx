@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { ExploreTopNav } from '../components/layout/TopNav'
 import { CU_CHI_LOCATION_ID } from '../shared/config/constants'
+import { buildChatPath } from '../features/chat/chatRoute'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 
 type ZoneFilter = 'all' | 'military' | 'memorial' | 'underground' | 'tech'
@@ -142,7 +143,7 @@ export function ExplorePage() {
                             {/* Các nút thao tác nhanh */}
                             <div className="flex flex-wrap gap-3 justify-center lg:justify-start pt-1">
                                 <button
-                                    onClick={() => navigate('/chat')}
+                                    onClick={() => navigate(buildChatPath())}
                                     className="px-6 py-3.5 rounded-xl bg-gradient-to-r from-[#fe951c] via-[#fdb438] to-[#e07d0b] hover:scale-105 text-black font-black text-xs uppercase tracking-wider transition-all shadow-[0_0_25px_rgba(254,149,28,0.5)] flex items-center gap-2 cursor-pointer"
                                 >
                                     <MaterialIcon name="forum" className="text-lg" />
@@ -170,7 +171,7 @@ export function ExplorePage() {
 
                                 {/* Nhân vật Nữ (Chị Năm Du Kích - VÀNG CAM) */}
                                 <div
-                                    onClick={() => navigate('/chat?persona=chi-nam')}
+                                    onClick={() => navigate(buildChatPath({ persona: 'chi-nam' }))}
                                     className="relative group cursor-pointer flex flex-col items-center transform transition-all duration-500 hover:scale-110 hover:-translate-y-2 z-10"
                                 >
                                     {/* Bong bóng thoại */}
@@ -200,7 +201,7 @@ export function ExplorePage() {
 
                                 {/* Nhân vật Nam (Anh Ba Chiến Sĩ - XANH CÔNG NGHỆ) */}
                                 <div
-                                    onClick={() => navigate('/chat?persona=anh-ba')}
+                                    onClick={() => navigate(buildChatPath({ persona: 'anh-ba' }))}
                                     className="relative group cursor-pointer flex flex-col items-center transform transition-all duration-500 hover:scale-110 hover:-translate-y-2 z-10"
                                 >
                                     {/* Bong bóng thoại */}
@@ -303,7 +304,7 @@ export function ExplorePage() {
                                 </button>
 
                                 <button
-                                    onClick={() => navigate('/chat')}
+                                    onClick={() => navigate(buildChatPath())}
                                     className="flex-1 px-3 py-2.5 rounded-xl bg-gradient-to-r from-[#fe951c]/20 to-[#fdb438]/20 border border-[#fe951c]/40 hover:border-[#fe951c] text-xs font-bold text-[#fdb438] transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
                                 >
                                     <MaterialIcon name="forum" className="text-sm" />

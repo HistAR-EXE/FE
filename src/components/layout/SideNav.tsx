@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 // src/components/layout/SideNav.tsx
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { MaterialIcon } from '../ui/MaterialIcon'
 import type { AppMode } from '../../shared/context/modeContext'
@@ -8,6 +8,7 @@ import { useAppMode } from '../../shared/context/useAppMode'
 import { useAuth } from '../../shared/auth/useAuth'
 import type { UserRole } from '../../shared/auth/types'
 import { CU_CHI_LOCATION_ID } from '../../shared/config/constants'
+import { buildChatPath } from '../../features/chat/chatRoute'
 
 // THÊM ĐẦY ĐỦ CÁC TÍNH NĂNG TIÊU BIỂU VÀ ĐẶC SẮC RA THÀNH SLIDE NAV CHÍNH
 const navItems = [
@@ -98,8 +99,13 @@ export function SideNav({
     const { mode } = useAppMode()
     const { user } = useAuth()
 
+    const chatPath = useMemo(() => buildChatPath(), [])
+
+    const withChatPath = <T extends { to: string }>(items: readonly T[]) =>
+        items.map((item) => (item.to === '/chat' ? { ...item, to: chatPath } : item))
+
     const [isCollapsed, setIsCollapsed] = useState(false)
-    const items = filterNavItems(navItems, mode, user?.role)
+    const items = withChatPath(filterNavItems(navItems, mode, user?.role))
 
     return (
         <aside
@@ -196,7 +202,10 @@ export function SideNavTablet({ activeBorder = 'right' }: { activeBorder?: 'left
     const { pathname } = useLocation()
     const { mode } = useAppMode()
     const { user } = useAuth()
-    const items = filterNavItems(navItems, mode, user?.role)
+    const chatPath = useMemo(() => buildChatPath(), [])
+    const withChatPath = <T extends { to: string }>(items: readonly T[]) =>
+        items.map((item) => (item.to === '/chat' ? { ...item, to: chatPath } : item))
+    const items = withChatPath(filterNavItems(navItems, mode, user?.role))
 
     return (
         <nav className="hidden md:flex lg:hidden h-screen w-20 fixed left-0 top-0 border-r border-white/10 bg-[#141620]/95 backdrop-blur-2xl flex-col py-6 px-2.5 z-40 items-center shadow-xl">
@@ -224,7 +233,10 @@ export function SideNavMobile() {
     const { pathname } = useLocation()
     const { mode } = useAppMode()
     const { user } = useAuth()
-    const items = filterNavItems(mobileNavItems, mode, user?.role, { excludeDesktopOnly: true })
+    const chatPath = useMemo(() => buildChatPath(), [])
+    const withChatPath = <T extends { to: string }>(items: readonly T[]) =>
+        items.map((item) => (item.to === '/chat' ? { ...item, to: chatPath } : item))
+    const items = withChatPath(filterNavItems(mobileNavItems, mode, user?.role, { excludeDesktopOnly: true }))
 
     return (
         <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-[#141620]/95 backdrop-blur-2xl pb-safe shadow-[0_-5px_20px_rgba(0,0,0,0.6)]">

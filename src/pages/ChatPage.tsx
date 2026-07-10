@@ -23,6 +23,7 @@ import { OrgQuotaModal } from '../components/monetization/OrgQuotaModal'
 import { billingApi } from '../features/billing/api'
 import { useToast } from '../shared/ui/toast/useToast'
 import { probeRagAiHealth } from '../shared/api/aiHealth'
+import { resolveChatLocationId, saveSelectedLocationId } from '../features/chat/chatRoute'
 
 const MESSAGE_PAGE_SIZE = 20
 
@@ -127,7 +128,7 @@ export function ChatPage() {
     const { characterId: routeCharacterId } = useParams<{ characterId?: string }>()
     const [params] = useSearchParams()
     const navigate = useNavigate()
-    const locationId = params.get('locationId') ?? ''
+    const locationId = resolveChatLocationId(params.get('locationId'))
     const personaParam = params.get('persona') // Nhận 'chi-nam' hoặc 'anh-ba' từ ExplorePage
     const initialCharacterId = routeCharacterId ?? params.get('characterId') ?? ''
     const questRecordKey = questRecordFromSearch(params)
@@ -308,6 +309,11 @@ export function ChatPage() {
             setLoadingOlder(false)
         }
     }, [conversationId, hasOlder, historyPage, loadingOlder, showToast])
+
+    useEffect(() => {
+        const fromUrl = params.get('locationId')?.trim()
+        if (fromUrl) saveSelectedLocationId(fromUrl)
+    }, [params])
 
     useEffect(() => {
         if (initialCharacterId) setCharacterId(initialCharacterId)
