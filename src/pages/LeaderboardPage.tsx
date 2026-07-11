@@ -1,6 +1,6 @@
 // src/pages/LeaderboardPage.tsx
 import { useEffect, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { SimpleTopNav } from '../components/layout/TopNav'
 import { viralApi, type LeaderboardResponse } from '../features/viral/api'
@@ -12,11 +12,11 @@ import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { useAppMode } from '../shared/context/useAppMode'
 import { useAuth } from '../shared/auth/useAuth'
 import { hasFullGamificationAccess } from '../shared/access/contentAccess'
-import { UpgradePrompt } from '../components/monetization/UpgradePrompt'
 
 export function LeaderboardPage() {
     const { mode: appMode } = useAppMode()
     const { user } = useAuth()
+    const navigate = useNavigate()
 
     // Logic của Backend: Kiểm tra quyền truy cập Gamification
     const gamificationUnlocked = hasFullGamificationAccess(user)
@@ -35,12 +35,22 @@ export function LeaderboardPage() {
     const currentUserEntry = data?.entries.find((entry) => entry.currentUser) ?? null
 
     useEffect(() => {
+        // NẾU CHƯA CÓ QUYỀN (FREE) -> DỪNG LẠI NGAY LẬP TỨC
+        // Không gọi API để tránh lỗi đỏ 422 từ Backend và tiết kiệm tài nguyên
+        if (!gamificationUnlocked) {
+            setLoading(false)
+            return
+        }
+
         setLoading(true)
 
         const handleLeaderboardError = (error: unknown) => {
             if (error instanceof ApiError && (error.code === 'TRIAL_EXPIRED' || error.status === 403)) {
                 setArchivedMessage(error.message || 'Gói của trường đã hết hạn, bảng xếp hạng hiện ở chế độ lưu trữ.')
                 setData({ scope: groupId ? 'group' : scope, city: scope === 'city' ? city.trim() || null : null, entries: [] } as any)
+            } else if (error instanceof ApiError && error.status === 422) {
+                // Âm thầm bỏ qua lỗi 422 từ Backend (nếu có lọt vào) vì giao diện Khóa Premium đã tự giải thích
+                setArchivedMessage(null)
             } else {
                 setArchivedMessage(null)
                 showToast({ message: getFriendlyErrorMessage(error, 'leaderboard'), type: 'error' })
@@ -71,7 +81,7 @@ export function LeaderboardPage() {
                 setLoading(false)
             })
             .catch(handleLeaderboardError)
-    }, [scope, city, groupId, showToast])
+    }, [scope, city, groupId, showToast, gamificationUnlocked])
 
     const getRankColor = (rank: number) => {
         if (rank === 1) return 'from-[#ffd700] to-[#d4af37] text-black shadow-[0_0_15px_#ffd700]'
@@ -230,7 +240,7 @@ export function LeaderboardPage() {
                                         </div>
                                     </div>
 
-                                    {/* Thẻ Label tên mùa giải (Đã giảm mt-8 xuống mt-4 để xích lại gần cúp hơn) */}
+                                    {/* Thẻ Label tên mùa giải */}
                                     <div className="mt-4 md:mt-6 px-6 py-2.5 rounded-full bg-[#0B1120]/90 backdrop-blur-xl border-2 border-[#fdb438]/60 text-[10px] md:text-xs font-black tracking-widest text-[#fff2a1] shadow-[0_0_25px_rgba(254,149,28,0.5)] relative z-30 uppercase">
                                         MÙA GIẢI: KHỞI NGUYÊN
                                     </div>
@@ -241,7 +251,7 @@ export function LeaderboardPage() {
                     </div>
                 </section>
 
-                {/* 1. THANH CHỈ SỐ MÙA GIẢI (Đã dời lên ngay dưới Banner để đè lên mép) */}
+                {/* 1. THANH CHỈ SỐ MÙA GIẢI */}
                 {!groupId && (
                     <div className="max-w-7xl mx-auto px-4 md:px-12 -mt-12 md:-mt-16 mb-8 relative z-30">
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-[#161b29]/95 backdrop-blur-xl border border-white/10 p-6 rounded-3xl shadow-[0_20px_40px_rgba(0,0,0,0.5)]">
@@ -265,27 +275,74 @@ export function LeaderboardPage() {
                     </div>
                 )}
 
-                {/* 2. KHUNG CẢNH BÁO UPGRADE B2C (Nằm gọn gàng bên dưới) */}
-                {!gamificationUnlocked && (
-                    <div className="max-w-7xl mx-auto px-4 md:px-12 mb-8 relative z-20">
-                        <UpgradePrompt
-                            title="BẢNG XẾP HẠNG TOÀN CỘNG ĐỒNG"
-                            message="Nâng cấp Premium để mở khóa Rankings Global, so tài Điểm kinh nghiệm (XP) với hàng ngàn người chơi khác và hoàn thiện Digital Passport của riêng bạn."
-                        />
-                    </div>
-                )}
 
-                {/* 3. LỚP PHỦ KÍNH MỜ BẢO VỆ (KHI CHƯA UNLOCK) */}
-                <div className={`relative max-w-7xl mx-auto ${!gamificationUnlocked ? 'overflow-hidden rounded-[3rem]' : ''}`}>
-                    {!gamificationUnlocked && (
-                        <div className="absolute inset-0 z-50 bg-[#0B1120]/80 backdrop-blur-xl pointer-events-none flex flex-col items-center pt-32" aria-hidden>
-                            <div className="w-24 h-24 rounded-full bg-[#1a79e5]/20 border border-[#388cf1]/50 flex items-center justify-center mb-6 shadow-[0_0_40px_rgba(56,140,241,0.5)]">
-                                <MaterialIcon name="lock" className="text-5xl text-[#388cf1] drop-shadow-md" />
+                {/* ======================================================== */}
+                {/* 3. KHU VỰC BẢNG XẾP HẠNG HOẶC KHÓA PREMIUM */}
+                {/* ======================================================== */}
+                {!gamificationUnlocked ? (
+                    /* GIAO DIỆN KHÓA PREMIUM (PAYWALL) MỚI MỞ RỘNG CHIỀU NGANG */
+                    <div className="max-w-7xl mx-auto px-4 md:px-12 mt-12 mb-20">
+                        <div className="relative w-full rounded-[3rem] overflow-hidden border border-white/10 bg-[#0B1120] shadow-[0_20px_80px_rgba(0,0,0,0.8)] min-h-[500px] flex flex-col items-center justify-center p-6 sm:p-12">
+
+                            {/* Background Ảo ảnh (Fake Blurred Content để giả vờ đang có leaderboard phía sau) */}
+                            <div className="absolute inset-0 opacity-20 pointer-events-none flex flex-col items-center justify-center gap-6 blur-[12px] p-10">
+                                <div className="w-full max-w-6xl h-20 rounded-2xl bg-white/20 border border-white/30" />
+                                <div className="w-full max-w-6xl h-20 rounded-2xl bg-white/20 border border-white/30" />
+                                <div className="w-full max-w-6xl h-20 rounded-2xl bg-white/20 border border-white/30" />
+                                <div className="w-full max-w-6xl h-20 rounded-2xl bg-white/20 border border-white/30" />
                             </div>
-                            <h3 className="text-2xl font-black text-white uppercase tracking-widest drop-shadow-md">KHU VỰC ĐÃ BỊ KHÓA</h3>
-                        </div>
-                    )}
 
+                            {/* Hào quang sáng từ phía sau Glass Card */}
+                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[500px] bg-[#fe951c]/15 rounded-[100%] blur-[120px] pointer-events-none animate-pulse" />
+                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-[#388cf1]/10 rounded-[100%] blur-[100px] pointer-events-none" />
+
+                            {/* Nội dung khối Paywall (Glassmorphism Đẹp Mắt mở rộng) */}
+                            <div className="relative z-10 w-full max-w-5xl rounded-[2.5rem] bg-[#161824]/90 backdrop-blur-3xl border border-white/15 shadow-[0_20px_50px_rgba(0,0,0,0.9),inset_0_2px_20px_rgba(255,255,255,0.05)] p-8 md:p-14 flex flex-col items-center text-center">
+
+                                <div className="w-24 h-24 mb-6 rounded-3xl bg-gradient-to-br from-[#fe951c]/20 to-[#fdb438]/10 border border-[#fe951c]/40 flex items-center justify-center shadow-[0_0_40px_rgba(254,149,28,0.3)]">
+                                    <MaterialIcon name="lock" className="text-[4rem] text-[#fdb438] drop-shadow-[0_0_15px_rgba(253,180,56,0.6)]" />
+                                </div>
+
+                                <span className="px-5 py-2 rounded-full bg-red-500/10 border border-red-500/30 text-red-400 text-[10px] md:text-xs font-black uppercase tracking-widest mb-6 shadow-sm">
+                                    Khu Vực Dành Riêng Cho Đặc Vụ Premium
+                                </span>
+
+                                <h3 className="text-3xl md:text-5xl font-black text-white mb-4 tracking-tight leading-tight">
+                                    Mở Khóa Bảng Xếp Hạng <br className="hidden md:block"/> <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#fe951c] to-[#fdb438]">Toàn Cầu</span>
+                                </h3>
+
+                                <p className="text-sm md:text-base text-gray-300 font-medium max-w-3xl mx-auto mb-10 leading-relaxed">
+                                    Tính năng so tài Điểm kinh nghiệm (XP) hiện đang bị khóa. Nâng cấp <strong>Premium</strong> ngay để cạnh tranh với hàng ngàn người chơi khác và ghi danh vào Hộ Chiếu Di Sản!
+                                </p>
+
+                                <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto">
+                                    <button
+                                        onClick={() => navigate('/pricing')}
+                                        className="w-full sm:w-auto px-10 py-4.5 rounded-2xl bg-gradient-to-r from-[#fe951c] via-[#fdb438] to-[#e07d0b] hover:from-[#e07d0b] hover:to-[#fe951c] text-black font-black text-sm uppercase tracking-wider transition-all shadow-[0_5px_25px_rgba(254,149,28,0.4)] hover:shadow-[0_8px_35px_rgba(254,149,28,0.6)] hover:scale-105 flex items-center justify-center gap-2 cursor-pointer"
+                                    >
+                                        <MaterialIcon name="workspace_premium" className="text-xl" />
+                                        Nâng Cấp Premium Ngay
+                                    </button>
+                                    {/*<button*/}
+                                    {/*    onClick={() => navigate('/explore')}*/}
+                                    {/*    className="w-full sm:w-auto px-10 py-4.5 rounded-2xl bg-[#1b1e2c] border border-white/10 hover:border-white/30 hover:bg-[#232636] text-white font-bold text-sm uppercase tracking-wider transition-all shadow-lg flex items-center justify-center gap-2 cursor-pointer"*/}
+                                    {/*>*/}
+                                    {/*    Quay Về Khám Phá*/}
+                                    {/*</button>*/}
+                                </div>
+
+                                <div className="mt-10 pt-8 border-t border-white/10 w-full flex flex-wrap items-center justify-center gap-x-12 gap-y-3 text-xs md:text-sm font-bold text-gray-400">
+                                    <span className="flex items-center gap-2"><MaterialIcon name="check_circle" className="text-[#388cf1] text-base" /> Tham gia giải đấu</span>
+                                    <span className="flex items-center gap-2"><MaterialIcon name="check_circle" className="text-[#388cf1] text-base" /> Mở khóa thẻ bài quý hiếm</span>
+                                    <span className="flex items-center gap-2"><MaterialIcon name="check_circle" className="text-[#388cf1] text-base" /> RAG AI Không giới hạn</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                ) : (
+                    /* ======================================================== */
+                    /* GIAO DIỆN BẢNG XẾP HẠNG BÌNH THƯỜNG (KHI ĐÃ UNLOCK)      */
+                    /* ======================================================== */
                     <div className="max-w-5xl mx-auto px-4 md:px-8 mt-10">
 
                         {/* BỘ LỌC PHÂN HẠNG (SCOPE FILTERS) */}
@@ -426,7 +483,7 @@ export function LeaderboardPage() {
 
                         {/* BẢNG DANH SÁCH (RANK 4 TRỞ XUỐNG) */}
                         {!loading && others.length > 0 && (
-                            <div className="space-y-4">
+                            <div className="space-y-4 relative z-10">
                                 {others.map((entry) => {
                                     const isMe = entry.currentUser;
                                     const rankColorClass = getRankColor(entry.rank);
@@ -471,7 +528,7 @@ export function LeaderboardPage() {
 
                         {/* HIỂN THỊ CURRENT USER NẾU NẰM NGOÀI TOP HIỂN THỊ */}
                         {!loading && !others.some(o => o.currentUser) && !podium.some(p => p?.currentUser) && currentUserEntry && (
-                            <div className="mt-8 p-1 rounded-2xl bg-gradient-to-r from-[#fe951c] to-[#fdb438]">
+                            <div className="mt-8 p-1 rounded-2xl bg-gradient-to-r from-[#fe951c] to-[#fdb438] relative z-10">
                                 <div className="p-4 md:p-5 rounded-xl bg-[#0B1120] flex items-center justify-between">
                                     <div className="flex items-center gap-4 md:gap-6 w-2/3">
                                         <div className="w-10 h-10 shrink-0 rounded-xl flex items-center justify-center font-black text-sm bg-gradient-to-br from-[#fe951c] to-[#b45309] text-white shadow-inner">
@@ -499,7 +556,7 @@ export function LeaderboardPage() {
                             </div>
                         )}
                     </div>
-                </div>
+                )}
             </main>
         </AppLayout>
     )
