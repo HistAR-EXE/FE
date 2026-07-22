@@ -4,9 +4,9 @@ import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-do
 import { AuthLayout } from '../components/layout/AuthLayout'
 import { useAuth } from '../shared/auth/useAuth'
 import {
-  getPostLoginRedirect,
-  needsEmailVerification,
-  type AuthUser,
+    getPostLoginRedirect,
+    needsEmailVerification,
+    type AuthUser,
 } from '../shared/auth/types'
 import { ApiError } from '../shared/api/contracts'
 import { useToast } from '../shared/ui/toast/useToast'
@@ -19,7 +19,7 @@ import { firebaseAuth, firebaseEnabled, googleProvider } from '../shared/auth/fi
 import { popReturnTo, peekReturnTo, readReturnTo, resolveReturnTo, stashReturnTo } from '../shared/router/returnTo'
 
 type LoginPageProps = {
-  defaultMode?: 'login' | 'register'
+    defaultMode?: 'login' | 'register'
 }
 
 export function LoginPage({ defaultMode = 'login' }: LoginPageProps) {
@@ -33,6 +33,21 @@ export function LoginPage({ defaultMode = 'login' }: LoginPageProps) {
     const [showPassword, setShowPassword] = useState(false)
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
     const { showToast } = useToast()
+
+    // --- STATES MỚI CHO UI/UX ĐĂNG KÝ ---
+    const [termsAccepted, setTermsAccepted] = useState(false)
+    const [isPrivacyOpen, setIsPrivacyOpen] = useState(false)
+    const [isTermsOpen, setIsTermsOpen] = useState(false)
+
+    // Khóa cuộn trang khi mở Popup Modal
+    useEffect(() => {
+        if (isPrivacyOpen || isTermsOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'unset';
+        }
+        return () => { document.body.style.overflow = 'unset'; }
+    }, [isPrivacyOpen, isTermsOpen])
 
     const pendingFrom = useMemo(() => {
         const legacyFrom = (location.state as { from?: string } | null)?.from
@@ -57,6 +72,13 @@ export function LoginPage({ defaultMode = 'login' }: LoginPageProps) {
 
     const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault()
+
+        // Chặn submit nếu đang ở mode Đăng ký mà chưa check đồng ý điều khoản
+        if (mode === 'register' && !termsAccepted) {
+            showToast({ message: 'Vui lòng đồng ý với Điều khoản dịch vụ và Chính sách bảo mật.', type: 'error' })
+            return
+        }
+
         const formData = new FormData(event.currentTarget)
         const email = String(formData.get('email') ?? '').trim()
         const password = String(formData.get('password') ?? '')
@@ -95,7 +117,7 @@ export function LoginPage({ defaultMode = 'login' }: LoginPageProps) {
             if (e instanceof ApiError && e.code === 'VALIDATION_ERROR' && e.fieldErrors) {
                 setFieldErrors(e.fieldErrors)
             }
-            const message = e instanceof ApiError ? e.message : 'Xác thực không thành công. Vui lòng kiểm tra lại thông tin.'
+            const message = e instanceof ApiError ? e.message : 'Xác thực không thành công. Vui lòng kiểm tra lại thông định.'
             showToast({ message, type: 'error' })
         } finally {
             setLoading(false)
@@ -114,7 +136,6 @@ export function LoginPage({ defaultMode = 'login' }: LoginPageProps) {
             setLoading(true)
             const returnTo = readReturnTo(searchParams) ?? pendingFrom
             stashReturnTo(returnTo)
-            // Force Google account picker (clear Firebase session from prior login).
             await signOut(firebaseAuth).catch(() => undefined)
             const credential = await signInWithPopup(firebaseAuth, googleProvider)
             const idToken = await credential.user.getIdToken()
@@ -125,8 +146,8 @@ export function LoginPage({ defaultMode = 'login' }: LoginPageProps) {
                 e instanceof ApiError
                     ? e.message
                     : e instanceof Error
-                      ? e.message
-                      : 'Đăng nhập Google thất bại.'
+                        ? e.message
+                        : 'Đăng nhập Google thất bại.'
             showToast({ message, type: 'error' })
         } finally {
             setLoading(false)
@@ -148,18 +169,17 @@ export function LoginPage({ defaultMode = 'login' }: LoginPageProps) {
                     <div className="absolute bottom-10 right-10 w-96 h-96 bg-[#1a79e5]/15 rounded-full blur-[130px]" />
                 </div>
 
-                {/* HEADER ĐƠN GIẢN SANG TRỌNG */}
+                {/* HEADER ĐƠN GIẢN SANG TRỌNG - Đã đẩy w-full ra sát mép */}
                 <header className="w-full top-0 sticky z-50 bg-[#0f1015]/80 backdrop-blur-xl border-b border-white/10 transition-all">
-                    <div className="flex justify-between items-center h-20 px-4 sm:px-8 max-w-7xl mx-auto w-full">
-                        <Link to="/" className="flex items-center gap-3 group">
-                            <img src="/brand/icon-192.png" alt="TimeLens Logo" className="w-9 h-9 rounded-full border border-[#fdb438]/60 object-cover shadow-sm" />
-                            <div className="flex flex-col">
-                <span className="text-xl font-black tracking-tight text-white group-hover:text-[#fdb438] transition-colors">
-                  TimeLens
-                </span>
-                                <span className="text-[9px] font-bold text-[#fe951c] tracking-widest uppercase -mt-1">
-                  by HistAR Team
-                </span>
+                    <div className="flex justify-between items-center h-20 px-4 sm:px-6 lg:px-12 w-full mx-auto">
+                        <Link to="/" className="flex items-center gap-3 sm:gap-4 group">
+                            <div className="relative flex items-center">
+                                <img src="/brand/logo-histar.png" alt="HistAR Logo" className="relative h-12 sm:h-14 w-auto object-contain drop-shadow-sm group-hover:scale-105 transition-transform" />
+                            </div>
+                            <div className="h-8 w-[2px] bg-white/20 rounded-full hidden sm:block"></div>
+                            <div className="flex flex-col justify-center">
+                                <span className="text-xl sm:text-2xl font-black tracking-tight text-white leading-none group-hover:text-[#fdb438] transition-colors">TimeLens</span>
+                                <span className="text-[10px] font-black text-[#D97706] tracking-widest uppercase mt-1">Heritage EdTech Platform</span>
                             </div>
                         </Link>
 
@@ -238,7 +258,7 @@ export function LoginPage({ defaultMode = 'login' }: LoginPageProps) {
                                 </button>
                                 <button
                                     type="button"
-                                    onClick={() => { setMode('register'); setFieldErrors({}); }}
+                                    onClick={() => { setMode('register'); setFieldErrors({}); setTermsAccepted(false); }}
                                     className={`py-2.5 rounded-xl font-extrabold text-xs tracking-wider uppercase transition-all duration-300 cursor-pointer ${
                                         mode === 'register'
                                             ? 'bg-gradient-to-r from-[#fe951c] to-[#fdb438] text-black shadow-md scale-[1.02]'
@@ -257,7 +277,7 @@ export function LoginPage({ defaultMode = 'login' }: LoginPageProps) {
                                 <p className="text-xs sm:text-sm text-gray-400 mt-1 font-medium">
                                     {mode === 'login'
                                         ? 'Nhập email và mật khẩu của bạn để vào không gian di sản.'
-                                        : 'Hoàn tất thông tin bên dưới để bắt đầu hành trình cùng TimeLens.'}
+                                        : 'Hoàn tất thông tin để bắt đầu hành trình cùng TimeLens.'}
                                 </p>
                             </div>
 
@@ -346,12 +366,51 @@ export function LoginPage({ defaultMode = 'login' }: LoginPageProps) {
                                     )}
                                 </div>
 
+                                {/* THÊM MỚI: Checkbox Điều khoản & Chính sách (Chỉ hiện khi Đăng ký) */}
+                                {mode === 'register' && (
+                                    <div className="flex items-start gap-3 mt-4 mb-2 animate-[fadeInUp_0.3s_ease-out]">
+                                        <div className="flex items-center h-5">
+                                            <input
+                                                id="terms"
+                                                type="checkbox"
+                                                checked={termsAccepted}
+                                                onChange={(e) => setTermsAccepted(e.target.checked)}
+                                                className="w-4 h-4 bg-[#1b1e2c] border border-white/20 rounded accent-[#fe951c] text-[#fe951c] focus:ring-[#fe951c] cursor-pointer"
+                                                required
+                                            />
+                                        </div>
+                                        <label htmlFor="terms" className="text-xs text-gray-400 leading-snug cursor-pointer">
+                                            Tôi đã đọc và đồng ý với{' '}
+                                            <button
+                                                type="button"
+                                                onClick={(e) => { e.preventDefault(); setIsTermsOpen(true); }}
+                                                className="text-[#388cf1] hover:text-[#fdb438] font-bold underline transition-colors cursor-pointer"
+                                            >
+                                                Điều khoản dịch vụ
+                                            </button>
+                                            {' '}và{' '}
+                                            <button
+                                                type="button"
+                                                onClick={(e) => { e.preventDefault(); setIsPrivacyOpen(true); }}
+                                                className="text-[#388cf1] hover:text-[#fdb438] font-bold underline transition-colors cursor-pointer"
+                                            >
+                                                Chính sách bảo mật
+                                            </button>
+                                            {' '}của TimeLens.
+                                        </label>
+                                    </div>
+                                )}
+
                                 {/* NÚT SUBMIT CHÍNH */}
-                                <div className="pt-3">
+                                <div className="pt-2">
                                     <Button
                                         type="submit"
-                                        disabled={loading}
-                                        className="w-full h-12 rounded-xl bg-gradient-to-r from-[#fe951c] via-[#fdb438] to-[#e07d0b] hover:from-[#e07d0b] hover:to-[#fe951c] text-black font-black text-sm uppercase tracking-wider shadow-[0_4px_20px_rgba(254,149,28,0.4)] hover:shadow-[0_6px_25px_rgba(254,149,28,0.6)] transition-all transform hover:scale-[1.01] active:scale-[0.99] cursor-pointer flex items-center justify-center gap-2"
+                                        disabled={loading || (mode === 'register' && !termsAccepted)}
+                                        className={`w-full h-12 rounded-xl text-black font-black text-sm uppercase tracking-wider shadow-[0_4px_20px_rgba(254,149,28,0.4)] transition-all flex items-center justify-center gap-2 ${
+                                            (mode === 'register' && !termsAccepted)
+                                                ? 'bg-gray-600 text-gray-400 shadow-none cursor-not-allowed opacity-70'
+                                                : 'bg-gradient-to-r from-[#fe951c] via-[#fdb438] to-[#e07d0b] hover:from-[#e07d0b] hover:to-[#fe951c] hover:shadow-[0_6px_25px_rgba(254,149,28,0.6)] transform hover:scale-[1.01] active:scale-[0.99] cursor-pointer'
+                                        }`}
                                     >
                                         {loading ? (
                                             <span className="flex items-center gap-2">
@@ -388,7 +447,7 @@ export function LoginPage({ defaultMode = 'login' }: LoginPageProps) {
                                     <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
                                     <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
                                 </svg>
-                                <span>Tiếp tục với Google ID</span>
+                                <span>Tiếp tục với Google</span>
                             </button>
 
                             {/* Lời khuyên chuyển đổi bên dưới */}
@@ -396,7 +455,7 @@ export function LoginPage({ defaultMode = 'login' }: LoginPageProps) {
                                 {mode === 'login' ? 'Bạn chưa có tài khoản thành viên?' : 'Bạn đã có tài khoản sẵn sàng?'}{' '}
                                 <button
                                     type="button"
-                                    onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setFieldErrors({}); }}
+                                    onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setFieldErrors({}); setTermsAccepted(false); }}
                                     className="text-[#fdb438] hover:underline font-bold cursor-pointer ml-1"
                                 >
                                     {mode === 'login' ? 'Đăng ký miễn phí ngay' : 'Đăng nhập tại đây'}
@@ -410,6 +469,146 @@ export function LoginPage({ defaultMode = 'login' }: LoginPageProps) {
 
                 {/* FOOTER */}
                 <Footer variant="login" />
+
+                {/* MODAL CHÍNH SÁCH BẢO MẬT (COPY TỪ ONBOARDING PAGE) */}
+                {isPrivacyOpen && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-[#0B1120]/80 backdrop-blur-md animate-[fadeIn_0.3s_ease-out]">
+                        <div className="bg-white rounded-3xl w-full max-w-4xl max-h-[85vh] flex flex-col overflow-hidden shadow-2xl relative text-[#1E293B]">
+                            {/* Header Modal */}
+                            <div className="px-6 py-5 border-b border-[#E2E8F0] flex items-center justify-between bg-[#F8FAFC]">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-xl bg-[#1A79E5]/10 border border-[#1A79E5]/30 flex items-center justify-center text-[#1A79E5]">
+                                        <MaterialIcon name="shield" className="text-xl" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-lg font-black text-[#1E293B] uppercase tracking-wide">Chính Sách Bảo Mật</h3>
+                                        <p className="text-[10px] font-bold text-[#64748B] uppercase tracking-widest">Cập nhật lần cuối: 09/07/2026</p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => setIsPrivacyOpen(false)}
+                                    className="w-10 h-10 rounded-full bg-white border border-[#CBD5E1] flex items-center justify-center text-[#64748B] hover:bg-[#F1F5F9] hover:text-[#EF4444] transition-colors cursor-pointer shadow-sm"
+                                >
+                                    <MaterialIcon name="close" className="text-xl" />
+                                </button>
+                            </div>
+
+                            {/* Body Modal (Scrollable) */}
+                            <div className="overflow-y-auto p-6 md:p-8 space-y-8 text-[#334155] custom-scrollbar bg-white">
+                                <section className="space-y-3">
+                                    <h4 className="text-base font-black text-[#1A79E5] uppercase tracking-wider flex items-center gap-2">
+                                        <MaterialIcon name="data_usage" className="text-lg text-[#FE951C]" /> 1. Thu Thập Dữ Liệu
+                                    </h4>
+                                    <p className="text-sm font-medium leading-relaxed">Khi bạn sử dụng nền tảng EdTech <strong>TimeLens</strong>, chúng tôi có thể thu thập các loại dữ liệu sau nhằm cá nhân hóa và nâng cao trải nghiệm học tập:</p>
+                                    <ul className="list-disc pl-5 space-y-2 text-sm font-medium text-[#475569]">
+                                        <li><strong>Thông tin định danh:</strong> Tên, địa chỉ email, mã số học sinh (đối với Sub-accounts B2B) khi bạn tạo tài khoản.</li>
+                                        <li><strong>Dữ liệu định vị (GPS & Geofencing):</strong> Được yêu cầu cấp quyền khi bạn sử dụng tính năng <em>Khám phá thực địa (O2O Interaction)</em> để mở khóa các mô hình AR 3D tại các di tích lịch sử. Chúng tôi chỉ thu thập vị trí tại thời điểm bạn "Check-in" hoặc quét mã QR.</li>
+                                        <li><strong>Dữ liệu tương tác AI:</strong> Các đoạn hội thoại (prompts) giữa bạn và Trợ lý Lịch sử AI được lưu trữ nhằm mục đích cải thiện mô hình RAG và đánh giá mức độ tiếp thu kiến thức.</li>
+                                    </ul>
+                                </section>
+
+                                <section className="space-y-3">
+                                    <h4 className="text-base font-black text-[#1A79E5] uppercase tracking-wider flex items-center gap-2">
+                                        <MaterialIcon name="insights" className="text-lg text-[#FE951C]" /> 2. Mục Đích Sử Dụng
+                                    </h4>
+                                    <p className="text-sm font-medium leading-relaxed">Chúng tôi cam kết chỉ sử dụng dữ liệu của bạn cho các mục đích phát triển giáo dục:</p>
+                                    <ul className="list-disc pl-5 space-y-2 text-sm font-medium text-[#475569]">
+                                        <li>Đo lường tiến độ học tập và hiển thị trên Bảng xếp hạng (Leaderboard) của nền tảng.</li>
+                                        <li>Cung cấp dữ liệu báo cáo thống kê chuyên sâu (Teacher Dashboard) dành cho quản trị viên nhà trường đối với hệ thống tài khoản B2B.</li>
+                                        <li>Tối ưu hóa các điểm mù kiến thức dựa trên lịch sử tương tác với Cổng thời gian (Time Portal).</li>
+                                    </ul>
+                                </section>
+
+                                <section className="space-y-3">
+                                    <h4 className="text-base font-black text-[#1A79E5] uppercase tracking-wider flex items-center gap-2">
+                                        <MaterialIcon name="gpp_good" className="text-lg text-[#FE951C]" /> 3. Bảo Vệ Dữ Liệu & Quyền Người Dùng
+                                    </h4>
+                                    <p className="text-sm font-medium leading-relaxed">Toàn bộ dữ liệu cá nhân được mã hóa chuẩn công nghiệp và lưu trữ an toàn trên máy chủ đám mây. <strong>HistAR Team tuyệt đối không bán hoặc trao đổi dữ liệu cá nhân của học sinh cho bất kỳ bên thứ ba nào vì mục đích quảng cáo thương mại.</strong></p>
+                                    <p className="text-sm font-medium leading-relaxed">Bạn có quyền yêu cầu trích xuất toàn bộ dữ liệu học tập (Digital Passport) hoặc yêu cầu xóa vĩnh viễn tài khoản khỏi hệ thống bằng cách liên hệ với chúng tôi qua email hỗ trợ.</p>
+                                </section>
+                            </div>
+
+                            {/* Footer Modal */}
+                            <div className="px-6 py-4 border-t border-[#E2E8F0] bg-[#F8FAFC] flex justify-end">
+                                <button onClick={() => setIsPrivacyOpen(false)} className="px-6 py-2.5 rounded-xl bg-[#1E293B] hover:bg-[#1A79E5] text-white font-black text-xs uppercase tracking-wider transition-all shadow-md">Tôi Đã Hiểu</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* MODAL ĐIỀU KHOẢN DỊCH VỤ (COPY TỪ ONBOARDING PAGE) */}
+                {isTermsOpen && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-[#0B1120]/80 backdrop-blur-md animate-[fadeIn_0.3s_ease-out]">
+                        <div className="bg-white rounded-3xl w-full max-w-4xl max-h-[85vh] flex flex-col overflow-hidden shadow-2xl relative text-[#1E293B]">
+                            {/* Header Modal */}
+                            <div className="px-6 py-5 border-b border-[#E2E8F0] flex items-center justify-between bg-[#F8FAFC]">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-xl bg-[#FE951C]/10 border border-[#FE951C]/30 flex items-center justify-center text-[#d97706]">
+                                        <MaterialIcon name="gavel" className="text-xl" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-lg font-black text-[#1E293B] uppercase tracking-wide">Điều Khoản Dịch Vụ</h3>
+                                        <p className="text-[10px] font-bold text-[#64748B] uppercase tracking-widest">Hiệu lực từ: 09/07/2026</p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => setIsTermsOpen(false)}
+                                    className="w-10 h-10 rounded-full bg-white border border-[#CBD5E1] flex items-center justify-center text-[#64748B] hover:bg-[#F1F5F9] hover:text-[#EF4444] transition-colors cursor-pointer shadow-sm"
+                                >
+                                    <MaterialIcon name="close" className="text-xl" />
+                                </button>
+                            </div>
+
+                            {/* Body Modal (Scrollable) */}
+                            <div className="overflow-y-auto p-6 md:p-8 space-y-8 text-[#334155] custom-scrollbar bg-white">
+                                <div className="p-4 rounded-xl bg-[#FE951C]/10 border border-[#FE951C]/30 text-sm font-medium text-[#b45309]">
+                                    Việc bạn truy cập và sử dụng nền tảng <strong>TimeLens</strong> đồng nghĩa với việc bạn đồng ý hoàn toàn với các điều khoản dưới đây do <strong>HistAR Team</strong> quy định.
+                                </div>
+
+                                <section className="space-y-3">
+                                    <h4 className="text-base font-black text-[#1E293B] uppercase tracking-wider flex items-center gap-2">
+                                        <MaterialIcon name="extension" className="text-lg text-[#1A79E5]" /> 1. Quyền Sở Hữu Trí Tuệ
+                                    </h4>
+                                    <p className="text-sm font-medium leading-relaxed">
+                                        Tất cả nội dung trên nền tảng bao gồm nhưng không giới hạn ở: <strong>Mô hình 3D (AR Models), không gian Tour 360°, nội dung thuyết minh lịch sử, thiết kế giao diện (UI/UX) và mã nguồn</strong> đều thuộc sở hữu trí tuệ độc quyền của HistAR Team và các đơn vị đối tác cấp phép.
+                                    </p>
+                                    <p className="text-sm font-medium leading-relaxed text-red-600 font-bold">
+                                        Nghiêm cấm mọi hành vi sao chép, trích xuất (scraping) mô hình 3D, dữ liệu API hoặc sử dụng tài sản nền tảng vào mục đích thương mại khi chưa có sự cho phép bằng văn bản.
+                                    </p>
+                                </section>
+
+                                <section className="space-y-3">
+                                    <h4 className="text-base font-black text-[#1E293B] uppercase tracking-wider flex items-center gap-2">
+                                        <MaterialIcon name="psychology" className="text-lg text-[#1A79E5]" /> 2. Giới Hạn Trách Nhiệm Về Trí Tuệ Nhân Tạo (AI)
+                                    </h4>
+                                    <p className="text-sm font-medium leading-relaxed">
+                                        Hệ thống <strong>Trợ Lý Lịch Sử AI</strong> của TimeLens được xây dựng dựa trên kiến trúc RAG (Retrieval-Augmented Generation) kết hợp với các nguồn sử liệu chính thống đã được số hóa. Tuy nhiên:
+                                    </p>
+                                    <ul className="list-disc pl-5 space-y-2 text-sm font-medium text-[#475569]">
+                                        <li>AI có thể thỉnh thoảng sinh ra các câu trả lời không chính xác tuyệt đối. Người dùng (đặc biệt là học sinh) cần tham chiếu các nguồn tài liệu (Cited Sources) đính kèm trong câu trả lời để kiểm chứng.</li>
+                                        <li>Nền tảng không chịu trách nhiệm pháp lý nếu người dùng sử dụng nội dung do AI tạo ra để phục vụ cho các kỳ thi học thuật chính quy có yếu tố bắt buộc về tính tuyệt đối.</li>
+                                    </ul>
+                                </section>
+
+                                <section className="space-y-3">
+                                    <h4 className="text-base font-black text-[#1E293B] uppercase tracking-wider flex items-center gap-2">
+                                        <MaterialIcon name="receipt_long" className="text-lg text-[#1A79E5]" /> 3. Thanh Toán, Cấp Phép & Hoàn Tiền
+                                    </h4>
+                                    <ul className="list-disc pl-5 space-y-2 text-sm font-medium text-[#475569]">
+                                        <li><strong>Đối với tài khoản cá nhân (B2C Premium):</strong> Phí duy trì được tính theo tháng/năm. Không hỗ trợ hoàn tiền cho chu kỳ thanh toán đang diễn ra nếu bạn hủy dịch vụ giữa chừng.</li>
+                                        <li><strong>Đối với tài khoản trường học (B2B Licensing):</strong> Master Account chịu trách nhiệm cấp phát và thu hồi Sub-account đúng với giới hạn của gói (Micro/Standard/Premium). Nếu số lượng CCU (người dùng đồng thời) vượt mức cho phép, hệ thống sẽ tự động đưa người dùng vào hàng chờ.</li>
+                                    </ul>
+                                </section>
+                            </div>
+
+                            {/* Footer Modal */}
+                            <div className="px-6 py-4 border-t border-[#E2E8F0] bg-[#F8FAFC] flex justify-end">
+                                <button onClick={() => setIsTermsOpen(false)} className="px-6 py-2.5 rounded-xl bg-[#FE951C] hover:bg-[#e07d0b] text-white font-black text-xs uppercase tracking-wider transition-all shadow-md">Tôi Đã Hiểu</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
             </div>
         </AuthLayout>
     )

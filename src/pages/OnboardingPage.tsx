@@ -187,23 +187,26 @@ export const OnboardingPage: React.FC = () => {
             <header
                 className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
                     scrolled
-                        ? 'bg-[#FAF8F3]/95 backdrop-blur-xl border-b border-[#E2E8F0] py-3.5 shadow-md'
-                        : 'bg-gradient-to-b from-[#FAF8F3] to-transparent py-6'
+                        ? 'bg-[#FAF8F3]/95 backdrop-blur-xl border-b border-[#E2E8F0] shadow-md'
+                        : 'bg-gradient-to-b from-[#FAF8F3] to-transparent'
                 }`}
             >
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+                {/* Đổi thành w-full và tăng px để đẩy 2 khối dạt sang 2 bên mép */}
+                <div className="w-full mx-auto px-4 sm:px-6 lg:px-12 flex items-center justify-between">
 
-                    <Link to="/" className="flex items-center gap-3 group">
-                        <div className="relative">
-                            <div className="absolute -inset-1 rounded-full bg-gradient-to-tr from-[#FE951C] to-[#1A79E5] blur-sm opacity-60 group-hover:opacity-100 transition-opacity" />
-                            <img src="/brand/icon-192.png" alt="TimeLens" className="relative w-10 h-10 rounded-full border-2 border-[#FE951C] object-cover shadow-sm" />
+                    <Link to="/" className="flex items-center gap-3 sm:gap-4 group">
+                        <div className="relative flex items-center">
+                            {/* Tăng h-16 sm:h-20 thành h-20 sm:h-24 (hoặc h-24 sm:h-28 nếu vẫn muốn to nữa) */}
+                            <img src="/brand/logo-histar.png" alt="HistAR Logo" className="relative h-24 sm:h-28 w-auto object-contain drop-shadow-sm group-hover:scale-105 transition-transform" />
                         </div>
-                        <div className="flex flex-col">
-                            <div className="flex items-center gap-1.5">
-                                <span className="text-xl font-black tracking-tight text-[#1E293B]">TimeLens</span>
-                                <span className="px-1.5 py-0.5 rounded bg-[#1E293B] text-white text-[8px] font-black uppercase tracking-widest">by HistAR</span>
-                            </div>
-                            <span className="text-[10px] font-black text-[#D97706] tracking-widest uppercase -mt-0.5">Heritage EdTech Platform</span>
+
+                        {/* Tăng vạch kẻ dọc từ h-8 lên h-10 hoặc h-12 để cân xứng với logo mới */}
+                        <div className="h-12 w-[2px] bg-[#CBD5E1] rounded-full hidden sm:block"></div>
+
+                        <div className="flex flex-col justify-center">
+                            {/* Bỏ tag "by HistAR" lặp từ, nhấn mạnh tên sản phẩm TimeLens */}
+                            <span className="text-xl sm:text-2xl font-black tracking-tight text-[#1E293B] leading-none">TimeLens</span>
+                            <span className="text-[10px] font-black text-[#D97706] tracking-widest uppercase mt-1">Heritage EdTech Platform</span>
                         </div>
                     </Link>
 
@@ -335,7 +338,7 @@ export const OnboardingPage: React.FC = () => {
 
                     <div className="space-y-8 pt-10 border-t border-[#CBD5E1]">
                         <div className="text-center max-w-3xl mx-auto space-y-3">
-                            <span className="text-xs font-black text-[#1A79E5] tracking-widest uppercase block">CÔNG NGHỆ TOÀN DIỆN (THE 6-LAYER ARCHITECTURE)</span>
+                            <span className="text-xs font-black text-[#1A79E5] tracking-widest uppercase block">CÔNG NGHỆ TOÀN DIỆN</span>
                             <h2 className="text-3xl sm:text-4xl font-black text-[#1E293B] tracking-tight">Sáu Tầng Kiến Trúc Độc Quyền TimeLens</h2>
                             <p className="text-[#64748B] text-sm sm:text-base font-medium">Sự dung hòa hoàn hảo giữa đồ họa không gian, trí tuệ nhân tạo và kết nối thực địa O2O để chuyển hóa trọn vẹn chuyến tham quan lịch sử.</p>
                         </div>
@@ -561,7 +564,7 @@ export const OnboardingPage: React.FC = () => {
                                 <div className="absolute -inset-0.5 bg-gradient-to-r from-[#fe951c] to-[#1a79e5] rounded-2xl blur opacity-60 group-hover:opacity-100 transition duration-500 animate-pulse"></div>
 
                                 <div className="relative px-5 py-3.5 bg-white rounded-xl flex items-center text-sm font-bold text-[#334155] shadow-lg">
-                                    <span className="mr-2 text-lg">💡</span>
+                                    {/*<span className="mr-2 text-lg">💡</span>*/}
                                     <span>
             Chính sách
             <strong className="text-transparent bg-clip-text bg-gradient-to-r from-[#fe951c] to-[#1a79e5] font-black text-base px-1.5 drop-shadow-sm">
@@ -753,11 +756,17 @@ export const OnboardingPage: React.FC = () => {
             <footer className="bg-[#1E293B] text-white py-16">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-10">
                     <div className="space-y-4 md:col-span-2">
-                        <div className="flex items-center gap-3">
-                            <img src="/brand/icon-192.png" alt="Logo" className="w-8 h-8 rounded-full border border-[#FE951C]" />
-                            <span className="text-xl font-black tracking-tight">TimeLens <span className="text-xs text-[#FE951C] font-normal">by HistAR</span></span>
+                        <div className="flex items-center gap-3.5 sm:gap-5">
+                            {/* Tăng mạnh kích thước logo Footer lên h-20 (mobile) và h-24 (desktop) */}
+                            <img src="/brand/logo-histar.png" alt="HistAR Logo" className="h-20 sm:h-24 w-auto object-contain drop-shadow-sm" />
+
+                            {/* Kéo dài vạch kẻ dọc phân tách để cân xứng với logo to */}
+                            <div className="h-10 sm:h-12 w-[2px] bg-gray-600 rounded-full hidden sm:block"></div>
+
+                            {/* Tăng nhẹ size chữ để cân đối với logo */}
+                            <span className="text-xl sm:text-2xl font-black tracking-tight text-white">TimeLens Platform</span>
                         </div>
-                        <p className="text-xs leading-relaxed max-w-sm text-gray-300 font-medium">Nền tảng công nghệ số hóa di sản và du lịch tương tác. Định hình phương thức kết nối mới giữa cộng đồng hiện đại và các giá trị lịch sử văn hóa.</p>
+                        <p className="text-xs leading-relaxed max-w-sm text-gray-300 font-medium mt-2">Nền tảng công nghệ số hóa di sản và du lịch tương tác. Định hình phương thức kết nối mới giữa cộng đồng hiện đại và các giá trị lịch sử văn hóa.</p>
                         <p className="text-[11px] text-gray-400 pt-2 font-semibold">© 2026 HistAR Team (TimeLens Platform). All rights reserved.</p>
                     </div>
 

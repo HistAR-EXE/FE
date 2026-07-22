@@ -85,7 +85,7 @@ const SMART_RECOMMENDATIONS: Record<string, RecommendationCard[]> = {
             reason: '⭐ Ôn tập & Tích lũy XP: Trọng tâm câu hỏi kiểm tra lịch sử chiến thuật Củ Chi.',
             tag: '+50 XP · TRẮC NGHIỆM',
             xp: 50,
-            image: '/media/cu-chi/scenes/bep-hoang-cam-2026.jpg',
+            image: '/media/cu-chi/hotspots/bep-hoang-cam.jpg', // Ảnh đã có sẵn
         },
         {
             unlockKey: 'poi_ham_chong',
@@ -93,7 +93,7 @@ const SMART_RECOMMENDATIONS: Record<string, RecommendationCard[]> = {
             reason: '📚 Tiến độ học tập: Mở khóa cấu tạo 8 loại bẫy du kích tự tạo.',
             tag: '+40 XP · MÔ HÌNH 3D',
             xp: 40,
-            image: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=600&q=80',
+            image: '/media/cu-chi/ham-chong.jpg', // Thay bằng đường dẫn local
         },
         {
             unlockKey: 'poi_lo_thong_hoi',
@@ -101,7 +101,7 @@ const SMART_RECOMMENDATIONS: Record<string, RecommendationCard[]> = {
             reason: '💡 Gợi ý tiếp theo: Bài học về nghệ thuật ngụy trang sinh tồn dưới lòng đất.',
             tag: '+35 XP · TOUR 360°',
             xp: 35,
-            image: 'https://images.unsplash.com/photo-1508804185872-d7badad00f7d?auto=format&fit=crop&w=600&q=80',
+            image: '/media/cu-chi/lo-thong-hoi.jpg', // Thay bằng đường dẫn local
         }
     ],
     research: [
@@ -111,7 +111,7 @@ const SMART_RECOMMENDATIONS: Record<string, RecommendationCard[]> = {
             reason: '🔍 Khảo cứu tư liệu chuyên sâu: Phân tích thông số kỹ thuật độ sâu từ 3m đến 12m.',
             tag: 'SỬ LIỆU RAG · BẢN ĐỒ',
             xp: 60,
-            image: '/media/banner-main.jpg',
+            image: '/media/banner-main.jpg', // Ảnh đã có sẵn
         },
         {
             unlockKey: 'poi_ben_duoc',
@@ -119,7 +119,7 @@ const SMART_RECOMMENDATIONS: Record<string, RecommendationCard[]> = {
             reason: '📜 Khảo cứu kiến trúc: Hồ sơ lưu trữ hơn 45.639 liệt sĩ hy sinh tại vùng đất thép.',
             tag: 'TƯ LIỆU GỐC · 4K',
             xp: 55,
-            image: 'https://images.unsplash.com/photo-1599708153386-62bf3f0b2bd6?auto=format&fit=crop&w=600&q=80',
+            image: '/media/cu-chi/ben-duoc.jpg', // Thay bằng đường dẫn local
         },
         {
             unlockKey: 'poi_xe_tang_m41',
@@ -127,7 +127,7 @@ const SMART_RECOMMENDATIONS: Record<string, RecommendationCard[]> = {
             reason: '⚙️ Khảo cứu vũ khí: Đối chiếu chiến thuật mìn gạt chống tăng của anh hùng Tô Hoài Đức.',
             tag: 'PHÂN TÍCH QUÂN SỰ',
             xp: 45,
-            image: 'https://images.unsplash.com/photo-1518998053901-5348d3961a04?auto=format&fit=crop&w=600&q=80',
+            image: '/media/cu-chi/xe-tang-m41.jpg', // Thay bằng đường dẫn local
         }
     ],
     travel: [
@@ -137,7 +137,7 @@ const SMART_RECOMMENDATIONS: Record<string, RecommendationCard[]> = {
             reason: '🎒 Điểm tham quan nổi bật: Trải nghiệm thực tế tháo lắp và bắn đạn thật quốc phòng.',
             tag: 'CHECK-IN HOT · ONSITE',
             xp: 30,
-            image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=600&q=80',
+            image: '/media/cu-chi/ban-sung.jpg', // Thay bằng đường dẫn local
         },
         {
             unlockKey: 'poi_ham_chui_ben_dinh',
@@ -145,7 +145,7 @@ const SMART_RECOMMENDATIONS: Record<string, RecommendationCard[]> = {
             reason: '📸 Lộ trình check-in: Thử thách đi bộ 50m dưới hầm ngầm nguyên bản.',
             tag: 'THỬ THÁCH THỰC TẾ',
             xp: 45,
-            image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80',
+            image: '/media/cu-chi/chui-ham.jpg', // Thay bằng đường dẫn local
         },
         {
             unlockKey: 'poi_thuong_thuc_khoai_mi',
@@ -153,7 +153,7 @@ const SMART_RECOMMENDATIONS: Record<string, RecommendationCard[]> = {
             reason: '🍵 Ẩm thực di sản: Thưởng thức món ăn đặc trưng nuôi sống quân dân Củ Chi.',
             tag: 'ẨM THỰC · CHECK-IN',
             xp: 25,
-            image: 'https://images.unsplash.com/photo-1583417319070-4a69db38a482?auto=format&fit=crop&w=600&q=80',
+            image: '/media/cu-chi/khoai-mi.jpg', // Thay bằng đường dẫn local
         }
     ]
 }
