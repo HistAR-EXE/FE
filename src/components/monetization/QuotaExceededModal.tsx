@@ -17,7 +17,7 @@ export function QuotaExceededModal({
   onUpgrade,
   pricingHref = '/pricing',
   dailyLimit = 10,
-  priceVnd = 49_000,
+  priceVnd = 79_000,
 }: QuotaExceededModalProps) {
   if (!open) return null
 

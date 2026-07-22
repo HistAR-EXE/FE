@@ -20,7 +20,7 @@ export function CheckoutB2CPage() {
   const [checking, setChecking] = useState(false)
   const [payment, setPayment] = useState<Awaited<ReturnType<typeof billingApi.createB2CPayment>> | null>(null)
   const [status, setStatus] = useState<'PENDING' | 'PAID' | 'FAILED' | 'EXPIRED' | null>(null)
-  const [priceVnd, setPriceVnd] = useState(49_000)
+  const [priceVnd, setPriceVnd] = useState(79_000)
   const [emailVerified, setEmailVerified] = useState<boolean | undefined>(undefined)
   const returnTo = useMemo(() => {
     const next = searchParams.get('next')

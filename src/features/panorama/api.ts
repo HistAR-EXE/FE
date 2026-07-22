@@ -6,7 +6,13 @@ export type Panorama = {
   locationId: string
   imageUrl: string
   title: string
+  areaSlug?: string | null
+  sortOrder?: number | null
+  defaultYaw?: number | null
+  defaultPitch?: number | null
 }
+
+export type MarkerStyle = 'near' | 'far'
 
 export type Hotspot = {
   id: string
@@ -16,6 +22,7 @@ export type Hotspot = {
   type: 'info' | 'scene'
   contentRef: string
   label: string
+  markerStyle?: MarkerStyle | null
   title?: string | null
   description?: string | null
   imageUrl?: string | null

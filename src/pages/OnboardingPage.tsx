@@ -530,7 +530,7 @@ export const OnboardingPage: React.FC = () => {
                                     <div>
                                         <span className="text-xs font-bold text-[#b45309] uppercase tracking-wider block mb-1">Mức giá trải nghiệm</span>
                                         <div className="flex items-baseline gap-1">
-                                            <span className="text-3xl font-black text-[#FE951C]">49.000đ</span>
+                                            <span className="text-3xl font-black text-[#FE951C]">79.000đ</span>
                                             <span className="text-sm font-bold text-[#64748B]">/ tháng</span>
                                         </div>
                                     </div>

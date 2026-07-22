@@ -33,7 +33,7 @@ export function PricingPage() {
   const navigate = useNavigate()
   const { showToast } = useToast()
   const [searchParams] = useSearchParams()
-  const [b2cPrice, setB2cPrice] = useState(49_000)
+  const [b2cPrice, setB2cPrice] = useState(79_000)
   const [chatDailyLimit, setChatDailyLimit] = useState(10)
   const [orgPlans, setOrgPlans] = useState<OrgPlanInfo[]>([])
   const [trialLoading, setTrialLoading] = useState(false)

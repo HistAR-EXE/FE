@@ -29,8 +29,8 @@ export const CU_CHI_SITE_BOUNDS: [[number, number], [number, number]] = [
 export const CU_CHI_TOUR_ROUTE: [number, number][] = [
   [11.143375, 106.462739],
   [11.141561, 106.462417],
-  [11.142989, 106.462806],
   [11.142461, 106.462631],
+  [11.142989, 106.462806],
   [11.140064, 106.462075],
   [11.145428, 106.463394],
   [11.145044, 106.464011],
@@ -68,20 +68,20 @@ export const CU_CHI_TOUR_MAP_PINS: Record<string, CuChiTourMapPin> = {
     detail: 'Đền tưởng niệm Liệt sĩ Bến Dược — kiến trúc mái cong truyền thống',
     routeOrder: 2,
   },
-  /** 3. Căn cứ Bộ Tư lệnh Quân khu Sài Gòn - Gia Định */
-  '22222222-2222-2222-2222-222222222223': {
-    lat: 11.142989,
-    lng: 106.462806,
-    shortLabel: 'Bộ Tư lệnh QK',
-    detail: 'Căn cứ Bộ Tư lệnh QK Sài Gòn - Gia Định — súng, bom đạn, bàn thờ',
-    routeOrder: 3,
-  },
-  /** 4. Khu trưng bày khí tài ngoài trời */
+  /** 3. Khu trưng bày khí tài ngoài trời */
   '22222222-2222-2222-2222-222222222224': {
     lat: 11.142461,
     lng: 106.462631,
     shortLabel: 'Khu trưng bày',
     detail: 'Khu trưng bày — xe tăng, thiết giáp M113, pháo 105mm, máy bay',
+    routeOrder: 3,
+  },
+  /** 4. Căn cứ Bộ Tư lệnh Quân khu Sài Gòn - Gia Định */
+  '22222222-2222-2222-2222-222222222223': {
+    lat: 11.142989,
+    lng: 106.462806,
+    shortLabel: 'Bộ Tư lệnh QK',
+    detail: 'Căn cứ Bộ Tư lệnh QK Sài Gòn - Gia Định — súng, bom đạn, bàn thờ',
     routeOrder: 4,
   },
   /** 5. Căn cứ Khu ủy Quân khu Sài Gòn - Gia Định */

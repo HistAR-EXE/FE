@@ -8,6 +8,8 @@ import { CuChiIllustratedMap } from '../components/panorama/CuChiIllustratedMap'
 import { Tour360Hud } from '../components/panorama/Tour360Hud'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { panoramaApi, type Hotspot, type Panorama } from '../features/panorama/api'
+import { resolveAreaSlug } from '../features/panorama/cuChiAreaMeta'
+import { buildLinkJsonSnippet, fallbackCopyText } from '../features/panorama/tour360Markers'
 import { recordDiscoveryEngagement, preloadDiscoveryBindings } from '../features/gamification/discoveryRouting'
 import { showDiscoveryRecordError } from '../features/gamification/discoveryEngagementToast'
 import { notifyEngagementOutcome } from '../features/gamification/handleEngagement'
@@ -29,6 +31,7 @@ export function Tour360Page() {
     const { locationId } = useParams<{ locationId?: string }>()
     const [searchParams] = useSearchParams()
     const panoramaParam = searchParams.get('panorama')
+    const calibrateMode = searchParams.get('calibrate') === '1'
     const { isAuthenticated, user } = useAuth()
     const activeLocationId = locationId ?? CU_CHI_LOCATION_ID
     const isCuChi = activeLocationId === CU_CHI_LOCATION_ID
@@ -46,6 +49,8 @@ export function Tour360Page() {
     const [menuOpen, setMenuOpen] = useState(false)
     const [immersive, setImmersive] = useState(false)
     const [layoutRevision, setLayoutRevision] = useState(0)
+    const [calibratePoint, setCalibratePoint] = useState<{ yaw: number; pitch: number } | null>(null)
+    const [copyStatus, setCopyStatus] = useState<string | null>(null)
     const [loading, setLoading] = useState(true)
     const { showToast } = useToast()
     const { applyEngagement } = useUserProgress()
@@ -236,6 +241,43 @@ export function Tour360Page() {
         setLayoutRevision((n) => n + 1)
     }, [])
 
+    const onCalibrateClick = useCallback((yaw: number, pitch: number) => {
+        setCalibratePoint({ yaw, pitch })
+        setCopyStatus(null)
+        console.log('[tour360-calibrate]', { panoramaId: activePanoramaId, yaw, pitch })
+    }, [activePanoramaId])
+
+    const handleCopyCalibrateJson = useCallback(() => {
+        if (!calibratePoint || !activePanoramaId) return
+        const areaSlug = resolveAreaSlug(
+            activePanoramaId,
+            activePanorama?.areaSlug,
+        )
+        const snippet = buildLinkJsonSnippet({
+            from: activePanoramaId,
+            to: '<target-panorama-uuid>',
+            markerStyle: calibratePoint.pitch <= -0.3 ? 'far' : 'near',
+            yaw: Number(calibratePoint.yaw.toFixed(4)),
+            pitch: Number(calibratePoint.pitch.toFixed(4)),
+            label: `→ ${areaSlug}`,
+        })
+        const copy = async () => {
+            try {
+                if (navigator.clipboard?.writeText) {
+                    await navigator.clipboard.writeText(snippet)
+                    setCopyStatus('Đã copy JSON vào clipboard')
+                    return
+                }
+            } catch {
+                // Safari / insecure context fallback below
+            }
+            const ok = fallbackCopyText(snippet)
+            setCopyStatus(ok ? 'Đã copy (fallback)' : 'Copy thất bại — xem console')
+            console.log(snippet)
+        }
+        void copy()
+    }, [calibratePoint, activePanoramaId, activePanorama?.areaSlug])
+
     return (
         <AppLayout
             activeBorder="left"
@@ -332,11 +374,40 @@ export function Tour360Page() {
                                 initialPanoramaId={panoramaParam ?? activePanoramaId}
                                 activePanoramaId={activePanoramaId}
                                 layoutRevision={layoutRevision}
+                                calibrateMode={calibrateMode}
+                                onCalibrateClick={onCalibrateClick}
                                 onHotspotSelect={onHotspotSelect}
                                 onPanoramaEnter={onPanoramaEnter}
                                 onLoadError={onLoadError}
                             />
                         </div>
+
+                        {calibrateMode && viewMode === 'panorama' && (
+                            <div className="tour360-calibrate-panel" role="status">
+                                <p className="font-black text-[#fe951c] text-[10px] uppercase tracking-widest">
+                                    Chế độ calibration
+                                </p>
+                                <p className="text-gray-300 mt-1">
+                                    Click vào lối đi trong ảnh để lấy yaw/pitch. Paste JSON vào{' '}
+                                    <code className="text-[#fdb438]">docs/cu-chi-tour-manifest.json</code> rồi chạy pipeline sql.
+                                </p>
+                                {calibratePoint ? (
+                                    <div className="tour360-calibrate-panel__row">
+                                        <code className="text-[11px] text-gray-200">
+                                            yaw {calibratePoint.yaw.toFixed(3)} · pitch {calibratePoint.pitch.toFixed(3)}
+                                        </code>
+                                        <button type="button" onClick={handleCopyCalibrateJson}>
+                                            Copy JSON
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <p className="text-gray-500 mt-2 text-[11px]">Chưa có điểm — click panorama</p>
+                                )}
+                                {copyStatus && (
+                                    <p className="text-emerald-400 text-[11px] mt-2 font-semibold">{copyStatus}</p>
+                                )}
+                            </div>
+                        )}
 
                         <Tour360Hud
                             locationId={locationId}

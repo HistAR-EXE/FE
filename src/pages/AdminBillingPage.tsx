@@ -137,7 +137,7 @@ export function AdminBillingPage() {
                     value={priceInput}
                     onChange={(e) => setPriceInput(e.target.value)}
                     className="w-full rounded-lg border border-outline-variant bg-surface px-md py-sm"
-                    placeholder="49000"
+                    placeholder="79000"
                   />
                 </label>
                 <label className="block text-sm space-y-1">

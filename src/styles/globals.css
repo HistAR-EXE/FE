@@ -1232,19 +1232,158 @@
     background: rgba(254, 149, 28, 0.2);
 }
 
-.vt-info-marker {
+.tour360-ground-arrow {
+    display: block;
+    cursor: pointer;
+    pointer-events: auto;
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+}
+
+.tour360-ground-arrow:hover,
+.tour360-ground-arrow:active {
+    opacity: 1;
+}
+
+.tour360-ground-arrow__hitbox {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    min-width: 56px;
+    min-height: 56px;
+    width: 96px;
+    height: 96px;
+    box-sizing: border-box;
+    padding: 4px;
+}
+
+.tour360-ground-arrow__visual {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 6px 10px;
-    border-radius: 999px;
-    background: rgba(24, 26, 36, 0.85);
-    border: 1px solid rgba(254, 149, 28, 0.55);
-    color: #fdb438;
-    font-family: 'Montserrat', 'Be Vietnam Pro', sans-serif;
+    transform: perspective(600px) rotateX(58deg);
+    transform-origin: center bottom;
+    transition: transform 0.2s ease;
+}
+
+.tour360-ground-arrow:hover .tour360-ground-arrow__visual,
+.tour360-ground-arrow:active .tour360-ground-arrow__visual {
+    transform: perspective(600px) rotateX(58deg) scale(1.1);
+}
+
+.tour360-ground-arrow__disc {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.82);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+    color: #4a4a4a;
+}
+
+.tour360-ground-arrow__chevron {
+    width: 38px;
+    height: 38px;
+    display: block;
+    margin-top: -4px;
+}
+
+.tour360-viewer .psv-virtual-tour-link {
+    filter: none !important;
+}
+
+.tour360-menu__list--areas {
+    gap: 6px;
+}
+
+.tour360-menu__area {
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.tour360-menu__area-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 12px;
+    text-align: left;
+    color: #e5e7eb;
+    font-size: 12px;
+    cursor: pointer;
+    background: transparent;
+    border: none;
+}
+
+.tour360-menu__area-head:hover,
+.tour360-menu__area-head.is-open {
+    background: rgba(254, 149, 28, 0.08);
+}
+
+.tour360-menu__station {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #fe951c, #fdb438);
+    color: #111;
     font-size: 11px;
-    font-weight: 600;
-    white-space: nowrap;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+    font-weight: 900;
+    flex-shrink: 0;
+}
+
+.tour360-menu__sublist {
+    list-style: none;
+    margin: 0;
+    padding: 0 8px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.tour360-menu__item--sub {
+    padding-left: 36px;
+    font-size: 11px;
+}
+
+.tour360-calibrate-panel {
+    position: absolute;
+    bottom: 88px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 55;
+    width: min(92vw, 420px);
+    padding: 12px 14px;
+    border-radius: 16px;
+    border: 1px solid rgba(254, 149, 28, 0.45);
+    background: rgba(15, 16, 21, 0.92);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.65);
+    color: #e5e7eb;
+    font-size: 12px;
+}
+
+.tour360-calibrate-panel__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.tour360-calibrate-panel button {
+    padding: 8px 12px;
+    border-radius: 10px;
+    border: none;
+    background: linear-gradient(135deg, #fe951c, #fdb438);
+    color: #111;
+    font-weight: 800;
+    font-size: 11px;
     cursor: pointer;
 }

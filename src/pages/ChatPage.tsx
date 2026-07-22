@@ -156,7 +156,7 @@ export function ChatPage() {
     const [quotaModalOpen, setQuotaModalOpen] = useState(false)
     const [orgQuotaModalOpen, setOrgQuotaModalOpen] = useState(false)
     const [orgUpgradePackage, setOrgUpgradePackage] = useState<string | null>(null)
-    const [b2cPriceVnd, setB2cPriceVnd] = useState(49_000)
+    const [b2cPriceVnd, setB2cPriceVnd] = useState(79_000)
     const [dailyChatLimit, setDailyChatLimit] = useState(10)
     const [premiumBannerDismissed, setPremiumBannerDismissed] = useState(
         () => sessionStorage.getItem('premiumBannerDismissed') === '1',

@@ -1,10 +1,16 @@
 // src/components/panorama/VirtualTourViewer.tsx
 import { useEffect, useRef } from 'react'
 import { images } from '../../assets/images'
-import type { Hotspot, Panorama } from '../../features/panorama/api'
+import type { Hotspot, MarkerStyle, Panorama } from '../../features/panorama/api'
+import { resolveAreaSlug } from '../../features/panorama/cuChiAreaMeta'
+import { isHotspotInView } from '../../features/panorama/panoAngles'
+import { computeArrivalView } from '../../features/panorama/panoArrivalView'
+import { markerHtmlForStyle, type SceneMarkerData } from '../../features/panorama/tour360Markers'
 import { resolveSceneLinkNodeId } from '../../features/gamification/discoveryLayer'
 
-const CU_CHI_ENTRANCE_ID = '22222222-2222-2222-2222-222222222222'
+const CU_CHI_ENTRANCE_ID = '22222222-2222-2222-2222-222222222221'
+
+type MarkerSelectData = Hotspot | SceneMarkerData
 
 function hotspotPosition(yaw: number, pitch: number) {
     return { yaw, pitch }
@@ -23,12 +29,32 @@ function resolvePanoramaUrl(imageUrl: string | undefined): string {
     return `${window.location.origin}${normalized}`
 }
 
+function resolveMarkerStyle(
+    hotspot: Hotspot,
+    currentAreaSlug: string,
+    targetAreaSlug: string,
+): MarkerStyle {
+    if (hotspot.markerStyle === 'near' || hotspot.markerStyle === 'far') {
+        return hotspot.markerStyle
+    }
+    if (hotspot.pitch <= -0.3) return 'far'
+    return currentAreaSlug === targetAreaSlug ? 'near' : 'far'
+}
+
+type NearMarkerMeta = {
+    id: string
+    yaw: number
+    areaSlug: string
+}
+
 type VirtualTourViewerProps = {
     panoramas: Panorama[]
     hotspotsByPanorama: Record<string, Hotspot[]>
     initialPanoramaId?: string | null
     activePanoramaId?: string | null
     layoutRevision?: number
+    calibrateMode?: boolean
+    onCalibrateClick?: (yaw: number, pitch: number) => void
     onHotspotSelect?: (hotspot: Hotspot) => void
     onPanoramaEnter?: (panoramaId: string) => void
     onLoadError?: (message: string) => void
@@ -36,39 +62,60 @@ type VirtualTourViewerProps = {
 }
 
 export function VirtualTourViewer({
-                                      panoramas,
-                                      hotspotsByPanorama,
-                                      initialPanoramaId,
-                                      activePanoramaId,
-                                      layoutRevision = 0,
-                                      onHotspotSelect,
-                                      onPanoramaEnter,
-                                      onLoadError,
-                                      className = '',
-                                  }: VirtualTourViewerProps) {
+    panoramas,
+    hotspotsByPanorama,
+    initialPanoramaId,
+    activePanoramaId,
+    layoutRevision = 0,
+    calibrateMode = false,
+    onCalibrateClick,
+    onHotspotSelect,
+    onPanoramaEnter,
+    onLoadError,
+    className = '',
+}: VirtualTourViewerProps) {
     const containerRef = useRef<HTMLDivElement | null>(null)
-    const viewerRef = useRef<{ destroy: () => void; resize: (size: { width: string; height: string }) => void } | null>(null)
+    const viewerRef = useRef<{
+        destroy: () => void
+        resize: (size: { width: string; height: string }) => void
+        getPosition: () => { yaw: number; pitch: number }
+        rotate: (p: { yaw?: number; pitch?: number }) => void
+        state: { hFov: number }
+    } | null>(null)
+    const markersPluginRef = useRef<{
+        showMarker: (id: string) => void
+        hideMarker: (id: string) => void
+    } | null>(null)
     const startNodeIdRef = useRef<string | null>(initialPanoramaId ?? null)
     const tourPluginRef = useRef<{ setCurrentNode: (id: string) => Promise<boolean> } | null>(null)
     const lastNodeRef = useRef<string | null>(null)
+    const rafRef = useRef<number | null>(null)
+    const disposedRef = useRef(false)
+    const nearMarkersRef = useRef<NearMarkerMeta[]>([])
+    const panoramaByIdRef = useRef<Map<string, Panorama>>(new Map())
+    const pendingArrivalRef = useRef<{ yaw: number; pitch: number } | null>(null)
 
     const onPanoramaEnterRef = useRef(onPanoramaEnter)
     const onHotspotSelectRef = useRef(onHotspotSelect)
     const onLoadErrorRef = useRef(onLoadError)
+    const onCalibrateClickRef = useRef(onCalibrateClick)
 
-    // [FIX ESLINT]: Tất cả thao tác gán ref.current phải nằm trong useEffect
     useEffect(() => {
         onPanoramaEnterRef.current = onPanoramaEnter
         onHotspotSelectRef.current = onHotspotSelect
         onLoadErrorRef.current = onLoadError
-    }, [onPanoramaEnter, onHotspotSelect, onLoadError])
+        onCalibrateClickRef.current = onCalibrateClick
+    }, [onPanoramaEnter, onHotspotSelect, onLoadError, onCalibrateClick])
 
-    // [FIX ESLINT]: Thiết lập giá trị startNodeIdRef lần đầu trong useEffect
     useEffect(() => {
         if (startNodeIdRef.current === null && initialPanoramaId) {
             startNodeIdRef.current = initialPanoramaId
         }
     }, [initialPanoramaId])
+
+    useEffect(() => {
+        panoramaByIdRef.current = new Map(panoramas.map((p) => [p.id, p]))
+    }, [panoramas])
 
     const resizeViewer = () => {
         const el = containerRef.current
@@ -79,10 +126,22 @@ export function VirtualTourViewer({
         viewer.resize({ width: `${width}px`, height: `${height}px` })
     }
 
+    const refreshNearMarkerVisibility = (viewerYaw: number, hFovRad: number, currentAreaSlug: string) => {
+        const mp = markersPluginRef.current
+        if (!mp) return
+        for (const meta of nearMarkersRef.current) {
+            const visible =
+                meta.areaSlug === currentAreaSlug && isHotspotInView(meta.yaw, viewerYaw, hFovRad)
+            if (visible) mp.showMarker(meta.id)
+            else mp.hideMarker(meta.id)
+        }
+    }
+
     useEffect(() => {
         if (!containerRef.current || panoramas.length === 0) return
 
         let cancelled = false
+        disposedRef.current = false
 
         const init = async () => {
             const [{ Viewer, EquirectangularAdapter }, { VirtualTourPlugin }, { MarkersPlugin }] =
@@ -101,30 +160,53 @@ export function VirtualTourViewer({
             if (cancelled || !containerRef.current) return
 
             const panoramaIds = panoramas.map((p) => p.id)
+            const panoMap = new Map(panoramas.map((p) => [p.id, p]))
+            nearMarkersRef.current = []
 
             const nodes = panoramas.map((panorama) => {
+                const currentArea = resolveAreaSlug(panorama.id, panorama.areaSlug)
                 const hotspots = hotspotsByPanorama[panorama.id] ?? []
-                const sceneLinks = hotspots
-                    .filter((h) => h.type === 'scene' && h.contentRef)
-                    .map((h) => ({
-                        nodeId: resolveSceneLinkNodeId(h.contentRef, panoramaIds),
+
+                const nodeMarkers = hotspots
+                    .filter((h) => h.type !== 'info')
+                    .map((h) => {
+                    const nodeId = resolveSceneLinkNodeId(h.contentRef, panoramaIds)
+                    const target = panoMap.get(nodeId)
+                    const targetArea = target
+                        ? resolveAreaSlug(target.id, target.areaSlug)
+                        : 'unknown'
+                    const style = resolveMarkerStyle(h, currentArea, targetArea)
+                    const markerId = `scene:${h.id}`
+
+                    if (style === 'near') {
+                        nearMarkersRef.current.push({
+                            id: markerId,
+                            yaw: h.yaw,
+                            areaSlug: currentArea,
+                        })
+                    }
+
+                    return {
+                        id: markerId,
                         position: hotspotPosition(h.yaw, h.pitch),
-                        name: h.label?.trim() || undefined,
-                    }))
+                        html: markerHtmlForStyle(style),
+                        anchor: 'center bottom' as const,
+                        size: { width: 96, height: 96 },
+                        data: {
+                            kind: 'scene',
+                            targetId: nodeId,
+                            hotspot: h,
+                            style,
+                        } satisfies SceneMarkerData,
+                    }
+                })
 
                 return {
                     id: panorama.id,
                     panorama: resolvePanoramaUrl(panorama.imageUrl),
                     name: panorama.title,
-                    links: sceneLinks,
-                    markers: hotspots
-                        .filter((h) => h.type === 'info')
-                        .map((h) => ({
-                            id: h.id,
-                            position: hotspotPosition(h.yaw, h.pitch),
-                            html: `<div class="vt-info-marker"><span>${h.label}</span></div>`,
-                            data: h,
-                        })),
+                    links: [],
+                    markers: nodeMarkers,
                 }
             })
 
@@ -154,7 +236,8 @@ export function VirtualTourViewer({
                         {
                             nodes,
                             startNodeId,
-                            showLinkTooltip: true,
+                            showLinkTooltip: false,
+                            linksOnCompass: false,
                             transitionOptions: { showLoader: true, speed: '20rpm' },
                         },
                     ],
@@ -165,27 +248,106 @@ export function VirtualTourViewer({
                 onLoadErrorRef.current?.('Không tải được ảnh panorama. Kiểm tra file media.')
             })
 
-            const markers = viewer.getPlugin(MarkersPlugin)
-            if (markers) {
-                markers.addEventListener('select-marker', ({ marker }: { marker: { data?: Hotspot } }) => {
-                    if (marker?.data) onHotspotSelectRef.current?.(marker.data)
+            if (calibrateMode) {
+                viewer.addEventListener('click', (event: { data?: { yaw?: number; pitch?: number } }) => {
+                    const yaw = event.data?.yaw
+                    const pitch = event.data?.pitch
+                    if (yaw != null && pitch != null) {
+                        onCalibrateClickRef.current?.(yaw, pitch)
+                    }
                 })
             }
+
+            const markers = viewer.getPlugin(MarkersPlugin) as unknown as {
+                addEventListener: (type: string, fn: (e: { marker: { data?: MarkerSelectData } }) => void) => void
+                showMarker: (id: string) => void
+                hideMarker: (id: string) => void
+            } | null
+
+            markersPluginRef.current = markers
+
+            if (markers) {
+                markers.addEventListener('select-marker', ({ marker }: { marker: { data?: MarkerSelectData } }) => {
+                    const data = marker?.data
+                    if (!data) return
+                    if ('kind' in data && data.kind === 'scene') {
+                        const fromId = lastNodeRef.current
+                        const targetId = data.targetId
+                        const destPano = panoramaByIdRef.current.get(targetId)
+                        const destHotspots = hotspotsByPanorama[targetId] ?? []
+                        if (fromId && destPano) {
+                            pendingArrivalRef.current = computeArrivalView(
+                                fromId,
+                                data.hotspot,
+                                destHotspots,
+                                panoramaIds,
+                                destPano,
+                            )
+                        } else {
+                            pendingArrivalRef.current = null
+                        }
+                        void tourPluginRef.current?.setCurrentNode(targetId).catch(() => {
+                            onLoadErrorRef.current?.('Không chuyển được scene.')
+                        })
+                        return
+                    }
+                    onHotspotSelectRef.current?.(data as Hotspot)
+                })
+            }
+
+            const onPositionUpdated = () => {
+                if (disposedRef.current || cancelled) return
+                if (rafRef.current !== null) return
+                rafRef.current = requestAnimationFrame(() => {
+                    rafRef.current = null
+                    if (disposedRef.current || cancelled) return
+                    const v = viewerRef.current
+                    if (!v) return
+                    const { yaw } = v.getPosition()
+                    const nodeId = lastNodeRef.current
+                    const pano = nodeId ? panoramaByIdRef.current.get(nodeId) : undefined
+                    const area = pano ? resolveAreaSlug(pano.id, pano.areaSlug) : ''
+                    refreshNearMarkerVisibility(yaw, v.state.hFov, area)
+                })
+            }
+
+            viewer.addEventListener('position-updated', onPositionUpdated)
 
             const tour = viewer.getPlugin(VirtualTourPlugin) as unknown as {
                 addEventListener: (type: string, fn: (e: { node: { id: string } }) => void) => void
                 setCurrentNode: (id: string) => Promise<boolean>
             } | null
+
+            const applyDefaultView = (nodeId: string) => {
+                const pano = panoramaByIdRef.current.get(nodeId)
+                if (!pano) return
+                const yaw = pano.defaultYaw ?? 0
+                const pitch = pano.defaultPitch ?? 0
+                viewer.rotate({ yaw, pitch })
+            }
+
             if (tour) {
                 tourPluginRef.current = tour
                 tour.addEventListener('node-changed', (event) => {
                     if (event?.node?.id) {
                         lastNodeRef.current = event.node.id
+                        const pending = pendingArrivalRef.current
+                        if (pending) {
+                            pendingArrivalRef.current = null
+                            viewer.rotate({ yaw: pending.yaw, pitch: pending.pitch })
+                        } else {
+                            applyDefaultView(event.node.id)
+                        }
                         onPanoramaEnterRef.current?.(event.node.id)
+                        const { yaw } = viewer.getPosition()
+                        const pano = panoramaByIdRef.current.get(event.node.id)
+                        const area = pano ? resolveAreaSlug(pano.id, pano.areaSlug) : ''
+                        refreshNearMarkerVisibility(yaw, viewer.state.hFov, area)
                     }
                 })
                 if (startNodeId) {
                     lastNodeRef.current = startNodeId
+                    applyDefaultView(startNodeId)
                     onPanoramaEnterRef.current?.(startNodeId)
                 }
             }
@@ -195,23 +357,47 @@ export function VirtualTourViewer({
             requestAnimationFrame(() => {
                 if (!cancelled) resizeViewer()
             })
+
+            return () => {
+                disposedRef.current = true
+                if (rafRef.current !== null) {
+                    cancelAnimationFrame(rafRef.current)
+                    rafRef.current = null
+                }
+                viewer.removeEventListener('position-updated', onPositionUpdated)
+            }
         }
 
-        init().catch(() => {
-            onLoadErrorRef.current?.('Không khởi tạo được trình xem 360°.')
-        })
+        let cleanupPosition: (() => void) | undefined
+
+        init()
+            .then((cleanup) => {
+                cleanupPosition = cleanup
+            })
+            .catch(() => {
+                onLoadErrorRef.current?.('Không khởi tạo được trình xem 360°.')
+            })
 
         return () => {
             cancelled = true
+            disposedRef.current = true
+            cleanupPosition?.()
+            if (rafRef.current !== null) {
+                cancelAnimationFrame(rafRef.current)
+                rafRef.current = null
+            }
             tourPluginRef.current = null
+            markersPluginRef.current = null
             lastNodeRef.current = null
+            nearMarkersRef.current = []
+            pendingArrivalRef.current = null
             viewerRef.current?.destroy()
             viewerRef.current = null
             if (containerRef.current) {
                 containerRef.current.replaceChildren()
             }
         }
-    }, [panoramas, hotspotsByPanorama])
+    }, [panoramas, hotspotsByPanorama, calibrateMode])
 
     useEffect(() => {
         const el = containerRef.current

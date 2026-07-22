@@ -1,7 +1,9 @@
 // src/components/panorama/Tour360Hud.tsx
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import type { Hotspot, Panorama } from '../../features/panorama/api'
+import { groupPanoramasByArea } from '../../features/panorama/cuChiAreaMeta'
 import { CU_CHI_LOCATION_ID } from '../../shared/config/constants'
 import { buildArUrl } from '../../features/ar/arDeepLink'
 import { getArSceneByPanoramaId } from '../../features/ar/cuChiArScenes'
@@ -39,6 +41,28 @@ export function Tour360Hud({
   onToggleMenu,
 }: Tour360HudProps) {
   const isCuChi = locationId === CU_CHI_LOCATION_ID
+  const areaGroups = useMemo(
+    () => (isCuChi ? groupPanoramasByArea(panoramas) : null),
+    [isCuChi, panoramas],
+  )
+  const [openAreas, setOpenAreas] = useState<Set<string>>(() => new Set())
+
+  const toggleArea = (slug: string) => {
+    setOpenAreas((prev) => {
+      const next = new Set(prev)
+      if (next.has(slug)) next.delete(slug)
+      else next.add(slug)
+      return next
+    })
+  }
+
+  const isAreaOpen = (slug: string, routeOrder: number) =>
+    openAreas.has(slug) || routeOrder <= 2 || slug === activePanorama?.areaSlug
+
+  const handleSelectScene = (id: string) => {
+    onSelectPanorama(id)
+    onToggleMenu()
+  }
 
   return (
     <>
@@ -129,23 +153,71 @@ export function Tour360Hud({
               </button>
             )}
 
-            <ul className="tour360-menu__list">
-              {panoramas.map((p) => (
-                <li key={p.id}>
-                  <button
-                    type="button"
-                    className={`tour360-menu__item ${activePanoramaId === p.id ? 'is-active' : ''}`}
-                    onClick={() => {
-                      onSelectPanorama(p.id)
-                      onToggleMenu()
-                    }}
-                  >
-                    <MaterialIcon name="panorama" className="text-base shrink-0" />
-                    <span>{p.title}</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
+            {isCuChi && areaGroups ? (
+              <ul className="tour360-menu__list tour360-menu__list--areas">
+                {areaGroups.map((group) => {
+                  const expanded = isAreaOpen(group.areaSlug, group.routeOrder)
+                  const multiScene = group.scenes.length > 1
+                  return (
+                    <li key={group.areaSlug} className="tour360-menu__area">
+                      <button
+                        type="button"
+                        className={`tour360-menu__area-head ${expanded ? 'is-open' : ''}`}
+                        onClick={() => (multiScene ? toggleArea(group.areaSlug) : handleSelectScene(group.scenes[0]!.id))}
+                        aria-expanded={multiScene ? expanded : undefined}
+                      >
+                        <span className="tour360-menu__station">{group.routeOrder}</span>
+                        <span className="flex-1 min-w-0 text-left">
+                          <span className="block font-bold truncate">{group.label}</span>
+                          {multiScene && (
+                            <span className="block text-[10px] text-gray-400 font-medium">
+                              {group.scenes.length} góc nhìn
+                            </span>
+                          )}
+                        </span>
+                        {multiScene && (
+                          <MaterialIcon
+                            name={expanded ? 'expand_less' : 'expand_more'}
+                            className="text-base shrink-0 opacity-70"
+                          />
+                        )}
+                      </button>
+                      {multiScene && expanded && (
+                        <ul className="tour360-menu__sublist">
+                          {group.scenes.map((p) => (
+                            <li key={p.id}>
+                              <button
+                                type="button"
+                                className={`tour360-menu__item tour360-menu__item--sub ${activePanoramaId === p.id ? 'is-active' : ''}`}
+                                onClick={() => handleSelectScene(p.id)}
+                              >
+                                <MaterialIcon name="panorama" className="text-base shrink-0" />
+                                <span>{p.title}</span>
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </li>
+                  )
+                })}
+              </ul>
+            ) : (
+              <ul className="tour360-menu__list">
+                {panoramas.map((p) => (
+                  <li key={p.id}>
+                    <button
+                      type="button"
+                      className={`tour360-menu__item ${activePanoramaId === p.id ? 'is-active' : ''}`}
+                      onClick={() => handleSelectScene(p.id)}
+                    >
+                      <MaterialIcon name="panorama" className="text-base shrink-0" />
+                      <span>{p.title}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
 
             {activeInfoHotspots.length > 0 && (
               <>
