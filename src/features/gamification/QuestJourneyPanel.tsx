@@ -73,6 +73,10 @@ export function QuestJourneyPanel({
                 <MaterialIcon name="radar" className="text-[#fe951c] text-3xl drop-shadow-[0_0_8px_#fe951c]" />
                 TIẾN TRÌNH CHIẾN DỊCH
             </h3>
+            <p data-testid="quest-step-progress" className="mb-6 text-sm font-bold text-[#fdb438]">
+                Bước {status === 'completed' ? steps.length : Math.min(currentStep + 1, steps.length)}/{steps.length}
+                {status === 'not_started' ? ' · chưa bắt đầu' : status === 'completed' ? ' · hoàn thành' : ' · đang làm'}
+            </p>
 
             <div className="relative space-y-6 md:space-y-10">
                 {/* Trục năng lượng chưa kích hoạt */}

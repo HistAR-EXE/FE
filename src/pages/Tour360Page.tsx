@@ -212,6 +212,17 @@ export function Tour360Page() {
         [panoramas, activePanoramaId],
     )
 
+    const orderedPanoramas = useMemo(
+        () => [...panoramas].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0)),
+        [panoramas],
+    )
+
+    const sceneIndex = useMemo(() => {
+        if (!activePanorama) return -1
+        const idx = orderedPanoramas.findIndex((p) => p.id === activePanorama.id)
+        return idx < 0 ? 0 : idx
+    }, [activePanorama, orderedPanoramas])
+
     const activeInfoHotspots = useMemo(() => {
         if (!activePanorama) return []
         return (hotspotsByPanorama[activePanorama.id] ?? []).filter((h) => h.type === 'info')
@@ -406,6 +417,39 @@ export function Tour360Page() {
                                 {copyStatus && (
                                     <p className="text-emerald-400 text-[11px] mt-2 font-semibold">{copyStatus}</p>
                                 )}
+                            </div>
+                        )}
+
+                        {viewMode === 'panorama' && orderedPanoramas.length > 0 && (
+                            <div
+                                data-testid="tour360-scene-progress"
+                                className="absolute bottom-6 left-1/2 z-40 flex -translate-x-1/2 items-center gap-2 rounded-full border border-white/15 bg-[#161824]/95 px-2 py-1 shadow-lg backdrop-blur"
+                            >
+                                <button
+                                    type="button"
+                                    className="rounded-full px-3 py-1 text-xs font-black text-white disabled:opacity-30"
+                                    disabled={sceneIndex <= 0}
+                                    onClick={() => {
+                                        const prev = orderedPanoramas[sceneIndex - 1]
+                                        if (prev) handleSelectPanorama(prev.id)
+                                    }}
+                                >
+                                    Trước
+                                </button>
+                                <span className="text-xs font-black text-[#fdb438]">
+                                    Scene {sceneIndex + 1}/{orderedPanoramas.length}
+                                </span>
+                                <button
+                                    type="button"
+                                    className="rounded-full px-3 py-1 text-xs font-black text-white disabled:opacity-30"
+                                    disabled={sceneIndex >= orderedPanoramas.length - 1}
+                                    onClick={() => {
+                                        const next = orderedPanoramas[sceneIndex + 1]
+                                        if (next) handleSelectPanorama(next.id)
+                                    }}
+                                >
+                                    Sau
+                                </button>
                             </div>
                         )}
 

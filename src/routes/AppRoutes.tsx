@@ -40,6 +40,8 @@ import { AdminOrganizationsPage } from '../pages/AdminOrganizationsPage'
 import { AdminUsersPage } from '../pages/AdminUsersPage'
 import { GroupHubPage } from '../pages/GroupHubPage'
 import { GroupProgressPage } from '../pages/GroupProgressPage'
+import { PrivacyPage } from '../pages/PrivacyPage'
+import { TermsPage } from '../pages/TermsPage'
 import { AdminRoute } from '../shared/router/AdminRoute'
 import { AuthRoute } from '../shared/router/AuthRoute'
 import { EmailVerifiedRoute } from '../shared/router/EmailVerifiedRoute'
@@ -69,6 +71,8 @@ export function AppRoutes() {
         {/* Action exceptions — external links */}
         <Route path="/verify-email" element={<VerifyEmailPage />} />
         <Route path="/join" element={<JoinPage />} />
+        <Route path="/privacy" element={<PrivacyPage />} />
+        <Route path="/terms" element={<TermsPage />} />
 
         {/* Protected — login required */}
         <Route element={<ProtectedRoute />}>
