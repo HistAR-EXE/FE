@@ -7,6 +7,7 @@ import { isHotspotInView } from '../../features/panorama/panoAngles'
 import { computeArrivalView } from '../../features/panorama/panoArrivalView'
 import { markerHtmlForStyle, type SceneMarkerData } from '../../features/panorama/tour360Markers'
 import { resolveSceneLinkNodeId } from '../../features/gamification/discoveryLayer'
+import { resolveMediaUrl } from '../../shared/config/env'
 
 const CU_CHI_ENTRANCE_ID = '22222222-2222-2222-2222-222222222221'
 
@@ -26,7 +27,7 @@ function resolvePanoramaUrl(imageUrl: string | undefined): string {
     }
     const path = trimmed.startsWith('/') ? trimmed : `/${trimmed}`
     const normalized = path.replace(/\.png$/i, '.jpg')
-    return `${window.location.origin}${normalized}`
+    return resolveMediaUrl(normalized)
 }
 
 function resolveMarkerStyle(

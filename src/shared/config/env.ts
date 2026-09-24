@@ -19,9 +19,29 @@ if (isProdBuild && /localhost|127\.0\.0\.1/i.test(apiUrl)) {
   )
 }
 
+const mediaBaseUrl = (env.VITE_MEDIA_BASE_URL ?? '').trim().replace(/\/$/, '')
+
+/**
+ * Prefix `/media/...` (and other relative paths) with VITE_MEDIA_BASE_URL when set.
+ * When unset, resolve against the current origin so Vercel static hosting stays unchanged.
+ * Absolute http(s) URLs are returned as-is.
+ */
+export function resolveMediaUrl(path: string | null | undefined): string {
+  const trimmed = (path ?? '').trim()
+  if (!trimmed) return ''
+  if (/^https?:\/\//i.test(trimmed)) return trimmed
+  const normalized = trimmed.startsWith('/') ? trimmed : `/${trimmed}`
+  if (mediaBaseUrl) return `${mediaBaseUrl}${normalized}`
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    return `${window.location.origin}${normalized}`
+  }
+  return normalized
+}
+
 export const appEnv = {
   apiUrl: apiUrl || '',
   aiUrl: aiUrl || '',
+  mediaBaseUrl,
   isProdBuild,
   demoEnabled: env.VITE_DEMO_ENABLED === 'true',
   demoMode: env.VITE_DEMO_MODE === 'true',

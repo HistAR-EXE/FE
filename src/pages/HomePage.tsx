@@ -6,6 +6,7 @@ import { HomeTopNav } from '../components/layout/TopNav'
 import { demoApi, type Ready } from '../features/demo/api'
 import { profileApi, type ProfileMe } from '../features/profile/api'
 import { CU_CHI_LOCATION_ID } from '../shared/config/constants'
+import { resolveMediaUrl } from '../shared/config/env'
 import { buildChatPath } from '../features/chat/chatRoute'
 import { useAppMode } from '../shared/context/useAppMode'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
@@ -332,7 +333,7 @@ export function HomePage() {
 
                 {/* --- THẺ TỔNG QUAN ĐỊA ĐIỂM SỬ DỤNG CU_CHI_HERO --- */}
                 <section className="relative rounded-3xl overflow-hidden border border-white/15 bg-[#161824] shadow-xl">
-                    <div className="absolute inset-0 opacity-25 bg-cover bg-center pointer-events-none" style={{ backgroundImage: `url('${CU_CHI_HERO}')` }} />
+                    <div className="absolute inset-0 opacity-25 bg-cover bg-center pointer-events-none" style={{ backgroundImage: `url('${resolveMediaUrl(CU_CHI_HERO)}')` }} />
                     <div className="absolute inset-0 bg-gradient-to-r from-[#161824] via-[#161824]/90 to-transparent pointer-events-none" />
 
                     <div className="relative z-10 p-6 sm:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
@@ -393,7 +394,7 @@ export function HomePage() {
                             >
                                 <div>
                                     <div className="h-44 relative overflow-hidden bg-black">
-                                        <img src={item.image} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 brightness-85 group-hover:brightness-100" />
+                                        <img src={resolveMediaUrl(item.image)} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 brightness-85 group-hover:brightness-100" />
                                         <div className="absolute inset-0 bg-gradient-to-t from-[#161824] via-transparent to-transparent" />
                                         <span className="absolute top-3 left-3 px-3 py-1 rounded-full bg-black/70 backdrop-blur-md border border-white/15 text-[10px] font-black text-[#fdb438] uppercase tracking-wider">
                                             {item.tag}

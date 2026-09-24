@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
+import { resolveMediaUrl } from '../config/env'
 import { isPlaceholderImage } from '../media/isPlaceholderImage'
 
 type SmartImageProps = {
@@ -33,18 +34,20 @@ export function SmartImage({
   onLoad,
   onFailed,
 }: SmartImageProps) {
-  const initial = src && !isPlaceholderImage(src) ? src : fallback
+  const resolvedSrc = src ? resolveMediaUrl(src) : src
+  const resolvedFallback = fallback ? resolveMediaUrl(fallback) : fallback
+  const initial = resolvedSrc && !isPlaceholderImage(resolvedSrc) ? resolvedSrc : resolvedFallback
   const [url, setUrl] = useState(initial)
   const [failed, setFailed] = useState(false)
 
   useEffect(() => {
     setFailed(false)
-    if (src && !isPlaceholderImage(src)) {
-      setUrl(src)
+    if (resolvedSrc && !isPlaceholderImage(resolvedSrc)) {
+      setUrl(resolvedSrc)
       return
     }
-    setUrl(fallback)
-  }, [src, fallback])
+    setUrl(resolvedFallback)
+  }, [resolvedSrc, resolvedFallback])
 
   const handleError = () => {
     if (!url) {
@@ -57,8 +60,8 @@ export function SmartImage({
       setUrl(swapped)
       return
     }
-    if (fallback && url !== fallback) {
-      setUrl(fallback)
+    if (resolvedFallback && url !== resolvedFallback) {
+      setUrl(resolvedFallback)
       return
     }
     setFailed(true)

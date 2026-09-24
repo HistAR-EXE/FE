@@ -7,6 +7,7 @@ import {
     CU_CHI_MAP_IMAGE,
 } from '../../features/panorama/cuChiIllustratedMapPins'
 import { MaterialIcon } from '../ui/MaterialIcon'
+import { resolveMediaUrl } from '../../shared/config/env'
 
 const MAP_W = 2361
 const MAP_H = 1663
@@ -63,7 +64,7 @@ export function CuChiIllustratedMap({
                     }}
                 >
                     <img
-                        src={CU_CHI_MAP_IMAGE}
+                        src={resolveMediaUrl(CU_CHI_MAP_IMAGE)}
                         alt="Sơ đồ Khu di tích Địa đạo Củ Chi — Bến Dược"
                         className="absolute inset-0 w-full h-full object-fill filter contrast-105"
                         draggable={false}

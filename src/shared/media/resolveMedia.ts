@@ -1,4 +1,5 @@
 import { images } from '../../assets/images'
+import { resolveMediaUrl } from '../config/env'
 import { isPlaceholderImage } from './isPlaceholderImage'
 
 /** Curated /media paths from cu-chi-asset-manifest — SmartImage falls back to stitch URLs if missing. */
@@ -39,17 +40,19 @@ export function pickLocationCover(
   if (broken || !url || isPlaceholderImage(url)) {
     return resolveLocationCoverFallback(locationName, index)
   }
-  return url
+  return resolveMediaUrl(url)
 }
 
 export function resolveArtifactImageSrc(imageUrl: string | undefined | null, unlockKey: string): string | undefined {
   const url = imageUrl?.trim()
-  if (url && !isPlaceholderImage(url)) return url
-  return ARTIFACT_MEDIA[unlockKey]
+  if (url && !isPlaceholderImage(url)) return resolveMediaUrl(url)
+  const mapped = ARTIFACT_MEDIA[unlockKey]
+  return mapped ? resolveMediaUrl(mapped) : mapped
 }
 
 export function resolveArtifactImageFallback(unlockKey: string): string {
-  return ARTIFACT_MEDIA[unlockKey] ?? images.detailArtifact
+  const mapped = ARTIFACT_MEDIA[unlockKey]
+  return mapped ? resolveMediaUrl(mapped) : images.detailArtifact
 }
 
 export function pickQuestCover(

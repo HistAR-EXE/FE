@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { useAuth } from '../shared/auth/useAuth'
+import { resolveMediaUrl } from '../shared/config/env'
 
 // Dữ liệu Ban Lãnh Đạo C-level chuẩn Sơ đồ Tổ chức HistAR Team
 const EXECUTIVE_TEAM = [
@@ -130,7 +131,7 @@ const PLATFORM_6_LAYERS = [
 const CuChiRadarWidget: React.FC = () => (
     <div className="relative w-full h-52 sm:h-60 rounded-3xl overflow-hidden bg-[#0f1015] border-2 border-[#FE951C]/50 shadow-2xl flex items-center justify-center group select-none">
         <img
-            src="/media/cu-chi/scenes/bep-hoang-cam-2026.jpg"
+            src={resolveMediaUrl('/media/cu-chi/scenes/bep-hoang-cam-2026.jpg')}
             alt="Mô phỏng hầm ngầm Củ Chi"
             className="absolute inset-0 w-full h-full object-cover opacity-25 mix-blend-luminosity filter contrast-125 group-hover:scale-105 transition-transform duration-700 pointer-events-none"
             onError={(e) => { e.currentTarget.style.display = 'none' }}
@@ -311,7 +312,7 @@ export const OnboardingPage: React.FC = () => {
 
                             <div className="relative rounded-3xl overflow-hidden shadow-2xl border-4 border-white bg-[#1E293B] group min-h-[250px] flex flex-col justify-end">
                                 <img
-                                    src="/media/banner-main.jpg"
+                                    src={resolveMediaUrl('/media/banner-main.jpg')}
                                     alt="Địa đạo Củ Chi"
                                     className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                                     onError={(e) => { e.currentTarget.style.opacity = '0.3' }}
@@ -392,7 +393,7 @@ export const OnboardingPage: React.FC = () => {
                             </div>
 
                             <div className="rounded-2xl overflow-hidden border-2 border-[#CBD5E1] h-60 relative shadow-inner">
-                                <img src="/media/tour-360.jpg" alt="Tour 360 AI Illustration" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" onError={(e) => { e.currentTarget.style.display = 'none' }} />
+                                <img src={resolveMediaUrl('/media/tour-360.jpg')} alt="Tour 360 AI Illustration" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" onError={(e) => { e.currentTarget.style.display = 'none' }} />
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end p-4">
                   <span className="px-3.5 py-1.5 rounded-full bg-black/80 border border-white/20 text-xs font-bold text-[#FDB438] flex items-center gap-2 shadow-lg">
                     <MaterialIcon name="360" className="animate-spin" /> Trải nghiệm không gian ba chiều sống động
@@ -416,7 +417,7 @@ export const OnboardingPage: React.FC = () => {
                             </div>
 
                             <div className="rounded-2xl overflow-hidden border-2 border-[#CBD5E1] h-60 relative shadow-inner">
-                                <img src="/media/time-portal.jpg" alt="Time Portal AI Illustration" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" onError={(e) => { e.currentTarget.style.display = 'none' }} />
+                                <img src={resolveMediaUrl('/media/time-portal.jpg')} alt="Time Portal AI Illustration" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" onError={(e) => { e.currentTarget.style.display = 'none' }} />
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end p-4">
                   <span className="px-3.5 py-1.5 rounded-full bg-[#1A79E5]/90 border border-white/20 text-xs font-bold text-white flex items-center gap-2 shadow-lg">
                     <MaterialIcon name="compare" /> Đối chiếu ranh giới xưa & nay

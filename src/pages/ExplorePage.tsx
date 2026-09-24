@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { ExploreTopNav } from '../components/layout/TopNav'
 import { CU_CHI_LOCATION_ID } from '../shared/config/constants'
+import { resolveMediaUrl } from '../shared/config/env'
 import { buildChatPath } from '../features/chat/chatRoute'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 
@@ -181,7 +182,7 @@ export function ExplorePage() {
 
                                     {/* Ảnh nhân vật */}
                                     <img
-                                        src="/media/characters/nu-du-kich.png"
+                                        src={resolveMediaUrl('/media/characters/nu-du-kich.png')}
                                         alt="Chị Năm Du Kích"
                                         className="h-56 sm:h-64 object-contain drop-shadow-[0_12px_20px_rgba(0,0,0,0.9)] filter contrast-105 transition-transform duration-500 group-hover:drop-shadow-[0_0_25px_rgba(253,180,56,0.5)] relative z-10"
                                         onError={(e) => { e.currentTarget.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80' }}
@@ -211,10 +212,10 @@ export function ExplorePage() {
 
                                     {/* Ảnh nhân vật */}
                                     <img
-                                        src="/media/characters/nam-du-kich.png"
+                                        src={resolveMediaUrl('/media/characters/nam-du-kich.png')}
                                         alt="Anh Ba Chiến Sĩ"
                                         className="h-56 sm:h-64 object-contain drop-shadow-[0_12px_20px_rgba(0,0,0,0.9)] filter contrast-105 transition-transform duration-500 group-hover:drop-shadow-[0_0_25px_rgba(56,140,241,0.5)] relative z-10"
-                                        onError={(e) => { e.currentTarget.src = '/media/characters/nam-du-kich.jpg' }}
+                                        onError={(e) => { e.currentTarget.src = resolveMediaUrl('/media/characters/nam-du-kich.jpg') }}
                                     />
 
                                     {/* Đốm hào quang ngay dưới bàn chân Anh Ba */}
@@ -268,7 +269,7 @@ export function ExplorePage() {
                         >
                             <div>
                                 <div className="h-48 relative overflow-hidden bg-black">
-                                    <img src={item.image} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                    <img src={resolveMediaUrl(item.image)} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                                     <div className="absolute inset-0 bg-gradient-to-t from-[#161824] via-transparent to-transparent" />
                                     <span className="absolute top-3 right-3 px-3 py-1 rounded-full bg-black/70 backdrop-blur-md border border-white/15 text-xs font-black text-emerald-400 shadow-md">
                                         +{item.xp} XP

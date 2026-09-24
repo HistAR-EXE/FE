@@ -6,6 +6,7 @@ import { MaterialIcon } from '../components/ui/MaterialIcon'
 import type { AppMode } from '../shared/context/modeContext'
 import { useAppMode } from '../shared/context/useAppMode'
 import { CU_CHI_LOCATION_ID } from '../shared/config/constants'
+import { resolveMediaUrl } from '../shared/config/env'
 import { HERITAGE_SITE_GEO } from '../shared/config/heritageSites'
 import { ExploreMapPanel } from '../features/explore/ExploreMapPanel'
 import {
@@ -436,7 +437,7 @@ export function ModeSelectPage() {
                                         >
                                             <div className="h-48 relative overflow-hidden bg-[#0f1015]">
                                                 <img
-                                                    src={dest.image}
+                                                    src={resolveMediaUrl(dest.image)}
                                                     alt={dest.name}
                                                     className="w-full h-full object-cover transition-transform duration-700 hover:scale-110"
                                                     onError={(e) => { e.currentTarget.src = dest.fallback }}

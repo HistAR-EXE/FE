@@ -6,6 +6,7 @@ import { SimpleTopNav } from '../components/layout/TopNav'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { Button } from '../components/ui/Button'
 import { images } from '../assets/images'
+import { resolveMediaUrl } from '../shared/config/env'
 import { chatApi, normalizeChatSources, type ChatMessage, type ChatSource } from '../features/chat/api'
 import { ChatSourcesBlock } from '../components/chat/ChatSourcesBlock'
 import { analyticsApi } from '../features/analytics/api'
@@ -647,7 +648,7 @@ export function ChatPage() {
                         <img
                             alt={displayProfile.name}
                             className="h-full w-auto object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.9)] filter contrast-105 transition-all duration-500 hover:scale-105"
-                            src={displayProfile.avatar}
+                            src={resolveMediaUrl(displayProfile.avatar)}
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-[#161824] via-transparent to-transparent pointer-events-none" />
 
@@ -701,7 +702,7 @@ export function ChatPage() {
                     {/* Header Mobile cho Persona */}
                     <div className="lg:hidden p-3 bg-[#12141f] border-b border-white/10 flex items-center justify-between">
                         <div className="flex items-center gap-2.5">
-                            <img src={displayProfile.avatar} alt="" className="w-9 h-9 rounded-full object-cover border border-[#fdb438]" />
+                            <img src={resolveMediaUrl(displayProfile.avatar)} alt="" className="w-9 h-9 rounded-full object-cover border border-[#fdb438]" />
                             <div className="text-left">
                                 <h4 className="text-sm font-black text-white leading-none">{displayProfile.name}</h4>
                                 <span className="text-[10px] text-emerald-400 font-bold">● RAG AI Sẵn sàng</span>
@@ -751,7 +752,7 @@ export function ChatPage() {
                             <div className="flex flex-col gap-5 max-w-2xl mx-auto my-auto text-center py-6">
                                 <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#fe951c] to-[#388cf1] p-0.5 mx-auto shadow-xl">
                                     <div className="w-full h-full rounded-2xl bg-[#1b1e2c] flex items-center justify-center overflow-hidden">
-                                        <img src={displayProfile.avatar} alt="" className="w-full h-full object-cover" />
+                                        <img src={resolveMediaUrl(displayProfile.avatar)} alt="" className="w-full h-full object-cover" />
                                     </div>
                                 </div>
 
@@ -790,7 +791,7 @@ export function ChatPage() {
                             return (
                                 <div key={m.id} className={`flex gap-3 max-w-[88%] sm:max-w-[80%] ${isUser ? 'self-end flex-row-reverse' : 'self-start'}`}>
                                     <div className="w-8 h-8 rounded-full overflow-hidden border border-white/15 shrink-0 hidden sm:block">
-                                        <img alt={m.role} className="w-full h-full object-cover" src={isUser ? images.chatUserAvatar : displayProfile.avatar} />
+                                        <img alt={m.role} className="w-full h-full object-cover" src={isUser ? images.chatUserAvatar : resolveMediaUrl(displayProfile.avatar)} />
                                     </div>
 
                                     <div className={`p-4 rounded-2xl border relative shadow-md text-left ${
@@ -822,7 +823,7 @@ export function ChatPage() {
                         {showTypingIndicator && (
                             <div className="flex gap-3 max-w-[80%] items-end self-start">
                                 <div className="w-8 h-8 rounded-full overflow-hidden border border-white/15 hidden sm:block">
-                                    <img alt="ai" className="w-full h-full object-cover" src={displayProfile.avatar} />
+                                    <img alt="ai" className="w-full h-full object-cover" src={resolveMediaUrl(displayProfile.avatar)} />
                                 </div>
                                 <div className="bg-[#1b1e2c] px-4 py-3 rounded-2xl rounded-tl-sm border border-white/10 flex items-center gap-1.5 h-11">
                                     <span className="w-2 h-2 bg-[#fdb438] rounded-full animate-bounce" />
