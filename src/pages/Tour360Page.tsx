@@ -8,6 +8,7 @@ import { CuChiIllustratedMap } from '../components/panorama/CuChiIllustratedMap'
 import { Tour360Hud } from '../components/panorama/Tour360Hud'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { panoramaApi, type Hotspot, type Panorama } from '../features/panorama/api'
+import { discoveriesApi } from '../features/gamification/api'
 import { resolveAreaSlug } from '../features/panorama/cuChiAreaMeta'
 import { buildLinkJsonSnippet, fallbackCopyText } from '../features/panorama/tour360Markers'
 import { recordDiscoveryEngagement, preloadDiscoveryBindings } from '../features/gamification/discoveryRouting'
@@ -58,6 +59,10 @@ export function Tour360Page() {
     const recordedScenes = useRef(new Set<string>())
     const dwellTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
     const hotspotDwellTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
+    const viewModeRef = useRef(viewMode)
+    viewModeRef.current = viewMode
+    const activePanoramaIdRef = useRef(activePanoramaId)
+    activePanoramaIdRef.current = activePanoramaId
 
     const recordScene = useCallback(
         (panoramaId: string) => {
@@ -86,11 +91,18 @@ export function Tour360Page() {
         [isAuthenticated, locationId, showToast, applyEngagement, user?.role, visitSessionId],
     )
 
-    const onPanoramaEnter = useCallback(
+    const clearSceneTimers = useCallback(() => {
+        dwellTimers.current.forEach((timer) => clearTimeout(timer))
+        dwellTimers.current.clear()
+    }, [])
+
+    const armSceneDwell = useCallback(
         (panoramaId: string) => {
-            setActivePanoramaId(panoramaId)
             const existing = dwellTimers.current.get(panoramaId)
             if (existing) clearTimeout(existing)
+            if (viewModeRef.current !== 'panorama' || document.visibilityState !== 'visible') {
+                return
+            }
             const dwellMs = appEnv.discoveryDwellMs
             if (dwellMs > 0) {
                 const timer = setTimeout(() => {
@@ -104,6 +116,49 @@ export function Tour360Page() {
         },
         [recordScene],
     )
+
+    const onPanoramaEnter = useCallback(
+        (panoramaId: string) => {
+            setActivePanoramaId(panoramaId)
+            armSceneDwell(panoramaId)
+        },
+        [armSceneDwell],
+    )
+
+    useEffect(() => {
+        if (viewMode !== 'panorama') {
+            clearSceneTimers()
+            return
+        }
+        if (activePanoramaId) armSceneDwell(activePanoramaId)
+    }, [viewMode, activePanoramaId, armSceneDwell, clearSceneTimers])
+
+    useEffect(() => {
+        const onVisibility = () => {
+            if (document.visibilityState !== 'visible') {
+                clearSceneTimers()
+                return
+            }
+            const id = activePanoramaIdRef.current
+            if (viewModeRef.current === 'panorama' && id) armSceneDwell(id)
+        }
+        document.addEventListener('visibilitychange', onVisibility)
+        return () => {
+            document.removeEventListener('visibilitychange', onVisibility)
+            clearSceneTimers()
+        }
+    }, [armSceneDwell, clearSceneTimers])
+
+    useEffect(() => {
+        if (!isAuthenticated) return
+        void discoveriesApi.summary(activeLocationId).then((summary) => {
+            for (const key of summary.keys ?? []) {
+                if (key.startsWith('scene:')) {
+                    recordedScenes.current.add(key.slice('scene:'.length))
+                }
+            }
+        }).catch(() => undefined)
+    }, [isAuthenticated, activeLocationId])
 
     useEffect(() => {
         if (!locationId || !isAuthenticated) return

@@ -21,6 +21,7 @@ export function CheckoutB2CPage() {
     const [checking, setChecking] = useState(false)
     const [payment, setPayment] = useState<Awaited<ReturnType<typeof billingApi.createB2CPayment>> | null>(null)
     const [status, setStatus] = useState<'PENDING' | 'PAID' | 'FAILED' | 'EXPIRED' | null>(null)
+    const [upgraded, setUpgraded] = useState(false)
     const [priceVnd, setPriceVnd] = useState(79_000)
     const [emailVerified, setEmailVerified] = useState<boolean | undefined>(user?.emailVerified)
 
@@ -54,6 +55,7 @@ export function CheckoutB2CPage() {
             const nextStatus = await billingApi.getB2CPaymentStatus(orderCode)
             setStatus(nextStatus.status)
             if (nextStatus.status === 'PAID' && nextStatus.upgraded) {
+                setUpgraded(true)
                 await completeUpgrade(nextStatus.returnToPath || returnTo)
             }
         } catch (e) {
@@ -78,12 +80,12 @@ export function CheckoutB2CPage() {
     }
 
     useEffect(() => {
-        if (!payment || status === 'PAID' || status === 'EXPIRED' || status === 'FAILED') return
+        if (!payment || upgraded || status === 'EXPIRED' || status === 'FAILED') return
         const timer = window.setInterval(() => {
             void refreshPaymentStatus(payment.orderCode, true)
         }, 5000)
         return () => window.clearInterval(timer)
-    }, [payment, status])
+    }, [payment, status, upgraded])
 
     return (
         <AuthLayout>
@@ -241,13 +243,18 @@ export function CheckoutB2CPage() {
 
                                     <Button
                                         type="button"
-                                        disabled={checking || status === 'PAID'}
+                                        disabled={checking || upgraded}
                                         onClick={() => void refreshPaymentStatus(payment.orderCode)}
                                         className="w-full max-w-[260px] h-12 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 text-white font-bold text-xs uppercase tracking-widest transition-all cursor-pointer flex items-center justify-center gap-2 shadow-lg"
                                     >
                                         <MaterialIcon name="sync" className={checking ? "animate-spin text-lg" : "text-lg"} />
-                                        {checking ? 'Đang kiểm tra...' : status === 'PAID' ? 'Hệ thống đang mở khóa...' : 'Tôi Đã Chuyển Khoản'}
+                                        {checking ? 'Đang kiểm tra...' : upgraded ? 'Hệ thống đang mở khóa...' : 'Tôi Đã Chuyển Khoản'}
                                     </Button>
+                                    {status !== 'PAID' && status !== 'EXPIRED' && (
+                                        <p className="mt-3 max-w-[260px] text-center text-[11px] font-medium text-gray-400">
+                                            Đang chờ ngân hàng xác nhận (có thể mất 1–2 phút).
+                                        </p>
+                                    )}
                                 </div>
                             )}
 

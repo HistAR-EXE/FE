@@ -46,7 +46,5 @@ export function notifyEngagementOutcome(
     showToast(formatXpToast(outcome.xpEarned, label))
   } else if (outcome.questProgress?.stepCompleted && !outcome.questProgress.questCompleted) {
     showToast({ message: `Nhiệm vụ: bước ${outcome.questProgress.currentStep} hoàn thành`, type: 'info' })
-  } else if (outcome.recorded) {
-    showToast(formatXpToast(0, XP_LABELS.discovery))
   }
 }

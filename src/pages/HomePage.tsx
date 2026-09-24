@@ -5,6 +5,7 @@ import { AppLayout } from '../components/layout/AppLayout'
 import { HomeTopNav } from '../components/layout/TopNav'
 import { demoApi, type Ready } from '../features/demo/api'
 import { profileApi, type ProfileMe } from '../features/profile/api'
+import { DISCOVERY_RECORDED_EVENT } from '../features/gamification/discoveryRouting'
 import { CU_CHI_LOCATION_ID } from '../shared/config/constants'
 import { resolveMediaUrl } from '../shared/config/env'
 import { buildChatPath } from '../features/chat/chatRoute'
@@ -182,8 +183,13 @@ export function HomePage() {
     }, [personaGoal])
 
     useEffect(() => {
-        profileApi.me().then(setProfile).catch(() => setProfile(null))
+        const loadProfile = () => {
+            profileApi.me().then(setProfile).catch(() => setProfile(null))
+        }
+        loadProfile()
         demoApi.ready().then(setReady).catch(() => setReady({ status: 'UP', database: 'UP' }))
+        window.addEventListener(DISCOVERY_RECORDED_EVENT, loadProfile)
+        return () => window.removeEventListener(DISCOVERY_RECORDED_EVENT, loadProfile)
     }, [])
 
     const goalBadgeInfo = useMemo(() => {
@@ -270,7 +276,13 @@ export function HomePage() {
                                 {profile?.displayName || 'Nguyễn Quốc Huy'}
                             </h1>
                             <p className="text-xs sm:text-sm md:text-base text-gray-300 leading-relaxed font-medium">
-                                Bạn đang giữ danh hiệu <strong className="text-[#fdb438] font-black text-lg">{profile?.levelName || 'Senior Explorer'} (Cấp {profile?.level || 4})</strong> với tổng điểm <strong className="text-white font-black">{((profile?.totalPoints || 1250)).toLocaleString()} XP</strong>. Hoàn thành các gợi ý RAG bên dưới để thăng hạng Legend!
+                                {profile ? (
+                                    <>
+                                        Bạn đang giữ danh hiệu <strong className="text-[#fdb438] font-black text-lg">{profile.levelName || 'Nhà khám phá'} (Cấp {profile.level ?? 1})</strong> với tổng điểm <strong className="text-white font-black">{(profile.totalPoints ?? 0).toLocaleString()} XP</strong>. Hoàn thành các gợi ý bên dưới để thăng hạng!
+                                    </>
+                                ) : (
+                                    <>Đang tải điểm và hạng của bạn.</>
+                                )}
                             </p>
 
                             <div className="pt-2 flex flex-wrap gap-3 justify-center lg:justify-start">

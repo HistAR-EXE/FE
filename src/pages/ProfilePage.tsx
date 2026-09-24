@@ -7,6 +7,7 @@ import { profileApi, type MyBadge, type ProfileMe } from '../features/profile/ap
 import { gamificationApi, type QuestProgress } from '../features/gamification/api'
 import { locationsApi, type Location } from '../features/locations/api'
 import { discoveriesApi } from '../features/gamification/api'
+import { DISCOVERY_RECORDED_EVENT } from '../features/gamification/discoveryRouting'
 import { useToast } from '../shared/ui/toast/useToast'
 import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
@@ -38,12 +39,18 @@ export function ProfilePage() {
   const { showToast } = useToast()
 
   useEffect(() => {
-    profileApi.me().then(setProfile).catch((e) => showToast({ message: getFriendlyErrorMessage(e, 'quest'), type: 'error' }))
+    const load = () => {
+      profileApi.me().then(setProfile).catch((e) => showToast({ message: getFriendlyErrorMessage(e, 'quest'), type: 'error' }))
+    }
+    load()
     profileApi.myBadges().then(setBadges).catch(() => setBadges([]))
     gamificationApi.myQuests().then(setQuests).catch(() => setQuests([]))
     locationsApi.list({ size: 50 }).then(setLocations).catch(() => setLocations([]))
     discoveriesApi.visitedLocations().then((d) => setVisitedCount(d.visitedLocationIds.length)).catch(() => setVisitedCount(0))
     viralApi.myCreations().then(setCreations).catch(() => setCreations([]))
+    const onDiscovery = () => load()
+    window.addEventListener(DISCOVERY_RECORDED_EVENT, onDiscovery)
+    return () => window.removeEventListener(DISCOVERY_RECORDED_EVENT, onDiscovery)
   }, [showToast])
 
   const completedQuests = useMemo(

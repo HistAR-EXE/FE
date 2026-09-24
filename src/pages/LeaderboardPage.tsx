@@ -12,6 +12,7 @@ import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { useAppMode } from '../shared/context/useAppMode'
 import { useAuth } from '../shared/auth/useAuth'
 import { hasFullGamificationAccess } from '../shared/access/contentAccess'
+import { DISCOVERY_RECORDED_EVENT } from '../features/gamification/discoveryRouting'
 
 export function LeaderboardPage() {
     const { mode: appMode } = useAppMode()
@@ -28,6 +29,7 @@ export function LeaderboardPage() {
     const [data, setData] = useState<LeaderboardResponse | null>(null)
     const [loading, setLoading] = useState(true)
     const [archivedMessage, setArchivedMessage] = useState<string | null>(null)
+    const [xpRefresh, setXpRefresh] = useState(0)
     const { showToast } = useToast()
 
     const podium = data?.entries.slice(0, 3) ?? []
@@ -81,7 +83,13 @@ export function LeaderboardPage() {
                 setLoading(false)
             })
             .catch(handleLeaderboardError)
-    }, [scope, city, groupId, showToast, gamificationUnlocked])
+    }, [scope, city, groupId, showToast, gamificationUnlocked, xpRefresh])
+
+    useEffect(() => {
+        const onDiscovery = () => setXpRefresh((n) => n + 1)
+        window.addEventListener(DISCOVERY_RECORDED_EVENT, onDiscovery)
+        return () => window.removeEventListener(DISCOVERY_RECORDED_EVENT, onDiscovery)
+    }, [])
 
     const getRankColor = (rank: number) => {
         if (rank === 1) return 'from-[#ffd700] to-[#d4af37] text-black shadow-[0_0_15px_#ffd700]'
