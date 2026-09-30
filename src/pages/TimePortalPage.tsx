@@ -25,6 +25,7 @@ import { getArSceneBySlug, getArSceneBySceneId, isCuChiSceneSlug } from '../feat
 import { TimePortalArEmbed } from '../features/ar/TimePortalArEmbed'
 import type { CuChiSceneSlug } from '../features/ar/types'
 import { TimePortalViewSwitch, type PortalViewMode } from '../features/time-portal/TimePortalViewSwitch'
+import { resolveMediaUrl } from '../shared/config/env'
 
 const DISCOVER_KEY_LABELS: Record<string, string> = {
     'era:1948': '1948 — Khởi đầu hầm ngầm',
@@ -217,10 +218,16 @@ export function TimePortalPage() {
         if (scene?.layers?.length) {
             const past = scene.layers.find((l) => l.era === 1968) ?? scene.layers[0]
             const present = scene.layers.find((l) => l.era === 2026) ?? scene.layers[scene.layers.length - 1]
-            return { left: past?.imageUrl ?? '', right: present?.imageUrl ?? '' }
+            return {
+                left: resolveMediaUrl(past?.imageUrl ?? ''),
+                right: resolveMediaUrl(present?.imageUrl ?? ''),
+            }
         }
         if (pair) {
-            return { left: pair.historicalImage, right: pair.currentImage }
+            return {
+                left: resolveMediaUrl(pair.historicalImage),
+                right: resolveMediaUrl(pair.currentImage),
+            }
         }
         return { left: '', right: '' }
     }, [scenes, pairs, index])
@@ -309,9 +316,27 @@ export function TimePortalPage() {
                         <h1 className="font-headline-lg font-bold text-on-surface">Cổng thời gian</h1>
                         <TimePortalViewSwitch mode={portalView} onChange={setPortalViewMode} arAvailable={arAvailable} />
                     </div>
-                    {exportUrls.left && exportUrls.right && portalView === 'compare' && (
-                        <DualPhotoExport leftImageUrl={exportUrls.left} rightImageUrl={exportUrls.right} />
-                    )}
+                    <div className="flex items-center gap-sm shrink-0">
+                        <button
+                            type="button"
+                            className="text-sm text-on-surface-variant hover:text-secondary inline-flex items-center gap-1"
+                            onClick={() => {
+                                const url = window.location.href
+                                if (navigator.share) {
+                                    void navigator.share({ title: 'Cổng thời gian — TimeLens', url }).catch(() => {})
+                                } else {
+                                    void navigator.clipboard.writeText(url).then(() =>
+                                        showToast({ message: 'Đã copy link Cổng thời gian', type: 'success' }),
+                                    )
+                                }
+                            }}
+                        >
+                            <MaterialIcon name="share" className="text-base" /> Chia sẻ
+                        </button>
+                        {exportUrls.left && exportUrls.right && portalView === 'compare' && (
+                            <DualPhotoExport leftImageUrl={exportUrls.left} rightImageUrl={exportUrls.right} />
+                        )}
+                    </div>
                 </header>
 
                 <section className="relative flex-1 bg-surface-container-lowest overflow-hidden">

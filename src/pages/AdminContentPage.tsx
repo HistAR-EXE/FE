@@ -500,6 +500,8 @@ function DiscoveryPointForm({
   const [unlockKey, setUnlockKey] = useState(initial?.unlockKey ?? '')
   const [mapXPct, setMapXPct] = useState(initial?.mapXPct?.toString() ?? '')
   const [mapYPct, setMapYPct] = useState(initial?.mapYPct?.toString() ?? '')
+  const [yaw, setYaw] = useState(initial?.yaw?.toString() ?? '')
+  const [pitch, setPitch] = useState(initial?.pitch?.toString() ?? '')
   const [sortOrder, setSortOrder] = useState(initial?.sortOrder?.toString() ?? '0')
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -510,6 +512,8 @@ function DiscoveryPointForm({
       unlockKey: unlockKey.trim(),
       mapXPct: mapXPct ? Number(mapXPct) : null,
       mapYPct: mapYPct ? Number(mapYPct) : null,
+      yaw: yaw ? Number(yaw) : null,
+      pitch: pitch ? Number(pitch) : null,
       sortOrder: sortOrder ? Number(sortOrder) : 0,
     })
   }
@@ -528,6 +532,14 @@ function DiscoveryPointForm({
         </FormField>
         <FormField label="map_y_pct">
           <TextInput type="number" step="0.01" value={mapYPct} onChange={(e) => setMapYPct(e.target.value)} />
+        </FormField>
+      </div>
+      <div className="grid grid-cols-2 gap-sm">
+        <FormField label="yaw" hint="Góc ngang hotspot tour 360°">
+          <TextInput type="number" step="0.0001" value={yaw} onChange={(e) => setYaw(e.target.value)} />
+        </FormField>
+        <FormField label="pitch" hint="Góc dọc hotspot tour 360°">
+          <TextInput type="number" step="0.0001" value={pitch} onChange={(e) => setPitch(e.target.value)} />
         </FormField>
       </div>
       <FormField label="Thứ tự">

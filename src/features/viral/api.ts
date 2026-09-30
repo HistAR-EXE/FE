@@ -37,6 +37,9 @@ export type LeaderboardResponse = {
   scope: 'all' | 'city' | 'week' | 'group'
   city: string | null
   entries: LeaderboardEntry[]
+  viewerRankLocked?: boolean
+  viewerRank?: number | null
+  viewerTotalPoints?: number | null
 }
 
 export type ShareRecorded = {

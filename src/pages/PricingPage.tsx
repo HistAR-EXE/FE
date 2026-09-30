@@ -119,6 +119,9 @@ export function PricingPage() {
                         <p className="text-sm md:text-base text-gray-400 max-w-2xl mx-auto font-medium leading-relaxed">
                             Đột phá giới hạn không gian và thời gian. Nâng cấp đặc quyền Premium để tận hưởng trọn vẹn hệ sinh thái RAG AI và Công nghệ đồ họa không gian của chúng tôi.
                         </p>
+                        <p className="text-xs text-gray-500 max-w-2xl mx-auto mt-3">
+                            Cổng Thời Gian &amp; phòng nhóm chạy trên web; app tập trung tour onsite và check-in AR.
+                        </p>
                     </header>
 
                     <div className="w-full space-y-16">

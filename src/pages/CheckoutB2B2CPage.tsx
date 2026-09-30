@@ -8,6 +8,7 @@ import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
 import { useToast } from '../shared/ui/toast/useToast'
 import { images } from '../assets/images'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
+import { CU_CHI_LOCATION_ID } from '../shared/config/constants'
 
 export function CheckoutB2B2CPage() {
     const navigate = useNavigate()
@@ -21,22 +22,41 @@ export function CheckoutB2B2CPage() {
         contactPhone: '',
         packageType: 'ONE_TIME' as 'ONE_TIME' | 'OPEX',
         message: '',
+        website: '',
     })
 
     const onSubmit = async (e: FormEvent) => {
         e.preventDefault()
+        const siteName = form.siteName.trim()
+        const contactName = form.contactName.trim()
+        const contactEmail = form.contactEmail.trim()
+        if (!siteName || !contactName || !contactEmail) {
+            showToast({ message: 'Vui lòng điền tên di tích, họ tên và email liên hệ.', type: 'error' })
+            return
+        }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) {
+            showToast({ message: 'Email liên hệ chưa đúng định dạng.', type: 'error' })
+            return
+        }
+        if (form.website.trim()) {
+            return
+        }
         try {
             setLoading(true)
             await billingApi.submitB2b2cInquiry({
-                siteName: form.siteName.trim(),
-                contactName: form.contactName.trim(),
-                contactEmail: form.contactEmail.trim(),
+                siteName,
+                contactName,
+                contactEmail,
                 contactPhone: form.contactPhone.trim() || undefined,
                 packageType: form.packageType,
                 message: form.message.trim() || undefined,
+                website: form.website.trim() || undefined,
             })
             setSubmitted(true)
-            showToast({ message: 'Đã gửi yêu cầu số hóa di tích thành công!', type: 'success' })
+            showToast({
+                message: 'Đã gửi yêu cầu. Đội ngũ sẽ phản hồi trong 02 ngày làm việc.',
+                type: 'success',
+            })
         } catch (err) {
             showToast({ message: getFriendlyErrorMessage(err, 'quest'), type: 'error' })
         } finally {
@@ -97,6 +117,25 @@ export function CheckoutB2B2CPage() {
 
                             <div className="space-y-3">
                                 <div className="flex items-center gap-3 bg-[#0B1120]/40 p-3 rounded-2xl border border-white/5">
+                                    <MaterialIcon name="view_in_ar" className="text-emerald-400 text-xl shrink-0" />
+                                    <p className="text-sm text-gray-200">Panorama 360°, hotspot AR và trợ lý AI theo từng di tích.</p>
+                                </div>
+                                <div className="flex items-center gap-3 bg-[#0B1120]/40 p-3 rounded-2xl border border-white/5">
+                                    <MaterialIcon name="analytics" className="text-emerald-400 text-xl shrink-0" />
+                                    <p className="text-sm text-gray-200">Bảng thống kê visit_sessions & phễu onsite cho ban quản lý.</p>
+                                </div>
+                                <div className="flex items-center gap-3 bg-[#0B1120]/40 p-3 rounded-2xl border border-white/5">
+                                    <MaterialIcon name="support_agent" className="text-emerald-400 text-xl shrink-0" />
+                                    <p className="text-sm text-gray-200">Triển khai & vận hành kèm đội HistAR — báo giá theo quy mô site.</p>
+                                </div>
+                                <Link
+                                    to={`/explore/${CU_CHI_LOCATION_ID}`}
+                                    className="inline-flex items-center gap-2 text-sm text-emerald-400 font-bold underline mt-2"
+                                >
+                                    <MaterialIcon name="map" className="text-base" />
+                                    Xem mẫu tour Củ Chi trên web
+                                </Link>
+                                <div className="flex items-center gap-3 bg-[#0B1120]/40 p-3 rounded-2xl border border-white/5">
                                     <MaterialIcon name="monetization_on" className="text-emerald-400 text-xl shrink-0" />
                                     <div>
                                         <p className="text-sm font-black text-white">Dự Án One-time (Mua Đứt)</p>
@@ -138,6 +177,16 @@ export function CheckoutB2B2CPage() {
                                 </div>
                             ) : (
                                 <form onSubmit={(e) => void onSubmit(e)} className="w-full max-w-2xl mx-auto space-y-4">
+                                    <input
+                                        type="text"
+                                        name="website"
+                                        value={form.website}
+                                        onChange={(e) => setForm((f) => ({ ...f, website: e.target.value }))}
+                                        className="hidden"
+                                        tabIndex={-1}
+                                        autoComplete="off"
+                                        aria-hidden
+                                    />
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                                         <label className="block space-y-1">
                                             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Tên Di Tích / Bảo Tàng <span className="text-red-400">*</span></span>

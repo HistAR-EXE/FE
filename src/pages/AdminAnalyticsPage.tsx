@@ -4,7 +4,7 @@ import { AppLayout } from '../components/layout/AppLayout'
 import { SimpleTopNav } from '../components/layout/TopNav'
 import { AdminSubNav } from '../components/admin/AdminSubNav'
 import { adminApi, type AdminAnalyticsOverview, type SessionReplay } from '../features/admin/api'
-import { analyticsDemoOverview, useDemoAnalytics } from '../features/admin/analyticsDemo'
+import { analyticsDemoOverview } from '../features/admin/analyticsDemo'
 import { CU_CHI_LOCATION_ID } from '../shared/config/constants'
 import { useToast } from '../shared/ui/toast/useToast'
 import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
@@ -37,30 +37,17 @@ export function AdminAnalyticsPage() {
     const [data, setData] = useState<AdminAnalyticsOverview | null>(null)
     const [usingDemo, setUsingDemo] = useState(false)
     const [loading, setLoading] = useState(true)
+    const [isEmpty, setIsEmpty] = useState(false)
     const [replaySessionId, setReplaySessionId] = useState('')
     const [replay, setReplay] = useState<SessionReplay | null>(null)
     const [replayLoading, setReplayLoading] = useState(false)
 
-    // FIX: Đưa Hook lên Top-level, dùng state để kích hoạt
-    const [isEmptyData, setIsEmptyData] = useState(false)
-    const shouldUseDemo = useDemoAnalytics(isEmptyData)
-
     const { showToast } = useToast()
 
-    // Effect 1: Xử lý gán Data khi kích hoạt chế độ Demo
-    useEffect(() => {
-        if (isEmptyData) {
-            if (shouldUseDemo) {
-                setData(analyticsDemoOverview(CU_CHI_LOCATION_ID))
-                setUsingDemo(true)
-            }
-            setLoading(false)
-        }
-    }, [isEmptyData, shouldUseDemo])
-
-    // Effect 2: Gọi API lấy dữ liệu thực tế
     useEffect(() => {
         setLoading(true)
+        setIsEmpty(false)
+        setUsingDemo(false)
         adminApi
             .analyticsOverview(CU_CHI_LOCATION_ID)
             .then((overview) => {
@@ -69,18 +56,26 @@ export function AdminAnalyticsPage() {
                     overview.questFunnel.every((q) => q.started === 0)
 
                 if (empty) {
-                    setIsEmptyData(true) // Kích hoạt flow Demo
+                    setData(null)
+                    setIsEmpty(true)
                 } else {
                     setData(overview)
-                    setUsingDemo(false)
-                    setLoading(false)
+                    setIsEmpty(false)
                 }
             })
             .catch((e) => {
-                setIsEmptyData(true) // Lỗi thì cũng bật flow Demo
+                setData(null)
+                setIsEmpty(true)
                 showToast({ message: getFriendlyErrorMessage(e, 'quest'), type: 'error' })
             })
+            .finally(() => setLoading(false))
     }, [showToast])
+
+    const loadDemoPitch = () => {
+        setData(analyticsDemoOverview(CU_CHI_LOCATION_ID))
+        setUsingDemo(true)
+        setIsEmpty(false)
+    }
 
     const loadReplay = async () => {
         const id = replaySessionId.trim()
@@ -111,11 +106,28 @@ export function AdminAnalyticsPage() {
 
                 {usingDemo && (
                     <p className="text-xs text-amber-600/90 bg-amber-500/10 border border-amber-500/20 rounded-lg px-md py-sm">
-                        Dữ liệu demo — bật traffic thật hoặc tắt VITE_ANALYTICS_DEMO để xem DB live.
+                        Dữ liệu demo pitch — không phải số liệu production.
                     </p>
                 )}
 
                 {loading && <div className="h-48 rounded-xl bg-surface-container animate-pulse border border-outline-variant" />}
+
+                {!loading && isEmpty && !data && (
+                    <section className="bg-surface-container border border-dashed border-outline-variant rounded-xl p-lg text-center space-y-md">
+                        <MaterialIcon name="insights" className="text-4xl text-on-surface-variant mx-auto" />
+                        <h2 className="font-title-md text-on-surface">Chưa có dữ liệu phân tích</h2>
+                        <p className="text-sm text-on-surface-variant max-w-md mx-auto">
+                            Bắt đầu ghi nhận phiên thăm quan (visit_sessions) khi người dùng khám phá POI và check-in onsite.
+                        </p>
+                        <button
+                            type="button"
+                            onClick={loadDemoPitch}
+                            className="inline-flex px-md py-sm rounded-lg bg-secondary text-on-secondary text-sm font-medium"
+                        >
+                            Xem demo pitch
+                        </button>
+                    </section>
+                )}
 
                 {data && !loading && (
                     <>
@@ -238,13 +250,13 @@ export function AdminAnalyticsPage() {
                             <p className="text-sm text-on-surface-variant">{data.journeyNote}</p>
                         </section>
 
-                        <section className="bg-surface-container border border-outline-variant rounded-xl p-md md:p-lg">
+                        <section className="bg-surface-container border border-dashed border-outline-variant rounded-xl p-md md:p-lg opacity-95">
                             <h2 className="font-title-md text-on-surface mb-1 flex items-center gap-2">
                                 <MaterialIcon name="history" className="text-secondary" />
                                 Phát lại phiên thăm quan
                             </h2>
                             <p className="text-xs text-on-surface-variant mb-md">
-                                Nhập UUID phiên thăm quan để xem dòng thời gian sự kiện.
+                                Nhập UUID phiên để xem timeline từ visit_sessions (dữ liệu thật khi có bước ghi nhận).
                             </p>
                             <div className="flex flex-wrap gap-sm mb-md">
                                 <input
@@ -264,6 +276,11 @@ export function AdminAnalyticsPage() {
                             </div>
                             {replay && (
                                 <div className="space-y-sm text-sm">
+                                    {replay.steps.length > 0 && (
+                                        <p className="text-xs text-emerald-700 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-md py-sm">
+                                            Dữ liệu phát lại lấy từ visit_sessions — sự kiện thật của phiên thăm quan.
+                                        </p>
+                                    )}
                                     <p className="text-on-surface-variant">
                                         Chế độ: {replay.mode} · {replay.steps.length} bước
                                         {replay.startedAt && (

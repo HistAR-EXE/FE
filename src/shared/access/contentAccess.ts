@@ -31,6 +31,10 @@ export function canAccessPremiumContent(user?: ContentAccessUser): boolean {
   return hasPremiumAccess(user)
 }
 
+export function hasBasicGamificationAccess(user?: ContentAccessUser): boolean {
+  return Boolean(user)
+}
+
 export function hasFullGamificationAccess(user?: ContentAccessUser): boolean {
   return hasPremiumAccess(user)
 }

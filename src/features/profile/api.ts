@@ -32,10 +32,21 @@ export type MyBadge = BadgeCatalogItem & {
   earned: boolean
 }
 
+export type PassportStamp = {
+  locationId: string
+  completedAt?: string | null
+  arVerified?: boolean
+}
+
+export type PassportMe = {
+  stamps: PassportStamp[]
+}
+
 export const profileApi = {
   me: () => getData<ProfileMe>(httpClient.get('/api/profile/me')),
   badgesCatalog: () => getListData<BadgeCatalogItem>(httpClient.get('/api/badges')),
   myBadges: () => getListData<MyBadge>(httpClient.get('/api/me/badges')),
+  passport: () => getData<PassportMe>(httpClient.get('/api/me/passport')),
   updateMe: (payload: { displayName?: string; avatarUrl?: string | null; city?: string | null }) =>
     getData<ProfileMe>(httpClient.patch('/api/profile/me', payload)),
   upgrade: () => getData<ProfileMe>(httpClient.post('/api/profile/upgrade')),

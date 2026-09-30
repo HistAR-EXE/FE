@@ -19,7 +19,6 @@ export function LeaderboardPage() {
     const { user } = useAuth()
     const navigate = useNavigate()
 
-    // Logic của Backend: Kiểm tra quyền truy cập Gamification
     const gamificationUnlocked = hasFullGamificationAccess(user)
     const [searchParams] = useSearchParams()
     const groupId = searchParams.get('groupId')
@@ -36,14 +35,9 @@ export function LeaderboardPage() {
     const others = data?.entries.slice(3) ?? []
     const currentUserEntry = data?.entries.find((entry) => entry.currentUser) ?? null
 
-    useEffect(() => {
-        // NẾU CHƯA CÓ QUYỀN (FREE) -> DỪNG LẠI NGAY LẬP TỨC
-        // Không gọi API để tránh lỗi đỏ 422 từ Backend và tiết kiệm tài nguyên
-        if (!gamificationUnlocked) {
-            setLoading(false)
-            return
-        }
+    const viewerRankLocked = Boolean(data?.viewerRankLocked && !gamificationUnlocked)
 
+    useEffect(() => {
         setLoading(true)
 
         const handleLeaderboardError = (error: unknown) => {
@@ -83,7 +77,7 @@ export function LeaderboardPage() {
                 setLoading(false)
             })
             .catch(handleLeaderboardError)
-    }, [scope, city, groupId, showToast, gamificationUnlocked, xpRefresh])
+    }, [scope, city, groupId, showToast, xpRefresh])
 
     useEffect(() => {
         const onDiscovery = () => setXpRefresh((n) => n + 1)
@@ -285,73 +279,24 @@ export function LeaderboardPage() {
 
 
                 {/* ======================================================== */}
-                {/* 3. KHU VỰC BẢNG XẾP HẠNG HOẶC KHÓA PREMIUM */}
+                {/* 3. BẢNG XẾP HẠNG (FREEMIUM: TOP 10 + KHÓA HẠNG CÁ NHÂN) */}
                 {/* ======================================================== */}
-                {!gamificationUnlocked ? (
-                    /* GIAO DIỆN KHÓA PREMIUM (PAYWALL) MỚI MỞ RỘNG CHIỀU NGANG */
-                    <div className="max-w-7xl mx-auto px-4 md:px-12 mt-12 mb-20">
-                        <div className="relative w-full rounded-[3rem] overflow-hidden border border-white/10 bg-[#0B1120] shadow-[0_20px_80px_rgba(0,0,0,0.8)] min-h-[500px] flex flex-col items-center justify-center p-6 sm:p-12">
-
-                            {/* Background Ảo ảnh (Fake Blurred Content để giả vờ đang có leaderboard phía sau) */}
-                            <div className="absolute inset-0 opacity-20 pointer-events-none flex flex-col items-center justify-center gap-6 blur-[12px] p-10">
-                                <div className="w-full max-w-6xl h-20 rounded-2xl bg-white/20 border border-white/30" />
-                                <div className="w-full max-w-6xl h-20 rounded-2xl bg-white/20 border border-white/30" />
-                                <div className="w-full max-w-6xl h-20 rounded-2xl bg-white/20 border border-white/30" />
-                                <div className="w-full max-w-6xl h-20 rounded-2xl bg-white/20 border border-white/30" />
-                            </div>
-
-                            {/* Hào quang sáng từ phía sau Glass Card */}
-                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[500px] bg-[#fe951c]/15 rounded-[100%] blur-[120px] pointer-events-none animate-pulse" />
-                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-[#388cf1]/10 rounded-[100%] blur-[100px] pointer-events-none" />
-
-                            {/* Nội dung khối Paywall (Glassmorphism Đẹp Mắt mở rộng) */}
-                            <div className="relative z-10 w-full max-w-5xl rounded-[2.5rem] bg-[#161824]/90 backdrop-blur-3xl border border-white/15 shadow-[0_20px_50px_rgba(0,0,0,0.9),inset_0_2px_20px_rgba(255,255,255,0.05)] p-8 md:p-14 flex flex-col items-center text-center">
-
-                                <div className="w-24 h-24 mb-6 rounded-3xl bg-gradient-to-br from-[#fe951c]/20 to-[#fdb438]/10 border border-[#fe951c]/40 flex items-center justify-center shadow-[0_0_40px_rgba(254,149,28,0.3)]">
-                                    <MaterialIcon name="lock" className="text-[4rem] text-[#fdb438] drop-shadow-[0_0_15px_rgba(253,180,56,0.6)]" />
-                                </div>
-
-                                <span className="px-5 py-2 rounded-full bg-red-500/10 border border-red-500/30 text-red-400 text-[10px] md:text-xs font-black uppercase tracking-widest mb-6 shadow-sm">
-                                    Khu Vực Dành Riêng Cho Đặc Vụ Premium
-                                </span>
-
-                                <h3 className="text-3xl md:text-5xl font-black text-white mb-4 tracking-tight leading-tight">
-                                    Mở Khóa Bảng Xếp Hạng <br className="hidden md:block"/> <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#fe951c] to-[#fdb438]">Toàn Cầu</span>
-                                </h3>
-
-                                <p className="text-sm md:text-base text-gray-300 font-medium max-w-3xl mx-auto mb-10 leading-relaxed">
-                                    Tính năng so tài Điểm kinh nghiệm (XP) hiện đang bị khóa. Nâng cấp <strong>Premium</strong> ngay để cạnh tranh với hàng ngàn người chơi khác và ghi danh vào Hộ Chiếu Di Sản!
-                                </p>
-
-                                <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto">
-                                    <button
-                                        onClick={() => navigate('/pricing')}
-                                        className="w-full sm:w-auto px-10 py-4.5 rounded-2xl bg-gradient-to-r from-[#fe951c] via-[#fdb438] to-[#e07d0b] hover:from-[#e07d0b] hover:to-[#fe951c] text-black font-black text-sm uppercase tracking-wider transition-all shadow-[0_5px_25px_rgba(254,149,28,0.4)] hover:shadow-[0_8px_35px_rgba(254,149,28,0.6)] hover:scale-105 flex items-center justify-center gap-2 cursor-pointer"
-                                    >
-                                        <MaterialIcon name="workspace_premium" className="text-xl" />
-                                        Nâng Cấp Premium Ngay
-                                    </button>
-                                    {/*<button*/}
-                                    {/*    onClick={() => navigate('/explore')}*/}
-                                    {/*    className="w-full sm:w-auto px-10 py-4.5 rounded-2xl bg-[#1b1e2c] border border-white/10 hover:border-white/30 hover:bg-[#232636] text-white font-bold text-sm uppercase tracking-wider transition-all shadow-lg flex items-center justify-center gap-2 cursor-pointer"*/}
-                                    {/*>*/}
-                                    {/*    Quay Về Khám Phá*/}
-                                    {/*</button>*/}
-                                </div>
-
-                                <div className="mt-10 pt-8 border-t border-white/10 w-full flex flex-wrap items-center justify-center gap-x-12 gap-y-3 text-xs md:text-sm font-bold text-gray-400">
-                                    <span className="flex items-center gap-2"><MaterialIcon name="check_circle" className="text-[#388cf1] text-base" /> Tham gia giải đấu</span>
-                                    <span className="flex items-center gap-2"><MaterialIcon name="check_circle" className="text-[#388cf1] text-base" /> Mở khóa thẻ bài quý hiếm</span>
-                                    <span className="flex items-center gap-2"><MaterialIcon name="check_circle" className="text-[#388cf1] text-base" /> RAG AI Không giới hạn</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                ) : (
-                    /* ======================================================== */
-                    /* GIAO DIỆN BẢNG XẾP HẠNG BÌNH THƯỜNG (KHI ĐÃ UNLOCK)      */
-                    /* ======================================================== */
                     <div className="max-w-5xl mx-auto px-4 md:px-8 mt-10">
+
+                        {viewerRankLocked && (
+                            <div className="mb-8 rounded-2xl border border-[#fe951c]/40 bg-[#fe951c]/10 px-6 py-4 text-sm text-[#fdb438] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                                <p>
+                                    Bạn đang xem <strong>Top 10</strong> công khai. Nâng cấp Premium để thấy hạng cá nhân và cạnh tranh toàn bảng.
+                                </p>
+                                <button
+                                    type="button"
+                                    onClick={() => navigate('/pricing')}
+                                    className="shrink-0 px-6 py-3 rounded-xl bg-gradient-to-r from-[#fe951c] to-[#e07d0b] text-black font-black text-xs uppercase tracking-wider"
+                                >
+                                    Nâng cấp Premium
+                                </button>
+                            </div>
+                        )}
 
                         {/* BỘ LỌC PHÂN HẠNG (SCOPE FILTERS) */}
                         {!groupId && (
@@ -535,7 +480,7 @@ export function LeaderboardPage() {
                         )}
 
                         {/* HIỂN THỊ CURRENT USER NẾU NẰM NGOÀI TOP HIỂN THỊ */}
-                        {!loading && !others.some(o => o.currentUser) && !podium.some(p => p?.currentUser) && currentUserEntry && (
+                        {!loading && !viewerRankLocked && !others.some(o => o.currentUser) && !podium.some(p => p?.currentUser) && currentUserEntry && (
                             <div className="mt-8 p-1 rounded-2xl bg-gradient-to-r from-[#fe951c] to-[#fdb438] relative z-10">
                                 <div className="p-4 md:p-5 rounded-xl bg-[#0B1120] flex items-center justify-between">
                                     <div className="flex items-center gap-4 md:gap-6 w-2/3">
@@ -564,7 +509,6 @@ export function LeaderboardPage() {
                             </div>
                         )}
                     </div>
-                )}
             </main>
         </AppLayout>
     )

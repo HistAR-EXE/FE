@@ -4,6 +4,7 @@ import type { PhotoPair } from '../locations/api'
 import type { PhotoScene } from '../photo-scenes/api'
 import { images } from '../../assets/images'
 import { MaterialIcon } from '../../components/ui/MaterialIcon'
+import { resolveMediaUrl } from '../../shared/config/env'
 import { eraBadgeClass } from '../../shared/ui/eraBadge'
 import { CompareLayerImage } from './CompareLayerImage'
 import {
@@ -37,12 +38,20 @@ function layerForEra(scene: PhotoScene | undefined, era: EraValue, pair: PhotoPa
       scene.layers.find((l) => l.era !== 2026) ??
       scene.layers[0]
     if (layer) {
-      return { imageUrl: layer.imageUrl, caption: layer.caption, era: layer.era as EraValue }
+      return {
+        imageUrl: resolveMediaUrl(layer.imageUrl),
+        caption: layer.caption,
+        era: layer.era as EraValue,
+      }
     }
   }
   if (pair) {
     const imageUrl = era === 2026 ? pair.currentImage : pair.historicalImage
-    return { imageUrl, caption: pair.caption, era: (pair.year ?? 1968) as EraValue }
+    return {
+      imageUrl: resolveMediaUrl(imageUrl),
+      caption: pair.caption,
+      era: (pair.year ?? 1968) as EraValue,
+    }
   }
   return {
     imageUrl: era === 2026 ? images.timePortalPresent : images.timePortalPast,

@@ -277,6 +277,9 @@ export const OnboardingPage: React.FC = () => {
                             <p className="text-base sm:text-lg text-[#475569] font-medium leading-relaxed max-w-2xl mx-auto lg:mx-0">
                                 Được sáng lập bởi tập thể kỹ sư trẻ <strong>HistAR Team</strong>, ứng dụng <strong>TimeLens</strong> ra đời với sứ mệnh xóa bỏ sự thụ động của các phương thức truyền đạt lịch sử cũ. Chúng tôi kiến tạo cầu nối công nghệ đưa di sản sống động vào từng phòng học và điểm tham quan.
                             </p>
+                            <p className="text-sm text-[#64748B] max-w-2xl mx-auto lg:mx-0">
+                                Cổng Thời Gian và phòng nhóm dùng trên web; app mobile tập trung tour tại chỗ và check-in AR.
+                            </p>
 
                             <div className="p-5 rounded-2xl bg-white/80 border border-[#CBD5E1] shadow-sm max-w-2xl text-left space-y-2">
                                 <div className="flex items-center gap-2 text-xs font-black text-[#1A79E5] uppercase tracking-wider">

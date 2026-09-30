@@ -76,6 +76,10 @@ export function QuestJourneyPanel({
             <p data-testid="quest-step-progress" className="mb-6 text-sm font-bold text-[#fdb438]">
                 Bước {status === 'completed' ? steps.length : Math.min(currentStep + 1, steps.length)}/{steps.length}
                 {status === 'not_started' ? ' · chưa bắt đầu' : status === 'completed' ? ' · hoàn thành' : ' · đang làm'}
+                {' · '}
+                <span className="text-white/70 font-medium">
+                    mỗi bước: khóa / đang làm / xong
+                </span>
             </p>
 
             <div className="relative space-y-6 md:space-y-10">
@@ -192,6 +196,13 @@ export function QuestJourneyPanel({
                                                         'bg-white/5 border-white/10 text-gray-500'
                                             }`}>
                                                 NODE {index + 1}
+                                            </span>
+                                            <span className={`px-2.5 py-1 rounded text-[9px] md:text-[10px] font-black uppercase tracking-widest border ${
+                                                isCompleted ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' :
+                                                    isActive && !portalLocked ? 'bg-[#fe951c]/10 border-[#fe951c]/30 text-[#fe951c]' :
+                                                        'bg-white/5 border-white/10 text-gray-500'
+                                            }`}>
+                                                {isCompleted ? 'Xong' : isActive && !portalLocked ? 'Đang làm' : 'Khóa'}
                                             </span>
                                             {step.actionType === 'artifact' && !isOnline && (
                                                 <span className="px-2.5 py-1 rounded bg-purple-500/10 border border-purple-500/30 text-purple-300 text-[9px] font-black uppercase tracking-widest flex items-center gap-1 shadow-sm">

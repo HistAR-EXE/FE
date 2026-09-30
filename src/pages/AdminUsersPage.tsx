@@ -28,6 +28,13 @@ export function AdminUsersPage() {
   }, [showToast])
 
   const onRoleChange = async (userId: string, role: 'USER' | 'ORG_MEMBER' | 'TEACHER' | 'ADMIN') => {
+    if (role === 'ADMIN') {
+      const target = users.find((u) => u.id === userId)
+      const ok = window.confirm(
+        `Promote ${target?.email ?? userId} lên ADMIN? Họ sẽ có quyền quản trị toàn hệ thống.`,
+      )
+      if (!ok) return
+    }
     try {
       await adminApi.updateRole(userId, role)
       showToast({ message: 'Đã cập nhật quyền', type: 'success' })
@@ -55,6 +62,8 @@ export function AdminUsersPage() {
                 <tr>
                   <th className="text-left p-sm">Email</th>
                   <th className="text-left p-sm">Tên</th>
+                  <th className="text-left p-sm">Email verified</th>
+                  <th className="text-left p-sm">Tier</th>
                   <th className="text-left p-sm">Vai trò</th>
                   <th className="text-left p-sm">XP</th>
                   <th className="text-left p-sm">Thao tác</th>
@@ -65,6 +74,14 @@ export function AdminUsersPage() {
                   <tr key={u.id} className="border-t border-outline-variant/50">
                     <td className="p-sm">{u.email}</td>
                     <td className="p-sm">{u.displayName}</td>
+                    <td className="p-sm">
+                      {u.emailVerified === false ? (
+                        <span className="text-xs text-error">Chưa xác minh</span>
+                      ) : (
+                        <span className="text-xs text-secondary">Đã xác minh</span>
+                      )}
+                    </td>
+                    <td className="p-sm">{u.tier ?? '—'}</td>
                     <td className="p-sm">
                       <span className="px-2 py-0.5 rounded-full border border-outline-variant text-xs">
                         {u.role}

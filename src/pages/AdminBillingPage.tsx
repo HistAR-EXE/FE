@@ -4,14 +4,15 @@ import { AdminSubNav } from '../components/admin/AdminSubNav'
 import { AppLayout } from '../components/layout/AppLayout'
 import { SimpleTopNav } from '../components/layout/TopNav'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
-import { adminApi, type AdminBillingSettings } from '../features/admin/api'
-import { billingApi } from '../features/billing/api'
+import { adminApi, type AdminBillingSettings, type AdminB2b2cInquiry, type AdminRecentPayment } from '../features/admin/api'
 import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
 import { useToast } from '../shared/ui/toast/useToast'
 
 function formatCurrency(value: number) {
   return `${value.toLocaleString('vi-VN')}đ`
 }
+
+const INQUIRY_STATUSES = ['NEW', 'CONTACTED', 'QUALIFIED', 'CLOSED', 'SPAM'] as const
 
 export function AdminBillingPage() {
   const [settings, setSettings] = useState<AdminBillingSettings | null>(null)
@@ -21,7 +22,9 @@ export function AdminBillingPage() {
   const [volumeMinLicensesInput, setVolumeMinLicensesInput] = useState('3')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [inquiries, setInquiries] = useState<Awaited<ReturnType<typeof billingApi.listB2b2cInquiries>>>([])
+  const [inquiries, setInquiries] = useState<AdminB2b2cInquiry[]>([])
+  const [inquiryStatusFilter, setInquiryStatusFilter] = useState<string>('')
+  const [recentPayments, setRecentPayments] = useState<AdminRecentPayment[]>([])
   const { showToast } = useToast()
 
   const load = () => {
@@ -39,10 +42,21 @@ export function AdminBillingPage() {
       .finally(() => setLoading(false))
   }
 
+  const loadInquiries = () => {
+    adminApi
+      .listB2b2cInquiries(inquiryStatusFilter || undefined)
+      .then(setInquiries)
+      .catch(() => setInquiries([]))
+  }
+
   useEffect(() => {
     load()
-    billingApi.listB2b2cInquiries().then(setInquiries).catch(() => setInquiries([]))
+    adminApi.listRecentPayments().then(setRecentPayments).catch(() => setRecentPayments([]))
   }, [])
+
+  useEffect(() => {
+    loadInquiries()
+  }, [inquiryStatusFilter])
 
   const parsedPrice = useMemo(() => Number(priceInput.replace(/[^\d]/g, '')), [priceInput])
   const parsedDailyLimit = useMemo(() => Number(dailyLimitInput), [dailyLimitInput])
@@ -90,6 +104,25 @@ export function AdminBillingPage() {
       showToast({ message: getFriendlyErrorMessage(e, 'quest'), type: 'error' })
     } finally {
       setSaving(false)
+    }
+  }
+
+  const copyText = async (text: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      showToast({ message: `Đã copy ${label}`, type: 'success' })
+    } catch {
+      showToast({ message: text, type: 'info' })
+    }
+  }
+
+  const patchInquiryStatus = async (id: string, status: string) => {
+    try {
+      await adminApi.updateB2b2cInquiryStatus(id, status)
+      showToast({ message: 'Đã cập nhật trạng thái', type: 'success' })
+      loadInquiries()
+    } catch (e) {
+      showToast({ message: getFriendlyErrorMessage(e, 'quest'), type: 'error' })
     }
   }
 
@@ -252,17 +285,88 @@ export function AdminBillingPage() {
             </section>
 
             <section className="bg-surface-container border border-outline-variant rounded-xl p-md space-y-sm">
-              <h2 className="font-title-md">B2B2C inquiries</h2>
+              <div className="flex flex-wrap items-center justify-between gap-sm">
+                <h2 className="font-title-md">Thanh toán gần đây</h2>
+                <span className="text-xs text-on-surface-variant">GET /api/admin/billing/payments/recent</span>
+              </div>
+              {recentPayments.length === 0 ? (
+                <p className="text-sm text-on-surface-variant">Chưa có dữ liệu hoặc API chưa bật.</p>
+              ) : (
+                <ul className="space-y-sm text-sm">
+                  {recentPayments.map((p) => (
+                    <li key={p.id} className="flex flex-wrap justify-between gap-2 border-b border-outline-variant/40 pb-sm">
+                      <span className="font-mono text-xs">{p.orderCode}</span>
+                      <span>{formatCurrency(p.amountVnd)} · {p.status}</span>
+                      <span className="text-on-surface-variant text-xs w-full">
+                        {p.payerEmail ?? '—'} · {new Date(p.createdAt).toLocaleString('vi-VN')}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+
+            <section className="bg-surface-container border border-outline-variant rounded-xl p-md space-y-sm">
+              <div className="flex flex-wrap items-center gap-sm justify-between">
+                <h2 className="font-title-md">B2B2C inquiries</h2>
+                <label className="text-sm flex items-center gap-2">
+                  Lọc trạng thái
+                  <select
+                    value={inquiryStatusFilter}
+                    onChange={(e) => setInquiryStatusFilter(e.target.value)}
+                    className="rounded-lg border border-outline-variant bg-surface px-sm py-1"
+                  >
+                    <option value="">Tất cả</option>
+                    {INQUIRY_STATUSES.map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
               {inquiries.length === 0 ? (
                 <p className="text-sm text-on-surface-variant">Chưa có yêu cầu số hóa di tích.</p>
               ) : (
                 <ul className="space-y-sm text-sm">
                   {inquiries.map((item) => (
-                    <li key={item.id} className="border-b border-outline-variant/40 pb-sm">
+                    <li key={item.id} className="border border-outline-variant/40 rounded-lg p-sm space-y-2">
                       <p className="font-medium text-on-surface">{item.siteName}</p>
                       <p className="text-on-surface-variant">
-                        {item.contactName} · {item.contactEmail} · {item.packageType} · {item.status}
+                        {item.contactName} · {item.packageType} · {new Date(item.createdAt).toLocaleString('vi-VN')}
                       </p>
+                      <div className="flex flex-wrap gap-2 items-center">
+                        <button
+                          type="button"
+                          className="text-secondary underline text-xs"
+                          onClick={() => void copyText(item.contactEmail, 'email')}
+                        >
+                          {item.contactEmail}
+                        </button>
+                        {item.contactPhone && (
+                          <button
+                            type="button"
+                            className="text-secondary underline text-xs"
+                            onClick={() => void copyText(item.contactPhone!, 'SĐT')}
+                          >
+                            {item.contactPhone}
+                          </button>
+                        )}
+                        <select
+                          value={item.status}
+                          onChange={(e) => void patchInquiryStatus(item.id, e.target.value)}
+                          className="ml-auto rounded border border-outline-variant bg-surface px-2 py-1 text-xs"
+                        >
+                          {INQUIRY_STATUSES.map((s) => (
+                            <option key={s} value={s}>
+                              {s}
+                            </option>
+                          ))}
+                          {!INQUIRY_STATUSES.includes(item.status as (typeof INQUIRY_STATUSES)[number]) && (
+                            <option value={item.status}>{item.status}</option>
+                          )}
+                        </select>
+                      </div>
                     </li>
                   ))}
                 </ul>
