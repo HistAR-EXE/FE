@@ -29,7 +29,8 @@ export function CheckoutB2BPage() {
     const [loading, setLoading] = useState(false)
     const [checking, setChecking] = useState(false)
     const [payment, setPayment] = useState<Awaited<ReturnType<typeof billingApi.createOrgPayment>> | null>(null)
-    const [status, setStatus] = useState<'PENDING' | 'PAID' | 'FAILED' | 'EXPIRED' | null>(null)
+    const [status, setStatus] = useState<'PENDING' | 'PAID' | 'FAILED' | 'EXPIRED' | 'UNDERPAID' | null>(null)
+    const [statusDetail, setStatusDetail] = useState<Awaited<ReturnType<typeof billingApi.getOrgPaymentStatus>> | null>(null)
     const [planPrices, setPlanPrices] = useState<Record<string, number>>({})
     const [licenseCount, setLicenseCount] = useState(Math.max(1, Number.parseInt(searchParams.get('licenses') ?? '1', 10) || 1))
     const [volumePreview, setVolumePreview] = useState<Awaited<ReturnType<typeof billingApi.getOrgVolumePreview>> | null>(null)
@@ -73,6 +74,7 @@ export function CheckoutB2BPage() {
             if (!silent) setChecking(true)
             const nextStatus = await billingApi.getOrgPaymentStatus(orderCode)
             setStatus(nextStatus.status)
+            setStatusDetail(nextStatus)
             if (nextStatus.status === 'PAID' && nextStatus.activated) {
                 await completeUpgrade(nextStatus.returnToPath || returnTo)
             }
@@ -281,9 +283,10 @@ export function CheckoutB2BPage() {
                                             <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border shadow-sm whitespace-nowrap ${
                                                 status === 'PAID' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.4)]' :
                                                     status === 'EXPIRED' ? 'bg-red-500/20 text-red-400 border-red-500/50' :
+                                                    status === 'UNDERPAID' ? 'bg-orange-500/20 text-orange-300 border-orange-500/50' :
                                                         'bg-amber-500/20 text-amber-400 border-amber-500/50 animate-pulse shadow-[0_0_20px_rgba(245,158,11,0.4)]'
                                             }`}>
-                                                {status === 'PAID' ? 'Đã Nhận Tiền' : status === 'EXPIRED' ? 'Đã Hết Hạn' : 'Đang Chờ...'}
+                                                {status === 'PAID' ? 'Đã Nhận Tiền' : status === 'EXPIRED' ? 'Đã Hết Hạn' : status === 'UNDERPAID' ? 'Chuyển Thiếu' : 'Đang Chờ...'}
                                             </span>
                                         </div>
 
@@ -332,6 +335,29 @@ export function CheckoutB2BPage() {
                                             <MaterialIcon name="sync" className={checking ? "animate-spin text-base" : "text-base"} />
                                             {checking ? 'Đang kiểm tra...' : status === 'PAID' ? 'Đang cấp phép...' : 'Tôi Đã Chuyển Khoản'}
                                         </Button>
+                                        {status === 'UNDERPAID' && (
+                                            <div
+                                                data-testid="org-underpaid-notice"
+                                                className="mt-4 w-full rounded-xl border border-orange-500/50 bg-orange-500/10 px-4 py-3 text-left text-xs text-orange-100"
+                                            >
+                                                <p className="font-bold mb-1">Bạn đã chuyển thiếu tiền</p>
+                                                <p className="text-orange-200/90 mb-2">
+                                                    Đã nhận {(statusDetail?.receivedAmountVnd ?? 0).toLocaleString('vi-VN')}đ /{' '}
+                                                    {(statusDetail?.amountVnd ?? payment.amountVnd).toLocaleString('vi-VN')}đ.
+                                                    Vui lòng chuyển bổ sung{' '}
+                                                    <strong>
+                                                        {(statusDetail?.remainingAmountVnd ?? payment.amountVnd).toLocaleString('vi-VN')}đ
+                                                    </strong>{' '}
+                                                    với <strong>cùng nội dung chuyển khoản</strong>:
+                                                </p>
+                                                <p className="font-mono font-black text-cyan-300 break-all text-sm">
+                                                    {statusDetail?.transferContent ?? payment.transferContent}
+                                                </p>
+                                                <p className="text-orange-200/70 mt-2">
+                                                    Chuyển dư (≥ số tiền) vẫn được chấp nhận. Bản quyền sẽ kích hoạt khi tổng tiền đủ.
+                                                </p>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             )}

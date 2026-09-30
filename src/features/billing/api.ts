@@ -12,6 +12,7 @@ export type OrgPlanInfo = {
 
 export type BillingPublicPricing = {
   b2cPremiumPriceVnd: number
+  b2cJourneyPassPriceVnd?: number
   chatFreeDailyLimit?: number
   orgPlans: OrgPlanInfo[]
 }
@@ -49,6 +50,8 @@ export type B2cBillingStatus = {
   daysUntilExpiry?: number
 }
 
+export type B2cPaymentStatusCode = 'PENDING' | 'PAID' | 'FAILED' | 'EXPIRED' | 'UNDERPAID'
+
 export type B2cPaymentIntent = {
   provider: string
   orderCode: string
@@ -59,16 +62,22 @@ export type B2cPaymentIntent = {
   accountName: string
   qrUrl: string
   expiresAt: string
-  status: 'PENDING' | 'PAID' | 'FAILED' | 'EXPIRED'
+  status: B2cPaymentStatusCode
 }
 
 export type B2cPaymentStatus = {
   orderCode: string
-  status: 'PENDING' | 'PAID' | 'FAILED' | 'EXPIRED'
+  status: B2cPaymentStatusCode
   expiresAt: string
   paidAt: string | null
   returnToPath: string | null
   upgraded: boolean
+  amountVnd?: number
+  transferContent?: string
+  /** UNDERPAID: sum of transfers received so far. */
+  receivedAmountVnd?: number
+  /** UNDERPAID: remaining amount to top up (same transfer content). */
+  remainingAmountVnd?: number
 }
 
 export type B2cSubscriptionHistoryItem = {
@@ -106,7 +115,7 @@ export type OrgPaymentIntent = {
   accountName: string
   qrUrl: string
   expiresAt: string
-  status: 'PENDING' | 'PAID' | 'FAILED' | 'EXPIRED'
+  status: 'PENDING' | 'PAID' | 'FAILED' | 'EXPIRED' | 'UNDERPAID'
   planType: string
   organizationId: string | null
   orgName: string
@@ -130,11 +139,12 @@ export type B2b2cInquiryPayload = {
   packageType: 'ONE_TIME' | 'OPEX'
   message?: string
   website?: string
+  interestSiteCode?: 'cu-chi' | 'hoang-thanh-thang-long' | 'dai-noi-hue'
 }
 
 export type OrgPaymentStatus = {
   orderCode: string
-  status: 'PENDING' | 'PAID' | 'FAILED' | 'EXPIRED'
+  status: 'PENDING' | 'PAID' | 'FAILED' | 'EXPIRED' | 'UNDERPAID'
   expiresAt: string
   paidAt: string | null
   returnToPath: string | null
@@ -142,6 +152,10 @@ export type OrgPaymentStatus = {
   organizationId: string | null
   planType: string
   orgName: string
+  amountVnd?: number | null
+  transferContent?: string | null
+  receivedAmountVnd?: number | null
+  remainingAmountVnd?: number | null
 }
 
 export type BillingStatus = {
@@ -155,8 +169,17 @@ export type BillingStatus = {
 export const billingApi = {
   subscribeB2C: (paymentMethod = 'DEMO') =>
     getData<ProfileMe>(httpClient.post('/api/billing/b2c/subscribe', { paymentMethod })),
-  createB2CPayment: (returnToPath?: string) =>
-    getData<B2cPaymentIntent>(httpClient.post('/api/billing/b2c/payment', { returnToPath })),
+  createB2CPayment: (
+    returnToPath?: string,
+    opts?: { planType?: 'PREMIUM' | 'JOURNEY_PASS'; siteCode?: string },
+  ) =>
+    getData<B2cPaymentIntent>(
+      httpClient.post('/api/billing/b2c/payment', {
+        returnToPath,
+        planType: opts?.planType ?? 'PREMIUM',
+        siteCode: opts?.siteCode,
+      }),
+    ),
   getB2CPaymentStatus: (orderCode: string) =>
     getData<B2cPaymentStatus>(httpClient.get(`/api/billing/b2c/payment/${orderCode}`)),
   createOrgPayment: (payload: {
@@ -195,6 +218,10 @@ export const billingApi = {
   cancelB2C: () => getData<B2cBillingStatus>(httpClient.delete('/api/billing/b2c/cancel')),
   getB2CStatus: () => getData<B2cBillingStatus>(httpClient.get('/api/billing/b2c/status')),
   getB2CHistory: () => getData<B2cSubscriptionHistoryItem[]>(httpClient.get('/api/billing/b2c/history')),
+  /**
+   * DEMO free org upgrade — blocked by BE when demo.enabled=false.
+   * Prefer createOrgPayment (SePay QR) for production.
+   */
   subscribeOrg: (payload: {
     orgName: string
     planType: string

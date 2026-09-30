@@ -9,6 +9,15 @@ import { AppModeProvider } from './shared/context/AppModeProvider'
 import { UserProgressProvider } from './shared/context/UserProgressProvider'
 import { ToastProvider } from './shared/ui/toast/ToastProvider'
 import { ThemeProvider } from './shared/theme/ThemeProvider'
+import { registerAppServiceWorker } from './pwa/registerSW'
+import { startOutboxAutoFlush } from './lib/offlineOutbox'
+import { startSessionEndTracking } from './lib/pilotEvents'
+import { initSentry } from './shared/observability/sentry'
+
+initSentry()
+registerAppServiceWorker()
+startOutboxAutoFlush()
+startSessionEndTracking()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

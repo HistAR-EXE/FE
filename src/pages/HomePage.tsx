@@ -8,9 +8,13 @@ import { profileApi, type ProfileMe } from '../features/profile/api'
 import { DISCOVERY_RECORDED_EVENT } from '../features/gamification/discoveryRouting'
 import { CU_CHI_LOCATION_ID } from '../shared/config/constants'
 import { resolveMediaUrl } from '../shared/config/env'
-import { buildChatPath } from '../features/chat/chatRoute'
+import { buildChatPath, readSelectedLocationId } from '../features/chat/chatRoute'
 import { useAppMode } from '../shared/context/useAppMode'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
+import { emitEvent } from '../lib/pilotEvents'
+import { NpsModal } from '../components/feedback/NpsModal'
+import { SiteOnsiteHub } from '../features/stations/SiteOnsiteHub'
+import { getPilotSite, siteCodeFromLocationId } from '../shared/config/constants'
 
 const CU_CHI_HERO = '/media/cu-chi/map/hero.jpg'
 
@@ -190,6 +194,12 @@ export function HomePage() {
         demoApi.ready().then(setReady).catch(() => setReady({ status: 'UP', database: 'UP' }))
         window.addEventListener(DISCOVERY_RECORDED_EVENT, loadProfile)
         return () => window.removeEventListener(DISCOVERY_RECORDED_EVENT, loadProfile)
+    }, [])
+
+    useEffect(() => {
+        if (sessionStorage.getItem('pilot_session_start_sent')) return
+        emitEvent('session_start')
+        sessionStorage.setItem('pilot_session_start_sent', '1')
     }, [])
 
     const goalBadgeInfo = useMemo(() => {
@@ -537,6 +547,45 @@ export function HomePage() {
 
                 </div>
 
+                {appMode === 'offline' && (() => {
+                    const activeLocationId = readSelectedLocationId() ?? CU_CHI_LOCATION_ID
+                    const activeSiteCode = siteCodeFromLocationId(activeLocationId)
+                    const activeSite = getPilotSite(activeSiteCode)
+                    return (
+                        <div className="space-y-4 pt-2">
+                            <div className="flex flex-wrap items-center justify-between gap-3">
+                                <p className="text-xs font-black uppercase tracking-widest text-[#fdb438]">
+                                    Onsite · {activeSite?.shortTitle ?? activeSiteCode}
+                                </p>
+                                <Link
+                                    to="/mode-select"
+                                    className="text-[11px] font-bold uppercase tracking-wider text-[#388cf1] hover:text-white"
+                                >
+                                    Đổi di tích
+                                </Link>
+                            </div>
+                            <SiteOnsiteHub
+                                siteCode={activeSiteCode}
+                                locationId={activeSite?.locationId ?? activeLocationId}
+                                showStory
+                            />
+                        </div>
+                    )
+                })()}
+                {appMode === 'online' && (
+                    <div className="rounded-2xl border border-white/10 bg-[#161824] p-4 flex flex-wrap items-center justify-between gap-3">
+                        <p className="text-sm text-gray-300">
+                            Đang ở Củ Chi? Chuyển Onsite để quét QR và mở mạch 6 trạm.
+                        </p>
+                        <Link
+                            to="/mode-select"
+                            className="px-4 py-2 rounded-xl bg-[#fe951c]/15 border border-[#fe951c]/40 text-[#fdb438] text-xs font-black uppercase"
+                        >
+                            Chọn Onsite
+                        </Link>
+                    </div>
+                )}
+
                 {/* --- MODULE 4: LỐI TẮT NHANH CÔNG NGHỆ --- */}
                 <section className="pt-4">
                     <h3 className="text-sm font-black text-gray-400 uppercase tracking-wider mb-4">
@@ -592,6 +641,7 @@ export function HomePage() {
                 </section>
 
             </main>
+            <NpsModal context="home" />
         </AppLayout>
     )
 }

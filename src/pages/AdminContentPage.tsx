@@ -29,8 +29,10 @@ import { CU_CHI_LOCATION_ID } from '../shared/config/constants'
 import { useToast } from '../shared/ui/toast/useToast'
 import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
+import { AdminStationsPanel } from '../components/admin/AdminStationsPanel'
+import { AdminContentReportsPanel } from '../components/admin/AdminContentReportsPanel'
 
-type Tab = 'discovery' | 'artifacts' | 'quests' | 'panoramas'
+type Tab = 'discovery' | 'artifacts' | 'quests' | 'panoramas' | 'stations' | 'reports'
 
 type ModalState =
   | { kind: 'discovery'; mode: 'create' | 'edit'; item?: AdminDiscoveryPoint }
@@ -99,6 +101,8 @@ export function AdminContentPage() {
     { id: 'artifacts', label: 'Hiện vật', count: artifacts.length },
     { id: 'quests', label: 'Nhiệm vụ', count: quests.length },
     { id: 'panoramas', label: 'Panorama 360°', count: panoramas.length },
+    { id: 'stations', label: 'Trạm pilot', count: 6 },
+    { id: 'reports', label: 'Báo sai liệu', count: 0 },
   ]
 
   const handleSaveDiscovery = async (body: AdminDiscoveryPointInput, id?: string) => {
@@ -297,7 +301,7 @@ export function AdminContentPage() {
           )}
         </div>
 
-        {loading && <p className="text-on-surface-variant text-sm">Đang tải...</p>}
+        {loading && tab !== 'stations' && <p className="text-on-surface-variant text-sm">Đang tải...</p>}
 
         {!loading && tab === 'discovery' && (
           <ContentTable
@@ -360,6 +364,9 @@ export function AdminContentPage() {
             }))}
           />
         )}
+
+        {tab === 'stations' && <AdminStationsPanel />}
+        {tab === 'reports' && <AdminContentReportsPanel />}
 
         {modal?.kind === 'discovery' && (
           <AdminModal

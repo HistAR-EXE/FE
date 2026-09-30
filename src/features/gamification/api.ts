@@ -59,6 +59,21 @@ export type BadgeEarned = {
 
 export type CheckinResult = CheckinEngagementResponse
 
+/**
+ * Legacy: `qrCode` (location QR) + GPS. QR-first: `qrPayload` (`stationCode:timestamp:sig`) + `stationCode`
+ * + `presenceMethod: 'QR'`; GPS is optional when the station QR is verified server-side.
+ */
+export type CheckinRequestBody = {
+    locationId: string
+    latitude?: number
+    longitude?: number
+    qrCode?: string
+    qrPayload?: string
+    stationCode?: string
+    presenceMethod?: 'QR' | 'GPS' | 'MANUAL'
+    clientUuid?: string
+}
+
 export type SecretStory = {
     locked: boolean
     title: string
@@ -107,7 +122,7 @@ export const gamificationApi = {
         getData<QuestProgress>(httpClient.post(`/api/quests/${questId}/start`)),
     progress: (questId: string) =>
         getData<QuestProgress>(httpClient.get(`/api/quests/${questId}/progress`)),
-    checkin: (body: { locationId: string; latitude: number; longitude: number; qrCode: string }) =>
+    checkin: (body: CheckinRequestBody) =>
         getData<CheckinResult>(httpClient.post('/api/checkins', body)),
     secretStory: (locationId: string) =>
         getData<SecretStory>(httpClient.get(`/api/locations/${locationId}/secret-story`)),

@@ -7,6 +7,8 @@ import { MaterialIcon } from '../../components/ui/MaterialIcon'
 import { resolveMediaUrl } from '../../shared/config/env'
 import { eraBadgeClass } from '../../shared/ui/eraBadge'
 import { CompareLayerImage } from './CompareLayerImage'
+import { LampHotspotLayer } from './LampHotspotLayer'
+import type { LampHotspot } from './lampHotspots'
 import {
   ERA_VALUES,
   eraCompareSideLabel,
@@ -26,6 +28,31 @@ type TimePortalViewerProps = {
   initialEra?: EraValue
   isPremium?: boolean
   onPremiumRequired?: () => void
+  /** Đèn dầu hotspots (x/y % hoặc yaw/pitch). Hiển thị cả khi không có depth map. */
+  lampHotspots?: LampHotspot[]
+  onLampActivate?: (hotspot: LampHotspot) => void
+  /** Depth map tuỳ chọn (trắng = gần). Thiếu/lỗi → chỉ parallax nền + đèn dầu. */
+  depthMapUrl?: string
+  /** Bật parallax theo con trỏ. Mặc định true. */
+  parallax?: boolean
+}
+
+/** Tilt (degrees) that maps to full parallax offset, neutral beta when the phone is held upright, low-pass factor. */
+const GYRO_RANGE_DEG = 25
+const GYRO_NEUTRAL_BETA_DEG = 50
+const GYRO_LOW_PASS_ALPHA = 0.12
+
+type DeviceOrientationWithPermission = {
+  requestPermission?: () => Promise<'granted' | 'denied'>
+}
+
+function hasDeviceOrientation(): boolean {
+  return typeof window !== 'undefined' && typeof DeviceOrientationEvent !== 'undefined'
+}
+
+function gyroNeedsPermissionApi(): boolean {
+  if (!hasDeviceOrientation()) return false
+  return typeof (DeviceOrientationEvent as unknown as DeviceOrientationWithPermission).requestPermission === 'function'
 }
 
 type LayerData = { imageUrl: string; caption: string; era: EraValue }
@@ -81,6 +108,10 @@ export function TimePortalViewer({
   initialEra,
   isPremium = true,
   onPremiumRequired,
+  lampHotspots,
+  onLampActivate,
+  depthMapUrl,
+  parallax = true,
 }: TimePortalViewerProps) {
   const scene = scenes?.[sceneIndex]
   const pair = pairs?.[sceneIndex]
@@ -97,6 +128,129 @@ export function TimePortalViewer({
   )
 
   const showCompare = !isPresentEra(era)
+
+  const sceneLamps = useMemo(
+    () => (lampHotspots ?? []).filter((h) => h.sceneIndex === undefined || h.sceneIndex === sceneIndex),
+    [lampHotspots, sceneIndex],
+  )
+
+  // Depth map: chỉ dùng khi tải được; lỗi → fallback (đèn dầu + parallax nền vẫn chạy).
+  const [depthReady, setDepthReady] = useState(false)
+  useEffect(() => {
+    setDepthReady(false)
+    if (!depthMapUrl) return
+    let cancelled = false
+    const img = new Image()
+    img.onload = () => {
+      if (!cancelled) setDepthReady(true)
+    }
+    img.onerror = () => {
+      if (!cancelled) setDepthReady(false)
+    }
+    img.src = depthMapUrl
+    return () => {
+      cancelled = true
+    }
+  }, [depthMapUrl])
+
+  // Parallax: lerp bằng rAF, ghi CSS variables (không re-render React).
+  const parallaxTarget = useRef({ x: 0, y: 0 })
+  const parallaxCurrent = useRef({ x: 0, y: 0 })
+  const parallaxRaf = useRef<number | null>(null)
+
+  const runParallax = useCallback(() => {
+    if (parallaxRaf.current !== null) return
+    const step = () => {
+      const el = containerRef.current
+      const c = parallaxCurrent.current
+      const t = parallaxTarget.current
+      c.x += (t.x - c.x) * 0.12
+      c.y += (t.y - c.y) * 0.12
+      if (el) {
+        el.style.setProperty('--px', c.x.toFixed(4))
+        el.style.setProperty('--py', c.y.toFixed(4))
+      }
+      if (Math.abs(t.x - c.x) < 0.002 && Math.abs(t.y - c.y) < 0.002) {
+        parallaxRaf.current = null
+        return
+      }
+      parallaxRaf.current = requestAnimationFrame(step)
+    }
+    parallaxRaf.current = requestAnimationFrame(step)
+  }, [])
+
+  useEffect(
+    () => () => {
+      if (parallaxRaf.current !== null) cancelAnimationFrame(parallaxRaf.current)
+    },
+    [],
+  )
+
+  const onPointerMove = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (!parallax || e.pointerType === 'touch' || dragging.current) return
+      const rect = e.currentTarget.getBoundingClientRect()
+      if (!rect.width || !rect.height) return
+      parallaxTarget.current = {
+        x: ((e.clientX - rect.left) / rect.width - 0.5) * -2,
+        y: ((e.clientY - rect.top) / rect.height - 0.5) * -2,
+      }
+      runParallax()
+    },
+    [parallax, runParallax],
+  )
+
+  const onPointerLeave = useCallback(() => {
+    parallaxTarget.current = { x: 0, y: 0 }
+    runParallax()
+  }, [runParallax])
+
+  // Gyro parallax (mobile): DeviceOrientation + low-pass filter. iOS 13+ needs a user-gesture permission request.
+  // Pointer parallax above stays as the fallback (desktop / permission denied / no sensor).
+  // iOS exposes requestPermission (must be called from a tap -> button); other browsers just start listening.
+  const [gyroEnabled, setGyroEnabled] = useState(() => hasDeviceOrientation() && !gyroNeedsPermissionApi())
+  const [gyroNeedsPermission, setGyroNeedsPermission] = useState(
+    () => hasDeviceOrientation() && gyroNeedsPermissionApi(),
+  )
+  const gyroSmoothed = useRef({ x: 0, y: 0 })
+
+  const onDeviceOrientation = useCallback(
+    (e: DeviceOrientationEvent) => {
+      if (e.gamma == null || e.beta == null) return
+      const clamp = (v: number) => Math.min(1, Math.max(-1, v))
+      const rawX = clamp(e.gamma / GYRO_RANGE_DEG)
+      const rawY = clamp((e.beta - GYRO_NEUTRAL_BETA_DEG) / GYRO_RANGE_DEG)
+      const s = gyroSmoothed.current
+      s.x += (rawX - s.x) * GYRO_LOW_PASS_ALPHA
+      s.y += (rawY - s.y) * GYRO_LOW_PASS_ALPHA
+      parallaxTarget.current = { x: -s.x, y: -s.y }
+      runParallax()
+    },
+    [runParallax],
+  )
+
+  useEffect(() => {
+    if (!parallax || !gyroEnabled) return
+    window.addEventListener('deviceorientation', onDeviceOrientation)
+    return () => window.removeEventListener('deviceorientation', onDeviceOrientation)
+  }, [parallax, gyroEnabled, onDeviceOrientation])
+
+  const requestGyroPermission = useCallback(async () => {
+    const requestPermission = (DeviceOrientationEvent as unknown as DeviceOrientationWithPermission)
+      .requestPermission
+    if (typeof requestPermission !== 'function') return
+    try {
+      const result = await requestPermission.call(DeviceOrientationEvent)
+      if (result === 'granted') {
+        setGyroEnabled(true)
+        setGyroNeedsPermission(false)
+      } else {
+        setGyroNeedsPermission(false) // denied: keep the pointer fallback
+      }
+    } catch {
+      setGyroNeedsPermission(false)
+    }
+  }, [])
 
   useEffect(() => {
     if (initialEra) setEra(initialEra)
@@ -152,7 +306,12 @@ export function TimePortalViewer({
   const caption = isPresentEra(era) ? present.caption : past.caption || present.caption
 
   return (
-    <div ref={containerRef} className="relative h-full w-full overflow-hidden bg-black">
+    <div
+      ref={containerRef}
+      className="portal-parallax relative h-full w-full overflow-hidden bg-black"
+      onPointerMove={onPointerMove}
+      onPointerLeave={onPointerLeave}
+    >
       {vortex && (
         <div className="absolute inset-0 z-40 pointer-events-none flex items-center justify-center" aria-hidden>
           <div
@@ -170,8 +329,20 @@ export function TimePortalViewer({
         src={present.imageUrl}
         fallback={images.timePortalPresent}
         alt="Hiện nay"
-        className="absolute inset-0 w-full h-full object-cover"
+        className={`absolute inset-0 w-full h-full object-cover${parallax ? ' portal-parallax-layer' : ''}`}
+        style={{ '--depth': 6 } as React.CSSProperties}
       />
+
+      {/* Lớp tiền cảnh 2.5D: cùng ảnh, mask bằng depth map, dịch chuyển mạnh hơn */}
+      {parallax && depthReady && depthMapUrl && (
+        <CompareLayerImage
+          src={present.imageUrl}
+          fallback={images.timePortalPresent}
+          alt=""
+          className="portal-depth-fg portal-parallax-layer absolute inset-0 z-[5] w-full h-full object-cover pointer-events-none"
+          style={{ '--depth': 16, '--depth-map': `url("${depthMapUrl}")` } as React.CSSProperties}
+        />
+      )}
 
       {/* Ảnh xưa — lớp trên, cắt theo thanh trượt (bên trái) */}
       {showCompare && (
@@ -183,7 +354,24 @@ export function TimePortalViewer({
             src={past.imageUrl}
             fallback={images.timePortalPast}
             alt={`Tái hiện ${compareEra}`}
-            className="absolute inset-0 w-full h-full object-cover brightness-90"
+            className={`absolute inset-0 w-full h-full object-cover brightness-90${parallax ? ' portal-parallax-layer' : ''}`}
+            style={{ '--depth': 6 } as React.CSSProperties}
+          />
+        </div>
+      )}
+
+      {/* Đèn dầu — bám theo lớp nền (cùng hệ số parallax), không phụ thuộc depth map */}
+      {sceneLamps.length > 0 && (
+        <div
+          className={`absolute inset-0 z-[15] pointer-events-none${parallax ? ' portal-parallax-layer' : ''}`}
+          style={{ '--depth': 6 } as React.CSSProperties}
+        >
+          <LampHotspotLayer
+            hotspots={sceneLamps}
+            onActivate={(h) => {
+              onEngagement?.()
+              onLampActivate?.(h)
+            }}
           />
         </div>
       )}
@@ -227,6 +415,18 @@ export function TimePortalViewer({
             </div>
           </div>
         </>
+      )}
+
+      {gyroNeedsPermission && (
+        <button
+          type="button"
+          data-testid="gyro-permission-btn"
+          onClick={() => void requestGyroPermission()}
+          className="absolute top-24 right-xl z-30 inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-black/60 border border-secondary/50 text-xs text-secondary backdrop-blur-sm"
+        >
+          <MaterialIcon name="screen_rotation" className="text-sm" />
+          Bật cảm biến nghiêng
+        </button>
       )}
 
       <div className="absolute bottom-xl left-1/2 -translate-x-1/2 z-30 flex flex-col items-center gap-sm">

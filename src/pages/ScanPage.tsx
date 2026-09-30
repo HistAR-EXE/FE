@@ -15,10 +15,16 @@ import { demoApi } from '../features/demo/api'
 import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
 import { useToast } from '../shared/ui/toast/useToast'
 import { useAuth } from '../shared/auth/useAuth'
-import { CU_CHI_LOCATION_ID } from '../shared/config/constants'
+import { CU_CHI_LOCATION_ID, locationIdFromSiteCode, siteCodeFromLocationId } from '../shared/config/constants'
 import { useVisitSessionForLocation, useVisitSession } from '../features/visit/VisitSessionProvider'
 import { buildArUrl } from '../features/ar/arDeepLink'
 import { saveSelectedLocationId } from '../features/chat/chatRoute'
+import { parseStationQr, type ParsedStationQr } from '../lib/stationQr'
+import { emitEvent } from '../lib/pilotEvents'
+import { enqueueCheckin, isOfflineLikeError } from '../lib/offlineOutbox'
+import type { CheckinRequestBody } from '../features/gamification/api'
+import { StationNextSteps } from '../features/stations/StationNextSteps'
+import { setActiveStationCode } from '../lib/stationSafety'
 
 const UUID_REGEX = /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/i
 
@@ -55,19 +61,44 @@ function normalizeQrPayload(value: string, locationId: string): string {
     return `timelens:location:${locationId}`
 }
 
+function packSkipKey(siteCode: string) {
+    return `histar_pack_soft_gate_skipped:${siteCode.trim().toLowerCase()}`
+}
+
+function isPackLiteLoaded(siteCode: string): boolean {
+    try {
+        return (
+            localStorage.getItem(`histar_pack_lite_loaded:${siteCode}`) === '1' ||
+            localStorage.getItem('histar_pack_lite_loaded') === '1'
+        )
+    } catch {
+        return false
+    }
+}
+
 export function ScanPage() {
     const { isAuthenticated } = useAuth()
     const [params] = useSearchParams()
     const targetLocationId = params.get('locationId') ?? ''
     const sessionLocationId = targetLocationId || CU_CHI_LOCATION_ID
+    const activeSiteCode = siteCodeFromLocationId(sessionLocationId)
     useVisitSessionForLocation(sessionLocationId, isAuthenticated)
     const { getSessionId } = useVisitSession()
     const visitSessionId = getSessionId(sessionLocationId)
 
     const [qrCode, setQrCode] = useState(targetLocationId ? `timelens:location:${targetLocationId}` : '')
     const [result, setResult] = useState<CheckinResult | null>(null)
+    const [lastStationCode, setLastStationCode] = useState<string | null>(null)
     const [geoError, setGeoError] = useState<string | null>(null)
     const [checking, setChecking] = useState(false)
+    const [packGateDismissed, setPackGateDismissed] = useState(() => {
+        try {
+            return sessionStorage.getItem(packSkipKey(activeSiteCode)) === '1' || isPackLiteLoaded(activeSiteCode)
+        } catch {
+            return false
+        }
+    })
+    const showPackGate = !packGateDismissed && !isPackLiteLoaded(activeSiteCode)
 
     // States Camera & AR
     const [cameraEnabled, setCameraEnabled] = useState(false)
@@ -85,7 +116,10 @@ export function ScanPage() {
 
     const { showToast } = useToast()
     const { applyEngagement } = useUserProgress()
-    const parsedLocationId = useMemo(() => extractLocationIdFromQr(qrCode), [qrCode])
+    const parsedLocationId = useMemo(
+        () => extractLocationIdFromQr(qrCode) || (parseStationQr(qrCode) ? targetLocationId || CU_CHI_LOCATION_ID : ''),
+        [qrCode, targetLocationId],
+    )
 
     const filteredHistory = useMemo(() => {
         const q = historySearch.trim().toLowerCase()
@@ -93,10 +127,136 @@ export function ScanPage() {
         return scanHistory.filter((item) => item.label.toLowerCase().includes(q) || item.id.toLowerCase().includes(q) || item.payload.toLowerCase().includes(q))
     }, [scanHistory, historySearch])
 
+    /** QR-first check-in: station QR proves presence; GPS is optional (best-effort, short timeout). */
+    const performStationCheckin = useCallback(
+        async (station: ParsedStationQr) => {
+            const locationId =
+                targetLocationId || locationIdFromSiteCode(station.siteCode) || CU_CHI_LOCATION_ID
+            const site = station.siteCode || siteCodeFromLocationId(locationId)
+            try {
+                const packKey = `histar_pack_manifest_v1:${site}:lite`
+                const skipped = sessionStorage.getItem(`histar_pack_skip:${site}`)
+                if (!localStorage.getItem(packKey) && !localStorage.getItem('histar_pack_manifest_v1:lite') && !skipped) {
+                    const goPack = window.confirm(
+                        'Chưa tải gói Lite offline. Mở trang Chuẩn bị hành trang trước khi vào trạm? (Hủy = bỏ qua lần này)',
+                    )
+                    if (goPack) {
+                        window.location.href = `/pack-prep?site=${encodeURIComponent(site)}`
+                        return
+                    }
+                    sessionStorage.setItem(`histar_pack_skip:${site}`, '1')
+                }
+            } catch {
+                /* ignore */
+            }
+            const clientUuid = crypto.randomUUID()
+            emitEvent('station_arrived', {
+                stationCode: station.stationCode,
+                payload: { locationId, method: 'QR', siteCode: site },
+            })
+            setActiveStationCode(station.stationCode)
+            setLastStationCode(station.stationCode)
+
+            const position = await new Promise<GeolocationPosition | null>((resolve) => {
+                if (!('geolocation' in navigator)) return resolve(null)
+                navigator.geolocation.getCurrentPosition(resolve, () => resolve(null), {
+                    enableHighAccuracy: false,
+                    timeout: 3000,
+                    maximumAge: 60000,
+                })
+            })
+            setGeoError(null)
+
+            const body: CheckinRequestBody = {
+                locationId,
+                qrPayload: station.payload,
+                stationCode: station.stationCode,
+                presenceMethod: 'QR',
+                clientUuid,
+                ...(position ? { latitude: position.coords.latitude, longitude: position.coords.longitude } : {}),
+            }
+
+            const queueOffline = async () => {
+                await enqueueCheckin(station.stationCode, { clientUuid, payload: { ...body } })
+                emitEvent('checkin_result', {
+                    stationCode: station.stationCode,
+                    payload: { ok: false, queuedOffline: true, clientUuid },
+                })
+                showToast({
+                    message: 'Đang offline — đã lưu check-in, sẽ tự gửi khi có mạng.',
+                    type: 'success',
+                })
+            }
+
+            if (typeof navigator !== 'undefined' && !navigator.onLine) {
+                await queueOffline()
+                return
+            }
+
+            try {
+                const res = await gamificationApi.checkin(body)
+                setResult(res)
+                setQrCode(station.payload)
+                saveSelectedLocationId(locationId)
+                notifyEngagementOutcome(res, showToast, applyEngagement, {
+                    locationId,
+                    visitSessionId,
+                    engagementKind: 'checkin',
+                })
+                emitEvent('station_completed', {
+                    stationCode: station.stationCode,
+                    payload: { locationId, clientUuid, gps: Boolean(position) },
+                })
+                try {
+                    const n = Number(sessionStorage.getItem('histar_stations_completed_count') || '0')
+                    sessionStorage.setItem('histar_stations_completed_count', String(n + 1))
+                } catch {
+                    /* ignore */
+                }
+                emitEvent('checkin_result', {
+                    stationCode: station.stationCode,
+                    payload: { ok: true, clientUuid, method: 'QR', gps: Boolean(position) },
+                })
+                void analyticsApi.recordEvent({
+                    locationId,
+                    visitSessionId,
+                    eventType: 'CHECKIN_SUCCESS',
+                    eventKey: station.stationCode,
+                    source: 'scan',
+                })
+                setScanHistory((prev) => [
+                    {
+                        id: station.stationCode,
+                        label: `Trạm ${station.stationCode}`,
+                        time: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+                        payload: station.payload,
+                    },
+                    ...prev.filter((x) => x.payload !== station.payload).slice(0, 9),
+                ])
+            } catch (e) {
+                if (isOfflineLikeError(e)) {
+                    await queueOffline()
+                    return
+                }
+                emitEvent('checkin_result', {
+                    stationCode: station.stationCode,
+                    payload: { ok: false, clientUuid, message: e instanceof Error ? e.message : 'error' },
+                })
+                throw e
+            }
+        },
+        [targetLocationId, showToast, applyEngagement, visitSessionId],
+    )
+
     const performCheckin = useCallback(
         async (payload: string) => {
             try {
                 setChecking(true)
+                const stationQr = parseStationQr(payload)
+                if (stationQr) {
+                    await performStationCheckin(stationQr)
+                    return
+                }
                 const locationId = extractLocationIdFromQr(payload)
                 if (!locationId) {
                     showToast({ message: 'Mã chưa hợp lệ. Hãy quét mã hoặc chọn di tích.', type: 'error' })
@@ -153,7 +313,7 @@ export function ScanPage() {
                 setChecking(false)
             }
         },
-        [showToast, applyEngagement, visitSessionId],
+        [showToast, applyEngagement, visitSessionId, performStationCheckin],
     )
 
     // Lắng nghe tín hiệu từ iFrame AR 3D
@@ -208,8 +368,11 @@ export function ScanPage() {
                         lastDecodedRef.current = jsQrResult.data
                         lastDecodedAtRef.current = now
                         setQrCode(jsQrResult.data)
-                        const locationId = extractLocationIdFromQr(jsQrResult.data)
-                        if (locationId) {
+                        const stationQr = parseStationQr(jsQrResult.data)
+                        const locationId = stationQr ? '' : extractLocationIdFromQr(jsQrResult.data)
+                        if (stationQr) {
+                            setQrCode(stationQr.payload)
+                        } else if (locationId) {
                             const normalizedPayload = normalizeQrPayload(jsQrResult.data, locationId)
                             setScanHistory((prev) => [
                                 {
@@ -223,7 +386,12 @@ export function ScanPage() {
                             setQrCode(normalizedPayload)
                         }
                         showToast({ message: 'Đã nhận diện mã QR. Sẽ tự động check-in sau giây lát...', type: 'success' })
-                        if (locationId) {
+                        if (stationQr) {
+                            if (autoCheckinTimerRef.current !== null) window.clearTimeout(autoCheckinTimerRef.current)
+                            autoCheckinTimerRef.current = window.setTimeout(() => {
+                                void performCheckin(stationQr.payload)
+                            }, 600)
+                        } else if (locationId) {
                             if (autoCheckinTimerRef.current !== null) window.clearTimeout(autoCheckinTimerRef.current)
                             autoCheckinTimerRef.current = window.setTimeout(() => {
                                 void performCheckin(normalizeQrPayload(jsQrResult.data, locationId))
@@ -255,11 +423,8 @@ export function ScanPage() {
 
     const submitCheckin = () => performCheckin(qrCode)
 
-    const forceDemoUi =
-        typeof window !== 'undefined' &&
-        (new URLSearchParams(window.location.search).get('forceDemo') === '1' ||
-            localStorage.getItem('timelens_force_demo') === '1')
-    const showDemoCheckin = appEnv.demoEnabled || forceDemoUi
+    // Demo UI only when VITE_DEMO_ENABLED=true — forceDemo / localStorage cannot bypass prod with demo off.
+    const showDemoCheckin = appEnv.demoEnabled
 
     const submitDemoCheckin = async () => {
         if (!showDemoCheckin) return
@@ -285,6 +450,41 @@ export function ScanPage() {
     return (
         <AppLayout activeBorder="right" topNav={<ScanTopNav />} mobileTitle="Quét mã">
             <main className="mt-14 md:mt-16 p-md md:p-lg max-w-6xl mx-auto w-full">
+                {showPackGate && (
+                    <div
+                        data-testid="pack-soft-gate"
+                        className="mb-md rounded-xl border border-[#fe951c]/40 bg-[#fe951c]/10 p-md flex flex-col sm:flex-row sm:items-center gap-3"
+                    >
+                        <div className="flex-1">
+                            <p className="text-sm font-bold text-[#fdb438]">Tải gói Lite trước khi vào hầm?</p>
+                            <p className="text-xs text-on-surface-variant mt-1">
+                                Gói offline giúp media/FAQ vẫn mở khi sóng yếu. Bạn có thể bỏ qua một lần nếu đi cùng hướng dẫn viên.
+                            </p>
+                        </div>
+                        <div className="flex flex-wrap gap-2 shrink-0">
+                            <Link
+                                to={`/pack-prep?site=${encodeURIComponent(activeSiteCode)}`}
+                                className="px-3 py-2 rounded-lg bg-[#fe951c] text-black text-xs font-black uppercase"
+                            >
+                                Tải gói
+                            </Link>
+                            <button
+                                type="button"
+                                className="px-3 py-2 rounded-lg border border-outline-variant text-xs font-bold text-on-surface-variant"
+                                onClick={() => {
+                                    try {
+                                        sessionStorage.setItem(packSkipKey(activeSiteCode), '1')
+                                    } catch {
+                                        /* ignore */
+                                    }
+                                    setPackGateDismissed(true)
+                                }}
+                            >
+                                Bỏ qua lần này
+                            </button>
+                        </div>
+                    </div>
+                )}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-md lg:gap-lg min-h-0 lg:min-h-[650px]">
                     <aside className="lg:col-span-4 bg-surface-container border border-outline-variant rounded-xl flex flex-col">
                         <div className="p-lg border-b border-outline-variant">
@@ -296,7 +496,7 @@ export function ScanPage() {
                             <input
                                 value={qrCode}
                                 onChange={(e) => setQrCode(e.target.value)}
-                                placeholder="VD: timelens:location:<uuid>"
+                                placeholder="QR trạm: ST01:<timestamp>:<sig> hoặc timelens:location:<uuid>"
                                 className="w-full neo-input rounded-lg px-md py-sm"
                             />
 
@@ -425,6 +625,15 @@ export function ScanPage() {
                                     </Link>
                                 )}
                             </div>
+                            {lastStationCode && (
+                                <div className="mt-md">
+                                    <StationNextSteps
+                                        stationCode={lastStationCode}
+                                        siteCode={siteCodeFromLocationId(sessionLocationId)}
+                                        locationId={sessionLocationId}
+                                    />
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>

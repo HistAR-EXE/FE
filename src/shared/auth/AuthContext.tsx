@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { profileApi } from '../../features/profile/api'
 import { authApi, type AuthPayload, type LoginInput, type RegisterInput } from '../../features/auth/api'
+import { hydrateJourneyPassFromProfile } from '../access/contentAccess'
 import { AuthContext, type AuthContextValue } from './auth-context'
 import { normalizeOrgSubscription, normalizeRole, normalizeTier, type AuthUser } from './types'
 import {
@@ -86,6 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const token = getToken()
     if (!token || isAccessTokenExpired()) return
     const profile = await profileApi.me()
+    hydrateJourneyPassFromProfile(profile.activeVisitSites)
     const next = profileToUser(profile)
     setUser(next)
     persistUserSession(next)

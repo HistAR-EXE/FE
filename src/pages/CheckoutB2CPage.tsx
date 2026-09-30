@@ -4,13 +4,16 @@ import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { isSafeRedirect } from '../shared/auth/types'
 import { AuthLayout } from '../components/layout/AuthLayout'
 import { Button } from '../components/ui/Button'
-import { billingApi } from '../features/billing/api'
+import { billingApi, type B2cPaymentStatus, type B2cPaymentStatusCode } from '../features/billing/api'
+import { emitEvent } from '../lib/pilotEvents'
 import { profileApi } from '../features/profile/api'
 import { useAuth } from '../shared/auth/useAuth'
 import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
 import { useToast } from '../shared/ui/toast/useToast'
 import { images } from '../assets/images'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
+import { isPilotSiteCode } from '../shared/config/constants'
+import { markJourneyPassActive } from '../shared/access/contentAccess'
 
 export function CheckoutB2CPage() {
     const [searchParams] = useSearchParams()
@@ -20,10 +23,14 @@ export function CheckoutB2CPage() {
     const [loading, setLoading] = useState(false)
     const [checking, setChecking] = useState(false)
     const [payment, setPayment] = useState<Awaited<ReturnType<typeof billingApi.createB2CPayment>> | null>(null)
-    const [status, setStatus] = useState<'PENDING' | 'PAID' | 'FAILED' | 'EXPIRED' | null>(null)
+    const [status, setStatus] = useState<B2cPaymentStatusCode | null>(null)
+    const [statusDetail, setStatusDetail] = useState<B2cPaymentStatus | null>(null)
     const [upgraded, setUpgraded] = useState(false)
-    const [priceVnd, setPriceVnd] = useState(79_000)
+    const [priceVnd, setPriceVnd] = useState(49_000)
     const [emailVerified, setEmailVerified] = useState<boolean | undefined>(user?.emailVerified)
+
+    const planType = searchParams.get('plan') === 'journey_pass' ? 'JOURNEY_PASS' : 'PREMIUM'
+    const siteCode = isPilotSiteCode(searchParams.get('site')) ? searchParams.get('site')! : 'cu-chi'
 
     const returnTo = useMemo(() => {
         const next = searchParams.get('next')
@@ -31,14 +38,35 @@ export function CheckoutB2CPage() {
     }, [searchParams])
 
     useEffect(() => {
-        billingApi.getPublicPricing().then((data) => setPriceVnd(data.b2cPremiumPriceVnd)).catch(() => undefined)
+        billingApi
+            .getPublicPricing()
+            .then((data) =>
+                setPriceVnd(
+                    planType === 'JOURNEY_PASS'
+                        ? (data.b2cJourneyPassPriceVnd ?? 29_000)
+                        : data.b2cPremiumPriceVnd,
+                ),
+            )
+            .catch(() => undefined)
         profileApi.me()
             .then((profile) => setEmailVerified(profile.emailVerified))
             .catch(() => undefined)
-    }, [])
+    }, [planType])
 
     const completeUpgrade = async (nextPath: string) => {
         const profile = await profileApi.me()
+        if (planType === 'JOURNEY_PASS') {
+            const match = profile.activeVisitSites?.find(
+                (s) => s.siteCode?.toLowerCase() === siteCode.toLowerCase(),
+            )
+            const expiresMs = match?.expiresAt
+                ? Date.parse(match.expiresAt)
+                : Date.now() + 72 * 60 * 60 * 1000
+            markJourneyPassActive(siteCode, Number.isFinite(expiresMs) ? expiresMs : Date.now() + 72 * 60 * 60 * 1000)
+            showToast({ message: 'Journey Pass 72h đã kích hoạt cho site này!', type: 'success' })
+            navigate(nextPath)
+            return
+        }
         updateUser({
             tier: profile.tier,
             orgId: profile.orgId,
@@ -54,8 +82,17 @@ export function CheckoutB2CPage() {
             if (!silent) setChecking(true)
             const nextStatus = await billingApi.getB2CPaymentStatus(orderCode)
             setStatus(nextStatus.status)
-            if (nextStatus.status === 'PAID' && nextStatus.upgraded) {
+            setStatusDetail(nextStatus)
+            if (nextStatus.status === 'PAID' && (nextStatus.upgraded || planType === 'JOURNEY_PASS')) {
                 setUpgraded(true)
+                emitEvent('purchase_success', {
+                    payload: {
+                        orderCode,
+                        amountVnd: nextStatus.amountVnd ?? null,
+                        plan: planType === 'JOURNEY_PASS' ? 'journey_pass' : 'b2c_premium',
+                        siteCode,
+                    },
+                })
                 await completeUpgrade(nextStatus.returnToPath || returnTo)
             }
         } catch (e) {
@@ -69,15 +106,24 @@ export function CheckoutB2CPage() {
         if (loading || emailVerified === false) return
         try {
             setLoading(true)
-            const next = await billingApi.createB2CPayment(returnTo)
+            const next = await billingApi.createB2CPayment(returnTo, {
+                planType,
+                siteCode: planType === 'JOURNEY_PASS' ? siteCode : undefined,
+            })
             setPayment(next)
             setStatus(next.status)
+            setStatusDetail(null)
+            if (next.status === 'UNDERPAID') void refreshPaymentStatus(next.orderCode, true)
         } catch (e) {
             showToast({ message: getFriendlyErrorMessage(e, 'quest'), type: 'error' })
         } finally {
             setLoading(false)
         }
     }
+
+    useEffect(() => {
+        emitEvent('paywall_shown', { payload: { source: 'checkout_b2c' } })
+    }, [])
 
     useEffect(() => {
         if (!payment || upgraded || status === 'EXPIRED' || status === 'FAILED') return
@@ -237,9 +283,10 @@ export function CheckoutB2CPage() {
                                         <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border shadow-sm ${
                                             status === 'PAID' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.4)]' :
                                                 status === 'EXPIRED' ? 'bg-red-500/20 text-red-400 border-red-500/50' :
+                                                    status === 'UNDERPAID' ? 'bg-orange-500/20 text-orange-300 border-orange-500/50' :
                                                     'bg-amber-500/20 text-amber-400 border-amber-500/50 animate-pulse shadow-[0_0_20px_rgba(245,158,11,0.4)]'
                                         }`}>
-                                            {status === 'PAID' ? 'Đã Nhận Tiền' : status === 'EXPIRED' ? 'Đã Hết Hạn' : 'Đang Chờ Quét...'}
+                                            {status === 'PAID' ? 'Đã Nhận Tiền' : status === 'EXPIRED' ? 'Đã Hết Hạn' : status === 'UNDERPAID' ? 'Chuyển Thiếu' : 'Đang Chờ Quét...'}
                                         </span>
                                     </div>
 
@@ -260,7 +307,27 @@ export function CheckoutB2CPage() {
                                         <MaterialIcon name="sync" className={checking ? "animate-spin text-lg" : "text-lg"} />
                                         {checking ? 'Đang kiểm tra...' : upgraded ? 'Hệ thống đang mở khóa...' : 'Tôi Đã Chuyển Khoản'}
                                     </Button>
-                                    {status !== 'PAID' && status !== 'EXPIRED' && (
+                                    {status === 'UNDERPAID' && (
+                                        <div
+                                            data-testid="underpaid-notice"
+                                            className="mt-4 w-full max-w-[280px] rounded-xl border border-orange-500/50 bg-orange-500/10 px-4 py-3 text-left text-xs text-orange-100"
+                                        >
+                                            <p className="font-bold mb-1">Bạn đã chuyển thiếu tiền</p>
+                                            <p className="text-orange-200/90 mb-2">
+                                                Đã nhận {(statusDetail?.receivedAmountVnd ?? 0).toLocaleString('vi-VN')}đ / {(statusDetail?.amountVnd ?? payment.amountVnd).toLocaleString('vi-VN')}đ.
+                                                Vui lòng chuyển bổ sung{' '}
+                                                <strong>{(statusDetail?.remainingAmountVnd ?? payment.amountVnd).toLocaleString('vi-VN')}đ</strong>{' '}
+                                                với <strong>cùng nội dung chuyển khoản</strong>:
+                                            </p>
+                                            <p className="font-mono font-black text-[#fdb438] break-all text-sm">
+                                                {statusDetail?.transferContent ?? payment.transferContent}
+                                            </p>
+                                            <p className="text-orange-200/70 mt-2">
+                                                Chuyển dư (≥ số tiền) vẫn được chấp nhận. Premium sẽ tự kích hoạt khi tổng tiền đủ.
+                                            </p>
+                                        </div>
+                                    )}
+                                    {status !== 'PAID' && status !== 'EXPIRED' && status !== 'UNDERPAID' && (
                                         <p className="mt-3 max-w-[260px] text-center text-[11px] font-medium text-gray-400">
                                             Đang chờ ngân hàng xác nhận (có thể mất 1–2 phút).
                                         </p>

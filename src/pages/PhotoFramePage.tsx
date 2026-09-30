@@ -12,17 +12,30 @@ import { useAuth } from '../shared/auth/useAuth'
 import { hasPremiumAccess } from '../shared/access/contentAccess'
 import { UpgradePrompt } from '../components/monetization/UpgradePrompt'
 import { resizeImageForUpload } from '../shared/utils/resizeImage'
+import {
+  buildPreviewFilter,
+  DEFAULT_LOW_LIGHT,
+  enhanceCapturedPhoto,
+  TUNNEL_VIGNETTE_CSS,
+  type LowLightOptions,
+} from '../lib/heritageImage'
+import { emitEvent } from '../lib/pilotEvents'
+import { getActiveStationCode, isCameraLockedForStation } from '../lib/stationSafety'
+import { ReportContentButton } from '../components/feedback/ReportContentModal'
 
 export function PhotoFramePage() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const premium = hasPremiumAccess(user)
+  const activeStation = getActiveStationCode()
+  const cameraLocked = isCameraLockedForStation(activeStation)
   const [frames, setFrames] = useState<PhotoFrame[]>([])
   const [frameId, setFrameId] = useState('')
   const [variant, setVariant] = useState<'square' | 'story'>('square')
   const [file, setFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
   const [framesLoading, setFramesLoading] = useState(true)
+  const [lowLight, setLowLight] = useState<LowLightOptions>(DEFAULT_LOW_LIGHT)
   const { showToast } = useToast()
 
   useEffect(() => {
@@ -35,6 +48,12 @@ export function PhotoFramePage() {
       .catch((e) => showToast({ message: getFriendlyErrorMessage(e, 'upload'), type: 'error' }))
       .finally(() => setFramesLoading(false))
   }, [showToast])
+
+  useEffect(() => {
+    if (!cameraLocked) {
+      emitEvent('camera_opened', { stationCode: activeStation ?? undefined, payload: { page: 'photo_frame' } })
+    }
+  }, [cameraLocked, activeStation])
 
   const selectedFrame = useMemo(() => frames.find((f) => f.id === frameId), [frames, frameId])
   const selectedLocked = selectedFrame?.requiresPremium && !premium
@@ -57,7 +76,8 @@ export function PhotoFramePage() {
     }
     setUploading(true)
     try {
-      const resized = await resizeImageForUpload(file)
+      const enhanced = await enhanceCapturedPhoto(file, lowLight).catch(() => file)
+      const resized = await resizeImageForUpload(enhanced)
       const creation = await viralApi.uploadCreation({ file: resized, frameId, variant })
       navigate(`/share?creationId=${creation.id}&outputUrl=${encodeURIComponent(creation.outputUrl)}`)
       showToast({ message: 'Tạo ảnh thành công.', type: 'success' })
@@ -90,7 +110,11 @@ export function PhotoFramePage() {
                   src={previewUrl || selectedFrame?.imageUrl || images.photoFrameCharacter}
                   crossOrigin="anonymous"
                   className="w-full h-full object-cover"
+                  style={previewUrl ? { filter: buildPreviewFilter(lowLight) } : undefined}
                 />
+                {previewUrl && lowLight.tunnelGrade && (
+                  <div className="absolute inset-0 pointer-events-none" style={{ background: TUNNEL_VIGNETTE_CSS }} />
+                )}
               </div>
             </div>
           </div>
@@ -106,12 +130,68 @@ export function PhotoFramePage() {
             {!framesLoading && frames.length === 0 && (
               <p className="text-sm text-on-surface-variant">Chưa có khung ảnh. Thử lại sau.</p>
             )}
+            {cameraLocked && (
+              <div
+                data-testid="camera-locked-banner"
+                className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-md text-sm text-amber-100"
+              >
+                <p className="font-bold flex items-center gap-2">
+                  <MaterialIcon name="warning" className="text-base" /> Camera tạm khóa tại trạm {activeStation}
+                </p>
+                <p className="mt-1 text-amber-100/80">
+                  Cất điện thoại khi đi trong hầm hẹp / khu tưởng niệm. Ưu tiên nghe lời dẫn. Bạn vẫn có thể chọn ảnh từ thư viện (không selfie lên server mặc định).
+                </p>
+              </div>
+            )}
             <div className="flex flex-col gap-md">
               <h3 className="font-title-md">Nguồn ảnh</h3>
               <p className="text-sm text-on-surface-variant">
-                Không dùng được camera? Chọn từ thư viện ảnh bên dưới.
+                {cameraLocked
+                  ? 'Camera live bị khóa — chọn ảnh từ thư viện nếu cần.'
+                  : 'Không dùng được camera? Chọn từ thư viện ảnh bên dưới.'}
               </p>
-              <input type="file" accept="image/*" capture="environment" onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="w-full text-sm" />
+              <input
+                type="file"
+                accept="image/*"
+                capture={cameraLocked ? undefined : 'environment'}
+                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                className="w-full text-sm"
+              />
+              {!cameraLocked && (
+                <div className="flex items-start gap-sm rounded-lg border border-outline-variant bg-surface p-sm text-sm text-on-surface-variant" role="note">
+                  <MaterialIcon name="flashlight_on" className="text-base text-primary shrink-0" />
+                  <p>
+                    Nơi thiếu sáng (địa đạo, hầm)? Bật đèn pin của điện thoại hoặc nút flash trong ứng dụng camera, giữ máy thật vững rồi chụp.
+                    Có thể tăng sáng bên dưới nếu ảnh vẫn tối.
+                  </p>
+                </div>
+              )}
+              <ReportContentButton stationCode={activeStation ?? undefined} context="photo_frame" />
+            </div>
+            <div className="flex flex-col gap-md">
+              <h3 className="font-title-md">Chế độ thiếu sáng</h3>
+              <label className="flex flex-col gap-1 text-sm text-on-surface-variant">
+                <span className="flex justify-between">
+                  <span>Tăng sáng (đường cong gamma)</span>
+                  <span>{Math.round(lowLight.boost * 100)}%</span>
+                </span>
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  value={Math.round(lowLight.boost * 100)}
+                  onChange={(e) => setLowLight((s) => ({ ...s, boost: Number(e.target.value) / 100 }))}
+                  aria-label="Tăng sáng"
+                />
+              </label>
+              <label className="flex items-center gap-sm text-sm text-on-surface">
+                <input
+                  type="checkbox"
+                  checked={lowLight.tunnelGrade}
+                  onChange={(e) => setLowLight((s) => ({ ...s, tunnelGrade: e.target.checked }))}
+                />
+                Ánh sáng địa đạo (ấm, giảm bão hòa, tối viền)
+              </label>
             </div>
             <div className="flex flex-col gap-md">
               <h3 className="font-title-md">Khung</h3>

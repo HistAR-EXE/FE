@@ -1,5 +1,5 @@
 // src/features/admin/analyticsDemo.ts
-import { getData, getPageData, httpClient } from '../../shared/api/httpClient'
+import { getData, getListData, getPageData, httpClient } from '../../shared/api/httpClient'
 import type { PageResponse } from '../../shared/api/contracts'
 
 export type AdminUserSummary = {
@@ -31,6 +31,9 @@ export type AdminB2b2cInquiry = {
   message: string | null
   status: string
   createdAt: string
+  interestSiteCode?: string | null
+  contactedAt?: string | null
+  adminNotes?: string | null
 }
 
 export type AdminRecentPayment = {
@@ -41,6 +44,39 @@ export type AdminRecentPayment = {
   payerEmail?: string | null
   createdAt: string
   channel?: string | null
+  /** BE AdminRecentB2cPaymentItem fields */
+  amount?: number
+  userEmail?: string | null
+  transferContent?: string | null
+  /** UNDERPAID: total received so far */
+  receivedAmount?: number
+}
+
+export type ReferralStatsItem = {
+  code: string
+  creatorName: string
+  active: boolean
+  visits: number
+  uniqueSessions: number
+  uniqueUsers: number
+  lastVisitAt: string | null
+}
+
+export type PilotKpi = {
+  sessionStart: number
+  stationArrived: number
+  shareInitiated: number
+  checkinsLast7Days: number
+  sessionEnd: number
+  stationCompleted: number
+  exportCreated: number
+  packLoaded: number
+  checkinResult: number
+  npsSubmitted: number
+  landingVisit: number
+  paywallShown: number
+  purchaseSuccess: number
+  byEventType: Record<string, number>
 }
 
 export type AdminDiscoveryPoint = {
@@ -213,6 +249,64 @@ export type AdminBillingSettings = {
   updatedAt: string | null
 }
 
+export type AdminStationBlock = {
+  id: string
+  blockType: string
+  title: string | null
+  body: string | null
+  mediaUrl: string | null
+  sortOrder: number
+  metaJson: string | null
+}
+
+export type AdminStation = {
+  id: string
+  siteCode: string
+  code: string
+  name: string
+  sortOrder: number
+  lat: number | null
+  lng: number | null
+  questStepKey: string | null
+  active: boolean
+  blocks: AdminStationBlock[]
+}
+
+export type AdminContentReport = {
+  id: string
+  stationCode: string | null
+  sessionId: string | null
+  payload: string
+  occurredAt: string
+  statusHint: 'NEW' | 'REVIEWED' | string
+}
+
+export type AdminStationImportItem = {
+  code: string
+  name: string
+  sortOrder?: number
+  lat?: number | null
+  lng?: number | null
+  questStepKey?: string | null
+  active?: boolean
+  blocks?: Array<{
+    blockType: string
+    title?: string | null
+    body?: string | null
+    mediaUrl?: string | null
+    sortOrder?: number
+    metaJson?: string | null
+  }>
+}
+
+export type AdminStationQrToken = {
+  stationCode: string
+  timestamp: number
+  signature: string
+  payload: string
+  signed: boolean
+}
+
 export const adminApi = {
   listUsers: (page = 0, size = 20) =>
     getPageData<AdminUserSummary>(httpClient.get('/api/admin/users', { params: { page, size } })),
@@ -270,6 +364,36 @@ export const adminApi = {
   listRecentPayments: (limit = 20) =>
     getData<AdminRecentPayment[]>(
       httpClient.get('/api/admin/billing/payments/recent', { params: { limit } }),
+    ),
+
+  listPaymentsByStatus: (status: string, limit = 50) =>
+    getData<AdminRecentPayment[]>(
+      httpClient.get('/api/admin/billing/payments', { params: { status, limit } }),
+    ),
+
+  pilotKpi: () => getData<PilotKpi>(httpClient.get('/api/admin/analytics/pilot-kpi')),
+
+  listContentReports: (days = 30, limit = 50) =>
+    getData<AdminContentReport[]>(
+      httpClient.get('/api/admin/content-reports', { params: { days, limit } }),
+    ),
+
+  referralStats: (days = 30) =>
+    getListData<ReferralStatsItem>(httpClient.get('/api/admin/referral/stats', { params: { days } })),
+
+  listStations: (siteCode = 'cu-chi') =>
+    getListData<AdminStation>(httpClient.get(`/api/sites/${encodeURIComponent(siteCode)}/stations`)),
+
+  importStations: (siteCode: string, body: AdminStationImportItem[]) =>
+    getListData<AdminStation>(
+      httpClient.post(`/api/admin/sites/${encodeURIComponent(siteCode)}/stations/import`, body),
+    ),
+
+  stationQrToken: (code: string, siteCode = 'cu-chi', staticQr = true) =>
+    getData<AdminStationQrToken>(
+      httpClient.get(`/api/admin/stations/${encodeURIComponent(code)}/qr-token`, {
+        params: { siteCode, static: staticQr },
+      }),
     ),
 
   getBillingSettings: () =>

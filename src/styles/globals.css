@@ -470,6 +470,156 @@
     z-index: 21;
 }
 
+/* ── Time Portal 2.5D: parallax + đèn dầu hotspots ── */
+.portal-parallax {
+    --px: 0;
+    --py: 0;
+}
+
+.portal-parallax-layer {
+    /* --depth: hệ số dịch chuyển (px tối đa) của từng lớp */
+    transform: translate3d(calc(var(--px) * var(--depth, 8) * 1px), calc(var(--py) * var(--depth, 8) * 1px), 0) scale(1.08);
+    will-change: transform;
+}
+
+.portal-depth-fg {
+    -webkit-mask-image: var(--depth-map);
+    mask-image: var(--depth-map);
+    -webkit-mask-mode: luminance;
+    mask-mode: luminance;
+    -webkit-mask-size: cover;
+    mask-size: cover;
+    -webkit-mask-position: center;
+    mask-position: center;
+}
+
+.lamp-hotspot {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    display: block;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    border-radius: 9999px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
+}
+
+.lamp-glow {
+    position: absolute;
+    inset: 0;
+    border-radius: 9999px;
+    background: radial-gradient(
+        circle at center,
+        rgba(255, 214, 120, 0.55) 0%,
+        rgba(254, 149, 28, 0.32) 22%,
+        rgba(242, 191, 80, 0.12) 50%,
+        transparent 72%
+    );
+    mix-blend-mode: screen;
+    opacity: 0.4;
+    transform: scale(0.88);
+    transition: opacity 0.35s ease, transform 0.35s ease;
+    animation: lamp-flicker 3.4s ease-in-out infinite;
+    pointer-events: none;
+}
+
+.lamp-core {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 12px;
+    height: 12px;
+    margin: -6px 0 0 -6px;
+    border-radius: 9999px;
+    background: radial-gradient(circle, #fff3c4 0%, #fe951c 60%, transparent 100%);
+    box-shadow: 0 0 14px rgba(254, 149, 28, 0.75);
+    opacity: 0.7;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    pointer-events: none;
+}
+
+.lamp-hotspot:hover .lamp-glow,
+.lamp-hotspot:focus-visible .lamp-glow,
+.lamp-hotspot.is-active .lamp-glow {
+    opacity: 1;
+    transform: scale(1.08);
+    animation-play-state: paused;
+}
+
+.lamp-hotspot:hover .lamp-core,
+.lamp-hotspot:focus-visible .lamp-core,
+.lamp-hotspot.is-active .lamp-core {
+    opacity: 1;
+    transform: scale(1.4);
+}
+
+.lamp-hotspot:focus-visible {
+    box-shadow: 0 0 0 2px rgba(242, 191, 80, 0.6);
+}
+
+.lamp-tip {
+    position: absolute;
+    left: 50%;
+    bottom: calc(50% + 18px);
+    transform: translate(-50%, 6px);
+    min-width: 9rem;
+    max-width: 14rem;
+    padding: 6px 10px;
+    border-radius: 10px;
+    background: rgba(12, 12, 20, 0.82);
+    border: 1px solid rgba(242, 191, 80, 0.4);
+    backdrop-filter: blur(8px);
+    color: #f2bf50;
+    font-size: 12px;
+    line-height: 1.35;
+    text-align: left;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.lamp-tip strong {
+    display: block;
+    font-weight: 600;
+}
+
+.lamp-tip span {
+    display: block;
+    margin-top: 2px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.lamp-tip--below {
+    bottom: auto;
+    top: calc(50% + 18px);
+    transform: translate(-50%, -6px);
+}
+
+.lamp-hotspot:hover .lamp-tip,
+.lamp-hotspot:focus-visible .lamp-tip,
+.lamp-hotspot.is-active .lamp-tip {
+    opacity: 1;
+    transform: translate(-50%, 0);
+}
+
+@keyframes lamp-flicker {
+    0%, 100% { opacity: 0.4; }
+    30% { opacity: 0.52; }
+    55% { opacity: 0.36; }
+    80% { opacity: 0.48; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .portal-parallax-layer {
+        transform: scale(1.04);
+    }
+    .lamp-glow {
+        animation: none;
+    }
+}
+
 @keyframes float-up {
     0% {
         opacity: 0;

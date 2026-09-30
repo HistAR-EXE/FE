@@ -6,6 +6,7 @@ import { CharacterExplorePage } from '../pages/CharacterExplorePage'
 import { CharacterDetailPage } from '../pages/CharacterDetailPage'
 import { TeacherDashboardPage } from '../pages/TeacherDashboardPage'
 import { TeacherAssignmentsPage } from '../pages/TeacherAssignmentsPage'
+import { TeacherLiveBoardPage } from '../pages/TeacherLiveBoardPage'
 import { TeacherRoute } from '../shared/router/TeacherRoute'
 import { ChatPage } from '../pages/ChatPage'
 import { ExplorePage } from '../pages/ExplorePage'
@@ -39,7 +40,14 @@ import { AdminContentPage } from '../pages/AdminContentPage'
 import { AdminOrganizationsPage } from '../pages/AdminOrganizationsPage'
 import { AdminUsersPage } from '../pages/AdminUsersPage'
 import { GroupHubPage } from '../pages/GroupHubPage'
+import { SquadLobbyPage } from '../pages/SquadLobbyPage'
 import { GroupProgressPage } from '../pages/GroupProgressPage'
+import { PackPrepPage } from '../pages/PackPrepPage'
+import { StationMediaDemoPage } from '../pages/StationMediaDemoPage'
+import { StationGamePage } from '../pages/StationGamePage'
+import { JourneyWrappedPage } from '../pages/JourneyWrappedPage'
+import { CreatorLandingPage } from '../pages/CreatorLandingPage'
+import { CreatorStatsPage } from '../pages/CreatorStatsPage'
 import { PrivacyPage } from '../pages/PrivacyPage'
 import { TermsPage } from '../pages/TermsPage'
 import { AdminRoute } from '../shared/router/AdminRoute'
@@ -76,6 +84,13 @@ export function AppRoutes() {
         <Route path="/join" element={<JoinPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/terms" element={<TermsPage />} />
+        <Route path="/pack-prep" element={<PackPrepPage />} />
+        <Route path="/sites/:siteCode/stations/:code/media" element={<StationMediaDemoPage />} />
+        <Route path="/sites/:siteCode/stations/:code/game/:gameId" element={<StationGamePage />} />
+        <Route path="/stations/:code/media" element={<StationMediaDemoPage />} />
+        <Route path="/stations/:code/game/:gameId" element={<StationGamePage />} />
+        <Route path="/creator/:code" element={<CreatorLandingPage />} />
+        <Route path="/creator/:code/stats" element={<CreatorStatsPage />} />
 
         {/* Protected — login required */}
         <Route element={<ProtectedRoute />}>
@@ -115,6 +130,7 @@ export function AppRoutes() {
             <Route element={<TeacherRoute />}>
               <Route path="/teacher" element={<TeacherDashboardPage />} />
               <Route path="/teacher/assignments" element={<TeacherAssignmentsPage />} />
+              <Route path="/teacher/live-board" element={<TeacherLiveBoardPage />} />
             </Route>
 
             <Route element={<ModeGuardRoute />}>
@@ -123,7 +139,9 @@ export function AppRoutes() {
               <Route path="/characters/:characterId" element={<CharacterDetailPage />} />
               <Route path="/artifacts" element={<ArtifactsPage />} />
               <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/journey-wrapped" element={<JourneyWrappedPage />} />
               <Route path="/groups" element={<GroupHubPage />} />
+              <Route path="/squad" element={<SquadLobbyPage />} />
               <Route path="/groups/:groupId/progress" element={<GroupProgressPage />} />
               <Route path="/share" element={<SharePage />} />
               <Route path="/photo-frame" element={<PhotoFramePage />} />

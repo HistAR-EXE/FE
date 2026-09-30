@@ -13,6 +13,41 @@ export function hasPremiumAccess(user?: ContentAccessUser): boolean {
   return isPremium(user as AuthUser)
 }
 
+/** Story ch.3–6 / citations: Premium OR active Journey Pass for site (session hint). */
+export function canAccessStoryPremium(user?: ContentAccessUser, siteCode?: string): boolean {
+  if (hasPremiumAccess(user)) return true
+  if (!siteCode || typeof sessionStorage === 'undefined') return false
+  try {
+    const raw = sessionStorage.getItem(`histar_journey_pass:${siteCode.trim().toLowerCase()}`)
+    if (!raw) return false
+    const expires = Number(raw)
+    return Number.isFinite(expires) && expires > Date.now()
+  } catch {
+    return false
+  }
+}
+
+export function markJourneyPassActive(siteCode: string, expiresAtMs: number) {
+  try {
+    sessionStorage.setItem(`histar_journey_pass:${siteCode.trim().toLowerCase()}`, String(expiresAtMs))
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Hydrate Journey Pass session hints from GET /api/profile/me. */
+export function hydrateJourneyPassFromProfile(
+  sites: { siteCode: string; expiresAt: string }[] | null | undefined,
+) {
+  if (!sites?.length) return
+  for (const site of sites) {
+    if (!site?.siteCode || !site.expiresAt) continue
+    const ms = Date.parse(site.expiresAt)
+    if (!Number.isFinite(ms) || ms <= Date.now()) continue
+    markJourneyPassActive(site.siteCode, ms)
+  }
+}
+
 export function shouldShowB2CPaywall(user?: ContentAccessUser): boolean {
   if (!user) return false
   if (user.orgId) return false

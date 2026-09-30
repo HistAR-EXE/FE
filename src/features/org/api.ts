@@ -65,6 +65,31 @@ export type ProvisionStudentResult = {
   temporaryPassword?: string | null
 }
 
+export type LiveBoardRow = {
+  userId: string
+  displayName: string
+  email: string
+  stationsCompleted: number
+  score: number
+  lastStationCode: string | null
+  lastActivityAt: string | null
+}
+
+export type LiveBoardSnapshot = {
+  organizationId: string
+  generatedAt: string
+  windowStart: string
+  memberCount: number
+  activeMembers: number
+  lastRallyAt: string | null
+  rows: LiveBoardRow[]
+}
+
+export type LiveBoardRally = {
+  organizationId: string
+  rallyAt: string
+}
+
 export const orgApi = {
   mine: () => getData<OrgMembership[]>(httpClient.get('/api/org/mine')),
   analytics: (orgId: string) =>
@@ -85,4 +110,12 @@ export const orgApi = {
   ) => getData<ProvisionStudentResult>(httpClient.post(`/api/org/${orgId}/students/provision`, payload)),
   leave: () => getData<void>(httpClient.post('/api/org/leave', { confirm: true })),
   removeMember: (userId: string) => getData<void>(httpClient.delete(`/api/org/members/${userId}`)),
+  liveBoard: (orgId: string) =>
+    getData<LiveBoardSnapshot>(httpClient.get(`/api/org/${orgId}/live-board`)),
+  liveBoardRally: (orgId: string) =>
+    getData<LiveBoardRally>(httpClient.post(`/api/org/${orgId}/live-board/rally`)),
+  liveBoardCsv: async (orgId: string) => {
+    const res = await httpClient.get<Blob>(`/api/org/${orgId}/live-board/export.csv`, { responseType: 'blob' })
+    return res.data
+  },
 }

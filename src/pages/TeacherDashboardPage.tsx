@@ -25,16 +25,26 @@ export function TeacherDashboardPage() {
   const [removingUserId, setRemovingUserId] = useState<string | null>(null)
   const { showToast } = useToast()
 
-  useEffect(() => {
+  const reloadMemberships = () => {
     orgApi
       .mine()
       .then((items) => {
         setMemberships(items)
-        if (items[0]) setOrgId(items[0].organizationId)
+        if (items[0]) setOrgId((prev) => prev || items[0].organizationId)
       })
       .catch(() => showToast({ message: 'Không tải được tổ chức.', type: 'error' }))
       .finally(() => setMembershipsLoaded(true))
+  }
+
+  useEffect(() => {
+    reloadMemberships()
   }, [showToast])
+
+  useEffect(() => {
+    const onFocus = () => reloadMemberships()
+    window.addEventListener('focus', onFocus)
+    return () => window.removeEventListener('focus', onFocus)
+  }, [])
 
   useEffect(() => {
     if (!orgId) return
@@ -167,6 +177,9 @@ export function TeacherDashboardPage() {
               LMS Premium
             </Link>
           )}
+          <Link to="/teacher/live-board" className="text-sm px-sm py-xs border border-secondary/40 rounded-lg text-secondary">
+            Live Board
+          </Link>
           <Link to="/profile" className="text-sm text-secondary underline">
             Hồ sơ
           </Link>
@@ -180,10 +193,10 @@ export function TeacherDashboardPage() {
             </p>
             <div className="flex flex-wrap justify-center gap-sm">
               <Link
-                to="/checkout/b2b"
+                to="/checkout/b2b?next=%2Fteacher"
                 className="px-md py-sm rounded-lg border border-secondary text-secondary hover:bg-secondary/10"
               >
-                Mua gói B2B
+                Mua gói trường (SePay QR)
               </Link>
               <Link
                 to="/checkout/b2b2c"

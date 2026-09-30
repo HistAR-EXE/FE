@@ -1,18 +1,38 @@
-﻿// src/pages/PricingPage.tsx
-import React, { useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+// src/pages/PricingPage.tsx
+import React, { useEffect, useState } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { resolveMediaUrl } from '../shared/config/env'
 import mascotImg from '../assets/mascot.png'
 import { PublicHeader } from '../components/layout/PublicHeader'
 import { PublicFooter } from '../components/layout/PublicFooter'
+import { billingApi } from '../features/billing/api'
 
 export const PricingPage: React.FC = () => {
     const navigate = useNavigate()
+    const [searchParams] = useSearchParams()
+    const [b2cPrice, setB2cPrice] = useState(49_000)
+    const [journeyPassPrice, setJourneyPassPrice] = useState(29_000)
+    const next = searchParams.get('next')
+    const site = searchParams.get('site') || 'cu-chi'
+
+    const checkoutB2cHref = next
+        ? `/checkout/b2c?site=${encodeURIComponent(site)}&next=${encodeURIComponent(next)}`
+        : `/checkout/b2c?site=${encodeURIComponent(site)}`
+    const checkoutJourneyHref = next
+        ? `/checkout/b2c?plan=journey_pass&site=${encodeURIComponent(site)}&next=${encodeURIComponent(next)}`
+        : `/checkout/b2c?plan=journey_pass&site=${encodeURIComponent(site)}`
+    const checkoutB2bHref = (planId: string) => {
+        const returnTo = next || '/teacher'
+        return `/checkout/b2b?plan=${planId}&next=${encodeURIComponent(returnTo)}`
+    }
 
     useEffect(() => {
-        // Cuộn lên đầu trang khi mới vào
         window.scrollTo(0, 0)
+        billingApi.getPublicPricing().then((data) => {
+            setB2cPrice(data.b2cPremiumPriceVnd)
+            setJourneyPassPrice(data.b2cJourneyPassPriceVnd ?? 29_000)
+        }).catch(() => undefined)
     }, [])
 
     return (
@@ -58,6 +78,25 @@ export const PricingPage: React.FC = () => {
                         <p className="text-sm text-[#64748B] font-semibold max-w-2xl mx-auto lg:mx-0 mt-3 italic border-l-4 border-[#FDC908] pl-3 bg-[#FFF2C3]/40 py-2 pr-3 rounded-r-lg shadow-sm">
                             * Lưu ý: Cổng Thời Gian & phòng nhóm chạy trên web; app tập trung tour onsite và check-in AR.
                         </p>
+
+                        
+                        <div className="mt-6 max-w-xl mx-auto lg:mx-0 rounded-2xl border border-emerald-500/40 bg-emerald-50 px-5 py-4 text-left shadow-sm">
+                            <Link
+                                to={checkoutJourneyHref}
+                                className="inline-flex items-center gap-2 text-emerald-700 text-sm font-black"
+                                data-testid="pricing-journey-pass"
+                            >
+                                Journey Pass 72h · {journeyPassPrice.toLocaleString('vi-VN')}đ · site {site}
+                            </Link>
+                            <ul className="mt-3 space-y-1.5 text-xs text-emerald-800/90 font-medium">
+                                <li>Mở chương truyện 3–6 và nguồn trích dẫn RAG tại site đã mua</li>
+                                <li>Chat vẫn theo hạn mức miễn phí/ngày — không phải chat không giới hạn</li>
+                                <li>Muốn chat vô hạn + mọi pilot: chọn Premium bên dưới</li>
+                            </ul>
+                            <Link to="/checkout/b2b2c" className="mt-3 inline-flex text-xs font-bold uppercase tracking-wider text-[#0275FB] hover:underline" data-testid="pricing-b2b2c-link">
+                                Hợp tác BQL / trường học (B2B2C)
+                            </Link>
+                        </div>
 
                         <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-4">
                             <a href="#b2c-pricing" className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-[#0275FB] to-[#1d4ed8] text-white font-black text-sm uppercase tracking-wider shadow-[0_8px_25px_rgba(2,117,251,0.4)] hover:scale-105 transition-all flex items-center justify-center gap-2 cursor-pointer">
@@ -153,7 +192,7 @@ export const PricingPage: React.FC = () => {
                                     <p className="text-[#475569] mt-2 font-medium text-base">Hành trang hoàn hảo cho những chuyến du lịch và khám phá kiến thức chuyên sâu.</p>
                                 </div>
                                 <div className="mt-4 flex items-baseline gap-1.5">
-                                    <span className="text-5xl font-black text-[#0275FB] drop-shadow-sm">79.000đ</span>
+                                    <span className="text-5xl font-black text-[#0275FB] drop-shadow-sm">{`${b2cPrice.toLocaleString('vi-VN')}đ`}</span>
                                     <span className="text-base font-bold text-[#64748B]">/ tháng</span>
                                 </div>
 
@@ -176,7 +215,7 @@ export const PricingPage: React.FC = () => {
                                     </li>
                                 </div>
                             </div>
-                            <button onClick={() => navigate('/login')} className="mt-10 w-full py-4 rounded-xl bg-gradient-to-r from-[#0275FB] to-[#1d4ed8] hover:scale-[1.02] text-white font-black text-sm uppercase tracking-wider transition-all shadow-[0_8px_25px_rgba(2,117,251,0.4)] cursor-pointer relative z-10">
+                            <button onClick={() => navigate(checkoutB2cHref)} className="mt-10 w-full py-4 rounded-xl bg-gradient-to-r from-[#0275FB] to-[#1d4ed8] hover:scale-[1.02] text-white font-black text-sm uppercase tracking-wider transition-all shadow-[0_8px_25px_rgba(2,117,251,0.4)] cursor-pointer relative z-10">
                                 Đăng Ký Premium Ngay
                             </button>
                         </div>
@@ -238,7 +277,7 @@ export const PricingPage: React.FC = () => {
                                     </ul>
                                 </div>
                             </div>
-                            <button onClick={() => navigate('/login')} className="mt-8 w-full py-4 rounded-xl bg-white border-2 border-[#CBD5E1] group-hover:border-[#0275FB] group-hover:bg-[#0275FB] group-hover:text-white text-[#475569] font-black text-sm uppercase tracking-wider transition-all cursor-pointer shadow-sm">Chọn Gói</button>
+                            <button onClick={() => navigate(checkoutB2bHref('MICRO'))} className="mt-8 w-full py-4 rounded-xl bg-white border-2 border-[#CBD5E1] group-hover:border-[#0275FB] group-hover:bg-[#0275FB] group-hover:text-white text-[#475569] font-black text-sm uppercase tracking-wider transition-all cursor-pointer shadow-sm">Chọn Gói</button>
                         </div>
 
                         {/* GÓI 2: STANDARD (HERO B2B) */}
@@ -279,7 +318,7 @@ export const PricingPage: React.FC = () => {
                                     </ul>
                                 </div>
                             </div>
-                            <button onClick={() => navigate('/login')} className="mt-8 w-full py-4 rounded-xl bg-[#0275FB] hover:bg-[#1d4ed8] text-white font-black text-sm uppercase tracking-wider transition-all shadow-[0_5px_20px_rgba(2,117,251,0.3)] cursor-pointer">
+                            <button onClick={() => navigate(checkoutB2bHref('STANDARD') + '&licenses=3')} className="mt-8 w-full py-4 rounded-xl bg-[#0275FB] hover:bg-[#1d4ed8] text-white font-black text-sm uppercase tracking-wider transition-all shadow-[0_5px_20px_rgba(2,117,251,0.3)] cursor-pointer">
                                 Triển Khai Tiêu Chuẩn
                             </button>
                         </div>
@@ -313,7 +352,7 @@ export const PricingPage: React.FC = () => {
                                     </ul>
                                 </div>
                             </div>
-                            <button onClick={() => navigate('/login')} className="mt-8 w-full py-4 rounded-xl bg-white border-2 border-[#CBD5E1] group-hover:border-emerald-600 group-hover:bg-emerald-600 group-hover:text-white text-[#475569] font-black text-sm uppercase tracking-wider transition-all cursor-pointer shadow-sm">
+                            <button onClick={() => navigate(checkoutB2bHref('PREMIUM'))} className="mt-8 w-full py-4 rounded-xl bg-white border-2 border-[#CBD5E1] group-hover:border-emerald-600 group-hover:bg-emerald-600 group-hover:text-white text-[#475569] font-black text-sm uppercase tracking-wider transition-all cursor-pointer shadow-sm">
                                 Đăng Ký Toàn Diện
                             </button>
                         </div>

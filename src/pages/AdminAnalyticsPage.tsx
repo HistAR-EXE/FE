@@ -3,7 +3,13 @@ import { useEffect, useState } from 'react'
 import { AppLayout } from '../components/layout/AppLayout'
 import { SimpleTopNav } from '../components/layout/TopNav'
 import { AdminSubNav } from '../components/admin/AdminSubNav'
-import { adminApi, type AdminAnalyticsOverview, type SessionReplay } from '../features/admin/api'
+import {
+    adminApi,
+    type AdminAnalyticsOverview,
+    type PilotKpi,
+    type ReferralStatsItem,
+    type SessionReplay,
+} from '../features/admin/api'
 import { analyticsDemoOverview } from '../features/admin/analyticsDemo'
 import { CU_CHI_LOCATION_ID } from '../shared/config/constants'
 import { useToast } from '../shared/ui/toast/useToast'
@@ -43,6 +49,19 @@ export function AdminAnalyticsPage() {
     const [replayLoading, setReplayLoading] = useState(false)
 
     const { showToast } = useToast()
+    const [pilotKpi, setPilotKpi] = useState<PilotKpi | null>(null)
+    const [referralStats, setReferralStats] = useState<ReferralStatsItem[]>([])
+
+    useEffect(() => {
+        adminApi
+            .pilotKpi()
+            .then(setPilotKpi)
+            .catch(() => setPilotKpi(null))
+        adminApi
+            .referralStats(30)
+            .then(setReferralStats)
+            .catch(() => setReferralStats([]))
+    }, [])
 
     useEffect(() => {
         setLoading(true)
@@ -103,6 +122,85 @@ export function AdminAnalyticsPage() {
                 </div>
 
                 <AdminSubNav />
+
+                {referralStats.length > 0 && (
+                    <section data-testid="referral-stats" className="bg-surface-container border border-outline-variant rounded-xl p-md">
+                        <div className="flex items-center justify-between mb-sm">
+                            <h2 className="font-title-md text-on-surface">Creator referral (30 ngày)</h2>
+                            <span className="text-xs text-on-surface-variant">GET /api/admin/referral/stats</span>
+                        </div>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-sm">
+                                <thead>
+                                    <tr className="text-left text-on-surface-variant text-xs uppercase">
+                                        <th className="py-1 pr-2">Code</th>
+                                        <th className="py-1 pr-2">Creator</th>
+                                        <th className="py-1 pr-2 tabular-nums">Visits</th>
+                                        <th className="py-1 pr-2 tabular-nums">Sessions</th>
+                                        <th className="py-1 pr-2 tabular-nums">Users</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {referralStats.map((r) => (
+                                        <tr key={r.code} className="border-t border-outline-variant/40">
+                                            <td className="py-2 pr-2 font-mono text-secondary">/{r.code}</td>
+                                            <td className="py-2 pr-2">{r.creatorName}</td>
+                                            <td className="py-2 pr-2 tabular-nums">{r.visits}</td>
+                                            <td className="py-2 pr-2 tabular-nums">{r.uniqueSessions}</td>
+                                            <td className="py-2 pr-2 tabular-nums">{r.uniqueUsers}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+                )}
+
+                {pilotKpi && (
+                    <section data-testid="pilot-kpi" className="bg-surface-container border border-outline-variant rounded-xl p-md">
+                        <div className="flex items-center justify-between mb-sm">
+                            <h2 className="font-title-md text-on-surface">Pilot KPI (7 ngày)</h2>
+                            <span className="text-xs text-on-surface-variant">
+                                Events §13A thật · siteCode trong payload · GET /api/admin/analytics/pilot-kpi
+                            </span>
+                        </div>
+                        <p className="text-[11px] text-on-surface-variant mb-sm">
+                            Funnel onsite: pack_loaded → checkin_result → video/game/chat → paywall_shown → purchase_success.
+                            Báo sai liệu: tab Nội dung → Báo sai liệu.
+                        </p>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-sm">
+                            {(
+                                [
+                                    ['Session bắt đầu', pilotKpi.sessionStart],
+                                    ['Session kết thúc', pilotKpi.sessionEnd],
+                                    ['Đến trạm', pilotKpi.stationArrived],
+                                    ['Hoàn thành trạm', pilotKpi.stationCompleted],
+                                    ['Check-in (7 ngày)', pilotKpi.checkinsLast7Days],
+                                    ['Kết quả check-in', pilotKpi.checkinResult],
+                                    ['Pack đã tải', pilotKpi.packLoaded],
+                                    ['Export tạo', pilotKpi.exportCreated],
+                                    ['Chia sẻ', pilotKpi.shareInitiated],
+                                    ['NPS gửi', pilotKpi.npsSubmitted],
+                                    ['Landing visit', pilotKpi.landingVisit],
+                                    ['Paywall hiển thị', pilotKpi.paywallShown],
+                                    ['Mua thành công', pilotKpi.purchaseSuccess],
+                                    ['Portal dùng', pilotKpi.byEventType?.portal_used ?? 0],
+                                    ['Video phát', pilotKpi.byEventType?.video_played ?? 0],
+                                    ['Audio phát', pilotKpi.byEventType?.audio_played ?? 0],
+                                    ['Game xong', pilotKpi.byEventType?.game_completed ?? 0],
+                                    ['Chat message', pilotKpi.byEventType?.chat_message ?? 0],
+                                    ['Camera mở', pilotKpi.byEventType?.camera_opened ?? 0],
+                                    ['Báo sai liệu', pilotKpi.byEventType?.content_report ?? 0],
+                                ] as const
+                            ).map(([label, value]) => (
+                                <div key={label} className="bg-surface-container-high rounded-lg p-sm border border-outline-variant">
+                                    <p className="text-[11px] uppercase text-on-surface-variant">{label}</p>
+                                    <p className="font-title-md text-on-surface tabular-nums">{value}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </section>
+                )}
 
                 {usingDemo && (
                     <p className="text-xs text-amber-600/90 bg-amber-500/10 border border-amber-500/20 rounded-lg px-md py-sm">

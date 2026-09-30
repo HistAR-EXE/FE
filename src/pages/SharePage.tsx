@@ -10,6 +10,10 @@ import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
 import { useToast } from '../shared/ui/toast/useToast'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { images } from '../assets/images'
+import { emitEvent } from '../lib/pilotEvents'
+import { downloadBlob, exportStoryImage } from '../lib/heritageImage'
+
+const STORY_FILENAME = 'timelens-heritage-9x16.jpg'
 
 export function SharePage() {
   const [params] = useSearchParams()
@@ -22,24 +26,64 @@ export function SharePage() {
     viralApi.sharePrefill().then((data) => setCaption(data.caption))
   }, [])
 
-  const onDownload = () => {
-    if (!outputUrl) {
-      showToast({ message: 'Chưa có ảnh để tải xuống.', type: 'error' })
-      return
+  const [exporting, setExporting] = useState(false)
+
+  /** Render 1080x1920 (9:16) JPEG with "timelens.asia" watermark; null if canvas export fails (e.g. CORS). */
+  const buildStoryFile = async (): Promise<File | null> => {
+    if (!outputUrl) return null
+    try {
+      const blob = await exportStoryImage(outputUrl)
+      return new File([blob], STORY_FILENAME, { type: 'image/jpeg' })
+    } catch {
+      return null
     }
+  }
+
+  const downloadOriginal = () => {
     const link = document.createElement('a')
     link.href = outputUrl
     link.download = 'timelens-heritage.jpg'
     link.target = '_blank'
     link.rel = 'noopener noreferrer'
     link.click()
-    showToast({ message: 'Đang tải ảnh...', type: 'info' })
+  }
+
+  const onDownload = async () => {
+    if (!outputUrl) {
+      showToast({ message: 'Chưa có ảnh để tải xuống.', type: 'error' })
+      return
+    }
+    setExporting(true)
+    try {
+      const file = await buildStoryFile()
+      if (file) {
+        downloadBlob(file, STORY_FILENAME)
+        showToast({ message: 'Đang tải ảnh 9:16 có watermark...', type: 'info' })
+      } else {
+        downloadOriginal()
+        showToast({ message: 'Không xuất được ảnh 9:16, đang tải ảnh gốc.', type: 'info' })
+      }
+    } finally {
+      setExporting(false)
+    }
   }
 
   const onShare = async () => {
+    setExporting(true)
     try {
+      const file = await buildStoryFile()
+      emitEvent('share_initiated', {
+        payload: { ...(creationId ? { creationId } : {}), format: file ? '9x16' : 'original', channel: 'native' },
+      })
       if (navigator.share) {
-        await navigator.share({ title: 'TimeLens', text: caption, url: outputUrl || window.location.href })
+        if (file && navigator.canShare?.({ files: [file] })) {
+          await navigator.share({ files: [file], title: 'TimeLens', text: caption })
+        } else {
+          if (file) downloadBlob(file, STORY_FILENAME)
+          await navigator.share({ title: 'TimeLens', text: caption, url: outputUrl || window.location.href })
+        }
+      } else if (file) {
+        downloadBlob(file, STORY_FILENAME)
       }
       if (creationId) {
         const tracked = await viralApi.recordShare(creationId)
@@ -58,6 +102,8 @@ export function SharePage() {
       }
     } catch {
       showToast({ message: 'Không thể share trực tiếp, hãy tải ảnh rồi đăng thủ công.', type: 'info' })
+    } finally {
+      setExporting(false)
     }
   }
 
@@ -67,6 +113,7 @@ export function SharePage() {
       return
     }
     try {
+      emitEvent('share_initiated', { payload: { creationId, source: 'share_manual' } })
       const tracked = await viralApi.recordShare(creationId)
       void analyticsApi.recordEvent({
         eventType: 'SHARE_CREATED',
@@ -123,13 +170,13 @@ export function SharePage() {
               </div>
             </div>
             <div className="mt-xl pt-lg border-t border-outline-variant/30 flex flex-wrap gap-sm">
-              <button onClick={onShare} className="flex-1 min-w-[140px] bg-primary hover:bg-primary-container text-on-primary font-title-md py-md px-lg rounded-xl flex justify-center items-center gap-sm">
+              <button onClick={onShare} disabled={exporting} className="flex-1 min-w-[140px] bg-primary hover:bg-primary-container text-on-primary font-title-md py-md px-lg rounded-xl flex justify-center items-center gap-sm disabled:opacity-60">
                 <MaterialIcon name="share" />
-                Chia sẻ ngay
+                {exporting ? 'Đang xuất ảnh...' : 'Chia sẻ ngay'}
               </button>
-              <button onClick={onDownload} type="button" className="border border-outline-variant px-md py-sm rounded-xl inline-flex items-center gap-1">
+              <button onClick={onDownload} disabled={exporting} type="button" className="border border-outline-variant px-md py-sm rounded-xl inline-flex items-center gap-1 disabled:opacity-60">
                 <MaterialIcon name="download" className="text-sm" />
-                Tải ảnh
+                Tải ảnh 9:16
               </button>
               <button onClick={markSharedManually} type="button" className="border border-outline-variant px-md py-sm rounded-xl">
                 Đã chia sẻ

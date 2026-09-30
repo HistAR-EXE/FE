@@ -1,4 +1,4 @@
-﻿// src/pages/OnboardingPage.tsx
+// src/pages/OnboardingPage.tsx
 import React, { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
@@ -6,6 +6,7 @@ import { resolveMediaUrl } from '../shared/config/env'
 import mascotImg from '../assets/mascot.png'
 import { PublicHeader } from '../components/layout/PublicHeader'
 import { PublicFooter } from '../components/layout/PublicFooter'
+import { emitEvent } from '../lib/pilotEvents'
 
 // Dữ liệu Sáu Tầng Kiến Trúc Nền Tảng chuẩn 6-Layer Architecture
 const PLATFORM_6_LAYERS = [
@@ -99,6 +100,15 @@ export const OnboardingPage: React.FC = () => {
 
     useEffect(() => {
         window.scrollTo(0, 0)
+    }, [])
+
+    // Pilot KPI: one landing_visit per browser session
+    useEffect(() => {
+        if (sessionStorage.getItem('pilot_landing_visit_sent')) return
+        emitEvent('landing_visit', {
+            payload: { path: window.location.pathname, referrer: document.referrer || null },
+        })
+        sessionStorage.setItem('pilot_landing_visit_sent', '1')
     }, [])
 
     return (

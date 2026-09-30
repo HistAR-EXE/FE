@@ -15,7 +15,9 @@ import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { buildChatPath } from '../features/chat/chatRoute'
 import { ProgressSummaryCard } from '../features/gamification/ProgressSummaryCard'
 import { isAdminPreview } from '../shared/access/contentAccess'
-import { CU_CHI_LOCATION_ID } from '../shared/config/constants'
+import { CU_CHI_LOCATION_ID, getPilotSite, siteCodeFromLocationId } from '../shared/config/constants'
+import { StoryJourneyPanel } from '../features/story/StoryJourneyPanel'
+import { SiteOnsiteHub } from '../features/stations/SiteOnsiteHub'
 
 const PREVIEW_CHAR_LIMIT = 480
 
@@ -300,6 +302,16 @@ export function HeritageDetailPage() {
                   <div className="w-12 h-12 rounded-full bg-surface-variant flex items-center justify-center text-on-surface"><MaterialIcon name="chat_bubble" className="text-2xl" /></div>
                   <div className="text-left flex-1"><h3 className="font-title-md text-title-md text-on-surface mb-1">Trò chuyện AI</h3><p className="font-label-sm text-label-sm text-on-surface-variant">Hỏi đáp với nhân vật lịch sử</p></div>
                 </Link>
+                {getPilotSite(siteCodeFromLocationId(location.id)) && (
+                  <div className="sm:col-span-2 lg:col-span-3 space-y-6">
+                    <SiteOnsiteHub
+                      siteCode={siteCodeFromLocationId(location.id)}
+                      locationId={location.id}
+                      showStory={false}
+                    />
+                    <StoryJourneyPanel siteCode={siteCodeFromLocationId(location.id)} />
+                  </div>
+                )}
             </div>
             )}
 

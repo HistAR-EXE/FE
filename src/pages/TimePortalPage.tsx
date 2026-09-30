@@ -11,8 +11,10 @@ import { analyticsApi } from '../features/analytics/api'
 import { useUserProgress } from '../shared/context/UserProgressProvider'
 import { useAuth } from '../shared/auth/useAuth'
 import { DualPhotoExport } from '../features/time-portal/DualPhotoExport'
+import { TimePortalClipRecorder } from '../features/time-portal/TimePortalClipRecorder'
 import { TimePortalViewer } from '../features/time-portal/TimePortalViewer'
 import { ERA_VALUES, type EraValue } from '../features/time-portal/eraLabels'
+import { CU_CHI_LAMP_HOTSPOTS } from '../features/time-portal/lampHotspots'
 import { ApiError } from '../shared/api/contracts'
 import { useToast } from '../shared/ui/toast/useToast'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
@@ -26,6 +28,8 @@ import { TimePortalArEmbed } from '../features/ar/TimePortalArEmbed'
 import type { CuChiSceneSlug } from '../features/ar/types'
 import { TimePortalViewSwitch, type PortalViewMode } from '../features/time-portal/TimePortalViewSwitch'
 import { resolveMediaUrl } from '../shared/config/env'
+import { emitEvent } from '../lib/pilotEvents'
+import { getActiveStationCode } from '../lib/stationSafety'
 
 const DISCOVER_KEY_LABELS: Record<string, string> = {
     'era:1948': '1948 — Khởi đầu hầm ngầm',
@@ -170,6 +174,15 @@ export function TimePortalPage() {
             source: 'time_portal',
         })
     }, [eraModalOpen, activeLocationId, visitSessionId])
+
+    useEffect(() => {
+        if (sessionStorage.getItem('portal_used_emitted')) return
+        sessionStorage.setItem('portal_used_emitted', '1')
+        emitEvent('portal_used', {
+            stationCode: getActiveStationCode() ?? undefined,
+            payload: { locationId: activeLocationId, mode: 'slider' },
+        })
+    }, [activeLocationId])
 
     const onEraUpgradeClick = useCallback(() => {
         void analyticsApi.recordEvent({
@@ -336,6 +349,7 @@ export function TimePortalPage() {
                         {exportUrls.left && exportUrls.right && portalView === 'compare' && (
                             <DualPhotoExport leftImageUrl={exportUrls.left} rightImageUrl={exportUrls.right} />
                         )}
+                        {portalView === 'compare' && <TimePortalClipRecorder />}
                     </div>
                 </header>
 
@@ -394,6 +408,7 @@ export function TimePortalPage() {
                             initialEra={initialEra}
                             isPremium={isPremium}
                             onPremiumRequired={openEraPaywall}
+                            lampHotspots={activeLocationId === CU_CHI_LOCATION_ID ? CU_CHI_LAMP_HOTSPOTS : undefined}
                         />
                     )}
 
@@ -408,9 +423,12 @@ export function TimePortalPage() {
                         />
                     )}
 
-                    {exportUrls.left && exportUrls.right && portalView === 'compare' && (
-                        <div className="md:hidden absolute bottom-20 right-md z-30">
-                            <DualPhotoExport leftImageUrl={exportUrls.left} rightImageUrl={exportUrls.right} />
+                    {portalView === 'compare' && (
+                        <div className="md:hidden absolute bottom-20 right-md z-30 flex flex-col items-end gap-2">
+                            {exportUrls.left && exportUrls.right && (
+                                <DualPhotoExport leftImageUrl={exportUrls.left} rightImageUrl={exportUrls.right} />
+                            )}
+                            <TimePortalClipRecorder />
                         </div>
                     )}
                 </section>

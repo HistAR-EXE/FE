@@ -11,6 +11,7 @@ import {
 import { visitSessionsApi } from './api'
 import { readAppMode } from '../../shared/context/AppModeProvider'
 import { useAuth } from '../../shared/auth/useAuth'
+import { bindPilotSessionId } from '../../lib/pilotEvents'
 
 type VisitSessionContextValue = {
   endSessionForLocation: (locationId: string) => void
@@ -74,6 +75,7 @@ export function useVisitSessionForLocation(locationId: string | undefined, enabl
       .start(locationId, mode)
       .then((res) => {
         ctx.setSessionId(locationId, res.id)
+        bindPilotSessionId(res.id)
       })
       .catch(() => {
         ctx.clearStarted(locationId)

@@ -153,10 +153,18 @@ export function ProfilePage() {
                   </div>
                 </div>
               </div>
-              <div className="md:justify-self-end">
+              <div className="md:justify-self-end flex flex-col gap-2 items-stretch md:items-end">
+                <Link to="/journey-wrapped" className="inline-flex items-center gap-2 px-md py-sm border border-primary text-primary rounded-lg hover:bg-primary/10">
+                  <MaterialIcon name="auto_awesome" className="text-sm" /> Journey Wrapped
+                </Link>
                 <Link to="/leaderboard" className="inline-flex items-center gap-2 px-md py-sm border border-secondary text-secondary rounded-lg hover:bg-secondary/10">
                   <MaterialIcon name="leaderboard" className="text-sm" /> Bảng xếp hạng
                 </Link>
+                {typeof localStorage !== 'undefined' && localStorage.getItem('histar_referral_code') && (
+                  <p className="text-[11px] font-mono text-on-surface-variant">
+                    Mã giới thiệu: {localStorage.getItem('histar_referral_code')}
+                  </p>
+                )}
               </div>
             </div>
 

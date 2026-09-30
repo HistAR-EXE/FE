@@ -10,6 +10,7 @@ import { locationsApi } from '../features/locations/api'
 import { analyticsApi } from '../features/analytics/api'
 import { DISCOVERY_RECORDED_EVENT } from '../features/gamification/discoveryRouting'
 import { QuestJourneyPanel } from '../features/gamification/QuestJourneyPanel'
+import { StoryJourneyPanel } from '../features/story/StoryJourneyPanel'
 import { useAuth } from '../shared/auth/useAuth'
 import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
 import { useToast } from '../shared/ui/toast/useToast'
@@ -17,6 +18,7 @@ import { useVisitSession } from '../features/visit/VisitSessionProvider'
 import { pickQuestCover } from '../shared/media/resolveMedia'
 import { SmartImage } from '../shared/ui/SmartImage'
 import { HERITAGE_QUEST_META } from '../features/gamification/heritageQuestSteps'
+import { siteCodeFromLocationId } from '../shared/config/constants'
 
 export function QuestDetailPage() {
     const { questId } = useParams<{ questId: string }>()
@@ -274,6 +276,9 @@ export function QuestDetailPage() {
                         currentStep={currentStep}
                         stepImages={stepImages}
                     />
+
+                    {/* B4: chương truyện theo site của quest (1–2 miễn phí, 3+ Premium / Journey Pass) */}
+                    <StoryJourneyPanel siteCode={siteCodeFromLocationId(locationId)} />
 
                 </div>
             </main>

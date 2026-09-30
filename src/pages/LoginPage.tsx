@@ -94,14 +94,32 @@ export function LoginPage({ defaultMode = 'login' }: LoginPageProps) {
             setFieldErrors({})
             const returnTo = readReturnTo(searchParams) ?? pendingFrom
             stashReturnTo(returnTo)
+            const referralCode =
+                searchParams.get('ref')?.trim() ||
+                (typeof localStorage !== 'undefined' ? localStorage.getItem('histar_referral_code') : null) ||
+                undefined
             const loggedInUser =
                 mode === 'login'
                     ? await login({ email, password })
-                    : await register({ email, password, displayName })
+                    : await register({
+                          email,
+                          password,
+                          displayName,
+                          referralCode: referralCode || undefined,
+                      })
+            if (mode === 'register' && referralCode) {
+                try {
+                    localStorage.removeItem('histar_referral_code')
+                } catch {
+                    /* ignore */
+                }
+            }
             navigateAfterAuth(loggedInUser)
             if (mode === 'register') {
                 showToast({
-                    message: 'Kiểm tra email để kích hoạt tài khoản trước khi khám phá TimeLens.',
+                    message: referralCode
+                        ? `Đã gắn mã giới thiệu ${referralCode}. Kiểm tra email để kích hoạt tài khoản.`
+                        : 'Kiểm tra email để kích hoạt tài khoản trước khi khám phá TimeLens.',
                     type: 'info',
                 })
             }

@@ -1,10 +1,55 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [
+    react(),
+    tailwindcss(),
+    VitePWA({
+      strategies: 'generateSW',
+      registerType: 'autoUpdate',
+      includeAssets: ['favicon.svg', 'icons.svg'],
+      manifest: {
+        name: 'HistAR TimeLens',
+        short_name: 'HistAR',
+        description: 'Khám phá di sản Việt bằng AR & Tour 360 — hỗ trợ offline.',
+        lang: 'vi',
+        start_url: '/',
+        scope: '/',
+        display: 'standalone',
+        background_color: '#0B1120',
+        theme_color: '#0B1120',
+        icons: [
+          { src: '/favicon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
+        ],
+      },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,svg,woff2}'],
+        // three.js / photo-sphere chunks are large.
+        maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
+        cleanupOutdatedCaches: true,
+        // SPA: any navigation falls back to the app shell, except APIs and standalone static pages.
+        navigateFallback: '/index.html',
+        navigateFallbackDenylist: [/^\/api\//, /^\/ai\//, /^\/ar\//, /^\/ar\.html$/, /^\/media\//],
+        runtimeCaching: [
+          {
+            // Site media (hero, panorama thumbs...). Pack prep page fills a dedicated cache too.
+            urlPattern: ({ url }) => url.pathname.startsWith('/media/'),
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'histar-media',
+              expiration: { maxEntries: 120, maxAgeSeconds: 60 * 60 * 24 * 30 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+        ],
+      },
+      devOptions: { enabled: false },
+    }),
+  ],
   server: {
     port: 5173,
     proxy: {

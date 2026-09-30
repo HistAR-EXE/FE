@@ -13,6 +13,19 @@ function formatCurrency(value: number) {
 }
 
 const INQUIRY_STATUSES = ['NEW', 'CONTACTED', 'QUALIFIED', 'CLOSED', 'SPAM'] as const
+const SLA_HOURS = 48
+
+function inquirySlaLabel(item: AdminB2b2cInquiry): { text: string; overdue: boolean } {
+  if (item.status !== 'NEW') {
+    return { text: item.contactedAt ? `Đã liên hệ ${new Date(item.contactedAt).toLocaleString('vi-VN')}` : item.status, overdue: false }
+  }
+  const ageH = (Date.now() - new Date(item.createdAt).getTime()) / (1000 * 60 * 60)
+  const overdue = ageH > SLA_HOURS
+  return {
+    text: overdue ? `SLA quá hạn (${Math.floor(ageH)}h)` : `SLA ≤${SLA_HOURS}h · còn ${Math.max(0, Math.ceil(SLA_HOURS - ageH))}h`,
+    overdue,
+  }
+}
 
 export function AdminBillingPage() {
   const [settings, setSettings] = useState<AdminBillingSettings | null>(null)
@@ -170,7 +183,7 @@ export function AdminBillingPage() {
                     value={priceInput}
                     onChange={(e) => setPriceInput(e.target.value)}
                     className="w-full rounded-lg border border-outline-variant bg-surface px-md py-sm"
-                    placeholder="79000"
+                    placeholder="49000"
                   />
                 </label>
                 <label className="block text-sm space-y-1">
@@ -308,7 +321,15 @@ export function AdminBillingPage() {
 
             <section className="bg-surface-container border border-outline-variant rounded-xl p-md space-y-sm">
               <div className="flex flex-wrap items-center gap-sm justify-between">
-                <h2 className="font-title-md">B2B2C inquiries</h2>
+                <div>
+                  <h2 className="font-title-md">B2B2C inquiries (CRM)</h2>
+                  <p className="text-xs text-on-surface-variant mt-1">
+                    Lead thương mại · SLA NEW → CONTACTED ≤ {SLA_HOURS}h · Báo lỗi nội dung factual →{' '}
+                    <Link to="/admin/content" className="text-secondary underline">
+                      Admin Nội dung
+                    </Link>
+                  </p>
+                </div>
                 <label className="text-sm flex items-center gap-2">
                   Lọc trạng thái
                   <select
@@ -333,8 +354,21 @@ export function AdminBillingPage() {
                     <li key={item.id} className="border border-outline-variant/40 rounded-lg p-sm space-y-2">
                       <p className="font-medium text-on-surface">{item.siteName}</p>
                       <p className="text-on-surface-variant">
-                        {item.contactName} · {item.packageType} · {new Date(item.createdAt).toLocaleString('vi-VN')}
+                        {item.contactName} · {item.packageType}
+                        {item.interestSiteCode ? ` · pilot ${item.interestSiteCode}` : ''} ·{' '}
+                        {new Date(item.createdAt).toLocaleString('vi-VN')}
                       </p>
+                      {(() => {
+                        const sla = inquirySlaLabel(item)
+                        return (
+                          <p
+                            className={`text-xs font-bold ${sla.overdue ? 'text-red-400' : 'text-on-surface-variant'}`}
+                            data-testid="inquiry-sla"
+                          >
+                            {sla.text}
+                          </p>
+                        )
+                      })()}
                       <div className="flex flex-wrap gap-2 items-center">
                         <button
                           type="button"

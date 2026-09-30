@@ -7,7 +7,10 @@ import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { Button } from '../components/ui/Button'
 import { images } from '../assets/images'
 import { resolveMediaUrl } from '../shared/config/env'
-import { chatApi, normalizeChatSources, type ChatMessage, type ChatSource } from '../features/chat/api'
+import { chatApi, normalizeChatSources, type ChatMessage, type ChatPrompt, type ChatSource } from '../features/chat/api'
+import { emitEvent } from '../lib/pilotEvents'
+import { setActiveStationCode } from '../lib/stationSafety'
+import { ReportContentButton } from '../components/feedback/ReportContentModal'
 import { ChatSourcesBlock } from '../components/chat/ChatSourcesBlock'
 import { analyticsApi } from '../features/analytics/api'
 import { buildChatTimeline } from '../features/chat/chatTimeline'
@@ -25,6 +28,7 @@ import { billingApi } from '../features/billing/api'
 import { useToast } from '../shared/ui/toast/useToast'
 import { probeRagAiHealth } from '../shared/api/aiHealth'
 import { resolveChatLocationId, saveSelectedLocationId } from '../features/chat/chatRoute'
+import { isPilotSiteCode, siteCodeFromLocationId } from '../shared/config/constants'
 
 const MESSAGE_PAGE_SIZE = 20
 
@@ -131,6 +135,10 @@ export function ChatPage() {
     const navigate = useNavigate()
     const locationId = resolveChatLocationId(params.get('locationId'))
     const personaParam = params.get('persona') // Nhận 'chi-nam' hoặc 'anh-ba' từ ExplorePage
+    const stationCode = (params.get('station') || params.get('stationCode') || '').trim().toUpperCase() || null
+    const siteCode = isPilotSiteCode(params.get('site'))
+        ? params.get('site')!
+        : siteCodeFromLocationId(locationId)
     const initialCharacterId = routeCharacterId ?? params.get('characterId') ?? ''
     const questRecordKey = questRecordFromSearch(params)
     const questPrompt = params.get('questPrompt') ?? params.get('prompt') ?? ''
@@ -157,13 +165,14 @@ export function ChatPage() {
     const [quotaModalOpen, setQuotaModalOpen] = useState(false)
     const [orgQuotaModalOpen, setOrgQuotaModalOpen] = useState(false)
     const [orgUpgradePackage, setOrgUpgradePackage] = useState<string | null>(null)
-    const [b2cPriceVnd, setB2cPriceVnd] = useState(79_000)
+    const [b2cPriceVnd, setB2cPriceVnd] = useState(49_000)
     const [dailyChatLimit, setDailyChatLimit] = useState(10)
     const [premiumBannerDismissed, setPremiumBannerDismissed] = useState(
         () => sessionStorage.getItem('premiumBannerDismissed') === '1',
     )
     const [voicePhase, setVoicePhase] = useState<VoicePhase>('idle')
     const [aiServiceOnline, setAiServiceOnline] = useState<boolean | null>(null)
+    const [stationChips, setStationChips] = useState<ChatPrompt[]>([])
     const recorderRef = useRef<MediaRecorder | null>(null)
     const recordPromiseRef = useRef<Promise<Blob> | null>(null)
     const messagesScrollRef = useRef<HTMLDivElement | null>(null)
@@ -210,6 +219,26 @@ export function ChatPage() {
             })
             .catch(() => undefined)
     }, [isAuthenticated])
+
+    useEffect(() => {
+        if (stationCode) setActiveStationCode(stationCode)
+        if (!stationCode) {
+            setStationChips([])
+            return
+        }
+        let cancelled = false
+        chatApi
+            .getStationPrompts(siteCode, stationCode, activePersonaKey)
+            .then((chips) => {
+                if (!cancelled) setStationChips(chips)
+            })
+            .catch(() => {
+                if (!cancelled) setStationChips([])
+            })
+        return () => {
+            cancelled = true
+        }
+    }, [stationCode, activePersonaKey, siteCode])
 
     // Chọn Persona hiển thị (Ưu tiên Đại sứ Củ Chi, fallback API)
     const currentAmbassador = useMemo(() => AMBASSADORS[activePersonaKey], [activePersonaKey])
@@ -461,6 +490,12 @@ export function ChatPage() {
                 characterId: targetId,
                 message: userText,
                 conversationId,
+                stationCode,
+                siteCode,
+            })
+            emitEvent('chat_message', {
+                stationCode: stationCode ?? undefined,
+                payload: { hasCitation: Boolean(reply.sources?.length), stationCode, siteCode },
             })
 
             setConversationId(reply.conversationId)
@@ -657,8 +692,8 @@ export function ChatPage() {
                                 <span className={`w-1.5 h-1.5 rounded-full ${aiServiceOnline === false ? 'bg-amber-400' : 'bg-emerald-400 animate-ping'}`} />
                                 <span>
                                     {aiServiceOnline === false
-                                        ? 'BE fallback · RAG offline'
-                                        : 'Ollama 3B RAG Engine · Active'}
+                                        ? 'RAG tắt · trả lời LLM (không hứa trích nguồn 100%)'
+                                        : 'Trợ lý lịch sử · nguồn khi RAG_ENABLED'}
                                 </span>
                             </div>
                             <h2 className="text-2xl font-black text-white leading-tight drop-shadow-md">{displayProfile.name}</h2>
@@ -705,7 +740,7 @@ export function ChatPage() {
                             <img src={resolveMediaUrl(displayProfile.avatar)} alt="" className="w-9 h-9 rounded-full object-cover border border-[#fdb438]" />
                             <div className="text-left">
                                 <h4 className="text-sm font-black text-white leading-none">{displayProfile.name}</h4>
-                                <span className="text-[10px] text-emerald-400 font-bold">● RAG AI Sẵn sàng</span>
+                                <span className="text-[10px] text-emerald-400 font-bold">● Trợ lý lịch sử sẵn sàng</span>
                             </div>
                         </div>
                         <div className="flex gap-1">
@@ -717,7 +752,7 @@ export function ChatPage() {
                     {aiServiceOnline === false && (
                         <div className="px-4 py-2 border-b border-amber-500/30 bg-amber-500/10 text-xs text-amber-200 shrink-0">
                             <MaterialIcon name="warning" className="text-sm align-middle mr-1" />
-                            AI service (:8100) hoặc Ollama chưa sẵn sàng — chat vẫn thử qua BE fallback. Chạy{' '}
+                            Chat dùng BE (pgvector khi RAG_ENABLED, hoặc LLM fallback). Chạy{' '}
                             <code className="text-amber-100">scripts/diagnose-chat.ps1</code>
                         </div>
                     )}
@@ -765,18 +800,41 @@ export function ChatPage() {
                                     </p>
                                 </div>
 
+                                {stationCode && (
+                                    <p
+                                        data-testid="chat-station-badge"
+                                        className="text-[10px] font-black uppercase tracking-widest text-[#fdb438]"
+                                    >
+                                        Trạm {stationCode} · gợi ý theo ngữ cảnh
+                                    </p>
+                                )}
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-left pt-2">
-                                    {displayProfile.quickPrompts.map((prompt, idx) => (
+                                    {(stationChips.length > 0
+                                        ? stationChips.map((c) => ({
+                                              key: c.id,
+                                              label: c.chipLabel,
+                                              text: c.questionText,
+                                          }))
+                                        : displayProfile.quickPrompts.map((prompt, idx) => ({
+                                              key: `qp-${idx}`,
+                                              label: prompt,
+                                              text: prompt,
+                                          }))
+                                    ).map((chip) => (
                                         <button
-                                            key={idx}
+                                            key={chip.key}
                                             type="button"
-                                            onClick={() => setInput(prompt)}
+                                            data-testid={stationChips.length > 0 ? 'station-chat-chip' : undefined}
+                                            onClick={() => setInput(chip.text)}
                                             className="p-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-[#fdb438]/50 text-xs font-semibold text-gray-200 hover:text-white transition-all flex items-center justify-between group cursor-pointer"
                                         >
-                                            <span className="line-clamp-2">"{prompt}"</span>
+                                            <span className="line-clamp-2">"{chip.label}"</span>
                                             <MaterialIcon name="send" className="text-sm text-gray-500 group-hover:text-[#fdb438] shrink-0 ml-2" />
                                         </button>
                                     ))}
+                                </div>
+                                <div className="pt-2">
+                                    <ReportContentButton stationCode={stationCode ?? undefined} context="chat" />
                                 </div>
                             </div>
                         )}

@@ -1,5 +1,5 @@
 // src/features/chat/api.ts
-import { getData, getPageData, httpClient } from '../../shared/api/httpClient'
+import { getData, getListData, getPageData, httpClient } from '../../shared/api/httpClient'
 import type { PageResponse } from '../../shared/api/contracts'
 
 export type ChatSource = {
@@ -44,7 +44,21 @@ export function normalizeChatSources(
     return sources as ChatSource[]
 }
 
+export type ChatPrompt = {
+    id: string
+    persona: string
+    chipLabel: string
+    questionText: string
+    sortOrder: number
+}
+
 export const chatApi = {
+    /** Suggested question chips for a station (public endpoint). */
+    getStationPrompts: (siteCode: string, stationCode: string, persona = 'chi-nam') =>
+        getListData<ChatPrompt>(
+            httpClient.get(`/api/sites/${siteCode}/stations/${stationCode}/chat-prompts`, { params: { persona } }),
+        ),
+
     getContext: (characterId: string, conversationId?: string | null) =>
         getData<ChatContext>(
             httpClient.get('/api/chat/context', {
@@ -61,12 +75,18 @@ export const chatApi = {
         characterId: string
         message: string
         conversationId?: string | null
+        /** Optional station (e.g. ST03): scopes pgvector RAG retrieval to that station first. */
+        stationCode?: string | null
+        /** Pilot site slug — scopes RAG chunks (V35 site_code). */
+        siteCode?: string | null
     }) =>
         getData<ChatReply>(
             httpClient.post('/api/chat/messages', {
                 characterId: payload.characterId,
                 message: payload.message,
                 conversationId: payload.conversationId ?? undefined,
+                stationCode: payload.stationCode ?? undefined,
+                siteCode: payload.siteCode ?? undefined,
             }),
         ),
 
@@ -75,6 +95,8 @@ export const chatApi = {
         characterId: string
         message: string
         conversationId?: string | null
+        stationCode?: string | null
+        siteCode?: string | null
     }): Promise<ChatReply> {
         return chatApi.sendOrchestrated(payload)
     },

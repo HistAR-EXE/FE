@@ -5,7 +5,7 @@ import { AppLayout } from '../components/layout/AppLayout'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import type { AppMode } from '../shared/context/modeContext'
 import { useAppMode } from '../shared/context/useAppMode'
-import { CU_CHI_LOCATION_ID } from '../shared/config/constants'
+import { CU_CHI_LOCATION_ID, HERITAGE_LOCATION_IDS, PILOT_SITES } from '../shared/config/constants'
 import { resolveMediaUrl } from '../shared/config/env'
 import { HERITAGE_SITE_GEO } from '../shared/config/heritageSites'
 import { ExploreMapPanel } from '../features/explore/ExploreMapPanel'
@@ -93,7 +93,7 @@ const DEST_UI: Record<string, { desc: string; image: string; fallback: string; i
         desc: 'Quần thể di tích hoàng gia gắn liền với lịch sử kinh đô Thăng Long - Hà Nội bắt đầu từ thời kỳ trước Thăng Long.',
         image: '/media/destinations/thang-long.jpg',
         fallback: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=800&q=80',
-        isReady: false,
+        isReady: true,
     },
     'co-do-hoa-lu': {
         desc: 'Kinh đô đầu tiên của nhà nước phong kiến trung ương tập quyền Việt Nam dưới triều Đinh, Tiền Lê.',
@@ -117,7 +117,7 @@ const DEST_UI: Record<string, { desc: string; image: string; fallback: string; i
         desc: 'Trung tâm hành chính và chính trị của triều đình nhà Nguyễn, hội tụ đỉnh cao nghệ thuật kiến trúc cung đình.',
         image: 'https://images.unsplash.com/photo-1518684079-3c830dcef090?auto=format&fit=crop&w=800&q=80',
         fallback: 'https://images.unsplash.com/photo-1518684079-3c830dcef090?auto=format&fit=crop&w=800&q=80',
-        isReady: false,
+        isReady: true,
     },
     'pho-co-hoi-an': {
         desc: 'Thương cảng sầm uất thế kỷ 16-17, lưu giữ trọn vẹn nét kiến trúc giao thoa Đông Tây trầm mặc rực rỡ.',
@@ -185,10 +185,25 @@ export function ModeSelectPage() {
         [mergedDestinations],
     )
 
+    const pilotLocationIds = useMemo(
+        () => new Set(PILOT_SITES.map((s) => s.locationId)),
+        [],
+    )
+
     const filteredDestinations = useMemo(() => {
-        if (regionFilter === 'all') return mergedDestinations
-        return mergedDestinations.filter((d) => d.region === regionFilter)
-    }, [mergedDestinations, regionFilter])
+        let list = mergedDestinations
+        if (selectedMode === 'offline') {
+            // Onsite MVBP: prioritize 3 pilot hubs; de-emphasize national 10-site browse.
+            list = list.filter((d) => pilotLocationIds.has(d.locationId) || d.isReady)
+            list = [...list].sort((a, b) => {
+                const ap = pilotLocationIds.has(a.locationId) ? 0 : 1
+                const bp = pilotLocationIds.has(b.locationId) ? 0 : 1
+                return ap - bp
+            })
+        }
+        if (regionFilter === 'all') return list
+        return list.filter((d) => d.region === regionFilter)
+    }, [mergedDestinations, regionFilter, selectedMode, pilotLocationIds])
 
     const notifyDigitizing = useCallback((name: string) => {
         showToast({
@@ -215,10 +230,12 @@ export function ModeSelectPage() {
         const dest = findMergedByLocationId(mergedDestinations, loc.id)
         if (!dest) return
 
-        const isCuChi = dest.locationId === CU_CHI_LOCATION_ID
         if (!selectDestination(dest.locationId)) return
-
-        if (isCuChi) {
+        const isPilot =
+            dest.locationId === CU_CHI_LOCATION_ID ||
+            dest.locationId === HERITAGE_LOCATION_IDS.HOANG_THANH_THANG_LONG ||
+            dest.locationId === HERITAGE_LOCATION_IDS.DAI_NOI_HUE
+        if (isPilot) {
             setStep(3)
         }
     }, [mergedDestinations, selectDestination])
@@ -362,7 +379,15 @@ export function ModeSelectPage() {
                                 </span>
                                 <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-white">Chọn Điểm Đến Khám Phá</h2>
                                 <p className="text-sm sm:text-base text-gray-300 font-medium max-w-2xl mx-auto">
-                                    Tương tác trực tiếp trên bản đồ 3D/Vệ tinh bên dưới hoặc chọn nhanh trong danh sách. Dữ liệu thực tế ảo RAG AI đầy đủ nhất hiện sẵn sàng tại <strong className="text-[#fdb438]">Địa Đạo Củ Chi</strong>.
+                                    {selectedMode === 'offline' ? (
+                                        <>
+                                            Onsite pilot: chọn một trong <strong className="text-[#fdb438]">3 miền</strong> (Củ Chi · Hoàng thành Thăng Long · Đại Nội Huế) — mỗi site có 6 trạm QR.
+                                        </>
+                                    ) : (
+                                        <>
+                                            Tương tác trên bản đồ hoặc chọn nhanh. Pilot onsite sẵn sàng tại <strong className="text-[#fdb438]">Củ Chi · Thăng Long · Đại Nội</strong>.
+                                        </>
+                                    )}
                                 </p>
                             </div>
 

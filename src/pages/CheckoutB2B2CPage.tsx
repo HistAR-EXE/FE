@@ -8,7 +8,7 @@ import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
 import { useToast } from '../shared/ui/toast/useToast'
 import { images } from '../assets/images'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
-import { CU_CHI_LOCATION_ID } from '../shared/config/constants'
+import { CU_CHI_LOCATION_ID, PILOT_SITES } from '../shared/config/constants'
 
 export function CheckoutB2B2CPage() {
     const navigate = useNavigate()
@@ -23,6 +23,7 @@ export function CheckoutB2B2CPage() {
         packageType: 'ONE_TIME' as 'ONE_TIME' | 'OPEX',
         message: '',
         website: '',
+        interestSiteCode: 'cu-chi' as 'cu-chi' | 'hoang-thanh-thang-long' | 'dai-noi-hue',
     })
 
     const onSubmit = async (e: FormEvent) => {
@@ -51,6 +52,7 @@ export function CheckoutB2B2CPage() {
                 packageType: form.packageType,
                 message: form.message.trim() || undefined,
                 website: form.website.trim() || undefined,
+                interestSiteCode: form.interestSiteCode,
             })
             setSubmitted(true)
             showToast({
@@ -187,6 +189,29 @@ export function CheckoutB2B2CPage() {
                                         autoComplete="off"
                                         aria-hidden
                                     />
+                                    <label className="block space-y-1">
+                                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                                            Pilot site quan tâm <span className="text-red-400">*</span>
+                                        </span>
+                                        <select
+                                            required
+                                            value={form.interestSiteCode}
+                                            onChange={(e) =>
+                                                setForm((f) => ({
+                                                    ...f,
+                                                    interestSiteCode: e.target.value as typeof f.interestSiteCode,
+                                                }))
+                                            }
+                                            className="w-full bg-[#0B1120]/60 border border-white/10 focus:border-emerald-500/50 rounded-lg px-3 py-2.5 text-sm text-white font-bold focus:outline-none"
+                                            data-testid="b2b2c-interest-site"
+                                        >
+                                            {PILOT_SITES.map((s) => (
+                                                <option key={s.siteCode} value={s.siteCode}>
+                                                    {s.region} · {s.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </label>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                                         <label className="block space-y-1">
                                             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Tên Di Tích / Bảo Tàng <span className="text-red-400">*</span></span>

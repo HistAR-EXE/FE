@@ -11,6 +11,8 @@ export type RegisterInput = {
   email: string
   password: string
   displayName: string
+  /** Creator referral code from /creator/:code → /register?ref= */
+  referralCode?: string
 }
 
 export type AuthPayload = {

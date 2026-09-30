@@ -2,6 +2,7 @@
 import { useCallback, useState } from 'react'
 import { MaterialIcon } from '../../components/ui/MaterialIcon'
 import { useToast } from '../../shared/ui/toast/useToast'
+import { emitEvent } from '../../lib/pilotEvents'
 
 type DualPhotoExportProps = {
   leftImageUrl: string
@@ -51,6 +52,7 @@ export function DualPhotoExport({ leftImageUrl, rightImageUrl, leftLabel = '1968
       link.download = `timelens-dual-${Date.now()}.png`
       link.href = canvas.toDataURL('image/png')
       link.click()
+      emitEvent('export_created', { payload: { kind: 'dual_photo', leftLabel, rightLabel } })
       showToast({ message: 'Đã tạo ảnh kép — kiểm tra thư mục tải về.', type: 'success' })
     } catch {
       showToast({

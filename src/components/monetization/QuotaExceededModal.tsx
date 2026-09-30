@@ -17,7 +17,7 @@ export function QuotaExceededModal({
   onUpgrade,
   pricingHref = '/pricing',
   dailyLimit = 10,
-  priceVnd = 79_000,
+  priceVnd = 49_000,
 }: QuotaExceededModalProps) {
   if (!open) return null
 
@@ -30,8 +30,8 @@ export function QuotaExceededModal({
         <div>
           <h3 className="font-title-md text-on-surface">Hết lượt chat hôm nay</h3>
           <p className="text-sm text-on-surface-variant mt-xs">
-            Bạn đã dùng hết {dailyLimit} lượt chat miễn phí. Nâng cấp Premium để chat không giới hạn và xem nguồn trích dẫn
-            chính thống.
+            Bạn đã dùng hết {dailyLimit} lượt chat miễn phí. Premium mở chat không giới hạn và nguồn trích dẫn mọi site.
+            Journey Pass 72h chỉ mở truyện ch.3–6 + citations tại một site — không tăng hạn mức chat.
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-sm justify-center">

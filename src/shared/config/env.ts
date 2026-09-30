@@ -2,7 +2,7 @@
 const env = import.meta.env
 
 // Dev: để trống → baseURL '' → Vite proxy /api → localhost:8080
-// Prod: .env.production hoặc Vercel env → https://histar-postgre.onrender.com
+// Prod: Vercel env (hoặc .env) → https://histar-postgre.onrender.com
 const apiUrl = (env.VITE_API_URL ?? '').trim() || (env.DEV ? '' : '')
 const aiUrl = (env.VITE_AI_URL ?? '').trim() || (env.DEV ? '' : '')
 const isProdBuild = env.PROD === true
