@@ -129,6 +129,7 @@ export type B2b2cInquiryPayload = {
   contactPhone?: string
   packageType: 'ONE_TIME' | 'OPEX'
   message?: string
+  website?: string
 }
 
 export type OrgPaymentStatus = {
@@ -174,6 +175,7 @@ export const billingApi = {
     getData<{ id: string; status: string; createdAt: string }>(
       httpClient.post('/api/billing/b2b2c-inquiry', payload),
     ),
+  /** @deprecated Prefer adminApi.listB2b2cInquiries — ADMIN-only `/api/admin/b2b2c-inquiries`. */
   listB2b2cInquiries: () =>
     getData<
       Array<{
@@ -187,7 +189,7 @@ export const billingApi = {
         status: string
         createdAt: string
       }>
-    >(httpClient.get('/api/billing/admin/b2b2c-inquiries')),
+    >(httpClient.get('/api/admin/b2b2c-inquiries')),
   getOrgPaymentStatus: (orderCode: string) =>
     getData<OrgPaymentStatus>(httpClient.get(`/api/billing/org/payment/${orderCode}`)),
   cancelB2C: () => getData<B2cBillingStatus>(httpClient.delete('/api/billing/b2c/cancel')),

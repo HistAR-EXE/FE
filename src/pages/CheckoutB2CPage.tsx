@@ -1,6 +1,6 @@
 // src/pages/CheckoutB2CPage.tsx
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { isSafeRedirect } from '../shared/auth/types'
 import { AuthLayout } from '../components/layout/AuthLayout'
 import { Button } from '../components/ui/Button'
@@ -66,7 +66,7 @@ export function CheckoutB2CPage() {
     }
 
     const handleCheckout = async () => {
-        if (loading) return
+        if (loading || emailVerified === false) return
         try {
             setLoading(true)
             const next = await billingApi.createB2CPayment(returnTo)
@@ -210,10 +210,20 @@ export function CheckoutB2CPage() {
                                     <p className="text-xs text-gray-300 mb-8 font-medium leading-relaxed">
                                         Hệ thống sẽ tạo mã QR bảo mật riêng cho bạn. Chỉ cần mở ứng dụng Ngân hàng (hoặc Momo) để quét. Tài khoản sẽ được <strong>kích hoạt tự động sau 5 giây</strong>.
                                     </p>
+                                    {emailVerified === false && (
+                                        <div className="w-full max-w-[280px] mb-4 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-left text-xs text-amber-100">
+                                            <p className="font-bold mb-1">Cần xác minh email trước khi thanh toán</p>
+                                            <p className="text-amber-200/90 mb-2">
+                                                Vui lòng xác minh email để kích hoạt gói Premium an toàn.
+                                            </p>
+                                            <Link to="/verify-email/pending" className="text-[#388cf1] font-bold underline">
+                                                Đi tới xác minh email
+                                            </Link>
+                                        </div>
+                                    )}
                                     <Button
                                         type="button"
-                                        disabled={loading}
-                                        title={emailVerified === false ? 'Email chưa xác minh — vẫn có thể thanh toán' : undefined}
+                                        disabled={loading || emailVerified === false}
                                         onClick={() => void handleCheckout()}
                                         className="w-full max-w-[280px] h-12 rounded-2xl bg-gradient-to-r from-[#1a79e5] via-[#388cf1] to-[#1a79e5] hover:from-[#388cf1] hover:to-[#1a79e5] text-white font-black text-xs uppercase tracking-wider shadow-[0_5px_25px_rgba(56,140,241,0.5)] hover:shadow-[0_8px_35px_rgba(56,140,241,0.8)] hover:scale-105 transition-all cursor-pointer flex items-center justify-center gap-2"
                                     >

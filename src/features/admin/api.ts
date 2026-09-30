@@ -6,10 +6,41 @@ export type AdminUserSummary = {
   id: string
   email: string
   displayName: string
-  role: 'USER' | 'ADMIN'
+  role: 'USER' | 'ORG_MEMBER' | 'TEACHER' | 'ADMIN'
+  tier?: 'FREE' | 'PREMIUM' | string
+  emailVerified?: boolean
   level: number
   totalPoints: number
   createdAt: string
+}
+
+export type AdminOrganizationSummary = {
+  id: string
+  name: string
+  orgType?: string
+  memberCount?: number
+}
+
+export type AdminB2b2cInquiry = {
+  id: string
+  siteName: string
+  contactName: string
+  contactEmail: string
+  contactPhone: string | null
+  packageType: string
+  message: string | null
+  status: string
+  createdAt: string
+}
+
+export type AdminRecentPayment = {
+  id: string
+  orderCode: string
+  amountVnd: number
+  status: string
+  payerEmail?: string | null
+  createdAt: string
+  channel?: string | null
 }
 
 export type AdminDiscoveryPoint = {
@@ -18,6 +49,8 @@ export type AdminDiscoveryPoint = {
   name: string
   mapXPct: number | null
   mapYPct: number | null
+  yaw?: number | null
+  pitch?: number | null
   unlockKey: string
   sortOrder: number
 }
@@ -54,6 +87,8 @@ export type AdminDiscoveryPointInput = {
   unlockKey: string
   mapXPct?: number | null
   mapYPct?: number | null
+  yaw?: number | null
+  pitch?: number | null
   sortOrder?: number | null
 }
 
@@ -220,6 +255,22 @@ export const adminApi = {
 
   organizationAnalytics: (orgId: string) =>
     getData<OrganizationAnalytics>(httpClient.get(`/api/admin/organizations/${orgId}/analytics`)),
+
+  listOrganizations: () =>
+    getData<AdminOrganizationSummary[]>(httpClient.get('/api/admin/organizations')),
+
+  listB2b2cInquiries: (status?: string) =>
+    getData<AdminB2b2cInquiry[]>(
+      httpClient.get('/api/admin/b2b2c-inquiries', { params: status ? { status } : {} }),
+    ),
+
+  updateB2b2cInquiryStatus: (id: string, status: string) =>
+    getData<AdminB2b2cInquiry>(httpClient.patch(`/api/admin/b2b2c-inquiries/${id}`, { status })),
+
+  listRecentPayments: (limit = 20) =>
+    getData<AdminRecentPayment[]>(
+      httpClient.get('/api/admin/billing/payments/recent', { params: { limit } }),
+    ),
 
   getBillingSettings: () =>
     getData<AdminBillingSettings>(httpClient.get('/api/admin/billing/settings')),

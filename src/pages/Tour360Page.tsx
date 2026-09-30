@@ -33,6 +33,7 @@ export function Tour360Page() {
     const [searchParams] = useSearchParams()
     const panoramaParam = searchParams.get('panorama')
     const calibrateMode = searchParams.get('calibrate') === '1'
+    const viewParam = searchParams.get('view')
     const { isAuthenticated, user } = useAuth()
     const activeLocationId = locationId ?? CU_CHI_LOCATION_ID
     const isCuChi = activeLocationId === CU_CHI_LOCATION_ID
@@ -43,9 +44,12 @@ export function Tour360Page() {
     const [panoramas, setPanoramas] = useState<Panorama[]>([])
     const [hotspotsByPanorama, setHotspotsByPanorama] = useState<Record<string, Hotspot[]>>({})
     const [activePanoramaId, setActivePanoramaId] = useState<string | null>(panoramaParam)
-    const [viewMode, setViewMode] = useState<TourViewMode>(
-        isCuChi && !panoramaParam ? 'illustrated' : 'panorama',
-    )
+    const [viewMode, setViewMode] = useState<TourViewMode>(() => {
+        if (viewParam === 'map' || viewParam === 'illustrated' || viewParam === 'panorama') {
+            return viewParam
+        }
+        return isCuChi && !panoramaParam ? 'illustrated' : 'panorama'
+    })
     const [infoModal, setInfoModal] = useState<Hotspot | null>(null)
     const [menuOpen, setMenuOpen] = useState(false)
     const [immersive, setImmersive] = useState(false)

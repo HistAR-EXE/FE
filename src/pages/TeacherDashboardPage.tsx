@@ -8,6 +8,7 @@ import { useToast } from '../shared/ui/toast/useToast'
 
 export function TeacherDashboardPage() {
   const [memberships, setMemberships] = useState<OrgMembership[]>([])
+  const [membershipsLoaded, setMembershipsLoaded] = useState(false)
   const [orgId, setOrgId] = useState('')
   const [analytics, setAnalytics] = useState<OrganizationAnalytics | null>(null)
   const [roster, setRoster] = useState<OrgRosterMember[]>([])
@@ -32,6 +33,7 @@ export function TeacherDashboardPage() {
         if (items[0]) setOrgId(items[0].organizationId)
       })
       .catch(() => showToast({ message: 'Không tải được tổ chức.', type: 'error' }))
+      .finally(() => setMembershipsLoaded(true))
   }, [showToast])
 
   useEffect(() => {
@@ -154,7 +156,7 @@ export function TeacherDashboardPage() {
           <div className="flex-1 min-w-0">
             <h1 className="font-display-md text-on-surface">Dashboard lớp học</h1>
             <p className="text-sm text-on-surface-variant mt-1">
-              Theo dõi lớp học — bản demo B2B; vận hành trường có Account Manager riêng.
+              Theo dõi lớp học — MVP teacher (giao bài + tiến độ cơ bản). LMS đầy đủ / org invite nằm sau MVBP.
             </p>
           </div>
           <Link to="/groups" className="text-sm px-sm py-xs border border-outline-variant rounded-lg hover:border-secondary">
@@ -169,6 +171,29 @@ export function TeacherDashboardPage() {
             Hồ sơ
           </Link>
         </div>
+
+        {membershipsLoaded && memberships.length === 0 && (
+          <section className="bg-surface-container border border-outline-variant rounded-xl p-lg text-center space-y-md">
+            <h2 className="font-title-md text-on-surface">Cần org Premium B2B</h2>
+            <p className="text-sm text-on-surface-variant max-w-md mx-auto">
+              Dashboard lớp học chỉ khả dụng khi trường/lớp đã có tổ chức trên gói B2B. Đăng ký license trường hoặc liên hệ số hóa di tích B2B2C.
+            </p>
+            <div className="flex flex-wrap justify-center gap-sm">
+              <Link
+                to="/checkout/b2b"
+                className="px-md py-sm rounded-lg border border-secondary text-secondary hover:bg-secondary/10"
+              >
+                Mua gói B2B
+              </Link>
+              <Link
+                to="/checkout/b2b2c"
+                className="px-md py-sm rounded-lg border border-outline-variant hover:border-secondary"
+              >
+                Tư vấn B2B2C
+              </Link>
+            </div>
+          </section>
+        )}
 
         {memberships.length > 1 && (
           <label className="flex items-center gap-sm text-sm">
@@ -374,6 +399,7 @@ export function TeacherDashboardPage() {
           </section>
         )}
 
+        {orgId && (
         <section className="bg-surface-container border border-outline-variant rounded-xl overflow-hidden">
           <div className="p-md border-b border-outline-variant">
             <h2 className="font-title-md">Danh sách học sinh</h2>
@@ -448,6 +474,7 @@ export function TeacherDashboardPage() {
             </table>
           </div>
         </section>
+        )}
       </main>
     </AppLayout>
   )

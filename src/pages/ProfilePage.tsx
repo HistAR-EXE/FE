@@ -16,7 +16,7 @@ import { ProgressSummaryCard } from '../features/gamification/ProgressSummaryCar
 import { normalizeHeritageName } from '../features/explore/vietnamMap'
 import { viralApi, type UserCreation } from '../features/viral/api'
 import { useAuth } from '../shared/auth/useAuth'
-import { hasFullGamificationAccess } from '../shared/access/contentAccess'
+import { hasBasicGamificationAccess, hasFullGamificationAccess } from '../shared/access/contentAccess'
 import { UpgradePrompt } from '../components/monetization/UpgradePrompt'
 
 type ProfileTab = 'overview' | 'passport'
@@ -28,7 +28,8 @@ const PROFILE_TABS: { id: ProfileTab; label: string }[] = [
 
 export function ProfilePage() {
   const { user } = useAuth()
-  const gamificationUnlocked = hasFullGamificationAccess(user)
+  const passportUnlocked = hasBasicGamificationAccess(user)
+  const premiumGamification = hasFullGamificationAccess(user)
   const [profile, setProfile] = useState<ProfileMe | null>(null)
   const [badges, setBadges] = useState<MyBadge[]>([])
   const [quests, setQuests] = useState<QuestProgress[]>([])
@@ -36,6 +37,7 @@ export function ProfilePage() {
   const [visitedCount, setVisitedCount] = useState(0)
   const [activeTab, setActiveTab] = useState<ProfileTab>('overview')
   const [creations, setCreations] = useState<UserCreation[]>([])
+  const [passportStampDates, setPassportStampDates] = useState<Map<string, string>>(new Map())
   const { showToast } = useToast()
 
   useEffect(() => {
@@ -44,6 +46,16 @@ export function ProfilePage() {
     }
     load()
     profileApi.myBadges().then(setBadges).catch(() => setBadges([]))
+    profileApi
+      .passport()
+      .then((passport) => {
+        const map = new Map<string, string>()
+        for (const stamp of passport.stamps ?? []) {
+          if (stamp.completedAt) map.set(stamp.locationId, stamp.completedAt)
+        }
+        setPassportStampDates(map)
+      })
+      .catch(() => setPassportStampDates(new Map()))
     gamificationApi.myQuests().then(setQuests).catch(() => setQuests([]))
     locationsApi.list({ size: 50 }).then(setLocations).catch(() => setLocations([]))
     discoveriesApi.visitedLocations().then((d) => setVisitedCount(d.visitedLocationIds.length)).catch(() => setVisitedCount(0))
@@ -65,11 +77,12 @@ export function ProfilePage() {
       .filter((l) => stampedLocationIds.has(l.id))
       .map((l) => {
         const quest = completedQuests.find((q) => q.locationId === l.id)
-        return { location: l, completedAt: quest?.completedAt }
+        const completedAt = quest?.completedAt ?? passportStampDates.get(l.id)
+        return { location: l, completedAt }
       })
     const unstamped = locations.filter((l) => !stampedLocationIds.has(l.id))
     return { stamped, unstamped, locById }
-  }, [locations, completedQuests])
+  }, [locations, completedQuests, passportStampDates])
 
   return (
     <AppLayout activeBorder="left" topNav={<SimpleTopNav title="Hồ sơ" />}>
@@ -234,20 +247,16 @@ export function ProfilePage() {
 
             {activeTab === 'passport' && (
               <>
-        {!gamificationUnlocked && (
+        {!passportUnlocked && (
+          <p className="text-sm text-on-surface-variant mb-md">Đăng nhập để xem Hộ chiếu & Huy hiệu.</p>
+        )}
+        {passportUnlocked && !premiumGamification && (
           <UpgradePrompt
-            title="Digital Passport — Premium"
-            message="Nâng cấp Premium để mở khóa Gamification toàn diện: Rankings, Badges hiếm và đóng dấu Hộ chiếu Di sản khi check-in AR tại di tích."
+            title="Đóng dấu AR tại di tích — Premium"
+            message="Bạn vẫn xem được tem và huy hiệu đã đạt. Nâng cấp Premium để mở khóa đóng dấu Hộ chiếu khi check-in AR onsite và huy hiệu hiếm."
           />
         )}
-        <section className={`bg-surface-container border border-outline-variant rounded-xl p-lg ${!gamificationUnlocked ? 'relative overflow-hidden' : ''}`}>
-          {!gamificationUnlocked && (
-            <div className="absolute inset-0 z-10 bg-surface/70 backdrop-blur-sm flex items-center justify-center p-md">
-              <p className="text-sm text-on-surface-variant text-center max-w-sm">
-                Preview bị khóa — Premium mở đầy đủ Digital Passport & stamp AR.
-              </p>
-            </div>
-          )}
+        <section className="bg-surface-container border border-outline-variant rounded-xl p-lg">
           <h2 className="font-title-md mb-sm inline-flex items-center gap-1">
             <MaterialIcon name="menu_book" className="text-primary" />
             Hộ chiếu Di sản

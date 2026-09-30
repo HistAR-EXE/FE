@@ -17,11 +17,25 @@ export function GroupHubPage() {
   const [createName, setCreateName] = useState('')
   const [joinCode, setJoinCode] = useState('')
   const [loading, setLoading] = useState(false)
+  const [listLoading, setListLoading] = useState(true)
+  const [listError, setListError] = useState<string | null>(null)
   const [multiplayerAllowed, setMultiplayerAllowed] = useState<boolean | null>(null)
   const [paywallOpen, setPaywallOpen] = useState(false)
 
   const reload = () => {
-    groupApi.mine().then(setGroups).catch(() => setGroups([]))
+    setListLoading(true)
+    setListError(null)
+    groupApi
+      .mine()
+      .then((list) => {
+        setGroups(list)
+        setListError(null)
+      })
+      .catch((err) => {
+        setGroups([])
+        setListError(getFriendlyErrorMessage(err, 'quest'))
+      })
+      .finally(() => setListLoading(false))
   }
 
   useEffect(() => {
@@ -111,7 +125,20 @@ export function GroupHubPage() {
 
         <section className="space-y-sm">
           <h2 className="font-title-md">Nhóm của bạn ({groups.length})</h2>
-          {groups.length === 0 && (
+          {listLoading && (
+            <p className="text-sm text-on-surface-variant border border-dashed border-outline-variant rounded-xl p-md text-center">
+              Đang tải danh sách nhóm…
+            </p>
+          )}
+          {!listLoading && listError && (
+            <div className="text-sm text-error border border-error/40 rounded-xl p-md text-center space-y-sm">
+              <p>{listError}</p>
+              <Button type="button" variant="outline" onClick={reload}>
+                Thử lại
+              </Button>
+            </div>
+          )}
+          {!listLoading && !listError && groups.length === 0 && (
             <p className="text-sm text-on-surface-variant border border-dashed border-outline-variant rounded-xl p-md text-center">
               Chưa có nhóm nào. Tạo hoặc nhập mã để bắt đầu.
             </p>

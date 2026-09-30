@@ -54,6 +54,11 @@ export const PricingPage: React.FC = () => {
                             TimeLens mang đến đặc quyền du hành xuyên thời gian dành cho những người yêu văn hóa, lịch sử và du lịch. Tận hưởng trọn vẹn không gian thực tế ảo và trợ lý AI thông minh với gói trải nghiệm cá nhân, hoặc khám phá giải pháp số hóa toàn diện cho doanh nghiệp.
                         </p>
 
+                        {/* CHÚ THÍCH CỦA ĐỒNG ĐỘI (Đã được CSS lại cho đẹp mắt và chuẩn UI) */}
+                        <p className="text-sm text-[#64748B] font-semibold max-w-2xl mx-auto lg:mx-0 mt-3 italic border-l-4 border-[#FDC908] pl-3 bg-[#FFF2C3]/40 py-2 pr-3 rounded-r-lg shadow-sm">
+                            * Lưu ý: Cổng Thời Gian & phòng nhóm chạy trên web; app tập trung tour onsite và check-in AR.
+                        </p>
+
                         <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-4">
                             <a href="#b2c-pricing" className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-[#0275FB] to-[#1d4ed8] text-white font-black text-sm uppercase tracking-wider shadow-[0_8px_25px_rgba(2,117,251,0.4)] hover:scale-105 transition-all flex items-center justify-center gap-2 cursor-pointer">
                                 <span>Xem Gói Cá Nhân</span>
