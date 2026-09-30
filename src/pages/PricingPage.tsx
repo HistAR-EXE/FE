@@ -1,301 +1,323 @@
 ﻿// src/pages/PricingPage.tsx
-import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { AuthLayout } from '../components/layout/AuthLayout'
-import { Button } from '../components/ui/Button'
+import React, { useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
-import { billingApi, type OrgPlanInfo } from '../features/billing/api'
-import { useToast } from '../shared/ui/toast/useToast'
-import { images } from '../assets/images'
+import { resolveMediaUrl } from '../shared/config/env'
+import mascotImg from '../assets/mascot.png'
+import { PublicHeader } from '../components/layout/PublicHeader'
+import { PublicFooter } from '../components/layout/PublicFooter'
 
-function formatCurrency(amount: number) {
-    return `${amount.toLocaleString('vi-VN')}đ`
-}
-
-function formatAi(limit: number | null) {
-    return limit == null ? 'Không giới hạn' : `${limit.toLocaleString('vi-VN')}/tháng`
-}
-
-// Bỏ các từ B2C, B2B thay bằng ngôn từ hướng người dùng (User-centric)
-const ORG_EXTRAS: Record<string, { icon: string, color: string, text: React.ReactNode }[]> = {
-    MICRO: [
-        { icon: 'check_circle', color: 'text-[#FE951C]', text: <span className="leading-snug"><strong>Học sinh hưởng Đặc Quyền Premium:</strong> Khám phá di sản, tương tác AR & mở khóa Cổng thời gian.</span> },
-        { icon: 'check_circle', color: 'text-[#FE951C]', text: <span className="leading-snug">Bể phóng AI Pool: Giới hạn tổng <strong className="text-white">5.000 queries/tháng</strong> cho toàn bộ trường.</span> }
-    ],
-    STANDARD: [
-        { icon: 'check_circle', color: 'text-[#1A79E5]', text: <span className="leading-snug">Sở hữu <strong>toàn bộ tính năng Core</strong> di sản số hóa của nền tảng.</span> },
-        { icon: 'check_circle', color: 'text-[#1A79E5]', text: <span className="leading-snug">Học nhóm <strong>Multiplayer (Quest Room):</strong> Lập đội trong AR giải đố lịch sử sinh động.</span> },
-        { icon: 'check_circle', color: 'text-[#1A79E5]', text: <span className="leading-snug">Bể phóng AI Pool Mở rộng: Nâng lên <strong className="text-white">30.000 queries/tháng</strong>.</span> }
-    ],
-    PREMIUM: [
-        { icon: 'check_circle', color: 'text-[#059669]', text: <span className="leading-snug"><strong>Mở khóa 100% quyền truy cập</strong> không giới hạn hệ sinh thái hiện tại & tương lai.</span> },
-        { icon: 'check_circle', color: 'text-[#059669]', text: <span className="leading-snug">Hệ thống quản lý <strong>Teacher Dashboard</strong>: Giao bài tập AR, chấm điểm tự động & báo cáo.</span> }
-    ]
-}
-
-export function PricingPage() {
+export const PricingPage: React.FC = () => {
     const navigate = useNavigate()
-    const { showToast } = useToast()
-    const [searchParams] = useSearchParams()
-    const [b2cPrice, setB2cPrice] = useState(79_000)
-    const [chatDailyLimit, setChatDailyLimit] = useState(10)
-    const [orgPlans, setOrgPlans] = useState<OrgPlanInfo[]>([])
-    const [trialLoading, setTrialLoading] = useState(false)
-    const next = searchParams.get('next')
-
-    const goBackPath = next ? next : '/home'
-
-    const checkoutB2cHref = next ? `/checkout/b2c?next=${encodeURIComponent(next)}` : '/checkout/b2c'
-    const checkoutB2bHref = (planId: string) =>
-        next ? `/checkout/b2b?plan=${planId}&next=${encodeURIComponent(next)}` : `/checkout/b2b?plan=${planId}`
 
     useEffect(() => {
-        window.scrollTo(0, 0);
-        billingApi.getPublicPricing().then((data) => {
-            setB2cPrice(data.b2cPremiumPriceVnd)
-            setChatDailyLimit(data.chatFreeDailyLimit ?? 10)
-            setOrgPlans(data.orgPlans)
-        }).catch(() => undefined)
+        // Cuộn lên đầu trang khi mới vào
+        window.scrollTo(0, 0)
     }, [])
 
-    const plans = useMemo(() => orgPlans.map((plan) => ({
-        ...plan,
-        hero: plan.planType === 'STANDARD',
-        cta: plan.planType === 'STANDARD' ? 'Triển khai gói tiêu chuẩn' : 'Đăng ký cấp phép',
-        extras: ORG_EXTRAS[plan.planType] ?? [],
-    })), [orgPlans])
-
-    const createClassroomTrial = async () => {
-        try {
-            setTrialLoading(true)
-            const trialName = `Classroom Trial ${new Date().toLocaleDateString('vi-VN')}`
-            await billingApi.createOrgTrial({ orgName: trialName })
-            showToast({ message: 'Đã tạo lớp học dùng thử 14 ngày', type: 'success' })
-            navigate('/teacher')
-        } catch {
-            showToast({ message: 'Không thể tạo lớp học. Vui lòng kiểm tra điều kiện tài khoản.', type: 'error' })
-        } finally {
-            setTrialLoading(false)
-        }
-    }
-
     return (
-        <AuthLayout>
-            <div className="relative z-10 flex flex-col bg-[#0f1015] text-white font-sans selection:bg-[#fe951c] selection:text-black min-h-screen">
-                {/* NỀN HIỆU ỨNG */}
-                <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
-                    <div className="absolute inset-0 bg-cover bg-center opacity-20 scale-105 filter blur-[2px]" style={{ backgroundImage: `url('${images.loginBg || '/media/banner-main.jpg'}')` }} />
-                    <div className="absolute inset-0 bg-gradient-to-tr from-[#0f1015] via-[#0f1015]/95 to-[#141620]/90" />
-                    <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-[#fe951c]/10 rounded-full blur-[150px] animate-pulse" />
-                    <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-[#388cf1]/10 rounded-full blur-[150px]" />
-                </div>
+        <div className="bg-[#FAF8F3] text-[#1E293B] min-h-screen flex flex-col font-sans select-none overflow-x-hidden selection:bg-[#0275FB] selection:text-white">
+            {/* HEADER NAVIGATION CHUẨN TỪ COMPONENT */}
+            <PublicHeader />
 
-                {/* HEADER ẨN (Nút THOÁT) */}
-                <header className="w-full top-0 sticky z-50 transition-all pt-6 px-4 sm:px-12 flex justify-between items-center relative">
-                    <div className="flex items-center gap-2 sm:gap-3 bg-white/5 border border-white/10 px-4 py-2 rounded-full backdrop-blur-md">
-                        <MaterialIcon name="workspace_premium" className="text-[#fe951c] text-lg sm:text-xl drop-shadow-[0_0_8px_rgba(254,149,28,0.8)]" />
-                        <span className="text-xs sm:text-sm font-black tracking-widest uppercase">Cổng Dịch Vụ</span>
-                    </div>
-                    <button
-                        onClick={() => navigate(goBackPath)}
-                        className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 hover:border-red-500/50 transition-all backdrop-blur-md shadow-lg cursor-pointer group"
-                    >
-                        <MaterialIcon name="close" className="text-xl group-hover:rotate-90 transition-transform duration-300" />
-                    </button>
-                </header>
+            {/* HERO BANNER - NÂNG CẤP ĐỒ HỌA & COPYWRITING (TẬP TRUNG B2C) */}
+            <section className="relative pt-36 sm:pt-44 pb-24 overflow-hidden bg-gradient-to-b from-[#FFF2C3]/60 via-[#FAF8F3] to-[#FAF8F3]">
+                {/* Background Graphics */}
+                <div className="absolute top-10 right-10 w-[600px] h-[600px] bg-[#0275FB]/10 rounded-full blur-[120px] pointer-events-none"></div>
+                <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-[#FDC908]/15 rounded-full blur-[100px] pointer-events-none"></div>
+                <div className="absolute inset-0 bg-[linear-gradient(rgba(2,117,251,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(2,117,251,0.03)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] pointer-events-none"></div>
 
-                <main className="flex-grow flex flex-col items-center w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 relative z-10">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 flex flex-col lg:flex-row items-center justify-between gap-12">
 
-                    {/* TYPOGRAPHY CHỐT SALE */}
-                    <header className="text-center mb-12 flex flex-col items-center">
-                        <span className="inline-block mb-6 px-4 py-1.5 rounded-full bg-[#fdb438]/20 border border-[#fdb438]/50 text-[#fdb438] text-[10px] font-black uppercase tracking-widest shadow-[0_0_15px_rgba(253,180,56,0.3)] animate-pulse">
-                            NÂNG TẦM TRẢI NGHIỆM DI SẢN
-                        </span>
+                    {/* Cột Trái: Nội dung Text */}
+                    <div className="lg:w-3/5 space-y-6 text-center lg:text-left">
+                        {/* Nhãn Tagline */}
+                        <div className="inline-flex items-center gap-2.5 px-5 py-2 rounded-full bg-white border border-[#FDC908] text-[#d97706] text-xs font-black uppercase tracking-widest shadow-sm hover:shadow-md transition-shadow cursor-default">
+                            <MaterialIcon name="explore" className="text-lg text-[#0275FB] animate-pulse" />
+                            <span>Mở Khóa Giới Hạn Không Gian & Thời Gian</span>
+                        </div>
 
-                        <h1 className="text-4xl md:text-5xl lg:text-[3.5rem] xl:text-6xl font-black tracking-tight text-white drop-shadow-md mb-6 md:whitespace-nowrap">
-                            Mở Khóa Toàn Bộ <br className="md:hidden" /> <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#fe951c] via-[#fdb438] to-[#fff2a1]">Sức Mạnh TimeLens</span>
+                        {/* Tiêu đề chính - Gom trọn vẹn 1 dòng */}
+                        <h1 className="text-[1.65rem] sm:text-4xl md:text-5xl lg:text-[3.15rem] xl:text-[3.5rem] font-black text-[#1E293B] tracking-tight leading-[1.2]">
+                            {/* Ép toàn bộ câu này nằm trên 1 dòng duy nhất */}
+                            <span className="block whitespace-nowrap">
+                                Đầu tư vào thế hệ <span className="text-[#0275FB]">tương lai</span>
+                            </span>
+                            {/* Dòng 2 */}
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#0275FB] via-[#1d4ed8] to-[#FDC908] inline-block mt-2 sm:mt-4 drop-shadow-sm">
+                                Thông Qua Di Sản Số
+                            </span>
                         </h1>
 
-                        <p className="text-sm md:text-base text-gray-400 max-w-2xl mx-auto font-medium leading-relaxed">
-                            Đột phá giới hạn không gian và thời gian. Nâng cấp đặc quyền Premium để tận hưởng trọn vẹn hệ sinh thái RAG AI và Công nghệ đồ họa không gian của chúng tôi.
+                        {/* Mô tả - Hướng đến cá nhân khám phá (B2C) */}
+                        <p className="text-[#475569] text-base sm:text-lg font-medium max-w-2xl mx-auto lg:mx-0 leading-relaxed">
+                            TimeLens mang đến đặc quyền du hành xuyên thời gian dành cho những người yêu văn hóa, lịch sử và du lịch. Tận hưởng trọn vẹn không gian thực tế ảo và trợ lý AI thông minh với gói trải nghiệm cá nhân, hoặc khám phá giải pháp số hóa toàn diện cho doanh nghiệp.
                         </p>
-                    </header>
 
-                    <div className="w-full space-y-16">
+                        <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-4">
+                            <a href="#b2c-pricing" className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-[#0275FB] to-[#1d4ed8] text-white font-black text-sm uppercase tracking-wider shadow-[0_8px_25px_rgba(2,117,251,0.4)] hover:scale-105 transition-all flex items-center justify-center gap-2 cursor-pointer">
+                                <span>Xem Gói Cá Nhân</span>
+                                <MaterialIcon name="arrow_downward" className="text-lg" />
+                            </a>
+                            <a href="#b2b-pricing" className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-white border-2 border-[#0275FB]/20 text-[#0275FB] font-black text-sm uppercase tracking-wider hover:bg-[#0275FB]/5 hover:border-[#0275FB]/50 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm">
+                                <MaterialIcon name="business" className="text-lg text-[#FDC908]" />
+                                <span>Giải Pháp Tổ Chức</span>
+                            </a>
+                        </div>
+                    </div>
 
-                        {/* ===================================== */}
-                        {/* GÓI CÁ NHÂN (XÓA BỎ CHỮ B2C)          */}
-                        {/* ===================================== */}
-                        <section className="relative w-full rounded-[2.5rem] bg-gradient-to-br from-[#1b1e2c]/90 to-[#0f1015]/95 border border-[#fe951c]/40 shadow-[0_25px_60px_rgba(0,0,0,0.6),0_0_40px_rgba(254,149,28,0.15)] backdrop-blur-2xl overflow-hidden group">
+                    {/* Cột Phải: Mascot Bay */}
+                    <div className="lg:w-2/5 flex justify-center lg:justify-end relative mt-12 lg:mt-0">
+                        {/* Vòng sáng hào quang động phía sau Mascot */}
+                        <div className="absolute w-[250px] h-[250px] sm:w-[350px] sm:h-[350px] bg-gradient-to-tr from-[#FDC908]/50 to-[#0275FB]/40 rounded-full blur-[70px] animate-[pulse_4s_ease-in-out_infinite]"></div>
 
-                            {/* Hào quang nền bên trong thẻ */}
-                            <div className="absolute top-0 right-0 w-80 h-80 bg-[#fe951c]/20 rounded-full blur-[80px] pointer-events-none transition-transform duration-700 group-hover:scale-110" />
-                            <div className="absolute bottom-0 left-0 w-64 h-64 bg-[#fdb438]/10 rounded-full blur-[60px] pointer-events-none" />
+                        {/* Hình ảnh Mascot bay */}
+                        <img
+                            src={resolveMediaUrl('/mascot-2.png')}
+                            alt="Chrono Mascot Bay"
+                            className="w-72 h-72 sm:w-96 sm:h-96 object-contain relative z-20 drop-shadow-[0_20px_40px_rgba(2,117,251,0.3)] animate-[bounce_5s_ease-in-out_infinite]"
+                            onError={(e) => { e.currentTarget.src = mascotImg }}
+                        />
+                    </div>
+                </div>
+            </section>
 
-                            <div className="relative z-10 flex flex-col md:flex-row items-stretch">
-                                {/* Cột Trái: Lợi ích */}
-                                <div className="flex-1 p-8 md:p-12 md:pr-10 border-b md:border-b-0 md:border-r border-white/10 flex flex-col justify-center">
-                                    <div className="flex items-center gap-3 mb-6">
-                                        <MaterialIcon name="workspace_premium" className="text-4xl text-[#fe951c] drop-shadow-[0_0_15px_rgba(254,149,28,0.8)]" />
-                                        <div>
-                                            <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight">Thành Viên Premium</h2>
-                                            <p className="text-xs text-[#fdb438] font-bold uppercase tracking-widest mt-1">Gói Trải Nghiệm Cá Nhân</p>
-                                        </div>
-                                    </div>
+            {/* PHÂN KHÚC KHÁCH HÀNG CÁ NHÂN (B2C) - SẢN PHẨM TRỌNG TÂM */}
+            <section id="b2c-pricing" className="py-24 bg-[#FAF8F3] relative z-20">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
 
-                                    <ul className="space-y-5 text-sm md:text-base font-medium text-gray-200">
-                                        <li className="flex items-start gap-4 p-3 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
-                                            <MaterialIcon name="motion_photos_on" className="text-[#fe951c] text-2xl shrink-0 drop-shadow-md" />
-                                            <span className="leading-snug"><strong>Cổng Thời Gian Đa Lớp:</strong> Mở khóa đối chiếu toàn bộ không gian di sản qua 3 kỷ nguyên lịch sử (1948 - 1968 - 2026).</span>
+                    <div className="text-center max-w-3xl mx-auto space-y-4">
+                        <span className="text-sm font-black text-[#0275FB] tracking-widest uppercase block bg-[#0275FB]/10 py-1.5 px-5 rounded-full w-max mx-auto border border-[#0275FB]/20 shadow-sm">
+                            KHÁM PHÁ CÁ NHÂN (B2C)
+                        </span>
+                        <h2 className="text-3xl sm:text-4xl lg:text-[2.75rem] font-black text-[#1E293B] tracking-tight leading-tight">
+                            Hành Trình Dành Cho <span className="whitespace-nowrap text-[#0275FB]">Đam Mê Khám Phá Di Sản</span>
+                        </h2>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+
+                        {/* GÓI MIỄN PHÍ - BÊN TRÁI (Nhỏ hơn một chút để tôn gói Premium) */}
+                        <div className="lg:col-span-5 p-8 sm:p-10 rounded-3xl bg-white border border-[#CBD5E1] shadow-md flex flex-col justify-between hover:shadow-xl hover:border-[#0275FB]/40 transition-all duration-300 group">
+                            <div className="space-y-6">
+                                <div className="w-14 h-14 rounded-2xl bg-[#F1F5F9] flex items-center justify-center text-[#64748B] group-hover:bg-[#0275FB]/10 group-hover:text-[#0275FB] transition-colors">
+                                    <MaterialIcon name="volunteer_activism" className="text-3xl" />
+                                </div>
+                                <div>
+                                    <h3 className="text-2xl font-black text-[#1E293B]">Bản Miễn Phí (Freemium)</h3>
+                                    <p className="text-[#64748B] mt-2 font-medium text-sm">Trải nghiệm không gian văn hóa số ở mức độ cơ bản.</p>
+                                </div>
+                                <div className="mt-4 flex items-baseline gap-1.5">
+                                    <span className="text-4xl font-black text-[#1E293B]">0đ</span>
+                                    <span className="text-sm font-bold text-[#64748B]">/ mãi mãi</span>
+                                </div>
+                                <ul className="space-y-5 text-sm font-medium text-[#475569] pt-4 border-t border-[#F1F5F9]">
+                                    <li className="flex items-start gap-3">
+                                        <MaterialIcon name="ar_on_you" className="text-[#94A3B8] text-xl shrink-0 mt-0.5" />
+                                        <span className="leading-relaxed">Quét và xem mô phỏng AR giới hạn (tối đa 3 địa danh).</span>
+                                    </li>
+                                    <li className="flex items-start gap-3">
+                                        <MaterialIcon name="chat" className="text-[#94A3B8] text-xl shrink-0 mt-0.5" />
+                                        <span className="leading-relaxed">Trò chuyện cùng AI Chrono (tối đa 5 câu hỏi/ngày), không kèm trích dẫn nguồn.</span>
+                                    </li>
+                                    <li className="flex items-start gap-3">
+                                        <MaterialIcon name="groups" className="text-[#94A3B8] text-xl shrink-0 mt-0.5" />
+                                        <span className="leading-relaxed">Đọc bài viết chia sẻ từ cộng đồng lịch sử.</span>
+                                    </li>
+                                </ul>
+                            </div>
+                            <button onClick={() => navigate('/login')} className="mt-8 w-full py-3.5 rounded-xl bg-[#F1F5F9] text-[#475569] font-black text-sm uppercase tracking-wider hover:bg-[#E2E8F0] transition-colors">
+                                Bắt Đầu Miễn Phí
+                            </button>
+                        </div>
+
+                        {/* GÓI PREMIUM - BÊN PHẢI (To hơn, rực rỡ hơn) */}
+                        <div className="lg:col-span-7 p-8 sm:p-10 rounded-3xl bg-gradient-to-br from-white via-[#FFF2C3]/40 to-[#0275FB]/5 border-2 border-[#FDC908] shadow-[0_15px_50px_rgba(2,117,251,0.15)] relative overflow-hidden transform lg:scale-105 z-10 flex flex-col justify-between group hover:-translate-y-2 transition-transform duration-500">
+                            {/* Ruy băng "Khuyên Dùng" */}
+                            <div className="absolute top-0 right-0 bg-gradient-to-r from-[#FDC908] to-[#d97706] text-white text-[11px] font-black uppercase tracking-widest px-6 py-2 rounded-bl-2xl shadow-md">Đặc Quyền Vô Hạn</div>
+
+                            {/* Hiệu ứng chìm */}
+                            <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-[#0275FB]/5 rounded-full blur-3xl pointer-events-none group-hover:bg-[#0275FB]/10 transition-colors"></div>
+
+                            <div className="space-y-6 relative z-10">
+                                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#0275FB] to-[#1d4ed8] flex items-center justify-center text-white shadow-lg shadow-[#0275FB]/30">
+                                    <MaterialIcon name="workspace_premium" className="text-3xl text-[#FDC908]" />
+                                </div>
+                                <div>
+                                    <h3 className="text-3xl font-black text-[#0275FB]">Đặc Quyền Premium</h3>
+                                    <p className="text-[#475569] mt-2 font-medium text-base">Hành trang hoàn hảo cho những chuyến du lịch và khám phá kiến thức chuyên sâu.</p>
+                                </div>
+                                <div className="mt-4 flex items-baseline gap-1.5">
+                                    <span className="text-5xl font-black text-[#0275FB] drop-shadow-sm">79.000đ</span>
+                                    <span className="text-base font-bold text-[#64748B]">/ tháng</span>
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5 text-sm font-semibold text-[#1E293B] pt-6 border-t border-[#0275FB]/15">
+                                    <li className="flex items-start gap-3">
+                                        <MaterialIcon name="check_circle" className="text-[#0275FB] text-xl shrink-0 mt-0.5 drop-shadow-sm" />
+                                        <span className="leading-relaxed"><strong>Mở khóa toàn bộ</strong> kho tàng bản đồ di sản 3D & Time Portal.</span>
+                                    </li>
+                                    <li className="flex items-start gap-3">
+                                        <MaterialIcon name="check_circle" className="text-[#0275FB] text-xl shrink-0 mt-0.5 drop-shadow-sm" />
+                                        <span className="leading-relaxed"><strong>Hỏi đáp AI 24/7 vô hạn</strong> kèm minh chứng tài liệu xác thực.</span>
+                                    </li>
+                                    <li className="flex items-start gap-3">
+                                        <MaterialIcon name="check_circle" className="text-[#0275FB] text-xl shrink-0 mt-0.5 drop-shadow-sm" />
+                                        <span className="leading-relaxed">Tham gia <strong>Nhiệm vụ (Quests)</strong> thực địa để nhận phần thưởng.</span>
+                                    </li>
+                                    <li className="flex items-start gap-3">
+                                        <MaterialIcon name="check_circle" className="text-[#0275FB] text-xl shrink-0 mt-0.5 drop-shadow-sm" />
+                                        <span className="leading-relaxed">Tích lũy <strong>Hộ chiếu số (Digital Passport)</strong> và thẻ Cổ vật Độc quyền.</span>
+                                    </li>
+                                </div>
+                            </div>
+                            <button onClick={() => navigate('/login')} className="mt-10 w-full py-4 rounded-xl bg-gradient-to-r from-[#0275FB] to-[#1d4ed8] hover:scale-[1.02] text-white font-black text-sm uppercase tracking-wider transition-all shadow-[0_8px_25px_rgba(2,117,251,0.4)] cursor-pointer relative z-10">
+                                Đăng Ký Premium Ngay
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+            </section>
+
+            {/* B2B Segment: Software/Service Package Licensing Model */}
+            <section id="b2b-pricing" className="py-24 bg-white border-t border-[#0275FB]/10">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
+                    <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 pb-6 border-b-2 border-[#0275FB]/10">
+                        <div className="text-center lg:text-left">
+                            <div className="inline-flex items-center justify-center lg:justify-start gap-2 px-4 py-2 rounded-full bg-[#FDC908]/10 border border-[#FDC908]/30 text-[#d97706] font-black text-xs uppercase tracking-wider w-max mx-auto lg:mx-0 mb-4 shadow-sm">
+                                <MaterialIcon name="business" className="text-base" />
+                                <span>Giải Pháp Doanh Nghiệp & Giáo Dục (B2B)</span>
+                            </div>
+                            <h3 className="text-3xl sm:text-4xl font-black text-[#1E293B]">Software Package Licensing Model</h3>
+                            <p className="text-base text-[#475569] mt-3 max-w-3xl font-medium leading-relaxed">Giải pháp phần mềm chuyển đổi số toàn diện dành cho Ban quản lý Di tích, Bảo tàng và Hệ thống Trường học. Cấp phát hàng loạt tài khoản Sub-accounts quản lý dễ dàng.</p>
+                        </div>
+                        <div className="relative shrink-0 group mx-auto lg:mx-0">
+                            <div className="absolute -inset-0.5 bg-gradient-to-r from-[#0275FB] to-[#FDC908] rounded-2xl blur opacity-70 group-hover:opacity-100 transition duration-500 animate-pulse"></div>
+                            <div className="relative px-6 py-4 bg-white rounded-xl flex items-center text-sm font-bold text-[#334155] shadow-lg border border-[#0275FB]/20">
+                                <span>
+                                    Chính sách <strong className="text-transparent bg-clip-text bg-gradient-to-r from-[#0275FB] to-[#D97706] font-black text-lg px-1.5 drop-shadow-sm">Volume Discount (30 - 40%)</strong> cho chuỗi hệ thống.
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* 3 Pricing Cards B2B */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch pt-4">
+                        {/* GÓI 1: MICRO */}
+                        <div className="p-8 rounded-3xl bg-[#FAF8F3] border border-[#CBD5E1] hover:border-[#0275FB]/50 transition-all flex flex-col justify-between shadow-sm hover:shadow-xl space-y-8 group">
+                            <div className="space-y-6">
+                                <div className="flex items-center justify-between">
+                                    <span className="px-3 py-1.5 rounded-lg bg-white text-[#64748B] font-black text-xs uppercase tracking-wider border border-[#E2E8F0]">Small Sub-plan</span>
+                                    <MaterialIcon name="devices" className="text-3xl text-[#64748B] group-hover:text-[#0275FB] transition-colors" />
+                                </div>
+                                <div>
+                                    <h4 className="text-2xl font-black text-[#1E293B]">Micro Package</h4>
+                                    <div className="mt-2 flex items-baseline gap-1.5"><span className="text-3xl font-black text-[#1E293B]">8.000.000đ</span><span className="text-xs font-bold text-[#64748B]">/ năm</span></div>
+                                </div>
+                                <div className="p-5 rounded-xl bg-white border border-[#E2E8F0] space-y-2 text-sm font-bold text-[#334155]">
+                                    <div className="flex justify-between border-b border-[#F1F5F9] pb-2"><span>Tài khoản Member:</span> <span className="text-[#0275FB] font-black">Tối đa 100</span></div>
+                                    <div className="flex justify-between pt-1"><span>Đồng thời (CCU):</span> <span className="text-[#0275FB] font-black">15 CCU</span></div>
+                                </div>
+                                <div className="pt-2">
+                                    <p className="text-xs font-black text-[#64748B] uppercase mb-4 tracking-wide">Tính năng & Giới hạn:</p>
+                                    <ul className="space-y-4 text-sm font-semibold text-[#475569]">
+                                        <li className="flex items-start gap-3">
+                                            <MaterialIcon name="check_circle" className="text-[#94A3B8] group-hover:text-[#0275FB] text-xl shrink-0 mt-0.5 transition-colors" />
+                                            <span className="leading-snug"><strong>Thừa hưởng B2C Premium:</strong> Khám phá di sản, tương tác AR & Cổng thời gian.</span>
                                         </li>
-                                        <li
-                                            className="flex items-start gap-4 p-3 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors"
-                                            title={`Gói Free hiện tại: ${chatDailyLimit} câu AI/ngày`}
-                                        >
-                                            <MaterialIcon name="forum" className="text-[#fe951c] text-2xl shrink-0 drop-shadow-md" />
-                                            <span className="leading-snug"><strong>Trợ Lý RAG AI Vô Hạn:</strong> Trò chuyện không giới hạn số câu hỏi, đính kèm nguồn tài liệu học thuật 100% minh bạch.</span>
-                                        </li>
-                                        <li className="flex items-start gap-4 p-3 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
-                                            <MaterialIcon name="military_tech" className="text-[#fe951c] text-2xl shrink-0 drop-shadow-md" />
-                                            <span className="leading-snug"><strong>Đặc Quyền Vinh Danh:</strong> Đua TOP Bảng xếp hạng toàn cầu, sưu tầm Huy hiệu hiếm và hoàn thiện Hộ Chiếu Di Sản.</span>
+                                        <li className="flex items-start gap-3">
+                                            <MaterialIcon name="check_circle" className="text-[#94A3B8] group-hover:text-[#0275FB] text-xl shrink-0 mt-0.5 transition-colors" />
+                                            <span className="leading-snug">Hệ thống AI RAG: Giới hạn tổng <strong className="text-[#1E293B]">5.000 queries/tháng</strong> cho toàn tổ chức.</span>
                                         </li>
                                     </ul>
                                 </div>
-
-                                {/* Cột Phải: Giá & Nút Call To Action */}
-                                <div className="w-full md:w-[350px] shrink-0 p-8 md:p-10 flex flex-col justify-center items-center text-center bg-black/20">
-                                    <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4">Chi phí duy trì</p>
-
-                                    {/* Gom chung Giá tiền, chữ "đ" và "/ tháng" vào một flex box, dùng whitespace-nowrap để cấm rớt dòng */}
-                                    <div className="flex items-baseline justify-center gap-1 mb-8 whitespace-nowrap">
-                                        <span className="text-5xl font-black text-white drop-shadow-lg">{formatCurrency(b2cPrice).replace('đ', '')}</span>
-                                        <span className="text-xl font-bold text-[#fdb438]">đ</span>
-                                        <span className="text-sm text-gray-400 font-bold ml-1">/ tháng</span>
-                                    </div>
-
-                                    <Link to={checkoutB2cHref} className="w-full relative group/btn block">
-                                        <div className="absolute -inset-1 bg-gradient-to-r from-[#fe951c] to-[#e07d0b] rounded-2xl blur opacity-70 group-hover/btn:opacity-100 transition duration-300"></div>
-                                        <Button type="button" className="relative w-full h-14 rounded-xl bg-gradient-to-r from-[#fe951c] via-[#fdb438] to-[#e07d0b] text-black font-black text-sm uppercase tracking-wider transition-all flex items-center justify-center gap-2">
-                                            <MaterialIcon name="bolt" className="text-xl" />
-                                            Kích Hoạt Premium
-                                        </Button>
-                                    </Link>
-                                    <p className="text-[10px] text-gray-500 mt-4 font-medium">Hỗ trợ thanh toán tự động qua mã QR SePay</p>
-                                </div>
                             </div>
-                        </section>
+                            <button onClick={() => navigate('/login')} className="mt-8 w-full py-4 rounded-xl bg-white border-2 border-[#CBD5E1] group-hover:border-[#0275FB] group-hover:bg-[#0275FB] group-hover:text-white text-[#475569] font-black text-sm uppercase tracking-wider transition-all cursor-pointer shadow-sm">Chọn Gói</button>
+                        </div>
 
-                        {/* ===================================== */}
-                        {/* GÓI TRƯỜNG HỌC (XÓA BỎ CHỮ B2B)       */}
-                        {/* ===================================== */}
-                        <section className="bg-[#161824]/80 backdrop-blur-2xl border border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.5)] rounded-[2rem] p-6 md:p-10">
-
-                            {/* HEADER VÀ NÚT ĐĂNG KÝ GIÁO VIÊN ĐƯỢC THIẾT KẾ LẠI TUYỆT ĐẸP */}
-                            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 mb-8">
+                        {/* GÓI 2: STANDARD (HERO B2B) */}
+                        <div className="p-8 rounded-3xl bg-gradient-to-b from-[#0275FB]/5 via-white to-white border-2 border-[#0275FB] transition-all flex flex-col justify-between shadow-xl relative scale-100 md:scale-105 z-10 space-y-8 hover:-translate-y-2 duration-500">
+                            <div className="absolute -top-4 inset-x-0 flex justify-center">
+                                <span className="px-5 py-1.5 rounded-full bg-[#0275FB] text-white font-black text-[11px] tracking-widest uppercase shadow-md border border-[#0275FB]">
+                                    Tiêu Chuẩn Doanh Nghiệp
+                                </span>
+                            </div>
+                            <div className="space-y-6 pt-2">
+                                <div className="flex items-center justify-between">
+                                    <span className="px-3 py-1.5 rounded-lg bg-white text-[#0275FB] font-black text-xs uppercase tracking-wider border border-[#0275FB]/30 shadow-sm">The Hero Product</span>
+                                    <MaterialIcon name="hub" className="text-3xl text-[#0275FB]" />
+                                </div>
                                 <div>
-                                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#1A79E5]/15 text-[#388cf1] border border-[#388cf1]/30 font-black text-xs uppercase tracking-wider mb-3 shadow-sm">
-                                        <MaterialIcon name="school" className="text-base" />
-                                        <span>Phân Khúc Khối Trường Học</span>
-                                    </div>
-                                    <h3 className="text-2xl font-black text-white">Cấp Phép Gói Giáo Dục</h3>
-                                    <p className="text-sm text-gray-400 mt-2 max-w-2xl font-medium">Hệ thống cấp tài khoản quản trị cho trường học và phân quyền học sinh.</p>
+                                    <h4 className="text-2xl font-black text-[#1E293B]">Standard Package</h4>
+                                    <div className="mt-2 flex items-baseline gap-1.5"><span className="text-4xl font-black text-[#0275FB]">15.000.000đ</span><span className="text-xs font-bold text-[#64748B]">/ năm</span></div>
                                 </div>
-
-                                <div className="flex flex-col items-start lg:items-end gap-3 w-full lg:w-auto mt-2 lg:mt-0">
-                                    <span className="text-[10px] font-black px-4 py-1.5 rounded-full bg-[#1a79e5]/15 text-[#388cf1] border border-[#388cf1]/30 tracking-widest uppercase shadow-sm">
-                                        Volume Discount 30–40% khi mua từ 3 license
-                                    </span>
-                                    <button
-                                        type="button"
-                                        onClick={() => void createClassroomTrial()}
-                                        disabled={trialLoading}
-                                        className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-gradient-to-r from-emerald-500/10 to-teal-500/10 hover:from-emerald-500/20 hover:to-teal-500/20 border border-emerald-500/40 text-emerald-400 hover:text-emerald-300 font-bold text-xs uppercase tracking-wider transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(16,185,129,0.15)] hover:shadow-[0_0_25px_rgba(16,185,129,0.25)]"
-                                    >
-                                        <MaterialIcon name="play_lesson" className="text-lg" />
-                                        {trialLoading ? 'Đang Khởi Tạo...' : 'Dùng Thử 14 Ngày Miễn Phí'}
-                                    </button>
+                                <div className="p-5 rounded-xl bg-white border border-[#0275FB]/20 shadow-sm space-y-2 text-sm font-bold text-[#1e293b]">
+                                    <div className="flex justify-between border-b border-[#0275FB]/10 pb-2"><span>Tài khoản Member:</span> <span className="text-[#0275FB] font-black">Tối đa 400</span></div>
+                                    <div className="flex justify-between pt-1"><span>Đồng thời (CCU):</span> <span className="text-[#0275FB] font-black">40 CCU</span></div>
+                                </div>
+                                <div className="pt-2">
+                                    <p className="text-xs font-black text-[#0275FB] uppercase mb-4 tracking-wide">Tính năng nâng cao:</p>
+                                    <ul className="space-y-4 text-sm font-semibold text-[#334155]">
+                                        <li className="flex items-start gap-3">
+                                            <MaterialIcon name="check_circle" className="text-[#0275FB] text-xl shrink-0 mt-0.5" />
+                                            <span className="leading-snug">Sở hữu <strong>toàn bộ tính năng Core</strong> di sản số hóa của nền tảng.</span>
+                                        </li>
+                                        <li className="flex items-start gap-3">
+                                            <MaterialIcon name="check_circle" className="text-[#0275FB] text-xl shrink-0 mt-0.5" />
+                                            <span className="leading-snug">Hoạt động nhóm <strong>Multiplayer (Quest Room):</strong> Lập đội giải đố lịch sử thực địa.</span>
+                                        </li>
+                                        <li className="flex items-start gap-3">
+                                            <MaterialIcon name="check_circle" className="text-[#0275FB] text-xl shrink-0 mt-0.5" />
+                                            <span className="leading-snug">Bể phóng AI Pool Mở rộng: Nâng lên <strong className="text-[#1E293B]">30.000 queries/tháng</strong>.</span>
+                                        </li>
+                                    </ul>
                                 </div>
                             </div>
+                            <button onClick={() => navigate('/login')} className="mt-8 w-full py-4 rounded-xl bg-[#0275FB] hover:bg-[#1d4ed8] text-white font-black text-sm uppercase tracking-wider transition-all shadow-[0_5px_20px_rgba(2,117,251,0.3)] cursor-pointer">
+                                Triển Khai Tiêu Chuẩn
+                            </button>
+                        </div>
 
-                            <div className="grid md:grid-cols-3 gap-6 items-stretch">
-                                {plans.map((plan) => (
-                                    <div
-                                        key={plan.planType}
-                                        className={`rounded-[2rem] border p-8 flex flex-col justify-between relative overflow-hidden transition-all duration-300 ${
-                                            plan.hero
-                                                ? 'border-[#388cf1] bg-gradient-to-b from-[#388cf1]/10 to-[#0B1120] shadow-[0_15px_40px_rgba(56,140,241,0.2)] scale-100 md:scale-[1.05] z-10'
-                                                : 'border-white/10 bg-[#161824]/60 backdrop-blur-xl hover:border-white/30'
-                                        }`}
-                                    >
-                                        {plan.hero && <div className="absolute top-0 right-0 w-40 h-40 bg-[#388cf1]/20 rounded-full blur-[50px] pointer-events-none" />}
-
-                                        <div className="relative z-10 mb-8">
-                                            <div className="flex justify-between items-start mb-4">
-                                                <h4 className={`text-2xl font-black ${plan.hero ? 'text-white' : 'text-gray-200'}`}>{plan.label}</h4>
-                                                {plan.hero && (
-                                                    <span className="inline-block px-3 py-1 bg-[#388cf1] text-white text-[9px] font-black uppercase tracking-widest rounded-md shadow-md">
-                                                        Phổ Biến
-                                                    </span>
-                                                )}
-                                            </div>
-
-                                            <div className="mb-6 whitespace-nowrap">
-                                                <span className={`text-3xl font-black ${plan.hero ? 'text-[#388cf1] drop-shadow-md' : 'text-white'}`}>{formatCurrency(plan.priceVnd).replace('đ', '')}</span>
-                                                <span className="text-sm font-bold text-gray-400 ml-1">đ / năm</span>
-                                            </div>
-
-                                            <div className={`p-4 rounded-2xl mb-6 space-y-1.5 text-xs font-bold border ${plan.hero ? 'bg-[#388cf1]/10 border-[#388cf1]/30 text-cyan-100 shadow-inner' : 'bg-black/30 border-white/5 text-gray-300'}`}>
-                                                <div className="flex justify-between border-b border-white/10 pb-1.5"><span>Tài khoản Học sinh:</span> <span className="font-black">Tối đa {plan.maxVerifiedAccounts}</span></div>
-                                                <div className="flex justify-between pt-1"><span>Lưu lượng CCU:</span> <span className="font-black">{plan.maxCcu} Users</span></div>
-                                                <div className="flex justify-between border-t border-white/10 pt-1.5 mt-1.5"><span>AI Pool Queries:</span> <span className="font-black">{formatAi(plan.maxAiQueriesPerMonth)}</span></div>
-                                            </div>
-
-                                            <ul className="space-y-3 text-xs font-medium text-gray-300">
-                                                {plan.extras.map((extra, idx) => (
-                                                    <li key={idx} className="flex items-start gap-2.5">
-                                                        <MaterialIcon name={extra.icon} className={`${extra.color} text-[18px] shrink-0`} />
-                                                        {extra.text}
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        </div>
-
-                                        <Link to={checkoutB2bHref(plan.planType) + (plan.planType === 'STANDARD' ? '&licenses=3' : '')} className="relative z-10 mt-auto">
-                                            <Button type="button" className={`w-full h-12 rounded-xl text-xs font-black uppercase tracking-widest transition-all cursor-pointer flex items-center justify-center gap-2 ${plan.hero ? 'bg-[#388cf1] hover:bg-[#1a79e5] text-white shadow-[0_4px_20px_rgba(56,140,241,0.4)] hover:scale-105' : 'bg-white/10 hover:bg-white/20 text-white'}`}>
-                                                {plan.hero ? <MaterialIcon name="rocket_launch" className="text-sm" /> : <MaterialIcon name="shopping_cart" className="text-sm" />}
-                                                {plan.cta}
-                                            </Button>
-                                        </Link>
-                                    </div>
-                                ))}
+                        {/* GÓI 3: PREMIUM B2B (UPSELL) */}
+                        <div className="p-8 rounded-3xl bg-[#FAF8F3] border border-[#CBD5E1] hover:border-emerald-500/50 transition-all flex flex-col justify-between shadow-sm hover:shadow-xl space-y-8 group">
+                            <div className="space-y-6">
+                                <div className="flex items-center justify-between">
+                                    <span className="px-3 py-1.5 rounded-lg bg-white text-emerald-700 font-black text-xs uppercase tracking-wider border border-emerald-200">The Upsell Product</span>
+                                    <MaterialIcon name="admin_panel_settings" className="text-3xl text-[#64748B] group-hover:text-emerald-500 transition-colors" />
+                                </div>
+                                <div>
+                                    <h4 className="text-2xl font-black text-[#1E293B]">Premium Package</h4>
+                                    <div className="mt-2 flex items-baseline gap-1.5"><span className="text-3xl font-black text-emerald-600">25.000.000đ</span><span className="text-xs font-bold text-[#64748B]">/ năm</span></div>
+                                </div>
+                                <div className="p-5 rounded-xl bg-white border border-[#E2E8F0] space-y-2 text-sm font-bold text-[#334155]">
+                                    <div className="flex justify-between border-b border-[#F1F5F9] pb-2"><span>Tài khoản Member:</span> <span className="text-emerald-600 font-black">Tối đa 1.000</span></div>
+                                    <div className="flex justify-between pt-1"><span>Đồng thời (CCU):</span> <span className="text-emerald-600 font-black">80 CCU</span></div>
+                                </div>
+                                <div className="pt-2">
+                                    <p className="text-xs font-black text-[#64748B] group-hover:text-emerald-600 transition-colors uppercase mb-4 tracking-wide">Tính năng tối thượng:</p>
+                                    <ul className="space-y-4 text-sm font-semibold text-[#475569]">
+                                        <li className="flex items-start gap-3">
+                                            <MaterialIcon name="check_circle" className="text-[#94A3B8] group-hover:text-emerald-500 text-xl shrink-0 mt-0.5 transition-colors" />
+                                            <span className="leading-snug"><strong>Mở khóa 100% quyền truy cập</strong> không giới hạn hệ sinh thái hiện tại & tương lai.</span>
+                                        </li>
+                                        <li className="flex items-start gap-3">
+                                            <MaterialIcon name="check_circle" className="text-[#94A3B8] group-hover:text-emerald-500 text-xl shrink-0 mt-0.5 transition-colors" />
+                                            <span className="leading-snug">Hệ thống quản lý <strong>B2B Dashboard</strong>: Giao nhiệm vụ, xem heatmap & xuất báo cáo.</span>
+                                        </li>
+                                    </ul>
+                                </div>
                             </div>
-                        </section>
-
-                        {/* ===================================== */}
-                        {/* GÓI BẢO TÀNG (XÓA BỎ CHỮ B2B2C)       */}
-                        {/* ===================================== */}
-                        <section className="bg-gradient-to-r from-[#1b1e2c] to-[#0f1015] border border-emerald-500/30 rounded-[2rem] p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-[0_10px_30px_rgba(16,185,129,0.15)] relative overflow-hidden">
-                            <div className="absolute right-0 bottom-0 w-48 h-48 bg-emerald-500/10 rounded-full blur-[50px] pointer-events-none" />
-                            <div className="relative z-10">
-                                <h2 className="text-lg font-black flex items-center gap-3 mb-2 text-white">
-                                    <MaterialIcon name="museum" className="text-emerald-400 text-2xl drop-shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
-                                    Dành Cho Ban Quản Lý Di Tích & Bảo Tàng
-                                </h2>
-                                <p className="text-sm text-gray-400 font-medium">
-                                    Giải pháp số hóa toàn diện: Chụp Panorama 360°, Dựng WebAR, Clone AI Nhân vật. Hỗ trợ triển khai theo dự án hoặc thuê bao.
-                                </p>
-                            </div>
-                            <Link to="/checkout/b2b2c" className="w-full md:w-auto shrink-0 relative z-10">
-                                <Button type="button" className="w-full h-12 px-8 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 font-black text-xs uppercase tracking-wider cursor-pointer transition-all hover:scale-105 flex items-center justify-center gap-2">
-                                    <MaterialIcon name="headset_mic" className="text-sm" />
-                                    Liên Hệ Chuyên Gia
-                                </Button>
-                            </Link>
-                        </section>
-
+                            <button onClick={() => navigate('/login')} className="mt-8 w-full py-4 rounded-xl bg-white border-2 border-[#CBD5E1] group-hover:border-emerald-600 group-hover:bg-emerald-600 group-hover:text-white text-[#475569] font-black text-sm uppercase tracking-wider transition-all cursor-pointer shadow-sm">
+                                Đăng Ký Toàn Diện
+                            </button>
+                        </div>
                     </div>
-                </main>
-            </div>
-        </AuthLayout>
+                </div>
+            </section>
+
+            {/* SỬ DỤNG COMPONENT FOOTER CHUẨN ĐỒNG NHẤT */}
+            <PublicFooter />
+        </div>
     )
 }

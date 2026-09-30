@@ -49,6 +49,7 @@ import { ModeGuardRoute } from '../shared/router/ModeGuardRoute'
 import { ProtectedRoute } from '../shared/router/ProtectedRoute'
 import { VisitSessionProvider } from '../features/visit/VisitSessionProvider'
 import { ARLoadingFallback } from '../features/ar/ARHud'
+import { AboutPage } from '../pages/AboutPage'
 
 const TimePortalARPage = lazy(() =>
   import('../pages/TimePortalARPage').then((m) => ({ default: m.TimePortalARPage })),
@@ -59,8 +60,10 @@ export function AppRoutes() {
     <BrowserRouter>
       <VisitSessionProvider>
       <Routes>
-        {/* Public — guest landing only */}
-        <Route path="/" element={<OnboardingPage />} />
+          {/* Public — guest landing only */}
+          <Route path="/" element={<OnboardingPage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/pricing" element={<PricingPage />} />
 
         {/* Auth — guest only */}
         <Route element={<AuthRoute />}>
