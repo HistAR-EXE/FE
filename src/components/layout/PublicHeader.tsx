@@ -7,10 +7,15 @@ import { useAuth } from '../../shared/auth/useAuth';
 export const PublicHeader: React.FC = () => {
     const navigate = useNavigate();
     const location = useLocation(); // Hook để lấy đường dẫn hiện tại
-    const { isAuthenticated, logout } = useAuth(); // Lấy thêm hàm logout (nếu có)
+    const { isAuthenticated, logout, user } = useAuth();
     const [scrolled, setScrolled] = useState(false);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
+    const displayName = user?.displayName ?? 'Thành viên TimeLens';
+    const avatarUrl =
+        user?.avatarUrl ||
+        `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=FDC908&color=fff`;
+    const tierLabel = user?.tier === 'PREMIUM' ? 'Thành viên Premium' : 'Thành viên Free';
 
     // Hiệu ứng đổi màu nền Header khi cuộn trang
     useEffect(() => {
@@ -72,8 +77,8 @@ export const PublicHeader: React.FC = () => {
                                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                                     className="flex items-center gap-3 bg-white border border-[#CBD5E1] p-1 pr-4 rounded-full hover:border-[#0275FB] transition-colors shadow-sm"
                                 >
-                                    <img src="https://ui-avatars.com/api/?name=Nguyen+Quoc+Huy&background=FDC908&color=fff" alt="Avatar" className="w-8 h-8 rounded-full object-cover shrink-0" />
-                                    <span className="text-sm font-bold text-[#1E293B] whitespace-nowrap">Nguyễn Quốc Huy</span>
+                                    <img src={avatarUrl} alt="Avatar" className="w-8 h-8 rounded-full object-cover shrink-0" />
+                                    <span className="text-sm font-bold text-[#1E293B] whitespace-nowrap">{displayName}</span>
                                     <MaterialIcon name="arrow_drop_down" className={`text-[#64748B] transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
                                 </button>
 
@@ -81,8 +86,8 @@ export const PublicHeader: React.FC = () => {
                                 {isDropdownOpen && (
                                     <div className="absolute right-0 mt-3 w-64 bg-white rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.1)] border border-[#E2E8F0] overflow-hidden py-2 animate-[fadeIn_0.2s_ease-out]">
                                         <div className="px-4 py-3 border-b border-[#F1F5F9] mb-2">
-                                            <p className="text-sm font-black text-[#1E293B]">Nguyễn Quốc Huy</p>
-                                            <p className="text-xs font-medium text-[#64748B] truncate">Lữ hành mới (Cấp 1)</p>
+                                            <p className="text-sm font-black text-[#1E293B]">{displayName}</p>
+                                            <p className="text-xs font-medium text-[#64748B] truncate">{tierLabel}</p>
                                         </div>
 
                                         <Link to="/profile" className="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-[#475569] hover:bg-[#F8FAFC] hover:text-[#0275FB] transition-colors">

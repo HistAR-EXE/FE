@@ -32,6 +32,7 @@ import { CheckoutB2B2CPage } from '../pages/CheckoutB2B2CPage'
 import { JoinPage } from '../pages/JoinPage'
 import { VerifyEmailPage } from '../pages/VerifyEmailPage'
 import { VerifyEmailPendingPage } from '../pages/VerifyEmailPendingPage'
+import { ForgotPasswordPage } from '../pages/ForgotPasswordPage'
 import { ModeSelectPage } from '../pages/ModeSelectPage'
 import { Tour360Page } from '../pages/Tour360Page'
 import { AdminAnalyticsPage } from '../pages/AdminAnalyticsPage'
@@ -79,8 +80,9 @@ export function AppRoutes() {
           <Route path="/register" element={<LoginPage defaultMode="register" />} />
         </Route>
 
-        {/* Action exceptions — external links */}
+        {/* Action exceptions — external links / unauthenticated recovery */}
         <Route path="/verify-email" element={<VerifyEmailPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/join" element={<JoinPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/terms" element={<TermsPage />} />

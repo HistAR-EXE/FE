@@ -347,9 +347,9 @@ export function LoginPage({ defaultMode = 'login' }: LoginPageProps) {
                                             Mật khẩu <span className="text-[#0275FB]">*</span>
                                         </label>
                                         {mode === 'login' && (
-                                            <a href="#" className="text-xs font-bold text-[#0275FB] hover:text-[#1d4ed8] transition-colors">
+                                            <Link to="/forgot-password" className="text-xs font-bold text-[#0275FB] hover:text-[#1d4ed8] transition-colors">
                                                 Quên mật khẩu?
-                                            </a>
+                                            </Link>
                                         )}
                                     </div>
                                     <div className="relative">

@@ -12,9 +12,9 @@ import { buildChatPath, readSelectedLocationId } from '../features/chat/chatRout
 import { useAppMode } from '../shared/context/useAppMode'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { emitEvent } from '../lib/pilotEvents'
-import { NpsModal } from '../components/feedback/NpsModal'
 import { SiteOnsiteHub } from '../features/stations/SiteOnsiteHub'
 import { getPilotSite, siteCodeFromLocationId } from '../shared/config/constants'
+import { useAuth } from '../shared/auth/useAuth'
 
 const CU_CHI_HERO = '/media/cu-chi/map/hero.jpg'
 
@@ -166,9 +166,11 @@ const SMART_RECOMMENDATIONS: Record<string, RecommendationCard[]> = {
 
 export function HomePage() {
     const { mode: appMode } = useAppMode()
+    const { user } = useAuth()
     const navigate = useNavigate()
     const [profile, setProfile] = useState<ProfileMe | null>(null)
     const [ready, setReady] = useState<Ready | null>(null)
+    const displayName = profile?.displayName ?? user?.displayName ?? 'Thành viên TimeLens'
 
     const personaGoal = useMemo(() => {
         return (localStorage.getItem('timelens_pref_goal') || 'study') as 'study' | 'research' | 'travel'
@@ -283,7 +285,7 @@ export function HomePage() {
                                 HỒ SƠ NHÀ KHÁM PHÁ DI SẢN
                             </span>
                             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white drop-shadow-md">
-                                {profile?.displayName || 'Nguyễn Quốc Huy'}
+                                {displayName}
                             </h1>
                             <p className="text-xs sm:text-sm md:text-base text-gray-300 leading-relaxed font-medium">
                                 {profile ? (
@@ -641,7 +643,6 @@ export function HomePage() {
                 </section>
 
             </main>
-            <NpsModal context="home" />
         </AppLayout>
     )
 }
