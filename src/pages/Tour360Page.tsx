@@ -516,7 +516,7 @@ export function Tour360Page() {
                         )}
 
                         <Tour360Hud
-                            locationId={locationId}
+                            locationId={activeLocationId}
                             panoramas={panoramas}
                             activePanorama={activePanorama}
                             activePanoramaId={activePanoramaId}
