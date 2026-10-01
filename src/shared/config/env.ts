@@ -19,17 +19,48 @@ if (isProdBuild && /localhost|127\.0\.0\.1/i.test(apiUrl)) {
   )
 }
 
-const mediaBaseUrl = (env.VITE_MEDIA_BASE_URL ?? '').trim().replace(/\/$/, '')
+/** R2 public host — must load via same-origin /media proxy (Vercel/Vite), not direct fetch (CORS + PSV). */
+const TIMELENS_MEDIA_HOSTS = new Set(['media.timelens.asia'])
+
+function normalizeMediaBaseUrl(raw: string): string {
+  const trimmed = raw.trim().replace(/\/$/, '')
+  if (!trimmed) return ''
+  try {
+    const host = new URL(trimmed).hostname.toLowerCase()
+    if (TIMELENS_MEDIA_HOSTS.has(host)) return ''
+  } catch {
+    if (/media\.timelens\.asia/i.test(trimmed)) return ''
+  }
+  return trimmed
+}
+
+const mediaBaseUrl = normalizeMediaBaseUrl(env.VITE_MEDIA_BASE_URL ?? '')
+
+/** Turn https://media.timelens.asia/media/... into /media/... for same-origin proxy. */
+function timelensMediaPathFromAbsolute(url: string): string | null {
+  try {
+    const u = new URL(url)
+    if (!TIMELENS_MEDIA_HOSTS.has(u.hostname.toLowerCase())) return null
+    return u.pathname + u.search
+  } catch {
+    return null
+  }
+}
 
 /**
- * Prefix `/media/...` with VITE_MEDIA_BASE_URL when set.
+ * Prefix `/media/...` with VITE_MEDIA_BASE_URL when set (except media.timelens.asia — always proxied).
  * Empty base: same-origin `/media/...` (Vercel/Vite proxy → R2). Avoid direct media.* URLs in the browser (CORS + SW).
- * Absolute http(s) URLs are returned as-is.
  */
 export function resolveMediaUrl(path: string | null | undefined): string {
-  const trimmed = (path ?? '').trim()
+  let trimmed = (path ?? '').trim()
   if (!trimmed) return ''
-  if (/^https?:\/\//i.test(trimmed)) return trimmed
+
+  if (/^https?:\/\//i.test(trimmed)) {
+    const rel = timelensMediaPathFromAbsolute(trimmed)
+    if (rel) trimmed = rel
+    else return trimmed
+  }
+
   const normalized = trimmed.startsWith('/') ? trimmed : `/${trimmed}`
   if (mediaBaseUrl) return `${mediaBaseUrl}${normalized}`
   if (typeof window !== 'undefined' && window.location?.origin) {

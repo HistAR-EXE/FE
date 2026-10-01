@@ -22,10 +22,8 @@ function resolvePanoramaUrl(imageUrl: string | undefined): string {
     if (!trimmed || trimmed.includes('placeholder') || trimmed.endsWith('.txt')) {
         return images.tour360Panorama
     }
-    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
-        return trimmed
-    }
-    const path = trimmed.startsWith('/') ? trimmed : `/${trimmed}`
+    const path =
+        /^https?:\/\//i.test(trimmed) ? trimmed : trimmed.startsWith('/') ? trimmed : `/${trimmed}`
     const normalized = path.replace(/\.png$/i, '.jpg')
     return resolveMediaUrl(normalized)
 }
