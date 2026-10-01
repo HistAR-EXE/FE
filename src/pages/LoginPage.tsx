@@ -11,9 +11,35 @@ import { ApiError } from '../shared/api/contracts'
 import { useToast } from '../shared/ui/toast/useToast'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { Button } from '../components/ui/Button'
-import { signInWithPopup, signOut } from 'firebase/auth'
+import {
+    getRedirectResult,
+    signInWithPopup,
+    signInWithRedirect,
+    signOut,
+} from 'firebase/auth'
 import { firebaseAuth, firebaseEnabled, googleProvider } from '../shared/auth/firebase'
 import { popReturnTo, peekReturnTo, readReturnTo, resolveReturnTo, stashReturnTo } from '../shared/router/returnTo'
+
+/** Mobile / in-app browsers often block Firebase popup → use full-page redirect. */
+function prefersGoogleRedirect(): boolean {
+    if (typeof window === 'undefined') return false
+    const ua = navigator.userAgent || ''
+    if (/Android|iPhone|iPad|iPod|Mobile|webOS|BlackBerry|IEMobile|Opera Mini/i.test(ua)) return true
+    if (/FBAN|FBAV|Instagram|Line\/|MicroMessenger|TikTok|Zalo/i.test(ua)) return true
+    try {
+        return window.matchMedia('(pointer: coarse)').matches
+    } catch {
+        return false
+    }
+}
+
+function authErrorCode(error: unknown): string | null {
+    if (typeof error === 'object' && error !== null && 'code' in error) {
+        const code = (error as { code?: unknown }).code
+        return typeof code === 'string' ? code : null
+    }
+    return null
+}
 
 // Kế thừa các Component giao diện chuẩn
 import { PublicHeader } from '../components/layout/PublicHeader'
@@ -62,6 +88,41 @@ export function LoginPage({ defaultMode = 'login' }: LoginPageProps) {
         }
         navigate(getPostLoginRedirect(loggedInUser, returnTo), { replace: true })
     }
+
+    // Complete Google sign-in after mobile redirect returns to /login.
+    useEffect(() => {
+        if (!firebaseEnabled || !firebaseAuth) return
+        let cancelled = false
+        setLoading(true)
+        getRedirectResult(firebaseAuth)
+            .then(async (credential) => {
+                if (cancelled || !credential) return
+                const idToken = await credential.user.getIdToken()
+                const loggedInUser = await loginWithGoogle(idToken)
+                if (cancelled) return
+                navigateAfterAuth({ ...loggedInUser, emailVerified: true, provider: 'google' })
+            })
+            .catch((e) => {
+                if (cancelled) return
+                const code = authErrorCode(e)
+                if (code === 'auth/credential-already-in-use') return
+                const message =
+                    e instanceof ApiError
+                        ? e.message
+                        : e instanceof Error
+                          ? e.message
+                          : 'Đăng nhập Google thất bại.'
+                showToast({ message, type: 'error' })
+            })
+            .finally(() => {
+                if (!cancelled) setLoading(false)
+            })
+        return () => {
+            cancelled = true
+        }
+        // Intentionally once on mount for redirect completion.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
 
     const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault()
@@ -147,19 +208,38 @@ export function LoginPage({ defaultMode = 'login' }: LoginPageProps) {
             const returnTo = readReturnTo(searchParams) ?? pendingFrom
             stashReturnTo(returnTo)
             await signOut(firebaseAuth).catch(() => undefined)
-            const credential = await signInWithPopup(firebaseAuth, googleProvider)
-            const idToken = await credential.user.getIdToken()
-            const loggedInUser = await loginWithGoogle(idToken)
-            navigateAfterAuth({ ...loggedInUser, emailVerified: true, provider: 'google' })
+
+            const useRedirect = prefersGoogleRedirect()
+            if (useRedirect) {
+                await signInWithRedirect(firebaseAuth, googleProvider)
+                return
+            }
+
+            try {
+                const credential = await signInWithPopup(firebaseAuth, googleProvider)
+                const idToken = await credential.user.getIdToken()
+                const loggedInUser = await loginWithGoogle(idToken)
+                navigateAfterAuth({ ...loggedInUser, emailVerified: true, provider: 'google' })
+            } catch (popupErr) {
+                const code = authErrorCode(popupErr)
+                // Desktop popup blocked / closed mid-flow → fall back to redirect.
+                if (code === 'auth/popup-blocked' || code === 'auth/cancelled-popup-request') {
+                    await signInWithRedirect(firebaseAuth, googleProvider)
+                    return
+                }
+                throw popupErr
+            }
         } catch (e) {
+            const code = authErrorCode(e)
             const message =
                 e instanceof ApiError
                     ? e.message
-                    : e instanceof Error
+                    : code === 'auth/popup-blocked'
+                      ? 'Trình duyệt chặn cửa sổ Google. Thử lại hoặc mở Safari/Chrome (không dùng in-app browser).'
+                      : e instanceof Error
                         ? e.message
                         : 'Đăng nhập Google thất bại.'
             showToast({ message, type: 'error' })
-        } finally {
             setLoading(false)
         }
     }
