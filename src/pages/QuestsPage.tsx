@@ -10,6 +10,7 @@ import { ApiError } from '../shared/api/contracts'
 import { useAuth } from '../shared/auth/useAuth'
 import { useToast } from '../shared/ui/toast/useToast'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
+import { GridTextureOverlay } from '../components/ui/GridTextureOverlay'
 import { isLocationLocked } from '../features/explore/locationUnlock'
 import { pickQuestCover } from '../shared/media/resolveMedia'
 import { SmartImage } from '../shared/ui/SmartImage'
@@ -136,7 +137,7 @@ export function QuestsPage() {
                 {/* Lớp phủ Gradient Tối */}
                 <div className="absolute inset-0 bg-gradient-to-t from-[#0a0b10] via-[#0a0b10]/80 to-transparent" />
                 <div className="absolute inset-0 bg-gradient-to-r from-[#0a0b10] via-[#0a0b10]/60 to-transparent" />
-                <div className="absolute inset-0 bg-[url('/media/grid.svg')] opacity-10 pointer-events-none" />
+                <GridTextureOverlay />
 
                 {/* ======================================================= */}
                 {/* LÕI NĂNG LƯỢNG ĐỒ HỌA 3D BÊN PHẢI (CHRONOS CORE) */}

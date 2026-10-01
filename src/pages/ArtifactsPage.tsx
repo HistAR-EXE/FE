@@ -19,6 +19,7 @@ import { getArSceneByUnlockKey } from '../features/ar/cuChiArScenes'
 import { useAppMode } from '../shared/context/useAppMode'
 import { resolveArtifactImageFallback, resolveArtifactImageSrc } from '../shared/media/resolveMedia'
 import { SmartImage } from '../shared/ui/SmartImage'
+import { GridTextureOverlay } from '../components/ui/GridTextureOverlay'
 
 type StatusFilter = 'all' | 'unlocked' | 'locked'
 
@@ -147,7 +148,7 @@ export function ArtifactsPage() {
                 {/* HERO BANNER - AR SCANNER & INSTRUCTIONS */}
                 {/* ========================================= */}
                 <section className="relative overflow-hidden border-b border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] bg-[#0B1120] pt-0 pb-8 md:pb-12">
-                    <div className="absolute inset-0 bg-[url('/media/grid.svg')] opacity-10 pointer-events-none" />
+                    <GridTextureOverlay />
 
                     {/* Hào quang Ambient Lighting */}
                     <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#1a79e5]/10 rounded-full blur-[120px] pointer-events-none" />
@@ -341,7 +342,7 @@ export function ArtifactsPage() {
                                         >
                                             <div className="aspect-[4/3] w-full relative bg-[#0B1120] flex items-center justify-center overflow-hidden">
                                                 <div className="absolute inset-0 bg-[linear-gradient(transparent_50%,rgba(56,140,241,0.1)_50%)] bg-[length:100%_4px] z-10 pointer-events-none" />
-                                                <div className="absolute inset-0 bg-[url('/media/grid.svg')] opacity-30 z-10" />
+                                                <GridTextureOverlay className="opacity-30 z-10" />
 
                                                 <img
                                                     src={resolveArtifactImageSrc(artifact.imageUrl, artifact.unlockKey) || resolveArtifactImageFallback(artifact.unlockKey)}

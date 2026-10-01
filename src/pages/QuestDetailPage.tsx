@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { SimpleTopNav } from '../components/layout/TopNav'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
+import { GridTextureOverlay } from '../components/ui/GridTextureOverlay'
 import { collectionApi } from '../features/collection/api'
 import { gamificationApi, type Quest, type QuestProgress } from '../features/gamification/api'
 import { locationsApi } from '../features/locations/api'
@@ -132,7 +133,7 @@ export function QuestDetailPage() {
                     {/* Các lớp Gradient phủ tối mờ */}
                     <div className="absolute inset-0 bg-gradient-to-r from-[#0a0b10] via-[#0a0b10]/90 to-transparent" />
                     <div className="absolute inset-0 bg-gradient-to-t from-[#0a0b10] via-transparent to-transparent" />
-                    <div className="absolute inset-0 bg-[url('/media/grid.svg')] opacity-10 pointer-events-none mix-blend-overlay" />
+                    <GridTextureOverlay />
 
                     {/* VÒNG TRÒN NĂNG LƯỢNG 3D PHÁT SÁNG (GÓC PHẢI) NHƯ ẢNH THAM KHẢO */}
                     <div className="absolute right-10 md:right-32 top-1/2 -translate-y-1/2 hidden md:flex items-center justify-center w-64 h-64 pointer-events-none">

@@ -9,6 +9,7 @@ import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
 import { useToast } from '../shared/ui/toast/useToast'
 import { images } from '../assets/images'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
+import { GridTextureOverlay } from '../components/ui/GridTextureOverlay'
 import { useAppMode } from '../shared/context/useAppMode'
 import { useAuth } from '../shared/auth/useAuth'
 import { hasFullGamificationAccess } from '../shared/access/contentAccess'
@@ -114,7 +115,7 @@ export function LeaderboardPage() {
                 {/* HERO BANNER - SÂN KHẤU HOLOGRAM ĐẲNG CẤP */}
                 {/* ========================================= */}
                 <section className="relative overflow-hidden border-b border-[#fe951c]/10 shadow-[0_20px_60px_rgba(0,0,0,0.8)] bg-[#0B1120] pt-2 pb-14 md:pt-4 md:pb-20">
-                    <div className="absolute inset-0 bg-[url('/media/grid.svg')] opacity-[0.05] pointer-events-none" />
+                    <GridTextureOverlay className="opacity-[0.05]" />
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(254,149,28,0.05)_0%,transparent_70%)]" />
 
                     <div className="absolute -top-32 -right-32 w-[600px] h-[600px] bg-[#fe951c]/15 rounded-full blur-[150px] pointer-events-none" />
