@@ -17,6 +17,7 @@ import {
     firebaseEnabled,
     googleProvider,
     markGoogleRedirectPending,
+    resetGoogleRedirectFlow,
 } from '../shared/auth/firebase'
 import { useGoogleRedirectBusy } from '../shared/auth/googleRedirectBusy'
 import { popReturnTo, peekReturnTo, readReturnTo, resolveReturnTo, stashReturnTo } from '../shared/router/returnTo'
@@ -172,6 +173,7 @@ export function LoginPage({ defaultMode = 'login' }: LoginPageProps) {
         }
         try {
             setLoading(true)
+            resetGoogleRedirectFlow()
             const returnTo = readReturnTo(searchParams) ?? pendingFrom
             stashReturnTo(returnTo)
             // Do not signOut before Google — clears redirect persistence on some mobile browsers.

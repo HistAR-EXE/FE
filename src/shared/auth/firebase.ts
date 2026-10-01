@@ -166,6 +166,13 @@ export function didGoogleRedirectFailAfterPending(): boolean {
  * Completes Google redirect once per page load (survives StrictMode).
  * Returns idToken, or null when there was no pending redirect.
  */
+/** Call before a new signInWithRedirect so a failed attempt can retry. */
+export function resetGoogleRedirectFlow(): void {
+  redirectResultPromise = null
+  googleRedirectIdTokenPromise = null
+  googleRedirectFailedPending = false
+}
+
 export function resolveGoogleRedirectIdToken(auth: Auth): Promise<string | null> {
   if (!googleRedirectIdTokenPromise) {
     const expectRedirect = isGoogleRedirectPending() || isFirebaseAuthCallbackUrl()

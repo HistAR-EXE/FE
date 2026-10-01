@@ -32,17 +32,16 @@ export function GoogleRedirectCompletion() {
   const startedRef = useRef(false)
 
   useEffect(() => {
-    if (!firebaseEnabled || !firebaseAuth || isAuthenticated || startedRef.current) return
+    if (!firebaseEnabled || !firebaseAuth || startedRef.current) return
+    if (isAuthenticated) return
     startedRef.current = true
 
-    let cancelled = false
     const showBusy = isGoogleRedirectPending() || isFirebaseAuthCallbackUrl()
     if (showBusy) setGoogleRedirectBusy(true)
 
     void (async () => {
       try {
         const idToken = await resolveGoogleRedirectIdToken(firebaseAuth)
-        if (cancelled) return
         if (!idToken) {
           if (didGoogleRedirectFailAfterPending()) {
             showToast({
@@ -55,8 +54,6 @@ export function GoogleRedirectCompletion() {
         }
 
         const loggedInUser = await loginWithGoogle(idToken)
-        if (cancelled) return
-
         const returnTo = readReturnTo(searchParams) ?? peekReturnTo() ?? popReturnTo()
         navigate(
           getPostLoginRedirect(
@@ -66,7 +63,6 @@ export function GoogleRedirectCompletion() {
           { replace: true },
         )
       } catch (e) {
-        if (cancelled) return
         const code = authErrorCode(e)
         if (code === 'auth/credential-already-in-use') return
         const message =
@@ -79,14 +75,12 @@ export function GoogleRedirectCompletion() {
                 : 'Đăng nhập Google thất bại.'
         showToast({ message, type: 'error' })
       } finally {
-        if (!cancelled && showBusy) setGoogleRedirectBusy(false)
+        if (showBusy) setGoogleRedirectBusy(false)
       }
     })()
-
-    return () => {
-      cancelled = true
-    }
-  }, [isAuthenticated, loginWithGoogle, navigate, searchParams, showToast])
+    // Run once per full page load — do not depend on isAuthenticated (cleanup cancelled navigate).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return null
 }
