@@ -11,13 +11,14 @@ import { ApiError } from '../shared/api/contracts'
 import { useToast } from '../shared/ui/toast/useToast'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { Button } from '../components/ui/Button'
+import { signInWithPopup, signInWithRedirect } from 'firebase/auth'
 import {
-    getRedirectResult,
-    signInWithPopup,
-    signInWithRedirect,
-    signOut,
-} from 'firebase/auth'
-import { firebaseAuth, firebaseEnabled, googleProvider } from '../shared/auth/firebase'
+    firebaseAuth,
+    firebaseEnabled,
+    googleProvider,
+    markGoogleRedirectPending,
+    resolveGoogleRedirectIdToken,
+} from '../shared/auth/firebase'
 import { popReturnTo, peekReturnTo, readReturnTo, resolveReturnTo, stashReturnTo } from '../shared/router/returnTo'
 
 /** Mobile / in-app browsers often block Firebase popup → use full-page redirect. */
@@ -90,19 +91,19 @@ export function LoginPage({ defaultMode = 'login' }: LoginPageProps) {
     }
 
     // Complete Google sign-in after mobile redirect returns to /login.
+    // resolveGoogleRedirectIdToken is module-scoped so React StrictMode remount cannot drop the one-shot result.
     useEffect(() => {
         if (!firebaseEnabled || !firebaseAuth) return
         let cancelled = false
         setLoading(true)
-        getRedirectResult(firebaseAuth)
-            .then(async (credential) => {
-                if (cancelled || !credential) return
-                const idToken = await credential.user.getIdToken()
+        void (async () => {
+            try {
+                const idToken = await resolveGoogleRedirectIdToken(firebaseAuth)
+                if (!idToken) return
                 const loggedInUser = await loginWithGoogle(idToken)
                 if (cancelled) return
                 navigateAfterAuth({ ...loggedInUser, emailVerified: true, provider: 'google' })
-            })
-            .catch((e) => {
+            } catch (e) {
                 if (cancelled) return
                 const code = authErrorCode(e)
                 if (code === 'auth/credential-already-in-use') return
@@ -113,10 +114,10 @@ export function LoginPage({ defaultMode = 'login' }: LoginPageProps) {
                           ? e.message
                           : 'Đăng nhập Google thất bại.'
                 showToast({ message, type: 'error' })
-            })
-            .finally(() => {
+            } finally {
                 if (!cancelled) setLoading(false)
-            })
+            }
+        })()
         return () => {
             cancelled = true
         }
@@ -207,10 +208,12 @@ export function LoginPage({ defaultMode = 'login' }: LoginPageProps) {
             setLoading(true)
             const returnTo = readReturnTo(searchParams) ?? pendingFrom
             stashReturnTo(returnTo)
-            await signOut(firebaseAuth).catch(() => undefined)
+            // Do not signOut before Google — clears redirect persistence on some mobile browsers.
+            // Account picker is already forced via googleProvider prompt=select_account.
 
             const useRedirect = prefersGoogleRedirect()
             if (useRedirect) {
+                markGoogleRedirectPending()
                 await signInWithRedirect(firebaseAuth, googleProvider)
                 return
             }
@@ -224,6 +227,7 @@ export function LoginPage({ defaultMode = 'login' }: LoginPageProps) {
                 const code = authErrorCode(popupErr)
                 // Desktop popup blocked / closed mid-flow → fall back to redirect.
                 if (code === 'auth/popup-blocked' || code === 'auth/cancelled-popup-request') {
+                    markGoogleRedirectPending()
                     await signInWithRedirect(firebaseAuth, googleProvider)
                     return
                 }
