@@ -36,8 +36,10 @@ export default defineConfig({
         navigateFallbackDenylist: [/^\/api\//, /^\/ai\//, /^\/ar\//, /^\/ar\.html$/, /^\/media\//],
         runtimeCaching: [
           {
-            // Site media (hero, panorama thumbs...). Pack prep page fills a dedicated cache too.
-            urlPattern: ({ url }) => url.pathname.startsWith('/media/'),
+            // Same-origin /media only (Vercel/Vite proxy → R2). Do not intercept media.timelens.asia (CORS).
+            urlPattern: ({ url }) =>
+              url.pathname.startsWith('/media/') &&
+              (typeof self === 'undefined' || url.origin === self.location.origin),
             handler: 'CacheFirst',
             options: {
               cacheName: 'histar-media',
@@ -55,6 +57,7 @@ export default defineConfig({
     proxy: {
       '/api': { target: 'http://localhost:8080', changeOrigin: true },
       '/ai': { target: 'http://localhost:8100', changeOrigin: true },
+      '/media': { target: 'https://media.timelens.asia', changeOrigin: true, secure: true },
     },
   },
 })
