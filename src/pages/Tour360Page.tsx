@@ -170,12 +170,10 @@ export function Tour360Page() {
     }, [locationId, isAuthenticated])
 
     useEffect(() => {
-        if (!locationId) return
-
         const run = async () => {
             try {
                 setLoading(true)
-                const list = await panoramaApi.byLocation(locationId)
+                const list = await panoramaApi.byLocation(activeLocationId)
                 let merged = list
                 if (panoramaParam && !list.some((p) => p.id === panoramaParam)) {
                     try {
@@ -219,7 +217,7 @@ export function Tour360Page() {
         }
 
         run()
-    }, [locationId, panoramaParam, showToast])
+    }, [activeLocationId, panoramaParam, showToast])
 
     const onHotspotSelect = useCallback(
         (hotspot: Hotspot) => {
@@ -416,7 +414,7 @@ export function Tour360Page() {
                     <p className="tour360-empty text-gray-400">Chưa có dữ liệu tham quan 360° cho địa điểm này.</p>
                 )}
 
-                {!loading && panoramas.length > 0 && locationId && (
+                {!loading && panoramas.length > 0 && (
                     <>
                         {isCuChi && viewMode === 'illustrated' && (
                             <div className="tour360-viewport">
