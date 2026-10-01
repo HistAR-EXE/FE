@@ -19,11 +19,14 @@ if (isProdBuild && /localhost|127\.0\.0\.1/i.test(apiUrl)) {
   )
 }
 
-const mediaBaseUrl = (env.VITE_MEDIA_BASE_URL ?? '').trim().replace(/\/$/, '')
+const mediaBaseUrlExplicit = (env.VITE_MEDIA_BASE_URL ?? '').trim().replace(/\/$/, '')
+/** Prod: media lives on R2 (public/media is not on Vercel). Dev: empty → same-origin /public/media. */
+const mediaBaseUrl =
+  mediaBaseUrlExplicit || (isProdBuild ? 'https://media.timelens.asia' : '')
 
 /**
- * Prefix `/media/...` (and other relative paths) with VITE_MEDIA_BASE_URL when set.
- * When unset, resolve against the current origin so Vercel static hosting stays unchanged.
+ * Prefix `/media/...` with VITE_MEDIA_BASE_URL (or prod default R2 host).
+ * Dev with empty base: same-origin `/public/media` via Vite.
  * Absolute http(s) URLs are returned as-is.
  */
 export function resolveMediaUrl(path: string | null | undefined): string {

@@ -187,10 +187,15 @@ export function Tour360Page() {
                 }
                 setPanoramas(merged)
 
+                // Hotspot failures must not wipe an otherwise valid panorama list.
                 const hotspotEntries = await Promise.all(
                     merged.map(async (panorama) => {
-                        const hotspots = await panoramaApi.hotspotsByPanorama(panorama.id)
-                        return [panorama.id, hotspots] as const
+                        try {
+                            const hotspots = await panoramaApi.hotspotsByPanorama(panorama.id)
+                            return [panorama.id, hotspots] as const
+                        } catch {
+                            return [panorama.id, [] as Hotspot[]] as const
+                        }
                     }),
                 )
                 setHotspotsByPanorama(Object.fromEntries(hotspotEntries))
