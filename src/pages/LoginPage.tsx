@@ -17,8 +17,8 @@ import {
     firebaseEnabled,
     googleProvider,
     markGoogleRedirectPending,
-    resolveGoogleRedirectIdToken,
 } from '../shared/auth/firebase'
+import { useGoogleRedirectBusy } from '../shared/auth/googleRedirectBusy'
 import { popReturnTo, peekReturnTo, readReturnTo, resolveReturnTo, stashReturnTo } from '../shared/router/returnTo'
 
 /** Mobile / in-app browsers often block Firebase popup → use full-page redirect. */
@@ -62,6 +62,7 @@ export function LoginPage({ defaultMode = 'login' }: LoginPageProps) {
     const [showPassword, setShowPassword] = useState(false)
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
     const { showToast } = useToast()
+    const googleRedirectBusy = useGoogleRedirectBusy()
 
     const [termsAccepted, setTermsAccepted] = useState(false)
 
@@ -89,41 +90,6 @@ export function LoginPage({ defaultMode = 'login' }: LoginPageProps) {
         }
         navigate(getPostLoginRedirect(loggedInUser, returnTo), { replace: true })
     }
-
-    // Complete Google sign-in after mobile redirect returns to /login.
-    // resolveGoogleRedirectIdToken is module-scoped so React StrictMode remount cannot drop the one-shot result.
-    useEffect(() => {
-        if (!firebaseEnabled || !firebaseAuth) return
-        let cancelled = false
-        setLoading(true)
-        void (async () => {
-            try {
-                const idToken = await resolveGoogleRedirectIdToken(firebaseAuth)
-                if (!idToken) return
-                const loggedInUser = await loginWithGoogle(idToken)
-                if (cancelled) return
-                navigateAfterAuth({ ...loggedInUser, emailVerified: true, provider: 'google' })
-            } catch (e) {
-                if (cancelled) return
-                const code = authErrorCode(e)
-                if (code === 'auth/credential-already-in-use') return
-                const message =
-                    e instanceof ApiError
-                        ? e.message
-                        : e instanceof Error
-                          ? e.message
-                          : 'Đăng nhập Google thất bại.'
-                showToast({ message, type: 'error' })
-            } finally {
-                if (!cancelled) setLoading(false)
-            }
-        })()
-        return () => {
-            cancelled = true
-        }
-        // Intentionally once on mount for redirect completion.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
 
     const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault()
@@ -492,14 +458,14 @@ export function LoginPage({ defaultMode = 'login' }: LoginPageProps) {
                                 <div className="pt-4">
                                     <Button
                                         type="submit"
-                                        disabled={loading || (mode === 'register' && !termsAccepted)}
+                                        disabled={loading || googleRedirectBusy || (mode === 'register' && !termsAccepted)}
                                         className={`w-full h-14 rounded-xl text-white font-black text-sm uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${
                                             (mode === 'register' && !termsAccepted)
                                                 ? 'bg-[#CBD5E1] shadow-none cursor-not-allowed'
                                                 : 'bg-gradient-to-r from-[#0275FB] to-[#1d4ed8] shadow-[0_8px_25px_rgba(2,117,251,0.35)] hover:shadow-[0_10px_30px_rgba(2,117,251,0.5)] hover:-translate-y-0.5 cursor-pointer'
                                         }`}
                                     >
-                                        {loading ? (
+                                        {loading || googleRedirectBusy ? (
                                             <span className="flex items-center gap-2">
                                                 <MaterialIcon name="progress_activity" className="animate-spin text-xl" />
                                                 <span>Đang xử lý dữ liệu...</span>
@@ -524,7 +490,7 @@ export function LoginPage({ defaultMode = 'login' }: LoginPageProps) {
                             {/* Social Login Button */}
                             <button
                                 type="button"
-                                disabled={loading}
+                                disabled={loading || googleRedirectBusy}
                                 onClick={() => void handleGoogleLogin()}
                                 className="w-full h-12 bg-white border-2 border-[#E2E8F0] hover:border-[#0275FB]/50 rounded-xl text-sm font-bold text-[#475569] hover:text-[#0275FB] hover:bg-[#F8FAFC] transition-all flex items-center justify-center gap-3 cursor-pointer shadow-sm disabled:opacity-60"
                             >

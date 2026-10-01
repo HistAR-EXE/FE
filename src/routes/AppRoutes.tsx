@@ -59,6 +59,7 @@ import { ProtectedRoute } from '../shared/router/ProtectedRoute'
 import { VisitSessionProvider } from '../features/visit/VisitSessionProvider'
 import { ARLoadingFallback } from '../features/ar/ARHud'
 import { AboutPage } from '../pages/AboutPage'
+import { GoogleRedirectCompletion } from '../shared/auth/GoogleRedirectCompletion'
 
 const TimePortalARPage = lazy(() =>
   import('../pages/TimePortalARPage').then((m) => ({ default: m.TimePortalARPage })),
@@ -67,6 +68,7 @@ const TimePortalARPage = lazy(() =>
 export function AppRoutes() {
   return (
     <BrowserRouter>
+      <GoogleRedirectCompletion />
       <VisitSessionProvider>
       <Routes>
           {/* Public — guest landing only */}
