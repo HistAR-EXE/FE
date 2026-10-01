@@ -46,7 +46,7 @@ export function GoogleRedirectCompletion() {
           if (didGoogleRedirectFailAfterPending()) {
             showToast({
               message:
-                'Không hoàn tất đăng nhập Google sau khi chọn tài khoản. Mở timelens.asia bằng Safari/Chrome (không dùng tab in-app), hoặc thử lại.',
+                'Safari không giữ phiên Google (redirect). Hãy mở đúng https://timelens.asia/login (tab Safari, không in-app), xóa dữ liệu site nếu cần, rồi thử lại sau khi FE đã deploy proxy /__/auth.',
               type: 'error',
             })
           }

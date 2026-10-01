@@ -4,6 +4,10 @@
       "source": "/media/:path*",
       "destination": "https://media.timelens.asia/media/:path*"
     },
+    {
+      "source": "/__/auth/:path*",
+      "destination": "https://histar-a08c1.firebaseapp.com/__/auth/:path*"
+    },
     { "source": "/((?!assets/).*)", "destination": "/index.html" }
   ]
 }

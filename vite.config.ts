@@ -33,7 +33,14 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         // SPA: any navigation falls back to the app shell, except APIs and standalone static pages.
         navigateFallback: '/index.html',
-        navigateFallbackDenylist: [/^\/api\//, /^\/ai\//, /^\/ar\//, /^\/ar\.html$/, /^\/media\//],
+        navigateFallbackDenylist: [
+          /^\/api\//,
+          /^\/ai\//,
+          /^\/ar\//,
+          /^\/ar\.html$/,
+          /^\/media\//,
+          /^\/__\/auth\//,
+        ],
         runtimeCaching: [
           {
             // Same-origin /media only (Vercel/Vite proxy → R2). Do not intercept media.timelens.asia (CORS).
@@ -57,6 +64,11 @@ export default defineConfig({
       '/api': { target: 'http://localhost:8080', changeOrigin: true },
       '/ai': { target: 'http://localhost:8100', changeOrigin: true },
       '/media': { target: 'https://media.timelens.asia', changeOrigin: true, secure: true },
+      '/__/auth': {
+        target: 'https://histar-a08c1.firebaseapp.com',
+        changeOrigin: true,
+        secure: true,
+      },
     },
   },
 })

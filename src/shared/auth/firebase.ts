@@ -13,9 +13,19 @@ import {
   type UserCredential,
 } from 'firebase/auth'
 
+/** Safari needs auth on the same site as the app — proxy `/__/auth` on Vercel (see vercel.json). */
+function resolveAuthDomain(): string | undefined {
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname.toLowerCase()
+    if (host === 'timelens.asia' || host === 'www.timelens.asia') return host
+  }
+  const fromEnv = (import.meta.env.VITE_FIREBASE_AUTH_DOMAIN as string | undefined)?.trim()
+  return fromEnv || undefined
+}
+
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY as string | undefined,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN as string | undefined,
+  authDomain: resolveAuthDomain(),
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID as string | undefined,
   appId: import.meta.env.VITE_FIREBASE_APP_ID as string | undefined,
 }
