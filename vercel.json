@@ -1,4 +1,12 @@
 {
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "timelens.asia" }],
+      "destination": "https://www.timelens.asia/:path*",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/media/:path*",
