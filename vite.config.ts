@@ -41,7 +41,7 @@ export default defineConfig({
             urlPattern: ({ url }) => url.pathname.startsWith('/media/'),
             handler: 'CacheFirst',
             options: {
-              cacheName: 'histar-media',
+              cacheName: 'histar-media-v2',
               expiration: { maxEntries: 120, maxAgeSeconds: 60 * 60 * 24 * 30 },
               cacheableResponse: { statuses: [0, 200] },
             },

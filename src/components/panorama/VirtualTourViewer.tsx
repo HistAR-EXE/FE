@@ -42,6 +42,7 @@ function resolveMarkerStyle(
 
 type NearMarkerMeta = {
     id: string
+    panoramaId: string
     yaw: number
     areaSlug: string
 }
@@ -125,14 +126,24 @@ export function VirtualTourViewer({
         viewer.resize({ width: `${width}px`, height: `${height}px` })
     }
 
-    const refreshNearMarkerVisibility = (viewerYaw: number, hFovRad: number, currentAreaSlug: string) => {
+    const refreshNearMarkerVisibility = (
+        viewerYaw: number,
+        hFovRad: number,
+        currentAreaSlug: string,
+        currentPanoramaId: string | null,
+    ) => {
         const mp = markersPluginRef.current
-        if (!mp) return
+        if (!mp || !currentPanoramaId) return
         for (const meta of nearMarkersRef.current) {
+            if (meta.panoramaId !== currentPanoramaId) continue
             const visible =
                 meta.areaSlug === currentAreaSlug && isHotspotInView(meta.yaw, viewerYaw, hFovRad)
-            if (visible) mp.showMarker(meta.id)
-            else mp.hideMarker(meta.id)
+            try {
+                if (visible) mp.showMarker(meta.id)
+                else mp.hideMarker(meta.id)
+            } catch {
+                // Markers belong to the active node only; ignore race during node transition.
+            }
         }
     }
 
@@ -180,6 +191,7 @@ export function VirtualTourViewer({
                     if (style === 'near') {
                         nearMarkersRef.current.push({
                             id: markerId,
+                            panoramaId: panorama.id,
                             yaw: h.yaw,
                             areaSlug: currentArea,
                         })
@@ -306,7 +318,7 @@ export function VirtualTourViewer({
                     const nodeId = lastNodeRef.current
                     const pano = nodeId ? panoramaByIdRef.current.get(nodeId) : undefined
                     const area = pano ? resolveAreaSlug(pano.id, pano.areaSlug) : ''
-                    refreshNearMarkerVisibility(yaw, v.state.hFov, area)
+                    refreshNearMarkerVisibility(yaw, v.state.hFov, area, nodeId)
                 })
             }
 
@@ -341,7 +353,7 @@ export function VirtualTourViewer({
                         const { yaw } = viewer.getPosition()
                         const pano = panoramaByIdRef.current.get(event.node.id)
                         const area = pano ? resolveAreaSlug(pano.id, pano.areaSlug) : ''
-                        refreshNearMarkerVisibility(yaw, viewer.state.hFov, area)
+                        refreshNearMarkerVisibility(yaw, viewer.state.hFov, area, event.node.id)
                     }
                 })
                 if (startNodeId) {

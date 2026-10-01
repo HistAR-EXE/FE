@@ -63,9 +63,7 @@ export function resolveMediaUrl(path: string | null | undefined): string {
 
   const normalized = trimmed.startsWith('/') ? trimmed : `/${trimmed}`
   if (mediaBaseUrl) return `${mediaBaseUrl}${normalized}`
-  if (typeof window !== 'undefined' && window.location?.origin) {
-    return `${window.location.origin}${normalized}`
-  }
+  // Same-origin relative path → Vercel/Vite /media proxy → R2 (best for PSV fetch + SW).
   return normalized
 }
 
