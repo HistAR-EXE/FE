@@ -1,5 +1,4 @@
 // src/routes/AppRoutes.tsx
-import { lazy, Suspense } from 'react'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { ArtifactsPage } from '../pages/ArtifactsPage'
 import { CharacterExplorePage } from '../pages/CharacterExplorePage'
@@ -24,7 +23,7 @@ import { QuestsPage } from '../pages/QuestsPage'
 import { ScanPage } from '../pages/ScanPage'
 import { SecretStoryPage } from '../pages/SecretStoryPage'
 import { SharePage } from '../pages/SharePage'
-import { TimePortalPage } from '../pages/TimePortalPage'
+import { BattleDioramaPage } from '../pages/BattleDioramaPage'
 import { PricingPage } from '../pages/PricingPage'
 import { CheckoutB2CPage } from '../pages/CheckoutB2CPage'
 import { CheckoutB2BPage } from '../pages/CheckoutB2BPage'
@@ -57,13 +56,8 @@ import { EmailVerifiedRoute } from '../shared/router/EmailVerifiedRoute'
 import { ModeGuardRoute } from '../shared/router/ModeGuardRoute'
 import { ProtectedRoute } from '../shared/router/ProtectedRoute'
 import { VisitSessionProvider } from '../features/visit/VisitSessionProvider'
-import { ARLoadingFallback } from '../features/ar/ARHud'
 import { AboutPage } from '../pages/AboutPage'
 import { GoogleRedirectCompletion } from '../shared/auth/GoogleRedirectCompletion'
-
-const TimePortalARPage = lazy(() =>
-  import('../pages/TimePortalARPage').then((m) => ({ default: m.TimePortalARPage })),
-)
 
 export function AppRoutes() {
   return (
@@ -109,15 +103,7 @@ export function AppRoutes() {
             <Route path="/pricing" element={<PricingPage />} />
             <Route path="/explore" element={<ExplorePage />} />
             <Route path="/explore/:locationId" element={<HeritageDetailPage />} />
-            <Route path="/time-portal/:locationId?" element={<TimePortalPage />} />
-            <Route
-              path="/time-portal/:locationId/ar"
-              element={
-                <Suspense fallback={<ARLoadingFallback />}>
-                  <TimePortalARPage />
-                </Suspense>
-              }
-            />
+            <Route path="/diorama/:locationId?" element={<BattleDioramaPage />} />
             <Route path="/tour/360/:locationId?" element={<Tour360Page />} />
             <Route path="/quests" element={<QuestsPage />} />
             <Route path="/quests/:questId" element={<QuestDetailPage />} />

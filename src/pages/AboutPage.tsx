@@ -119,11 +119,15 @@ export const AboutPage: React.FC = () => {
                         </div>
                         <div className="lg:w-1/2 relative mt-10 lg:mt-0">
                             <div className="absolute inset-0 bg-[#FDC908]/20 rounded-3xl transform rotate-3 scale-105 transition-transform duration-500 hover:rotate-6"></div>
+                            {/* Gọi trực tiếp đường dẫn tĩnh, bỏ resolveMediaUrl */}
                             <img
-                                src="/media/vision-edtech-ar.png"
+                                src="/huy/vision-edtech-ar.png"
                                 alt="Học sinh tương tác với Di sản AR"
                                 className="relative z-10 rounded-3xl shadow-2xl object-cover w-full h-[400px] sm:h-[450px] hover:-translate-y-2 transition-transform duration-500"
-                                onError={(e) => { e.currentTarget.style.display = 'none' }}
+                                onError={(e) => {
+                                    // Thay vì ẩn đi, tạm thời đổi sang ảnh placeholder để dễ debug
+                                    e.currentTarget.src = 'https://images.unsplash.com/photo-1577896851231-70ef18881754?q=80&w=1000&auto=format&fit=crop'
+                                }}
                             />
                             <div className="absolute -bottom-6 -left-4 sm:-left-6 bg-white/95 backdrop-blur-sm p-4 sm:p-5 rounded-2xl shadow-2xl z-20 border-2 border-[#0275FB]/20 flex items-center gap-4 hover:scale-105 transition-transform cursor-pointer">
                                 <div className="w-12 h-12 bg-gradient-to-br from-[#0275FB] to-[#1d4ed8] rounded-xl flex items-center justify-center text-white shadow-md">
