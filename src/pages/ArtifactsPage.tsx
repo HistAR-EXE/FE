@@ -1,10 +1,10 @@
 // src/pages/ArtifactsPage.tsx
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom' // THÊM DÒNG NÀY
 import { AppLayout } from '../components/layout/AppLayout'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
-import { SmartImage } from '../shared/ui/SmartImage'
 
-type StatusFilter = 'all' | 'unlocked' | 'locked'
+type CategoryFilter = 'all' | ArtifactCategory
 
 // ==========================================
 // MOCK DATA: BẢO TÀNG 3D
@@ -20,674 +20,340 @@ export interface Artifact {
     story: string
     unlocked: boolean
     thumbnail: string
+    specs?: { label: string, value: string }[]
+    funFact?: string
+}
+
+// Cấu hình UI cho các phân loại
+export const CATEGORY_MAP: Record<ArtifactCategory, { label: string; icon: string; color: string; bgColor: string }> = {
+    aircraft: { label: 'Không Quân', icon: 'flight', color: 'text-blue-600', bgColor: 'bg-blue-50 border-blue-200' },
+    armor: { label: 'Thiết Giáp', icon: 'directions_car', color: 'text-emerald-600', bgColor: 'bg-emerald-50 border-emerald-200' },
+    artillery: { label: 'Hỏa Lực', icon: 'track_changes', color: 'text-orange-600', bgColor: 'bg-orange-50 border-orange-200' },
+    ammunition: { label: 'Bom Đạn', icon: 'local_fire_department', color: 'text-red-600', bgColor: 'bg-red-50 border-red-200' },
 }
 
 // ==========================================
-// DATA BẢO TÀNG 3D - ĐỢT 1 (11 Hiện vật)
+// HÀM TIỆN ÍCH TẠO LINK ẢNH TỪ SKETCHFAB ID
 // ==========================================
-const MOCK_ARTIFACTS: Artifact[] = [
-    // --- KHÔNG QUÂN (AIRCRAFT) ---
+// Thay vì gọi API làm sập React, ta dùng API tĩnh của bên thứ 3 hoặc placeholder đẹp để thay thế
+const getThumbnail = (id: string) => `https://v3.3d-models.biz/models/${id}/thumbnails/0.jpg`; // Link dự phòng nhanh
+
+// ==========================================
+// DATA BẢO TÀNG 3D - 58 HIỆN VẬT (BẢN CHUYÊN SÂU TIMELENS)
+// ==========================================
+export const MOCK_ARTIFACTS_RAW: Artifact[] = [
+    // ------------------------------------------
+    // 1. KHU VỰC KHÔNG QUÂN (AIRCRAFT)
+    // ------------------------------------------
     {
-        id: 'art-mig17-6173',
-        name: 'Tiêm kích MiG-17 (Số hiệu 6173)',
-        category: 'aircraft',
-        sketchfabId: '6e3a0e66435d42c8b520b7466becf65a',
-        description: 'Cánh én bạc làm nên huyền thoại Không quân Việt Nam.',
-        story: 'Dù bị đánh giá là lỗi thời so với các dòng F-4 Phantom của Mỹ, MiG-17 với sự linh hoạt xuất sắc trong không chiến quần vòng (dogfight) dưới bàn tay các phi công Việt Nam đã lập nên những chiến công vang dội. Nó là biểu tượng của tinh thần lấy nhỏ đánh lớn, lấy vũ khí thô sơ đánh bại khí tài hiện đại.\n\nThông số kỹ thuật:\n- Tốc độ tối đa: 1.145 km/h\n- Vũ khí: 1 pháo 37mm, 2 pháo 23mm\n- Xuất xứ: Liên Xô',
-        unlocked: true,
-        thumbnail: 'https://media.sketchfab.com/models/6e3a0e66435d42c8b520b7466becf65a/thumbnails/ef6905541ea34cf69ba943a53e5e1bb3/d710cc52c6f14022a8ca6a2c91811e58.jpeg'
+        id: 'art-mig17-6173', name: 'Tiêm kích MiG-17 (Số hiệu 6173)', category: 'aircraft', sketchfabId: '6e3a0e66435d42c8b520b7466becf65a',
+        description: 'Cánh én bạc làm nên huyền thoại Không quân Việt Nam. Dù bị đánh giá là lỗi thời so với các dòng F-4 Phantom của Mỹ, MiG-17 với sự linh hoạt xuất sắc trong không chiến quần vòng (dogfight) dưới bàn tay các phi công Việt Nam đã lập nên những chiến công vang dội.',
+        story: 'Trong số 16 phi công Việt Nam đạt cấp Ace (bắn hạ từ 5 máy bay địch trở lên), có 2 phi công lái MiG-17.\n\nLúc bấy giờ, Không quân Mỹ tự tin với hàng trăm pháo đài bay B-52 và F-4 có tốc độ hơn 2000km/h, trong khi MiG-17 chỉ đạt tốc độ cận âm. Tuy nhiên, bằng chiến thuật "bay thấp kéo cao", lợi dụng địa hình đồi núi che khuất radar, các biên đội MiG-17 đã trở thành nỗi ám ảnh của phi công Mỹ, bảo vệ thành công bầu trời miền Bắc.', unlocked: true, thumbnail: '',
+        specs: [
+            { label: 'Xuất xứ', value: 'Liên Xô' }, { label: 'Tốc độ tối đa', value: '1.145 km/h' },
+            { label: 'Tầm bay', value: '2.060 km' }, { label: 'Trần bay', value: '16.600 m' },
+            { label: 'Vũ khí chính', value: 'Pháo 37mm & 23mm' }, { label: 'Nhiệm vụ', value: 'Tiêm kích đánh chặn' },
+        ],
+        funFact: 'MiG-17 thời kỳ đầu không hề có radar dò tìm mục tiêu. Phi công Việt Nam hoàn toàn dựa vào mắt thường, kinh nghiệm và sự điều phối từ trạm radar mặt đất để phục kích kẻ thù.'
     },
     {
-        id: 'art-aircraft-935',
-        name: 'Tiêm kích (Số hiệu 935)',
-        category: 'aircraft',
-        sketchfabId: '793cfbd1a9e647339e73f16b50d54790',
-        description: 'Mảnh ghép quan trọng của lưới lửa phòng không không quân.',
-        story: 'Những chiếc tiêm kích với phù hiệu cờ đỏ sao vàng đã trở thành nỗi ám ảnh của các phi đội ném bom đối phương. Với chiến thuật "bay thấp kéo cao", tận dụng khả năng tăng tốc đột ngột, các biên đội tiêm kích Việt Nam thường xuyên tổ chức phục kích, đánh nhanh rút gọn, bảo vệ thành công bầu trời miền Bắc.\n\nThông số kỹ thuật:\n- Trạng thái: Đang phục dựng 3D\n- Loại nhiệm vụ: Đánh chặn / Hộ tống',
-        unlocked: false, // Để khóa thử nghiệm UI
-        thumbnail: '/images/fallback.jpg'
+        id: 'art-aircraft-935', name: 'Tiêm kích MiG-21 (Biên đội 935)', category: 'aircraft', sketchfabId: '793cfbd1a9e647339e73f16b50d54790',
+        description: 'Mảnh ghép quan trọng của lưới lửa phòng không, "Sát thủ" của B-52.',
+        story: 'MiG-21 là dòng tiêm kích phản lực siêu âm hiện đại nhất của Việt Nam trong kháng chiến chống Mỹ. Với thiết kế cánh tam giác khí động học, MiG-21 có thể vọt lên độ cao hàng chục kilomet chỉ trong vài phút. Chiến thuật tiêu biểu của MiG-21 là "đánh vu hồi": bay ở độ cao thấp để giấu mình, sau đó bất ngờ vọt lên cao độ, phóng tên lửa K-13 rồi thoát ly chiến trường với tốc độ Mach 2.', unlocked: true, thumbnail: '',
+        specs: [
+            { label: 'Xuất xứ', value: 'Liên Xô' }, { label: 'Tốc độ tối đa', value: '2.175 km/h (Mach 2.05)' },
+            { label: 'Tầm bay', value: '1.510 km' }, { label: 'Vũ khí chính', value: 'Tên lửa K-13 (Atoll)' },
+        ],
+        funFact: 'MiG-21 là chiếc máy bay phản lực được sản xuất nhiều nhất trong lịch sử hàng không thế giới với hơn 11.000 chiếc, và Việt Nam là quốc gia vận hành MiG-21 hiệu quả nhất.'
     },
     {
-        id: 'art-c130',
-        name: 'Máy bay vận tải C-130 Hercules',
-        category: 'aircraft',
-        sketchfabId: '6ca6750c8be9465c9f779b0c4c275fbb',
-        description: 'Ngựa thồ không trung chủ lực của Không lực Hoa Kỳ.',
-        story: 'C-130 Hercules là loại máy bay vận tải chiến thuật đa dụng hạng trung. Trong chiến tranh Việt Nam, C-130 đóng vai trò cực kỳ quan trọng trong việc thả dù tiếp tế, vận chuyển quân, và thậm chí được cải hoán thành các phiên bản máy bay cường kích hạng nặng (AC-130) mang pháo tự động để bắn phá mục tiêu mặt đất.\n\nThông số kỹ thuật:\n- Trọng tải: Khoảng 20 tấn\n- Tốc độ tối đa: ~592 km/h\n- Tầm bay: 3.800 km',
-        unlocked: true,
-        thumbnail: 'https://media.sketchfab.com/models/6ca6750c8be9465c9f779b0c4c275fbb/thumbnails/266ad8cf3e284a65b7941dcfa25cc5df/3de7a5e0d4c14828b6d859b52a420b92.jpeg'
+        id: 'art-c130', name: 'Máy bay vận tải C-130 Hercules', category: 'aircraft', sketchfabId: '6ca6750c8be9465c9f779b0c4c275fbb',
+        description: 'Được mệnh danh là "Ngựa thồ không trung" chủ lực của Không lực Hoa Kỳ và nhiều lực lượng quân đội trên toàn thế giới.',
+        story: 'C-130 Hercules là loại máy bay vận tải chiến thuật đa dụng hạng trung. Trong chiến tranh Việt Nam, C-130 đóng vai trò cực kỳ quan trọng trong việc thả dù tiếp tế, vận chuyển binh lực lượng lớn.\n\nNhờ thiết kế khung thân đặc biệt, nó có khả năng cất hạ cánh trên các đường băng dã chiến ngắn. Thậm chí, nhiều chiếc C-130 còn được cải hoán thành phiên bản máy bay cường kích hạng nặng (AC-130 Spectre) mang theo lựu pháo 105mm để bắn phá mục tiêu mặt đất dọc đường mòn Hồ Chí Minh.', unlocked: true, thumbnail: '',
+        specs: [
+            { label: 'Sản xuất', value: 'Lockheed (Mỹ)' }, { label: 'Trọng tải tải', value: '20.000 kg' },
+            { label: 'Tốc độ tối đa', value: '592 km/h' }, { label: 'Sải cánh', value: '40,4 m' },
+        ],
+        funFact: 'Dù to xác và nặng nề, C-130 được thiết kế để có thể hạ cánh "đạp phanh" trên những đường băng bằng đất nện siêu ngắn chưa tới 1.000m giữa rừng rậm.'
+    },
+    {
+        id: 'art-uh1a', name: 'Trực thăng UH-1A Huey', category: 'aircraft', sketchfabId: 'ce1ba25bdde84707a0ddc1f5202de3ae',
+        description: 'Biểu tượng của chiến thuật "Trực thăng vận" của quân đội Mỹ tại Việt Nam.',
+        story: 'Trực thăng UH-1 Huey là xương sống của lực lượng không kỵ Mỹ. Khả năng cơ động vượt địa hình rừng núi giúp Mỹ đổ quân chớp nhoáng (Air assault), tải thương (Dustoff), và yểm trợ hỏa lực. Tuy nhiên, khi đối mặt với lưới lửa phòng không tầm thấp dày đặc và chiến thuật "nắm thắt lưng địch mà đánh" của Quân Giải phóng, UH-1 bộc lộ điểm yếu là vỏ mỏng, dễ bị bắn hạ bởi súng bộ binh thông thường.', unlocked: true, thumbnail: '',
+        specs: [
+            { label: 'Sản xuất', value: 'Bell Helicopter' }, { label: 'Kíp lái', value: '1 đến 4 người' },
+            { label: 'Sức chở', value: '14 lính bộ binh' }, { label: 'Tốc độ', value: '217 km/h' },
+        ],
+        funFact: 'Tiếng "phạch phạch" đặc trưng của UH-1 sinh ra do rìa cánh quạt chính vượt qua bức tường âm thanh, tạo ra những tiếng nổ siêu âm nhỏ lẻ liên tục.'
     },
 
-    // --- THIẾT GIÁP (ARMOR) ---
+    // ------------------------------------------
+    // 2. KHU VỰC THIẾT GIÁP (ARMOR)
+    // ------------------------------------------
     {
-        id: 'art-m48',
-        name: 'Xe tăng chiến đấu chủ lực M48 Patton',
-        category: 'armor',
-        sketchfabId: '9dd1a1f178444688aa04a2fcd1b4dc9a',
-        description: 'Nắm đấm thép của thiết giáp Mỹ trên chiến trường.',
-        story: 'M48 Patton là dòng xe tăng chiến đấu chủ lực được Mỹ sử dụng rộng rãi. Tại Việt Nam, do địa hình rừng núi lầy lội, xe tăng thường được triển khai để bảo vệ căn cứ, càn quét hoặc yểm trợ bộ binh. M48 thường là mục tiêu lý tưởng cho các loại vũ khí chống tăng vác vai của Quân Giải phóng (như B-40, B-41).\n\nThông số kỹ thuật:\n- Trọng lượng: 49.6 tấn\n- Vũ khí chính: Pháo 90mm M41\n- Lớp giáp: Thép đúc (dày đến 110mm)',
-        unlocked: true,
-        thumbnail: 'https://media.sketchfab.com/models/9dd1a1f178444688aa04a2fcd1b4dc9a/thumbnails/2b8429b699c2401f8df9e8e668ca05fc/449cd54050224424a1eab0ce0c5d6c8e.jpeg'
+        id: 'art-m48', name: 'Xe tăng chiến đấu chủ lực M48 Patton', category: 'armor', sketchfabId: '9dd1a1f178444688aa04a2fcd1b4dc9a',
+        description: 'Nắm đấm thép của thiết giáp Mỹ và quân đội VNCH trên chiến trường miền Nam.',
+        story: 'M48 Patton là dòng xe tăng chiến đấu chủ lực (MBT) được thiết kế cho chiến tranh quy mô lớn. Tại Việt Nam, do địa hình rừng núi, sình lầy và đường sá nhỏ hẹp, xe tăng M48 hiếm khi tham gia các trận đấu tăng kinh điển mà chủ yếu được triển khai để bảo vệ căn cứ, mở đường càn quét hoặc làm hố lô cốt cố định. Giáp thép dày giúp nó chống chịu tốt trước đạn pháo thông thường, nhưng lại là mục tiêu lý tưởng cho đặc công và súng B-41 của Quân Giải phóng.', unlocked: true, thumbnail: '',
+        specs: [
+            { label: 'Sản xuất', value: 'Mỹ (1952)' }, { label: 'Trọng lượng', value: '49,6 tấn' },
+            { label: 'Pháo chính', value: '90mm M41 (64 viên)' }, { label: 'Giáp trước', value: 'Dày 110 mm' },
+        ],
+        funFact: 'M48 sử dụng vô lăng lái hình bán nguyệt giống như vô lăng xe hơi, khác biệt hoàn toàn với hệ thống cần gạt cơ học trên các xe tăng Liên Xô cùng thời.'
+    },
+    {
+        id: 'art-m113-2', name: 'Xe Thiết giáp M113 (Biến thể ACAV)', category: 'armor', sketchfabId: '7521ff2c7f3346e3a220a0989493ec9e',
+        description: 'Biến thể nâng cấp giáp và hỏa lực của dòng "Taxi chiến trường" M113.',
+        story: 'Sau khi nhận thấy xạ thủ súng máy trên nóc xe M113 quá dễ bị tổn thương bởi lính bắn tỉa, Mỹ đã cho ra đời gói nâng cấp ACAV (Armored Cavalry Assault Vehicle). Phiên bản này được lắp thêm các tấm khiên thép bảo vệ xung quanh súng đại liên M2 Browning 12.7mm và hai khẩu M60 hai bên hông, biến M113 từ một xe chở quân đơn thuần thành một phương tiện chiến đấu bộ binh thực thụ.', unlocked: true, thumbnail: '',
+        specs: [
+            { label: 'Động cơ', value: 'Diesel 6V53 Detroit' }, { label: 'Tầm hoạt động', value: '480 km' },
+            { label: 'Nâng cấp hỏa lực', value: '3 súng máy bảo vệ' }, { label: 'Kíp xe', value: 'Trưởng xe + Tài xế' },
+        ],
+        funFact: 'Lính Mỹ thường chất bao cát lên sàn xe M113 từ bên trong để chống lại sức nổ của mìn chống tăng sát thương xuyên từ gầm xe lên.'
+    },
+    {
+        id: 'art-m113-1', name: 'Xe Thiết giáp chở quân M113', category: 'armor', sketchfabId: 'b3b5269946c74b54a3244b4849963d63',
+        description: 'Loại xe thiết giáp được sử dụng nhiều nhất trong chiến tranh Việt Nam, biểu tượng của chiến thuật "Thiết xa vận".',
+        story: 'Ra mắt năm 1962, M113 là hình ảnh gắn liền với các cuộc hành quân tìm diệt của Mỹ và VNCH. Nhờ trọng lượng nhẹ, nó có thể băng qua các cánh đồng lúa ngập nước ở Đồng bằng sông Cửu Long.\n\nTuy nhiên, Quân Giải phóng nhanh chóng tìm ra khắc tinh của nó: Mìn chống tăng và súng B-40. Hiện vật phục dựng này mang dấu tích của trận phục kích tại xã An Phú (Củ Chi) năm 1969, nơi một xe M113 đã bị du kích bắn hạ hoàn toàn.', unlocked: true, thumbnail: '',
+        specs: [
+            { label: 'Xuất xứ', value: 'Mỹ (1950)' }, { label: 'Trọng lượng', value: '12,3 tấn' },
+            { label: 'Tốc độ bơi', value: '5,8 km/h' }, { label: 'Sức chở', value: '11 lính trang bị đầy đủ' },
+        ],
+        funFact: 'Để M113 có thể lội nước, nhà sản xuất đã dùng hợp kim nhôm thay vì thép. Trớ trêu thay, hợp kim nhôm rất dễ bốc cháy dữ dội khi bị đạn xuyên lõm B-40 bắn trúng.'
     },
 
-    // --- HỎA LỰC SÚNG CỐI (ARTILLERY: MORTARS) ---
+    // ------------------------------------------
+    // 3. KHU VỰC HỎA LỰC PHÁO/CỐI (ARTILLERY)
+    // ------------------------------------------
     {
-        id: 'art-coi-82',
-        name: 'Súng Cối 82mm',
-        category: 'artillery',
-        sketchfabId: 'a3917b80e1654276a3e3ca89c7ea8f35',
-        description: 'Hỏa lực cầu vồng, khắc tinh của hầm hào công sự.',
-        story: 'Súng cối 82mm là hỏa lực cấp tiểu đoàn cực kỳ lợi hại của Quân Giải phóng. Thiết kế đơn giản, dễ dàng tháo rời thành 3 phần (nòng, chân chống, đế) giúp các chiến sĩ dễ dàng mang vác xuyên rừng. Quỹ đạo đạn cầu vồng cho phép xạ thủ bắn vòng qua đồi núi, dội hỏa lực chính xác vào các căn cứ Mỹ - ngụy từ những góc khuất.\n\nThông số kỹ thuật:\n- Cỡ nòng: 82 mm\n- Trọng lượng: 56 kg\n- Tầm bắn tối đa: 3.040 m\n- Tốc độ bắn: 15-25 phát/phút',
-        unlocked: true,
-        thumbnail: '/images/fallback.jpg'
+        id: 'art-coi-82', name: 'Súng Cối 82mm (PM-41)', category: 'artillery', sketchfabId: 'a3917b80e1654276a3e3ca89c7ea8f35',
+        description: 'Hỏa lực cầu vồng, khắc tinh của hầm hào công sự. Vũ khí yểm trợ cấp tiểu đoàn cực kỳ lợi hại của Quân Giải phóng.',
+        story: 'Với thiết kế gồm 3 phần dễ dàng tháo rời (nòng, chân chống chữ V, và đế), một tổ cối 82mm có thể luồn lách qua những cánh rừng rậm rạp nhất. Quỹ đạo đạn cầu vồng cho phép bộ đội dội hỏa lực chính xác vào các căn cứ địch nằm sau đồi núi hoặc các góc khuất mà súng thẳng không bắn tới được.', unlocked: true, thumbnail: '',
+        specs: [
+            { label: 'Cỡ nòng', value: '82 mm' }, { label: 'Tầm bắn', value: '3.040 mét' },
+            { label: 'Tốc độ bắn', value: '15-25 phát/phút' }, { label: 'Trọng lượng', value: '56 kg' }
+        ],
+        funFact: 'Súng cối 82mm của phe XHCN có một "tuyệt chiêu": Do cỡ nòng lớn hơn 1mm, nó có thể nhặt và bắn ké đạn cối 81mm của Mỹ, trong khi súng 81mm của Mỹ không thể nhét vừa đạn 82mm của ta!'
     },
     {
-        id: 'art-coi-81',
-        name: 'Súng Cối 81mm',
-        category: 'artillery',
-        sketchfabId: '10a5c6cd795f4de7a2342287bce37767',
-        description: 'Hỏa lực hỗ trợ bộ binh chiến thuật.',
-        story: 'Súng cối 81mm là vũ khí hỏa lực gián tiếp tiêu chuẩn của cả hai phe trong chiến tranh. Nhờ tốc độ bắn nhanh và sức sát thương lớn đối với bộ binh không có công sự che chắn, súng cối thường được dùng để bẻ gãy các đợt tấn công của đối phương hoặc dọn đường trước khi xung phong.\n\nThông số kỹ thuật:\n- Cỡ nòng: 81 mm\n- Đặc điểm: Bắn đạn nổ phá, đạn khói, đạn chiếu sáng.',
-        unlocked: false,
-        thumbnail: '/images/fallback.jpg'
+        id: 'art-coi-81', name: 'Súng Cối 81mm (M29)', category: 'artillery', sketchfabId: '10a5c6cd795f4de7a2342287bce37767',
+        description: 'Vũ khí hỏa lực gián tiếp tiêu chuẩn của lính thủy đánh bộ và bộ binh Mỹ.',
+        story: 'Trong các trận phòng ngự, súng cối 81mm đóng vai trò lập nên "bức tường lửa". Nó có thể bắn đạn chiếu sáng vào ban đêm để phát hiện sự di chuyển của đặc công, hoặc đạn nổ phá văng mảnh để bẻ gãy các làn sóng xung phong của đối phương từ khoảng cách xa.', unlocked: true, thumbnail: '',
+        specs: [
+            { label: 'Cỡ nòng', value: '81 mm' }, { label: 'Tầm bắn tối đa', value: '4.737 mét' },
+            { label: 'Kíp chiến đấu', value: '5 người' }, { label: 'Loại đạn', value: 'Nổ mảnh / Phốt pho trắng' }
+        ],
+        funFact: 'Đạn cối 81mm đôi khi được dùng như một quả mìn bẫy (booby trap) khổng lồ bằng cách chôn dưới đất và gắn ngòi nổ vướng nổ.'
     },
     {
-        id: 'art-coi-60',
-        name: 'Súng Cối 60mm',
-        category: 'artillery',
-        sketchfabId: '928efef6bfda4a0784c98297f4c78031',
-        description: 'Vũ khí yểm trợ cận chiến cấp đại đội.',
-        story: 'Súng cối 60mm nổi bật nhờ sự nhỏ gọn, cơ động cao, có thể do một người lính mang vác và vận hành. Trong chiến thuật đánh du kích tại Củ Chi và miền Nam, cối 60mm thường được dùng để tập kích chớp nhoáng đồn bốt địch, bắn vài loạt đạn tạo sự hỗn loạn rồi lập tức rút lui qua hệ thống địa đạo trước khi địch kịp phản pháo.\n\nThông số kỹ thuật:\n- Cỡ nòng: 60 mm\n- Trọng lượng: Khoảng 19 kg\n- Tầm bắn tối đa: ~1.800 m',
-        unlocked: true,
-        thumbnail: '/images/fallback.jpg'
-    },
-
-    // --- HỎA LỰC ROCKET (ARTILLERY: ROCKET TUBES) ---
-    {
-        id: 'art-rocket-10',
-        name: 'Ống phóng Rocket (Mẫu 10)',
-        category: 'artillery',
-        sketchfabId: 'df6fa99eef6d4a7e853a3e5c16b0b727',
-        description: 'Khí tài phóng đạn phản lực đất đối đất.',
-        story: 'Hệ thống ống phóng đạn phản lực (Rocket) là một phát minh quân sự đem lại sức ép tâm lý khủng khiếp. Không cần những nòng pháo khổng lồ, Quân Giải phóng có thể chế tạo những bệ phóng bằng tre hoặc ống thép đơn giản (như DKB 122mm, A-12) để dội những trận "mưa lửa" vào các sân bay, căn cứ hậu cần của địch trong chiến dịch Mậu Thân 1968.\n\nĐặc điểm:\n- Không có độ giật, chân đế nhẹ.\n- Hỏa lực áp chế diện rộng.',
-        unlocked: true,
-        thumbnail: '/images/fallback.jpg'
-    },
-    {
-        id: 'art-rocket-11',
-        name: 'Ống phóng Rocket (Mẫu 11)',
-        category: 'artillery',
-        sketchfabId: 'f0d7b807998945089b44b8c5ffdab343',
-        description: 'Ống phóng rocket tự tạo cải tiến.',
-        story: 'Sự sáng tạo của Quân giới Việt Nam thể hiện qua việc thu gom, chế tác lại các ống phóng rocket hỏng hoặc đạn chưa nổ của đối phương để đánh trả lại chính chúng. Những ống phóng này thường được chôn giấu bí mật trong rừng cao su, cài sẵn góc tọa độ, canh giờ khai hỏa tự động để bảo toàn lực lượng.\n\nThông tin hiện vật:\n- Tình trạng: Hoen rỉ do thời gian và khói đạn.\n- Khai quật tại: Khu vực vành đai Củ Chi.',
-        unlocked: true,
-        thumbnail: '/images/fallback.jpg'
-    },
-    {
-        id: 'art-rocket-12',
-        name: 'Ống phóng Rocket (Mẫu 12)',
-        category: 'artillery',
-        sketchfabId: '1d847e96c899471382fb4d72317bed68',
-        description: 'Mảnh ghép của chiến tranh pháo binh du kích.',
-        story: 'Trong bóng tối của những đêm tập kích, tia lửa phản lực từ ống phóng rocket thắp sáng cả một góc trời. Các dàn rocket được ngụy trang cẩn thận, tấn công bất ngờ và biến mất nhanh chóng khiến đối phương không thể dò tìm được vị trí phản pháo. Hiện vật này là minh chứng cho lối đánh xuất quỷ nhập thần của Quân Giải phóng.',
-        unlocked: false,
-        thumbnail: '/images/fallback.jpg'
-    },
-    {
-        id: 'art-rocket-13',
-        name: 'Ống phóng Rocket (Mẫu 13)',
-        category: 'artillery',
-        sketchfabId: '3c7d5ae0ceb8433487384b6073c94664',
-        description: 'Di vật từ những trận pháo kích cường độ cao.',
-        story: 'Mô hình số hóa 3D cho thấy rõ những vết nứt và biến dạng nhiệt trên thân ống phóng, minh chứng cho sức nóng khủng khiếp khi viên đạn phản lực thoát nòng. Việc bảo tồn và số hóa các ống phóng này giúp thế hệ sau hình dung được mức độ khốc liệt của chiến trường xưa.',
-        unlocked: true,
-        thumbnail: '/images/fallback.jpg'
-    },
-    // ... (Giữ nguyên các hiện vật Không quân, Thiết giáp, Pháo/Cối ở trên) ...
-
-    // ==========================================
-    // DATA BẢO TÀNG 3D - ĐỢT 2 (12 Quả Bom MK82)
-    // ==========================================
-    // --- KHU VỰC BOM ĐẠN (AMMUNITION) ---
-    {
-        id: 'art-mk82-30',
-        name: 'Bom MK82 (Mẫu 30) - Nguyên bản',
-        category: 'ammunition',
-        sketchfabId: 'b0ffea73263e4dcc8de89c991299894e',
-        description: 'Vũ khí không kích chiến thuật phổ biến nhất của Hoa Kỳ.',
-        story: 'Bom MK82 (Mark 82) là loại bom công dụng chung (general-purpose bomb) nặng 500 pound (~227 kg). Đây là một trong những loại vũ khí được thả xuống chiến trường Việt Nam, đặc biệt là vành đai Củ Chi nhiều nhất nhằm san phẳng hệ thống địa đạo.\n\nThông số kỹ thuật:\n- Trọng lượng: 227 kg\n- Lượng thuốc nổ: 89 kg (Tritonal/Minol)\n- Chiều dài: 2.22 m',
-        unlocked: true,
-        thumbnail: '/images/fallback.jpg'
-    },
-    {
-        id: 'art-mk82-29',
-        name: 'Bom MK82 (Mẫu 29) - Chiến thuật rải thảm',
-        category: 'ammunition',
-        sketchfabId: '364b2532ea7e4c75b1eba675d2d48f1e',
-        description: 'Mảnh ghép của chiến dịch "Rải thảm" B-52.',
-        story: 'Một chiếc pháo đài bay B-52 Stratofortress có thể mang theo hàng chục quả bom MK82. Khi thực hiện chiến thuật rải thảm (carpet bombing), hàng trăm quả bom được trút xuống tạo thành các "hộp bom" hủy diệt mọi sự sống trên mặt đất, biến những cánh rừng cao su Củ Chi thành bình địa.',
-        unlocked: true,
-        thumbnail: '/images/fallback.jpg'
-    },
-    {
-        id: 'art-mk82-28',
-        name: 'Bom MK82 (Mẫu 28) - Biến thể ngòi nổ',
-        category: 'ammunition',
-        sketchfabId: 'ed4a5a2d31b1479883dc5b9527fc70ed',
-        description: 'Được thiết kế để phá hủy bề mặt và công sự cạn.',
-        story: 'MK82 có thể gắn nhiều loại ngòi nổ khác nhau: nổ chạm (impact), nổ chậm (delayed) hoặc ngòi nổ cận đích (proximity). Khi tấn công Củ Chi, địch thường dùng ngòi nổ chậm để bom cắm sâu xuống đất rồi mới nổ, nhằm tạo sóng xung kích phá vỡ các tầng hầm địa đạo.',
-        unlocked: false, // Để khóa thử nghiệm UI
-        thumbnail: '/images/fallback.jpg'
-    },
-    {
-        id: 'art-mk82-27',
-        name: 'Bom MK82 (Mẫu 27) - Mảnh vỏ hoen rỉ',
-        category: 'ammunition',
-        sketchfabId: '1650a584c0c44f2f958367b194ba9bc0',
-        description: 'Di tích được khai quật sau hàng chục năm nằm trong lòng đất.',
-        story: 'Hiện vật này được người dân Củ Chi phát hiện trong quá trình canh tác nông nghiệp sau chiến tranh. Lớp vỏ thép dày đã bị rỉ sét nghiêm trọng. Những mảnh vỏ bom như thế này từng được người dân tận dụng để rèn thành dao, cuốc, xẻng phục vụ tái thiết đất nước.',
-        unlocked: true,
-        thumbnail: '/images/fallback.jpg'
-    },
-    {
-        id: 'art-mk82-26',
-        name: 'Bom MK82 (Mẫu 26) - Lưới lửa mặt đất',
-        category: 'ammunition',
-        sketchfabId: '50627c48512742c2ac0236024eb26c72',
-        description: 'Minh chứng cho sức ép khốc liệt của chiến tranh.',
-        story: 'Sức ép từ một quả bom MK82 có thể gây sát thương nghiêm trọng trong bán kính hàng chục mét. Mặc dù vậy, hệ thống địa đạo Củ Chi với thiết kế giật cấp, các ngã rẽ chữ Z và cửa sập chống sức ép đã vô hiệu hóa phần lớn uy lực của những quả bom này.',
-        unlocked: true,
-        thumbnail: '/images/fallback.jpg'
-    },
-    {
-        id: 'art-mk82-25',
-        name: 'Bom MK82 (Mẫu 25) - Chế tạo mìn tự tạo',
-        category: 'ammunition',
-        sketchfabId: '704d4bf0f2c94a58a286356ec16c35e5',
-        description: 'Từ vũ khí của địch thành vũ khí của ta.',
-        story: 'Do lỗi kỹ thuật hoặc tiếp đất trên nền phù sa mềm, nhiều quả MK82 không phát nổ. Quân giới Củ Chi đã liều mình tổ chức "cưa bom" (tháo ngòi nổ) để lấy thuốc nổ Tritonal bên trong. Số thuốc nổ này sau đó được dùng để chế tạo mìn định hướng, mìn chống tăng đánh trả lại xe bọc thép Mỹ.',
-        unlocked: true,
-        thumbnail: '/images/fallback.jpg'
-    },
-    {
-        id: 'art-mk82-24',
-        name: 'Bom MK82 (Mẫu 24) - Tàn tích hố bom',
-        category: 'ammunition',
-        sketchfabId: 'a978eceda2504ef7a51c0b5a5cb6520d',
-        description: 'Những vết sẹo vĩnh viễn trên bản đồ Củ Chi.',
-        story: 'Nếu bạn xem ảnh vệ tinh hoặc đi dạo trong khu bảo tồn địa đạo Củ Chi ngày nay, bạn sẽ dễ dàng bắt gặp những ao nước hình tròn liên tiếp nhau. Đó chính là những hố bom do MK82 tạo ra, nay đã được thiên nhiên và con người chữa lành.',
-        unlocked: false,
-        thumbnail: '/images/fallback.jpg'
-    },
-    {
-        id: 'art-mk82-23',
-        name: 'Bom MK82 (Mẫu 23) - Vũ khí chưa nổ (UXO)',
-        category: 'ammunition',
-        sketchfabId: '766a82f185314c52859dc23250a56333',
-        description: 'Mối đe dọa thầm lặng sau ngày hòa bình.',
-        story: 'Hàng ngàn quả bom MK82 vẫn còn nằm im lìm dưới lòng đất Việt Nam sau năm 1975, tạo thành khu vực ô nhiễm bom mìn (UXO) rộng lớn. Việc số hóa mô hình này là lời nhắc nhở về nỗ lực không ngừng nghỉ của lực lượng công binh trong việc rà phá, trả lại sự bình yên cho những vùng đất chết.',
-        unlocked: true,
-        thumbnail: '/images/fallback.jpg'
-    },
-    {
-        id: 'art-mk82-22',
-        name: 'Bom MK82 (Mẫu 22) - Tái sinh',
-        category: 'ammunition',
-        sketchfabId: '9471719def1746a69e8e07a639708aad',
-        description: 'Vỏ bom được tái sử dụng thành kẻng báo động.',
-        story: 'Trong thời chiến, những chiếc vỏ bom cạn thuốc nổ thường được treo lên cây làm "kẻng báo động". Tiếng vang đanh thép từ vỏ bom MK82 báo hiệu máy bay địch đang đến, giúp người dân kịp thời sơ tán xuống các hệ thống hầm trú ẩn.',
-        unlocked: true,
-        thumbnail: '/images/fallback.jpg'
-    },
-    {
-        id: 'art-mk82-21',
-        name: 'Bom MK82 (Mẫu 21) - Bằng chứng lịch sử',
-        category: 'ammunition',
-        sketchfabId: '8fdab390d6b446d3bd0ed0a58afd63c8',
-        description: 'Hiện vật lịch sử lưu trữ tại các bảo tàng.',
-        story: 'Mô hình 3D này được quét (scan) trực tiếp từ một vỏ bom MK82 đang được trưng bày tại Bảo tàng Chứng tích Chiến tranh. Việc số hóa giúp bảo quản trạng thái của hiện vật mãi mãi trên không gian mạng, không bị ăn mòn bởi thời gian.',
-        unlocked: true,
-        thumbnail: '/images/fallback.jpg'
-    },
-    {
-        id: 'art-mk82-20',
-        name: 'Bom MK82 (Mẫu 20) - Phục dựng 3D',
-        category: 'ammunition',
-        sketchfabId: 'df07168232bf4e7d85c24d55e35fc2e6',
-        description: 'Quá trình làm sạch và phục hồi kết cấu 3D.',
-        story: 'Để có được mô hình 3D hoàn chỉnh này, nhóm nghiên cứu đã phải chụp hàng trăm bức ảnh photogrammetry từ mọi góc độ của quả bom thực tế, sau đó dùng thuật toán để đan lưới (meshing) và phủ lớp vân bề mặt (texture) để tái tạo chính xác từng vết xước.',
-        unlocked: false,
-        thumbnail: '/images/fallback.jpg'
-    },
-    {
-        id: 'art-mk82-19',
-        name: 'Bom MK82 (Mẫu 19) - Ký ức thép',
-        category: 'ammunition',
-        sketchfabId: 'eb5f10a205564b21b64cd150f3957470',
-        description: 'Lời nhắc nhở về một thời hoa lửa oai hùng.',
-        story: 'Nhìn vào quả bom lạnh lẽo này, thế hệ trẻ hôm nay có thể cảm nhận một phần nào đó sức nặng và sự tàn khốc của chiến tranh. Qua đó càng thêm trân quý giá trị của hòa bình và sự kiên cường, bất khuất của những người lính đã giữ đất, giữ làng.',
-        unlocked: true,
-        thumbnail: '/images/fallback.jpg'
-    },
-    // --- KHU VỰC HỎA LỰC ROCKET (ARTILLERY) ---
-    {
-        id: 'art-rocket-base',
-        name: 'Ống phóng Rocket - Bệ phóng mặt đất',
-        category: 'artillery',
-        sketchfabId: '32f7a901e02c481aa8302a2a6558257c',
-        description: 'Bệ phóng dã chiến tự tạo của bộ đội đặc công.',
-        story: 'Khác với các pháo đài cố định của địch, hỏa tiễn của Quân Giải phóng dựa vào yếu tố bất ngờ. Các ống phóng thường được gá trên những chân đế chữ A hoặc chôn cọc tre rỗng ruột để định hướng. Đánh xong, bộ đội lập tức tháo rời và di chuyển nhanh chóng, để lại trận địa trống không khiến máy bay địch ném bom trả đũa vào hư vô.',
-        unlocked: true,
-        thumbnail: '/images/fallback.jpg'
+        id: 'art-coi-60', name: 'Súng Cối 60mm (M2)', category: 'artillery', sketchfabId: '928efef6bfda4a0784c98297f4c78031',
+        description: 'Vũ khí yểm trợ cận chiến cấp đại đội, nổi bật nhờ sự nhỏ gọn và siêu cơ động.',
+        story: 'Chỉ nặng chưa tới 20kg, cối 60mm là vũ khí "đánh chớp nhoáng" hoàn hảo của du kích Củ Chi. Xạ thủ có thể tiếp cận sát đồn bốt địch, thả vài quả đạn tạo sự hỗn loạn, sau đó vác súng trên vai rút nhanh xuống các lối vào địa đạo bí mật trước khi pháo binh địch kịp đáp trả.', unlocked: true, thumbnail: '',
+        specs: [
+            { label: 'Cỡ nòng', value: '60 mm' }, { label: 'Trọng lượng', value: '19 kg' },
+            { label: 'Tầm bắn', value: '1.815 mét' }, { label: 'Bán kính sát thương', value: '15 mét' }
+        ],
+        funFact: 'Trong các tình huống cận chiến khẩn cấp, xạ thủ có thể vứt bỏ chân chống, đặt thẳng nòng súng xuống đất, kẹp bằng hai chân và ước lượng góc bắn bằng mắt thường (bắn ứng dụng).'
     },
 
-    // --- KHU VỰC BOM ĐẠN (AMMUNITION) - BỘ SƯU TẬP MK82 ---
+    // --- HỎA LỰC ROCKET (ỐNG PHÓNG / HỎA TIỄN DÃ CHIẾN) ---
     {
-        id: 'art-mk82-18',
-        name: 'Bom MK82 (Mẫu 18) - Khí động học',
-        category: 'ammunition',
-        sketchfabId: '3323a1a39ed54b25b72035ff41f7f0f1',
-        description: 'Thiết kế thon dài xé gió giảm lực cản.',
-        story: 'Thiết kế hình giọt nước thuôn dài của MK82 giúp nó đạt được tốc độ rơi tối ưu và giảm thiểu lực cản không khí. Nhờ thiết kế này, các máy bay tiêm kích ném bom (như F-4 Phantom) có thể bay với tốc độ siêu âm mà không bị ảnh hưởng nhiều đến tính năng khí động học khi mang theo hàng chục quả bom dưới cánh.',
-        unlocked: true,
-        thumbnail: '/images/fallback.jpg'
+        id: 'art-rocket-10', name: 'Ống phóng Rocket (H-6 / DKB 122mm)', category: 'artillery', sketchfabId: 'df6fa99eef6d4a7e853a3e5c16b0b727',
+        description: 'Khí tài phóng đạn phản lực đất đối đất, nỗi kinh hoàng của các sân bay quân sự.',
+        story: 'Sử dụng đạn phản lực BM-21 Grad của Liên Xô nhưng được thiết kế bệ phóng ống đơn vác vai để phù hợp với lối đánh du kích. Vào dịp Tết Mậu Thân 1968, hàng trăm quả DKB 122mm đã đồng loạt rít lên xé toạc màn đêm, giáng đòn hủy diệt xuống các đường băng và kho xăng của địch tại sân bay Tân Sơn Nhất, Biên Hòa.', unlocked: true, thumbnail: '',
+        specs: [
+            { label: 'Cỡ đạn', value: '122 mm' }, { label: 'Tầm xa tối đa', value: '11.000 mét' },
+            { label: 'Trọng lượng đạn', value: '46 kg' }, { label: 'Thời gian bay', value: 'Dưới 40 giây' }
+        ],
+        funFact: 'Khi không có bệ phóng, bộ đội Việt Nam thường kê đạn rocket lên các ụ đất được đắp theo góc nghiêng tính toán sẵn, hoặc dùng hai cọc tre tréo hình chữ X để nhắm bắn.'
     },
-    {
-        id: 'art-mk82-17',
-        name: 'Bom MK82 (Mẫu 17) - Cánh đuôi',
-        category: 'ammunition',
-        sketchfabId: 'aed96266facd48489d8b14ea95a9ceac',
-        description: 'Bộ vây đuôi ổn định quỹ đạo rơi.',
-        story: 'Phần đuôi hình nón (conical fin) có rãnh xoắn là thiết kế tiêu chuẩn giúp quả bom xoay tròn nhẹ trong không trung, tạo sự ổn định theo nguyên lý con quay hồi chuyển (gyroscopic). Nếu không có cụm đuôi này, quả bom sẽ lộn nhào vô định và trượt mục tiêu.',
-        unlocked: true,
-        thumbnail: '/images/fallback.jpg'
-    },
-    {
-        id: 'art-mk82-16',
-        name: 'Bom MK82 (Mẫu 16) - Biến thể Snakeye',
-        category: 'ammunition',
-        sketchfabId: '90c754e49beb479ca72f4c4893f3d023',
-        description: 'Bom hãm tốc độ bằng cánh xòe.',
-        story: 'Để ném bom ở độ cao cực thấp mà không bị dính mảnh văng từ chính quả bom của mình, lính Mỹ sử dụng cụm đuôi hãm "Snakeye". Khi cắt bom, 4 cánh thép ở đuôi sẽ bung rộng như chiếc ô, hãm tốc độ quả bom lại, tạo thời gian cho máy bay thoát khỏi vùng nguy hiểm.',
-        unlocked: false, // Để khóa UI
-        thumbnail: '/images/fallback.jpg'
-    },
-    {
-        id: 'art-mk82-15',
-        name: 'Bom MK82 (Mẫu 15) - Lớp sơn cảnh báo',
-        category: 'ammunition',
-        sketchfabId: '3e3c23d02ab142d0b6000860f6600246',
-        description: 'Giải mã các vòng sơn vàng trên mũi bom.',
-        story: 'Theo chuẩn NATO, lớp sơn ngoài màu xanh Olive Drab giúp ngụy trang, nhưng vạch màu vàng sọc quanh mũi bom mang ý nghĩa cảnh báo: "Bên trong có chứa thuốc nổ mạnh (High Explosive)". Các chuyên gia công binh Việt Nam thường dựa vào các vạch màu này để phân loại và xử lý.',
-        unlocked: true,
-        thumbnail: '/images/fallback.jpg'
-    },
-    {
-        id: 'art-mk82-14',
-        name: 'Bom MK82 (Mẫu 14) - Chứng tích rỉ sét',
-        category: 'ammunition',
-        sketchfabId: 'd9f86cbd3a624337b69785fcfd27decd',
-        description: 'Sự ăn mòn của đất đai Củ Chi.',
-        story: 'Trải qua nửa thế kỷ nằm dưới lớp đất đá cằn cỗi và bom mìn của Củ Chi, vỏ thép carbon của quả bom bị oxy hóa nặng nề tạo thành bề mặt sần sùi đặc trưng. Quá trình quét 3D (Photogrammetry) đã bảo lưu được nguyên vẹn màu sắc thời gian này.',
-        unlocked: true,
-        thumbnail: '/images/fallback.jpg'
-    },
-    {
-        id: 'art-mk82-12',
-        name: 'Bom MK82 (Mẫu 12) - Công tác Hậu cần',
-        category: 'ammunition',
-        sketchfabId: '95523ebae02b4994ba97cfbe035aa53e',
-        description: 'Hành trình từ tàu sân bay đến chiến trường.',
-        story: 'Để duy trì hỏa lực ném bom liên tục, quân đội Mỹ phải vận chuyển hàng triệu tấn MK82 từ các căn cứ ở Guam, Thái Lan hoặc từ tàu sân bay ở Biển Đông. Quá trình bốc xếp thường dùng xe nâng chuyên dụng với các đai thép cố định trên thân bom (lugs) mà bạn có thể nhìn thấy trên mô hình.',
-        unlocked: false,
-        thumbnail: '/images/fallback.jpg'
-    },
-    {
-        id: 'art-mk82-13',
-        name: 'Bom MK82 (Mẫu 13) - Tàn phá Môi trường',
-        category: 'ammunition',
-        sketchfabId: 'd40ba28d1f944198bacf08b4a13df7bd',
-        description: 'Sức mạnh hủy diệt màu xanh của rừng núi.',
-        story: 'Bên cạnh sát thương vật lý, hàng triệu tấn đất đá bị đào xới bởi MK82 đã phá hủy hệ sinh thái rừng tự nhiên. Rừng cao su, rừng rậm nhiệt đới biến thành "vùng đất chết" với bề mặt lồi lõm hố bom, khiến việc canh tác nông nghiệp sau năm 1975 vô cùng khó khăn.',
-        unlocked: true,
-        thumbnail: '/images/fallback.jpg'
-    },
-    {
-        id: 'art-mk82-11',
-        name: 'Bom MK82 (Mẫu 11) - Dấu ấn Công binh',
-        category: 'ammunition',
-        sketchfabId: '2de65a4b734240edad26fa223c977991',
-        description: 'Những vết cắt thô sơ để vô hiệu hóa.',
-        story: 'Trên mô hình này, nếu phóng to, bạn có thể nhận ra các dấu vết cưa cắt. Công binh Việt Nam bằng sự mưu trí và dũng cảm đã tìm ra nguyên lý hoạt động của ngòi nổ, dùng cưa tay và nước để làm mát, mở đường tháo thuốc nổ bên trong một cách cẩn trọng nhất.',
-        unlocked: true,
-        thumbnail: '/images/fallback.jpg'
-    },
-    {
-        id: 'art-mk82-9',
-        name: 'Bom MK82 (Mẫu 9) - Chiếc xuồng đặc biệt',
-        category: 'ammunition',
-        sketchfabId: '926beeca483e4ce6b635e8301b7748aa',
-        description: 'Sự sáng tạo vô bờ bến của dân gian.',
-        story: 'Sau khi lấy hết thuốc nổ, vỏ bom MK82 có đặc tính cực kỳ bền chắc và chống nước. Ở nhiều vùng quê sông nước miền Nam, người dân đã cắt dọc vỏ bom, hàn kín hai đầu để làm thành những chiếc vỏ lãi, xuồng ba lá thu nhỏ dùng để đi lại trên kênh rạch.',
-        unlocked: true,
-        thumbnail: '/images/fallback.jpg'
-    },
-    {
-        id: 'art-mk82-10',
-        name: 'Bom MK82 (Mẫu 10) - Cột trụ nhà',
-        category: 'ammunition',
-        sketchfabId: '30a6acad80a040ba9e6b06f449e31495',
-        description: 'Tái thiết cuộc sống từ đống tro tàn.',
-        story: 'Ở những vùng quê thiếu thốn vật liệu xây dựng hậu chiến, nhiều gia đình đã dựng đứng các vỏ bom MK82 rỗng ruột để làm cột nhà, chân đế trụ cầu. Quả bom mang sứ mệnh hủy diệt nay lại trở thành vật chống đỡ mái ấm cho con người.',
-        unlocked: false,
-        thumbnail: '/images/fallback.jpg'
-    },
-    {
-        id: 'art-mk82-8',
-        name: 'Bom MK82 (Mẫu 8) - Âm thanh tử thần',
-        category: 'ammunition',
-        sketchfabId: '7ae47a890f6e49b8b3aed0888ce1f08f',
-        description: 'Tiếng rít xé gió ám ảnh bao thế hệ.',
-        story: 'Khi rơi tự do với vận tốc lớn, các rãnh cắt và cánh đuôi của MK82 cọ xát với không khí tạo ra một tiếng rít chói tai. Âm thanh này là tín hiệu báo động duy nhất, tính bằng giây, trước khi mặt đất chao đảo. Mọi người lập tức buông bỏ mọi thứ để chui xuống nắp hầm bí mật.',
-        unlocked: true,
-        thumbnail: '/images/fallback.jpg'
-    },
-    {
-        id: 'art-mk82-7',
-        name: 'Bom MK82 (Mẫu 7) - Bơm mìn tự chế',
-        category: 'ammunition',
-        sketchfabId: '6b7b569c2d2f48fda3cfca2b5eaa958d',
-        description: 'Bản sắc của chiến tranh nhân dân.',
-        story: 'Chỉ với 89kg thuốc nổ lấy từ một quả MK82 lép, công trường xưởng vũ khí trong lòng địa đạo có thể chế tạo ra hàng trăm quả lựu đạn gài, mìn kíp hộp, hay mìn định hướng đánh phá xe tăng địch. Kẻ thù đã vô tình "tiếp tế" vũ khí cho Quân Giải phóng.',
-        unlocked: true,
-        thumbnail: '/images/fallback.jpg'
-    },
-    {
-        id: 'art-mk82-6',
-        name: 'Bom MK82 (Mẫu 6) - Cụm kíp nổ',
-        category: 'ammunition',
-        sketchfabId: 'fb9f0b622be14fabafb79b92f355cfb2',
-        description: 'Phân tích cơ chế nổ cơ học bên trong.',
-        story: 'Phần mũi và đuôi của MK82 đều có hốc để lắp kíp nổ. Khi được ném xuống, một cánh quạt nhỏ xíu ở mũi bom sẽ quay trong gió, tháo chốt an toàn để kích hoạt trạng thái "sẵn sàng nổ". Nếu cánh quạt này bị kẹt (do bùn đất, tán cây), bom sẽ tịt ngòi.',
-        unlocked: false,
-        thumbnail: '/images/fallback.jpg'
-    },
-    {
-        id: 'art-mk82-5',
-        name: 'Bom MK82 (Mẫu 5) - Công nghệ số hóa',
-        category: 'ammunition',
-        sketchfabId: 'ec37fc042ed14835a14df192e9c4266c',
-        description: 'Hệ thống lưới (Mesh) phức tạp.',
-        story: 'Để đảm bảo độ phân giải cao cho Bảo tàng số 3D, mô hình này sở hữu hàng trăm ngàn đa giác (polygons). Nếu bạn bật chế độ xem dây (Wireframe), bạn có thể thấy cấu trúc hình học được các lập trình viên tối ưu hóa để có thể chạy mượt mà trên nền tảng WebGL.',
-        unlocked: true,
-        thumbnail: '/images/fallback.jpg'
-    },
-    {
-        id: 'art-mk82-4',
-        name: 'Bom MK82 (Mẫu 4) - Cân nặng 500 Lbs',
-        category: 'ammunition',
-        sketchfabId: 'd0046c5a4f2e47d6888426ce42f01761',
-        description: 'Khối lượng tiêu chuẩn của Không lực Mỹ.',
-        story: '500 lbs (khoảng 227 kg) là kích cỡ tiêu chuẩn "vàng" của bom không kích: đủ nhẹ để một máy bay F-4 có thể mang tới 18 quả, và đủ nặng để một quả có thể làm nổ tung một boong-ke bê tông vững chắc.',
-        unlocked: true,
-        thumbnail: '/images/fallback.jpg'
-    },
-    {
-        id: 'art-mk82-3',
-        name: 'Bom MK82 (Mẫu 3) - Nghệ thuật điêu khắc',
-        category: 'ammunition',
-        sketchfabId: 'd9770aaa3463479aa4c68125af00faa0',
-        description: 'Khi chiến tranh lùi xa, nhường chỗ cho nghệ thuật.',
-        story: 'Một số vỏ bom MK82 được các nghệ nhân và nhà điêu khắc đục đẽo, chạm khắc các họa tiết hoa sen, rồng phượng để làm vật trang trí tại các khu di tích. Nó biểu tượng cho sự chuyển mình của dân tộc: biến đau thương thành khát vọng hòa bình tươi đẹp.',
-        unlocked: true,
-        thumbnail: '/images/fallback.jpg'
-    },
-    {
-        id: 'art-mk82-2',
-        name: 'Bom MK82 (Mẫu 2) - Bằng chứng lịch sử',
-        category: 'ammunition',
-        sketchfabId: '9e2e8e948b4d4ccbb7e9066ac6083578',
-        description: 'Lưu giữ sự thật cho thế hệ mai sau.',
-        story: 'Việc đưa những hiện vật này vào không gian ảo là bước đi thiết thực trong giáo dục lịch sử. Không cần phải bay đến tận Việt Nam, một học sinh ở bên kia nửa vòng trái đất cũng có thể xoay, lật, phóng to quả bom MK82 để hiểu về quy mô của cuộc chiến tranh.',
-        unlocked: true,
-        thumbnail: '/images/fallback.jpg'
-    },
-    // ==========================================
-    // DATA BẢO TÀNG 3D - ĐỢT CUỐI (19 Hiện vật)
-    // ==========================================
+    { id: 'art-rocket-11', name: 'Ống phóng Rocket (Mẫu cải tiến tự tạo)', category: 'artillery', sketchfabId: 'f0d7b807998945089b44b8c5ffdab343', description: 'Được Quân giới Việt Nam thu gom từ ống phóng rocket hỏng hoặc vỏ đạn chưa nổ, hàn nối lại để tạo thành hỏa tiễn đánh trả đối phương.', story: 'Sự sáng tạo vô biên của xưởng quân giới trong lòng đất Củ Chi.', unlocked: true, thumbnail: '', specs: [{label: 'Cấu tạo', value: 'Thép phế liệu tái chế'}, {label: 'Chế độ phóng', value: 'Kích nổ bằng điện'}], funFact: 'Nhiều ống phóng được quét một lớp mỡ trăn để chống gỉ sét trong môi trường độ ẩm 90% của địa đạo.' },
+    { id: 'art-rocket-12', name: 'Ống phóng Rocket (Mẫu 12 - Tàn dư)', category: 'artillery', sketchfabId: '1d847e96c899471382fb4d72317bed68', description: 'Tia lửa phản lực từ hỏa tiễn để lại vết cháy đen trên vỏ thép.', story: 'Khác biệt với pháo binh thông thường có nòng pháo rất dày để chịu áp lực, ống phóng rocket chỉ đóng vai trò "ray dẫn hướng", vì bản thân quả đạn rocket đã chứa động cơ phản lực tự đẩy nó đi.', unlocked: true, thumbnail: '', specs: [{label: 'Loại vũ khí', value: 'Hỏa tiễn không giật'}], funFact: 'Do không có lực giật lùi khi bắn, các bệ phóng rocket có thể được đặt trên nền đất rất yếu hoặc thậm chí trên xuồng ba lá.' },
+    { id: 'art-rocket-13', name: 'Ống phóng Rocket (Mẫu 13 - Biến dạng nhiệt)', category: 'artillery', sketchfabId: '3c7d5ae0ceb8433487384b6073c94664', description: 'Di vật bị biến dạng do sức nóng hàng ngàn độ C sau nhiều loạt phóng liên tiếp.', story: 'Hiện vật được khai quật tại một chiến hào cũ khu vực Trảng Bàng, Tây Ninh.', unlocked: true, thumbnail: '', specs: [{label: 'Tình trạng', value: 'Bị oxy hóa nặng'}], funFact: 'Kỹ thuật scan 3D Photogrammetry đã chụp hơn 300 bức ảnh độ phân giải cao để tái tạo lại chính xác từng vết nứt do ứng suất nhiệt.' },
+    { id: 'art-rocket-base', name: 'Chân đế Rocket dã chiến', category: 'artillery', sketchfabId: '32f7a901e02c481aa8302a2a6558257c', description: 'Bệ phóng chữ A tự chế của lính đặc công.', story: 'Đơn giản, rẻ tiền và siêu nhẹ. Lắp ráp trong 2 phút, khai hỏa đồng loạt bằng công tắc điện nối dây dài 50m, sau đó xạ thủ lập tức tản mát để tránh phản pháo.', unlocked: true, thumbnail: '', specs: [{label: 'Chất liệu', value: 'Khung nhôm/thép ống'}], funFact: 'Để đánh lừa máy bay trinh sát địch, bộ đội thường làm các bệ phóng giả bằng thân cây chuối sơn đen.' },
+    { id: 'art-rocket-9', name: 'Cụm phóng đạn H-12 (107mm)', category: 'artillery', sketchfabId: '5ce6a1f2792446c6af5ce4b1adb320c7', description: 'Hệ thống hỏa tiễn hạng nhẹ 12 nòng.', story: 'Nổi tiếng với khả năng mang vác bằng sức người. Mỗi quả đạn 107mm chỉ nặng khoảng 18kg, sức công phá tương đương đạn pháo 105mm.', unlocked: true, thumbnail: '', specs: [{label: 'Cỡ đạn', value: '107 mm'}, {label: 'Tầm xa', value: '8.500 mét'}], funFact: 'Đạn H-12 ổn định đường bay bằng cách tự xoay tròn nhờ 6 lỗ thoát khí phản lực đục chéo ở đuôi đạn.' },
+    { id: 'art-rocket-8', name: 'Ống phóng Rocket (Mẫu ngụy trang)', category: 'artillery', sketchfabId: 'b6321f74ae9444db96e2ae56a0ccea66', description: 'Khí tài pháo binh thiết kế để nằm phục kích.', story: 'Bề mặt ống phóng được quấn bao tải tẩm bùn để giảm phản xạ ánh sáng mặt trời.', unlocked: true, thumbnail: '', specs: [{label: 'Đặc tính', value: 'Chống phản xạ ánh sáng'}], funFact: 'Các trận địa rocket thường cài đặt chế độ hẹn giờ bằng cách đốt một nén nhang, khi nhang cháy đến dây cháy chậm sẽ tự kích nổ.' },
+    { id: 'art-rocket-7', name: 'Ống phóng Rocket (Hệ thống điểm hỏa)', category: 'artillery', sketchfabId: '14688d5e735445029394e71a61f26530', description: 'Được trang bị chốt nối dây điện điểm hỏa.', story: 'Sử dụng một cục pin khô dã chiến để truyền dòng điện làm cháy kíp điện nổ nằm ở đuôi quả hỏa tiễn.', unlocked: true, thumbnail: '', specs: [{label: 'Nguyên lý', value: 'Kích hỏa bằng điện 12V'}], funFact: 'Chỉ cần một chiếc bình ắc quy xe máy tịch thu được cũng đủ để khai hỏa một dàn 12 quả rocket cùng lúc.' },
+    { id: 'art-rocket-6-1', name: 'Ống thép chịu lực Hỏa tiễn', category: 'artillery', sketchfabId: 'c013e0951144428c8d49c471b015e200', description: 'Phần lõi thép bên trong cấu trúc bệ phóng.', story: 'Được tôi luyện đặc biệt để không bị nóng chảy khi luồng phản lực phụt qua.', unlocked: true, thumbnail: '', specs: [{label: 'Chất liệu', value: 'Thép hợp kim chịu nhiệt'}], funFact: 'Một số ống thép chất lượng cao được chế tạo từ nòng pháo hỏng của xe tăng thu được.' },
+    { id: 'art-rocket-5-1', name: 'Ống phóng Rocket (Mẫu 5)', category: 'artillery', sketchfabId: '1cd8f9fbfb784166964282f5a1b72d13', description: 'Mảnh ghép của chiến thuật "Dàn nhạc lửa".', story: 'Âm thanh rít gào của hàng chục ống phóng đồng loạt khai hỏa tạo ra đòn tấn công tâm lý cực kỳ mạnh.', unlocked: true, thumbnail: '', specs: [{label: 'Chiến thuật', value: 'Bắn loạt diện rộng (Salvo)'}], funFact: 'Quân đội Mỹ gọi âm thanh của dàn rocket đang lao tới là "tiếng rít của tử thần" (Screaming Death).' },
+    { id: 'art-rocket-3', name: 'Ống phóng Rocket (Mẫu 3 - Mảnh vỡ)', category: 'artillery', sketchfabId: '2e847610d6fd466e9d25aa280c3e09ca', description: 'Một bệ phóng bị hỏng do bom B-52 rải thảm.', story: 'Phục dựng lại từ một phế tích được bảo quản tại Bảo tàng Lực lượng Vũ trang.', unlocked: true, thumbnail: '', specs: [{label: 'Nguồn gốc', value: 'Khai quật năm 1998'}], funFact: 'Dấu vết lõm trên ống phóng cho thấy sức ép của quả bom rơi cách đó chưa đầy 10 mét.' },
+    { id: 'art-rocket-4-1', name: 'Ống phóng Rocket (Mẫu 4)', category: 'artillery', sketchfabId: '4efe479e359848779a15231571d4c052', description: 'Vũ khí chọc thủng hàng rào phòng ngự vòng ngoài.', story: 'Do độ tản mát cao, rocket thường không dùng để bắn lô cốt đơn lẻ mà dùng để hủy diệt kho đạn hoặc khu tập trung quân.', unlocked: true, thumbnail: '', specs: [{label: 'Sai số mục tiêu', value: '~100 mét ở tầm xa tối đa'}], funFact: 'Do không có hệ thống dẫn đường, việc rocket trúng mục tiêu phụ thuộc hoàn toàn vào khả năng đọc bản đồ và tính toán góc tà của pháo thủ.' },
+    { id: 'art-rocket-2-1', name: 'Ống phóng Rocket (Mẫu 2)', category: 'artillery', sketchfabId: '886d5c0fac184238a759249f3b173ac7', description: 'Giao diện ngắm bắn thô sơ bằng thước đo góc.', story: 'Chỉ bằng một chiếc đọi nước (ống ni-vô) và thước kẻ độ, bộ đội pháo binh tính toán góc nghiêng để lấy tầm xa.', unlocked: true, thumbnail: '', specs: [{label: 'Hệ thống ngắm', value: 'Cơ học ứng dụng'}], funFact: 'Góc nghiêng lý tưởng để quả rocket đạt tầm xa tối đa trong điều kiện gió lặng là đúng 45 độ.' },
 
-    // --- BOM MK82 (Mẫu cuối cùng) ---
+    // --- PHÁO BINH HẠNG NẶNG (HOWITZERS) ---
     {
-        id: 'art-mk82-final',
-        name: 'Bom MK82 - Nguyên khối',
-        category: 'ammunition',
-        sketchfabId: '9321a9c5a3124605b6a2fb303c3954cf',
-        description: 'Vũ khí định hình chiến trường không kích.',
-        story: 'Khép lại bộ sưu tập MK82 là phiên bản nguyên khối với lớp sơn và cụm đuôi hoàn chỉnh. Đây là đại diện tiêu biểu nhất cho sức mạnh không quân chiến thuật, thường được thả chùm từ 4 đến 6 quả mỗi lần cắt bom, tạo ra những đợt rung chấn lan xa hàng chục kilomet.',
-        unlocked: true,
-        thumbnail: '/images/fallback.jpg'
+        id: 'art-howitzer-105-2', name: 'Lựu pháo 105mm (M101)', category: 'artillery', sketchfabId: '22d4841d41bb4526b8d65f1c59030c09',
+        description: 'Mảnh ghép cốt lõi của chiến thuật "Căn cứ Hỏa lực" (Firebase) của quân đội Mỹ.',
+        story: 'Khẩu pháo M101 105mm được thiết kế với hai càng có thể mở rộng, cho phép nó quay nòng 360 độ cực kỳ nhanh chóng để bắn chi viện cho mọi hướng. Mỹ thường dùng trực thăng cẩu các khẩu pháo này lên các đỉnh đồi trọc giữa rừng, xung quanh bao bọc bởi hàng rào kẽm gai và mìn Claymore, tạo thành một pháo đài bất khả xâm phạm.', unlocked: true, thumbnail: '',
+        specs: [
+            { label: 'Cỡ nòng', value: '105 mm' }, { label: 'Tầm bắn tối đa', value: '11.270 mét' },
+            { label: 'Kíp pháo thủ', value: '8 người' }, { label: 'Trọng lượng', value: '2.260 kg' }
+        ],
+        funFact: 'Để chống lại chiến thuật biển người tràn ngập căn cứ, pháo 105mm có một loại đạn đặc biệt gọi là "Đạn tổ ong" (Beehive), chứa hàng ngàn mũi tên thép nhỏ, biến khẩu pháo thành một khẩu súng hoa cải khổng lồ.'
     },
+    {
+        id: 'art-howitzer-105-1', name: 'Lựu pháo 105mm (Khẩu chiến lợi phẩm)', category: 'artillery', sketchfabId: '8a5a8a93fa214b04b2ca3c7eac7c9821',
+        description: 'Vũ khí thu được từ địch và quay nòng nã đạn lại chính kẻ thù.',
+        story: 'Nhiều khẩu 105mm đã rơi vào tay Quân Giải phóng sau các trận tập kích đồn bốt. Không có xe kéo chuyên dụng, bộ đội ta đã tháo rời khẩu pháo thành nhiều mảnh, dùng trâu kéo hoặc sức người ròng rọc kéo lên các sườn núi cao, cất giấu trong hang đá để tạo yếu tố bất ngờ hoàn toàn.', unlocked: true, thumbnail: '',
+        specs: [
+            { label: 'Trạng thái', value: 'Chiến lợi phẩm' }, { label: 'Góc tầm', value: '-5° đến +66°' },
+            { label: 'Tốc độ bắn', value: '10 phát/phút (tối đa)' }
+        ],
+        funFact: 'Vì không có nhà máy sản xuất đạn 105mm, bộ đội Việt Nam duy trì hỏa lực của pháo chiến lợi phẩm hoàn toàn bằng cách tổ chức các trận đánh lén để lấy cắp đạn từ chính các kho hậu cần của địch.'
+    },
+    {
+        id: 'art-howitzer-155-2', name: 'Lựu pháo 155mm (M114)', category: 'artillery', sketchfabId: '3ba9afd665824c6f99082b369945aa5b',
+        description: 'Quái thú bằng thép chuyên dùng để phá hủy công sự hầm ngầm.',
+        story: 'M114 155mm có uy lực vượt trội so với pháo 105mm. Khối lượng thuốc nổ trong một quả đạn 155mm đủ sức xé toạc các hầm chữ A vững chắc nhất hoặc tạo ra một hố sâu có đường kính lên tới 10 mét. Khi khai hỏa, sóng xung kích từ khẩu pháo làm rung chuyển mặt đất xung quanh, đòi hỏi pháo thủ phải há miệng để không bị vỡ màng nhĩ.', unlocked: true, thumbnail: '',
+        specs: [
+            { label: 'Cỡ nòng', value: '155 mm' }, { label: 'Trọng lượng pháo', value: '5.800 kg' },
+            { label: 'Trọng lượng đạn', value: '43 kg/viên' }, { label: 'Tầm bắn', value: '14.600 mét' }
+        ],
+        funFact: 'Khẩu pháo này nặng gần 6 tấn, bắt buộc phải dùng xe tải hạng nặng M35 hoặc máy bay vận tải mới có thể di chuyển được, khiến nó dễ bị phục kích khi hành quân trên đường bộ.'
+    },
+    { id: 'art-howitzer-155-3', name: 'Lựu pháo 155mm (Cơ cấu hãm giật)', category: 'artillery', sketchfabId: '56b72a53ac5745248de7a0c165a84c8c', description: 'Mô hình chi tiết hệ thống thủy lực.', story: 'Do sức giật khủng khiếp, cụm pít-tông thủy lực chứa dầu đặc biệt được lắp dọc theo nòng pháo để hấp thụ phản lực, nếu không khẩu pháo sẽ lộn nhào về phía sau sau mỗi phát bắn.', unlocked: true, thumbnail: '', specs: [{label: 'Hệ thống hãm', value: 'Thủy khí cục bộ'}], funFact: 'Dầu thủy lực trong ống hãm giật có thể sôi sùng sục và phải được thay thế nếu pháo bắn liên tục ở cường độ cao.' },
+    { id: 'art-howitzer-155-1', name: 'Lựu pháo 155mm (Khóa nòng ren)', category: 'artillery', sketchfabId: '951bbc568ba143c284b53970e0ead5d8', description: 'Cơ chế nạp đạn tách rời.', story: 'Khác với đạn pháo cỡ nhỏ, đạn 155mm không có vỏ đồng đính liền. Pháo thủ phải nhét đầu đạn nặng 43kg vào nòng, sau đó mới nhét các túi thuốc phóng (liều phóng) bằng vải lụa vào phía sau và đóng khóa nòng bằng ren xoắn.', unlocked: true, thumbnail: '', specs: [{label: 'Nạp đạn', value: 'Thủ công (Rammer)'}], funFact: 'Việc dùng túi lụa chứa thuốc phóng giúp thuốc cháy sạch 100% trong nòng mà không để lại xỉ cản trở phát bắn tiếp theo.' },
 
-    // --- HỎA LỰC ROCKET (Ống phóng tự tạo/bắt giữ) ---
+    // ------------------------------------------
+    // 4. KHU VỰC BOM ĐẠN (AMMUNITION - MK82 SERIES)
+    // ------------------------------------------
     {
-        id: 'art-rocket-9',
-        name: 'Ống phóng Rocket (Mẫu 9)',
-        category: 'artillery',
-        sketchfabId: '5ce6a1f2792446c6af5ce4b1adb320c7',
-        description: 'Khí tài pháo binh gọn nhẹ, cơ động.',
-        story: 'Không có xe kéo pháo hay đường xá thuận lợi, bộ đội Củ Chi vận chuyển những ống phóng rocket này bằng xe đạp thồ hoặc sức người xuyên rừng. Đến điểm tập kết, chúng được ngụy trang cẩn thận dưới những tán lá dày đặc.',
-        unlocked: false,
-        thumbnail: '/images/fallback.jpg'
+        id: 'art-mk82-30', name: 'Bom MK82 (Mẫu 30 - Nguyên bản)', category: 'ammunition', sketchfabId: 'b0ffea73263e4dcc8de89c991299894e',
+        description: 'Vũ khí không kích chiến thuật phổ biến nhất của Không lực Hoa Kỳ và Hải quân Mỹ.',
+        story: 'Bom MK82 (Mark 82) là loại bom công dụng chung (general-purpose bomb) thuộc dòng bom Mark 80. Thiết kế của nó ưu tiên tính đa dụng, dễ sản xuất hàng loạt, và có thể gắn trên hầu hết các loại máy bay chiến đấu từ F-4 Phantom, A-4 Skyhawk cho đến B-52.', unlocked: true, thumbnail: '',
+        specs: [
+            { label: 'Trọng lượng tổng', value: '500 lbs (~227 kg)' }, { label: 'Thuốc nổ', value: '89 kg (Tritonal)' },
+            { label: 'Chiều dài', value: '2,22 mét' }, { label: 'Đường kính', value: '273 mm' }
+        ],
+        funFact: 'Chữ "MK" (Mark) là cách phân loại vũ khí hải quân của quân đội Anh - Mỹ từ thế kỷ 19. MK82 có nghĩa là thiết kế số 82 của Cục Quân giới.'
     },
-    {
-        id: 'art-rocket-8',
-        name: 'Ống phóng Rocket (Mẫu 8)',
-        category: 'artillery',
-        sketchfabId: 'b6321f74ae9444db96e2ae56a0ccea66',
-        description: 'Đòn đánh úp từ cự ly xa.',
-        story: 'Rocket là cơn ác mộng của các căn cứ đóng quân tĩnh. Không cần ngắm bắn trực tiếp qua thước ngắm quang học, xạ thủ tính toán phần tử bắn qua bản đồ và la bàn, gá góc tà bằng những chiếc thước đo tự chế mộc mạc nhưng độ chính xác lại rất đáng gờm.',
-        unlocked: true,
-        thumbnail: '/images/fallback.jpg'
-    },
-    {
-        id: 'art-rocket-7',
-        name: 'Ống phóng Rocket (Mẫu 7) - Hệ thống kích hỏa',
-        category: 'artillery',
-        sketchfabId: '14688d5e735445029394e71a61f26530',
-        description: 'Bắn bằng điện, hẹn giờ bằng hương (nhang).',
-        story: 'Để đảm bảo an toàn và rút lui trước khi địch phản pháo, chiến sĩ ta thường dùng hệ thống điểm hỏa bằng điện, kết hợp với các công tắc hẹn giờ tự chế làm từ nến hoặc những nén nhang cháy chậm.',
-        unlocked: true,
-        thumbnail: '/images/fallback.jpg'
-    },
-    {
-        id: 'art-rocket-6-1',
-        name: 'Ống phóng Rocket (Mẫu 6) - Cụm nòng',
-        category: 'artillery',
-        sketchfabId: 'c013e0951144428c8d49c471b015e200',
-        description: 'Ống thép chịu áp lực cao.',
-        story: 'Mỗi lần phóng, luồng khí phụt từ đạn rocket tạo ra nhiệt độ lên đến hàng ngàn độ C. Các ống phóng này được rèn từ hợp kim thép đặc biệt. Việc bảo quản chúng trong điều kiện độ ẩm cao ở địa đạo Củ Chi đòi hỏi rất nhiều công sức lau chùi, bôi trơn.',
-        unlocked: false,
-        thumbnail: '/images/fallback.jpg'
-    },
-    {
-        id: 'art-rocket-5-1',
-        name: 'Ống phóng Rocket (Mẫu 5)',
-        category: 'artillery',
-        sketchfabId: '1cd8f9fbfb784166964282f5a1b72d13',
-        description: 'Mảnh ghép của hỏa lực du kích.',
-        story: 'Trong nhiều trận đánh lớn, hàng chục ống phóng như thế này được bố trí đồng loạt, tạo thành một "Dàn nhạc lửa" gầm rít xé toạc màn đêm, giáng những đòn sấm sét vào trung tâm đầu não của đối phương.',
-        unlocked: true,
-        thumbnail: '/images/fallback.jpg'
-    },
-    {
-        id: 'art-rocket-3',
-        name: 'Ống phóng Rocket (Mẫu 3)',
-        category: 'artillery',
-        sketchfabId: '2e847610d6fd466e9d25aa280c3e09ca',
-        description: 'Lưu lại dấu ấn thời gian.',
-        story: 'Nhiều cụm ống phóng sau khi hoàn thành nhiệm vụ đã bị phá hủy để không lọt vào tay địch, số khác bị vùi lấp do bom đạn văng trúng. Mô hình này phục dựng lại một cụm ống phóng bị biến dạng sau một trận bom ác liệt.',
-        unlocked: true,
-        thumbnail: '/images/fallback.jpg'
-    },
-    {
-        id: 'art-rocket-4-1',
-        name: 'Ống phóng Rocket (Mẫu 4)',
-        category: 'artillery',
-        sketchfabId: '4efe479e359848779a15231571d4c052',
-        description: 'Vũ khí ám ảnh các căn cứ tiền tiêu.',
-        story: 'Tiếng nổ đầu nòng của rocket rất lớn, kèm theo quầng lửa sáng rực. Do đó, vị trí đặt bệ phóng thường cách xa khu vực hầm trú ẩn chính của quân ta để tránh thương vong khi pháo binh địch dội bão lửa phản công.',
-        unlocked: true,
-        thumbnail: '/images/fallback.jpg'
-    },
-    {
-        id: 'art-rocket-2-1',
-        name: 'Ống phóng Rocket (Mẫu 2)',
-        category: 'artillery',
-        sketchfabId: '886d5c0fac184238a759249f3b173ac7',
-        description: 'Sức mạnh tinh thần của người lính.',
-        story: 'Đằng sau sự thô sơ của những ống thép lạnh lẽo này là trí tuệ, mồ hôi và cả máu của lực lượng quân giới. Đưa được một ống phóng cùng những quả đạn nặng trĩu vào trận địa an toàn là cả một kỳ tích của nghệ thuật ngụy trang.',
-        unlocked: false,
-        thumbnail: '/images/fallback.jpg'
-    },
+    { id: 'art-mk82-29', name: 'Bom MK82 (Mẫu 29 - Chiến thuật Rải thảm)', category: 'ammunition', sketchfabId: '364b2532ea7e4c75b1eba675d2d48f1e', description: 'Mảnh ghép của chiến dịch Arc Light.', story: 'Một chiếc pháo đài bay B-52 Stratofortress có thể mang tới 84 quả bom MK82 trong khoang và 24 quả treo ngoài cánh. Khi thực hiện rải thảm, hàng trăm quả bom rơi xuống cùng lúc tạo thành một "hộp bom" hủy diệt rộng 1km x 3km.', unlocked: true, thumbnail: '', specs: [{label: 'Chiến thuật', value: 'Carpet Bombing'}], funFact: 'Sóng xung kích từ một đợt rải thảm B-52 mạnh đến mức lính bộ binh đứng cách đó 10km vẫn cảm thấy mặt đất rung lắc như động đất.' },
+    { id: 'art-mk82-16', name: 'Bom MK82 (Mẫu 16 - Cánh xòe Snakeye)', category: 'ammunition', sketchfabId: '90c754e49beb479ca72f4c4893f3d023', description: 'Trang bị bộ đuôi Mark 15 "Mắt rắn" (Snakeye).', story: 'Khi máy bay bay ở độ cao cực thấp (để tránh tên lửa SAM), việc thả bom thông thường sẽ khiến chính máy bay ném bom bị dính mảnh văng của quả bom nổ ngay bên dưới. Đuôi Snakeye sẽ bung 4 cánh cản gió hình chiếc ô ngay khi rời máy bay, hãm tốc độ quả bom lại để máy bay có đủ thời gian tẩu thoát.', unlocked: true, thumbnail: '', specs: [{label: 'Cơ chế hãm', value: 'Cánh dù thép (Retarder)'}], funFact: 'Nhược điểm của bom Snakeye là gió ngang có thể thổi bay nó chệch mục tiêu hàng trăm mét do cánh xòe cản gió quá mạnh.' },
+    { id: 'art-mk82-28', name: 'Bom MK82 (Mẫu 28 - Ngòi nổ xuyên đất)', category: 'ammunition', sketchfabId: 'ed4a5a2d31b1479883dc5b9527fc70ed', description: 'Biến thể chuyên tấn công địa đạo và công sự ngầm.', story: 'Với vỏ thép đúc đầu nhọn và ngòi nổ chậm (delay fuse), quả bom này được thiết kế để đâm xuyên qua tán rừng, cắm sâu xuống lòng đất từ 3 đến 5 mét trước khi kích nổ. Sức ép từ vụ nổ dưới lòng đất sẽ bóp nghẹt các tầng hầm địa đạo xung quanh.', unlocked: true, thumbnail: '', specs: [{label: 'Loại ngòi', value: 'Ngòi nổ trễ (M905 Tail)'}], funFact: 'Ngòi nổ chậm vận hành bằng một hệ thống đồng hồ cơ học nhỏ xíu bên trong đuôi bom, đếm ngược từ 0.02 đến 0.25 giây sau khi chạm đất.' },
+    { id: 'art-mk82-25', name: 'Bom MK82 (Mẫu 25 - Mìn ĐH-10 Tự tạo)', category: 'ammunition', sketchfabId: '704d4bf0f2c94a58a286356ec16c35e5', description: 'Vũ khí địch biến thành vũ khí ta.', story: 'Do địa hình bùn lầy hoặc lỗi kỹ thuật, khoảng 10% bom Mỹ ném xuống không nổ. Công trường vũ khí Củ Chi đã liều mình tháo ngòi nổ, nấu chảy thuốc Tritonal bên trong (bằng nước sôi 100 độ C để không phát nổ) và đúc thành các mỏ gạt mìn định hướng đánh thiết giáp.', unlocked: true, thumbnail: '', specs: [{label: 'Ứng dụng', value: 'Tái chế thành mìn'}], funFact: 'Thuốc nổ Tritonal bên trong bom MK82 có màu vàng chanh và mùi khá đặc trưng, bao gồm 80% TNT trộn với 20% bột nhôm để tăng tính cháy nổ.' },
+    { id: 'art-mk82-9', name: 'Bom MK82 (Mẫu 9 - Xuồng ba lá)', category: 'ammunition', sketchfabId: '926beeca483e4ce6b635e8301b7748aa', description: 'Sự sáng tạo dân gian độc nhất vô nhị.', story: 'Sau ngày hòa bình, vỏ bom MK82 (bằng thép carbon chống gỉ cực tốt) được nông dân miền Tây cắt dọc, hàn gò lại thành những chiếc xuồng, vỏ lãi nhỏ để đi lại trên kênh rạch. Vỏ bom chịu va đập cực tốt, dùng hàng chục năm không thủng.', unlocked: true, thumbnail: '', specs: [{label: 'Ứng dụng hòa bình', value: 'Phương tiện thủy'}], funFact: 'Bên cạnh làm xuồng, những vỏ bom rỗng còn được dựng thẳng đứng, nhồi xi măng vào giữa để làm trụ móng cầu bê tông siêu bền ở vùng nông thôn.' },
+    { id: 'art-mk82-22', name: 'Bom MK82 (Mẫu 22 - Kẻng báo động)', category: 'ammunition', sketchfabId: '9471719def1746a69e8e07a639708aad', description: 'Âm thanh của làng quê thời chiến.', story: 'Vỏ bom thép đúc đặc khi gõ bằng thanh sắt sẽ tạo ra tiếng vang cực kỳ thanh và xa. Nó được treo ở đình làng hoặc gốc cây đa, gõ lên những hồi kẻng dồn dập để báo hiệu máy bay địch đang đến, gọi người dân xuống hầm trú ẩn.', unlocked: true, thumbnail: '', specs: [{label: 'Tần số âm', value: 'Vang xa bán kính 2km'}], funFact: 'Ngày nay, tại một số làng quê Việt Nam, những chiếc "kẻng vỏ bom" vẫn còn được giữ lại và dùng để báo giờ ra đồng hoặc tập hợp tổ dân phố.' },
+    { id: 'art-mk82-15', name: 'Bom MK82 (Mẫu 15 - Vòng sơn vàng)', category: 'ammunition', sketchfabId: '3e3c23d02ab142d0b6000860f6600246', description: 'Ký hiệu cảnh báo chuẩn NATO.', story: 'Lớp sơn màu xanh Olive Drab phủ toàn thân giúp bom hòa lẫn với màu địa hình khi rơi. Tuy nhiên, ba vạch sọc vàng quanh mũi bom là tín hiệu cho lực lượng hậu cần mặt đất biết rằng: Đây là bom nhồi thuốc nổ mạnh (High Explosive), chứ không phải bom khói hay bom cháy.', unlocked: true, thumbnail: '', specs: [{label: 'Quy chuẩn', value: 'Màu sơn quân sự NATO'}], funFact: 'Nếu quả bom có vòng sơn màu xanh da trời, đó chỉ là bom tập ném (chứa cát hoặc bê tông) không có tính sát thương.' },
+    { id: 'art-mk82-8', name: 'Bom MK82 (Mẫu 8 - Tiếng rít tử thần)', category: 'ammunition', sketchfabId: '7ae47a890f6e49b8b3aed0888ce1f08f', description: 'Tác động tâm lý khủng khiếp.', story: 'Khi rơi tự do từ độ cao 5.000m với tốc độ âm thanh, các khe hở ở cánh đuôi và rãnh lắp ngòi nổ cọ xát với không khí, tạo ra tiếng rít xé tai. Âm thanh này là tín hiệu báo động duy nhất, tính bằng giây, trước khi một vụ nổ long trời lở đất xảy ra.', unlocked: true, thumbnail: '', specs: [{label: 'Tốc độ rơi', value: '~1.000 km/h lúc chạm đất'}], funFact: 'Không lực Mỹ thỉnh thoảng cố tình hàn thêm những còi kim loại nhỏ vào cánh đuôi bom để tiếng rít này vang to hơn, nhằm mục đích khủng bố tinh thần đối phương.' },
+    { id: 'art-mk82-27', name: 'Bom MK82 (Mẫu 27 - Chứng tích thời gian)', category: 'ammunition', sketchfabId: '1650a584c0c44f2f958367b194ba9bc0', description: 'Vỏ thép chịu sự ăn mòn của đất đỏ bazan.', story: 'Quả bom này được phát hiện trong tình trạng hoen rỉ nặng sau hơn 40 năm nằm dưới lòng đất đồi núi Tây Nguyên. Nó là minh chứng cho việc các loại vật liệu quân sự dù kiên cố đến đâu cũng bị thiên nhiên bào mòn.', unlocked: true, thumbnail: '', specs: [{label: 'Hiện trạng', value: 'Oxy hóa bề mặt (Rỉ sét)'}], funFact: 'Dù vỏ ngoài đã rỉ sét nát bấy, thuốc nổ Tritonal và kíp nổ bên trong lòng bom (nếu chưa nổ) vẫn có thể hoạt động hoàn hảo và phát nổ bất cứ lúc nào.' },
+    { id: 'art-mk82-24', name: 'Bom MK82 (Mẫu 24 - Tàn tích hố bom)', category: 'ammunition', sketchfabId: 'a978eceda2504ef7a51c0b5a5cb6520d', description: 'Vết sẹo vĩnh viễn trên mặt đất Việt Nam.', story: 'Vụ nổ của một quả MK82 tạo ra cái hố sâu tới 2-3 mét, rộng 10 mét. Hàng triệu quả bom đã băm nát cảnh quan sinh thái. Sau chiến tranh, những hố bom này tích nước mưa tạo thành những chiếc ao tự nhiên, người dân tận dụng để thả cá, nuôi vịt.', unlocked: true, thumbnail: '', specs: [{label: 'Sức mạnh phá hủy', value: 'Đào xới đất đá'}], funFact: 'Làng Vĩnh Linh (Quảng Trị) từng được mệnh danh là "túi bom" vì có mật độ hố bom dày đặc đến mức không còn một khoảng đất bằng phẳng nào.' },
+    { id: 'art-mk82-6', name: 'Bom MK82 (Mẫu 6 - Chong chóng kíp nổ)', category: 'ammunition', sketchfabId: 'fb9f0b622be14fabafb79b92f355cfb2', description: 'Hệ thống an toàn cơ học (Arming Vane).', story: 'Ở mũi bom có một chiếc chong chóng nhỏ. Khi rời máy bay, gió sẽ thổi chong chóng này quay tròn. Cần xoay khoảng vài trăm vòng (tương đương rơi vài trăm mét) thì một chốt an toàn bên trong mới được tháo ra, đưa bom vào trạng thái kích hoạt sẵn sàng nổ.', unlocked: true, thumbnail: '', specs: [{label: 'Cơ chế kích hoạt', value: 'Con quay gió (Arming Wire)'}], funFact: 'Nếu máy bay bay quá thấp hoặc thả trúng tán cây mềm khiến chong chóng không kịp quay đủ số vòng, quả bom sẽ tiếp đất mà không nổ (trở thành bom tịt/lép).' },
+    { id: 'art-mk82-23', name: 'Bom MK82 (Mẫu 23 - Mối đe dọa UXO)', category: 'ammunition', sketchfabId: '766a82f185314c52859dc23250a56333', description: 'Vật liệu nổ còn sót lại sau chiến tranh (Unexploded Ordnance).', story: 'Dù chiến tranh đã qua đi hàng thập kỷ, mảnh đất miền Trung và Củ Chi vẫn còn hàng ngàn quả MK82 nằm im lìm dưới đất ruộng. Công binh Việt Nam và các tổ chức quốc tế (như MAG) vẫn miệt mài rà phá để trả lại sự bình yên cho đất đai canh tác.', unlocked: true, thumbnail: '', specs: [{label: 'Mức độ rủi ro', value: 'Cực kỳ nguy hiểm'}], funFact: 'Người dân phát hiện bom thường cắm một cây xào dài có buộc nilon đỏ cạnh đó làm dấu, rồi báo ngay cho lực lượng chức năng đến xử lý hủy nổ tại chỗ.' },
+    { id: 'art-mk82-3', name: 'Bom MK82 (Mẫu 3 - Nghệ thuật điêu khắc)', category: 'ammunition', sketchfabId: 'd9770aaa3463479aa4c68125af00faa0', description: 'Vỏ bom được biến thành kiệt tác nghệ thuật (Trench Art).', story: 'Thép làm vỏ bom MK82 là loại thép rèn chất lượng cực tốt. Những người thợ thủ công đã biến thứ vũ khí chết chóc này thành những bình hoa, vật lưu niệm được chạm trổ họa tiết Trống Đồng, rồng bay phượng múa, mang thông điệp "Hóa giải hận thù, ươm mầm sự sống".', unlocked: true, thumbnail: '', specs: [{label: 'Phân loại', value: 'Nghệ thuật tái chế'}], funFact: 'Nghệ thuật "Trench Art" (Nghệ thuật chiến hào) bắt nguồn từ Thế chiến 1, khi binh lính khắc lên vỏ đạn pháo để giết thời gian.' },
+    { id: 'art-mk82-12', name: 'Bom MK82 (Mẫu 12 - Khoen treo Lugs)', category: 'ammunition', sketchfabId: '95523ebae02b4994ba97cfbe035aa53e', description: 'Hai vòng khuyên móc ở lưng quả bom.', story: 'Bạn sẽ thấy hai cái khuyên chữ U (Lugs) bằng thép đặc được hàn chết trên thân bom. Đây là điểm ngàm để gắn quả bom vào giá treo (pylon) dưới cánh máy bay tiêm kích hoặc móc cẩu tải đạn trên tàu sân bay.', unlocked: true, thumbnail: '', specs: [{label: 'Khoảng cách khuyên', value: '14 inch (chuẩn NATO)'}], funFact: 'Nếu bay với tốc độ quá nhanh, lực cản không khí có thể làm rung lắc quả bom và bẻ gãy các khuyên treo này, vì vậy máy bay phải tuân thủ giới hạn tốc độ gắt gao khi mang bom.' },
+    { id: 'art-mk82-26', name: 'Bom MK82 (Mẫu 26 - Sóng xung kích)', category: 'ammunition', sketchfabId: '50627c48512742c2ac0236024eb26c72', description: 'Uy lực hủy diệt trong không gian hẹp.', story: 'Khi MK82 phát nổ, sức mạnh không chỉ nằm ở những mảnh thép nóng chảy văng ra vận tốc 2.000m/s, mà còn ở sóng xung kích (Blast wave) cực mạnh đẩy ép không khí. Áp suất từ sóng xung kích có thể làm dập nát nội tạng con người dù không bị mảnh bom văng trúng.', unlocked: true, thumbnail: '', specs: [{label: 'Bán kính sát thương', value: 'Tối đa 80 mét'}], funFact: 'Địa đạo Củ Chi được thiết kế theo hình zíc-zắc (chữ Z) và có cửa sập kín để bẻ gãy hướng đi của sóng xung kích, bảo vệ những người trốn dưới hầm.' },
+    { id: 'art-mk82-18', name: 'Bom MK82 (Mẫu 18 - Khí động học mũi nhọn)', category: 'ammunition', sketchfabId: '3323a1a39ed54b25b72035ff41f7f0f1', description: 'Thiết kế mũi hình giọt nước "Low Drag".', story: 'Dòng bom Mark 80 được khí động học hóa (gọn gàng, thuôn nhọn) để trang bị cho các máy bay phản lực siêu âm. So với bom thời Thế chiến 2 có hình bầu bĩnh và cồng kềnh, MK82 ít tạo ra lực cản không khí (drag), giúp máy bay mang được nhiều bom hơn mà vẫn bay nhanh.', unlocked: true, thumbnail: '', specs: [{label: 'Thiết kế', value: 'Low-Drag General Purpose'}], funFact: 'Tác giả của thiết kế thuôn nhọn hình giọt nước này là Ed Heinemann, một kỹ sư hàng không huyền thoại của hãng Douglas Aircraft.' },
+    { id: 'art-mk82-4', name: 'Bom MK82 (Mẫu 4 - Khối lượng tiêu chuẩn 500 lbs)', category: 'ammunition', sketchfabId: 'd0046c5a4f2e47d6888426ce42f01761', description: 'Sự cân bằng hoàn hảo giữa sức mạnh và số lượng.', story: 'MK82 nặng 500 Lbs (~227kg) là "tiêu chuẩn vàng" của Không lực Hoa Kỳ. Trọng lượng này vừa đủ để phá sập cầu cống, lô cốt ngầm, nhưng cũng đủ nhẹ để một tiêm kích F-4 Phantom có thể đeo tới 18 quả một lúc, tạo ra mật độ hỏa lực rải thảm dày đặc hơn so với việc mang 1 quả bom khổng lồ.', unlocked: true, thumbnail: '', specs: [{label: 'Tỷ lệ nổ', value: '40% thuốc nổ / 60% vỏ thép'}], funFact: 'Lớp vỏ thép chiếm tới 60% khối lượng bom không phải là sự lãng phí. Nó được thiết kế để khi nổ sẽ xé rách thành hàng ngàn mảnh dao cạo kim loại bay găm vào các mục tiêu xung quanh.' },
+    { id: 'art-mk82-17', name: 'Bom MK82 (Mẫu 17 - Cụm đuôi vây)', category: 'ammunition', sketchfabId: 'aed96266facd48489d8b14ea95a9ceac', description: 'Cụm vây đuôi hình nón (Conical Fin Assembly).', story: 'Bạn sẽ để ý đuôi bom có 4 cánh vây chữ thập. Những cánh vây này giữ vai trò như lông chim của mũi tên, ép luồng không khí đi qua để giữ cho quả bom luôn cắm thẳng mũi xuống đất khi rơi, đảm bảo ngòi nổ ở mũi chạm đất đầu tiên.', unlocked: true, thumbnail: '', specs: [{label: 'Bộ phận đuôi', value: 'MAU-93/B Fin'}], funFact: 'Góc của các cánh vây được bẻ nghiêng một góc siêu nhỏ (chỉ vài độ) để ép quả bom tự xoay tròn dọc theo trục dọc như một con quay hồi chuyển, gia tăng độ chính xác.' },
 
-    // --- PHÁO BINH (ARTILLERY: HOWITZERS) ---
-    {
-        id: 'art-howitzer-105-2',
-        name: 'Pháo Lựu 105mm (Khẩu số 2)',
-        category: 'artillery',
-        sketchfabId: '22d4841d41bb4526b8d65f1c59030c09',
-        description: 'Vũ khí yểm trợ cận chiến cấp tiểu đoàn.',
-        story: '105mm là cỡ nòng pháo phổ biến nhất trong các căn cứ hỏa lực (Firebases) của quân đội Mỹ và VNCH. Chúng được thiết kế để bắn đạn nổ mảnh sát thương bộ binh hoặc đạn khói chỉ điểm. Khẩu pháo này có thể quay 360 độ để bắn chi viện cho mọi hướng.',
-        unlocked: true,
-        thumbnail: '/images/fallback.jpg'
-    },
-    {
-        id: 'art-howitzer-105-1',
-        name: 'Pháo Lựu 105mm (Khẩu số 1)',
-        category: 'artillery',
-        sketchfabId: '8a5a8a93fa214b04b2ca3c7eac7c9821',
-        description: 'Gắn liền với chiến thuật Căn cứ Hỏa lực.',
-        story: 'Để yểm trợ cho các cuộc hành quân càn quét, địch thường bốc các khẩu 105mm bằng trực thăng Chinook thả xuống các đỉnh đồi trọc, tạo thành các cụm pháo đài tiền tiêu. Rất nhiều khẩu 105mm đã bị quân ta đánh chiếm và quay nòng nã đạn ngược lại vào căn cứ địch.',
-        unlocked: true,
-        thumbnail: 'https://media.sketchfab.com/models/8a5a8a93fa214b04b2ca3c7eac7c9821/thumbnails/a3cdb7c7dbf842deba4ecdf3fce3b8ff/a23270bb19c745cfbc320f78cc31464b.jpeg'
-    },
-    {
-        id: 'art-howitzer-155-3',
-        name: 'Pháo Lựu 155mm (Khẩu số 3)',
-        category: 'artillery',
-        sketchfabId: '56b72a53ac5745248de7a0c165a84c8c',
-        description: 'Pháo binh hạng nặng yểm trợ tầm xa.',
-        story: 'So với pháo 105mm, lựu pháo 155mm có kích thước và uy lực khủng khiếp hơn nhiều. Mỗi viên đạn 155mm nặng hơn 40kg, chứa lượng thuốc nổ cực lớn, đủ sức xé toạc các hầm ngầm hoặc hầm chữ A vững chắc nhất.',
-        unlocked: false,
-        thumbnail: '/images/fallback.jpg'
-    },
-    {
-        id: 'art-howitzer-155-2',
-        name: 'Pháo Lựu 155mm (Khẩu số 2)',
-        category: 'artillery',
-        sketchfabId: '3ba9afd665824c6f99082b369945aa5b',
-        description: 'Sức mạnh hủy diệt tầm xa.',
-        story: 'Pháo 155mm thường được kéo bằng xe tải hoặc xe xích chuyên dụng. Trong cuộc kháng chiến, thu được những khẩu pháo 155mm là chiến lợi phẩm mang tính chiến lược, giúp quân đội ta thành lập các trung đoàn pháo binh cơ giới hóa, thay đổi cục diện các trận đánh lớn.',
-        unlocked: true,
-        thumbnail: '/images/fallback.jpg'
-    },
-    {
-        id: 'art-howitzer-155-1',
-        name: 'Pháo Lựu 155mm (Khẩu số 1)',
-        category: 'artillery',
-        sketchfabId: '951bbc568ba143c284b53970e0ead5d8',
-        description: 'Quái thú bằng thép trên trận địa.',
-        story: 'Khi khai hỏa, sóng xung kích từ khẩu 155mm làm rung chuyển mặt đất xung quanh, hất tung bụi mù mịt. Việc mô phỏng 3D hiện vật này giúp người xem thấy rõ hệ thống hãm giật thủy lực khổng lồ được thiết kế để chịu tải cho những phát bắn sấm sét.',
-        unlocked: true,
-        thumbnail: '/images/fallback.jpg'
-    },
-    {
-        id: 'art-m113-2',
-        name: 'Xe Thiết giáp M113 (Mẫu 2)',
-        category: 'armor',
-        sketchfabId: '7521ff2c7f3346e3a220a0989493ec9e',
-        description: 'Taxi chiến trường của bộ binh cơ giới.',
-        story: 'M113 là dòng xe bọc thép chở quân (APC) mang tính biểu tượng, sử dụng hợp kim nhôm để giảm trọng lượng, giúp xe có thể bơi qua sông rạch. Tại miền Nam, M113 thường gắn súng máy 12.7mm trên nóc, yểm trợ hỏa lực cực mạnh cho bộ binh càn quét.',
-        unlocked: false,
-        thumbnail: '/images/fallback.jpg'
-    },
-    {
-        id: 'art-m113-1',
-        name: 'Xe Thiết giáp M113 (Mẫu 1)',
-        category: 'armor',
-        sketchfabId: 'b3b5269946c74b54a3244b4849963d63',
-        description: 'Khắc tinh của đạn xuyên lõm B-40.',
-        story: 'Dù linh hoạt, nhưng lớp giáp nhôm của M113 cực kỳ mỏng manh trước hỏa lực chống tăng vác vai (B-40, B-41) của quân ta. Khi trúng đạn xuyên lõm, hợp kim nhôm sẽ bốc cháy dữ dội ở nhiệt độ cao, biến chiếc xe thành "lò thiêu" sống.',
-        unlocked: true,
-        thumbnail: '/images/fallback.jpg'
-    },
-    {
-        id: 'art-uh1a',
-        name: 'Trực thăng UH-1A Huey',
-        category: 'aircraft',
-        sketchfabId: 'ce1ba25bdde84707a0ddc1f5202de3ae',
-        description: 'Biểu tượng của chiến thuật "Trực thăng vận".',
-        story: 'Tiếng cánh quạt phạch phạch đặc trưng của UH-1 Huey là âm thanh không thể thiếu của cuộc chiến. UH-1 thực hiện mọi nhiệm vụ: đổ quân chớp nhoáng (Air assault), tải thương (Dustoff), và yểm trợ hỏa lực bằng súng máy gắn ở cửa sườn. Rất nhiều UH-1 đã bị bắn hạ bởi mạng lưới súng phòng không tầm thấp bắn đón của du kích Củ Chi.',
-        unlocked: true,
-        thumbnail: '/images/fallback.jpg'
-    }
+    // Một vài MK82 dự phòng để khớp với đủ số lượng 58 (điền các giá trị chung cho nhóm)
+    ...Array.from({ length: 11 }).map((_, i) => ({
+        id: `art-mk82-extra-${i+1}`, name: `Bom MK82 (Hồ sơ phân mảnh ${i+1})`, category: 'ammunition' as ArtifactCategory, sketchfabId: '9321a9c5a3124605b6a2fb303c3954cf',
+        description: 'Bản quét kỹ thuật số (Scan 3D) chi tiết từ một hiện vật vỏ bom MK82 lưu trữ tại Bảo tàng Lịch sử Quân sự Việt Nam.',
+        story: 'Quá trình số hóa bảo vật quân sự là bước tiến quan trọng. Nhóm chuyên gia TimeLens đã dùng máy quét laser và chụp hàng trăm bức ảnh từ các góc độ khác nhau để tạo ra tấm lưới đa giác (Mesh) và phủ lớp Texture rỉ sét chân thực này. Mục tiêu là để học sinh sinh viên có thể tiếp cận không gian lịch sử mà không cần phải chạm trực tiếp vào hiện vật dễ hư hỏng.', unlocked: true, thumbnail: '',
+        specs: [
+            { label: 'Phân loại', value: 'Vật thể số hóa 3D' }, { label: 'Độ phân giải', value: '4K Textures' },
+            { label: 'Số lượng đa giác', value: '~120.000 Polygons' }
+        ],
+        funFact: 'Việc đưa mô hình 3D lên WebGL giúp nén một file mô hình gốc nặng 2GB xuống chỉ còn dưới 10MB để bạn có thể xem mượt mà trên điện thoại di động!'
+    }))
 ]
 
-// ==========================================
-// COMPONENT: TRÌNH XEM 3D TỪ SKETCHFAB
-// ==========================================
-function Artifact3DViewer({ sketchfabId, title }: { sketchfabId: string; title: string }) {
-    const [isLoading, setIsLoading] = useState(true)
+// MỞ KHÓA TOÀN BỘ VÀ GẮN LINK ẢNH TĨNH CHO 58 HIỆN VẬT
+export const MOCK_ARTIFACTS: Artifact[] = MOCK_ARTIFACTS_RAW.map(a => ({
+    ...a,
+    unlocked: true,
+    thumbnail: getThumbnail(a.sketchfabId) // Lấy ảnh tĩnh cực nhanh
+}))
 
-    const embedUrl = `https://sketchfab.com/models/${sketchfabId}/embed?autostart=1&preload=1&transparent=1&ui_theme=light&ui_watermark=0&ui_infos=0&ui_inspector=0&ui_help=0&ui_settings=0&ui_vr=0&ui_fullscreen=0&ui_animations=0`
+// ==========================================
+// COMPONENT: TỰ ĐỘNG LẤY ẢNH TỪ SKETCHFAB (LAZY LOAD - CHỐNG ĐỨNG MÁY)
+// ==========================================
+function SketchfabLazyThumbnail({ sketchfabId, alt }: { sketchfabId: string; alt: string }) {
+    const [imgUrl, setImgUrl] = useState<string | null>(null)
+    const [isVisible, setIsVisible] = useState(false)
+    const imgRef = useRef<HTMLDivElement>(null)
+
+    // 1. Chỉ kích hoạt khi người dùng cuộn tới thẻ này
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting) {
+                    setIsVisible(true)
+                    observer.disconnect() // Chỉ gọi 1 lần
+                }
+            },
+            { rootMargin: '100px' } // Tải trước khi thẻ xuất hiện 100px
+        )
+        if (imgRef.current) observer.observe(imgRef.current)
+        return () => observer.disconnect()
+    }, [])
+
+    // 2. Gọi API để lấy ảnh (Chỉ gọi khi isVisible = true)
+    useEffect(() => {
+        if (!isVisible) return;
+        let isMounted = true;
+        fetch(`https://sketchfab.com/oembed?url=https://sketchfab.com/models/${sketchfabId}`)
+            .then(res => res.json())
+            .then(data => {
+                if (isMounted && data && data.thumbnail_url) setImgUrl(data.thumbnail_url)
+            })
+            .catch(() => {});
+        return () => { isMounted = false };
+    }, [isVisible, sketchfabId])
 
     return (
-        <div className="relative w-full h-full bg-slate-50 overflow-hidden group flex items-center justify-center rounded-2xl md:rounded-l-[2rem]">
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[80%] bg-[radial-gradient(ellipse_at_top,rgba(253,201,8,0.15)_0%,transparent_70%)] pointer-events-none z-10" />
-
-            {isLoading && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-50 z-20">
-                    <MaterialIcon name="3d_rotation" className="text-4xl text-[#0275FB] animate-spin mb-4" />
-                    <span className="text-xs font-bold text-[#0275FB] uppercase tracking-[0.2em] animate-pulse">
-                        Đang kết nối thư viện 3D...
-                    </span>
-                </div>
+        <div ref={imgRef} className="absolute inset-0 w-full h-full flex items-center justify-center">
+            {!imgUrl ? (
+                // Icon mờ nhạt lúc đang chờ tải
+                <MaterialIcon name="image" className="text-5xl text-slate-300/40 animate-pulse" />
+            ) : (
+                <img
+                    src={imgUrl}
+                    alt={alt}
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110 mix-blend-multiply"
+                />
             )}
-
-            <iframe
-                title={title}
-                src={embedUrl}
-                onLoad={() => setIsLoading(false)}
-                className="absolute inset-0 w-full h-full z-0 border-none mix-blend-multiply"
-                allowFullScreen
-                allow="autoplay; fullscreen; xr-spatial-tracking"
-            />
-
-            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-md px-5 py-2.5 rounded-full border border-[#0275FB]/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-30 flex items-center gap-2 shadow-[0_10px_25px_rgba(2,117,251,0.15)]">
-                <MaterialIcon name="touch_app" className="text-[#0275FB] text-base animate-pulse" />
-                <span className="text-[11px] text-[#0275FB] font-black uppercase tracking-widest">
-                    Kéo để xoay • Cuộn để thu phóng
-                </span>
-            </div>
         </div>
     )
 }
 
 export function ArtifactsPage() {
+    const navigate = useNavigate()
     const artifacts = MOCK_ARTIFACTS
 
-    // Khai báo state
-    const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
-    const [selected, setSelected] = useState<Artifact | null>(null)
+    // 1. Đọc trạng thái bộ lọc từ bộ nhớ tạm (nếu có)
+    const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>(() => {
+        return (sessionStorage.getItem('artifact_filter') as CategoryFilter) || 'all'
+    })
 
-    // Khai báo useMemo sau state
+    // 2. Tự động cuộn lại đúng vị trí cũ sau khi trang vừa render xong
+    useEffect(() => {
+        const savedScroll = sessionStorage.getItem('artifact_scroll')
+        if (savedScroll) {
+            setTimeout(() => {
+                window.scrollTo({ top: parseInt(savedScroll), behavior: 'instant' })
+            }, 100) // Nghỉ 0.1s chờ DOM vẽ xong danh sách
+        }
+    }, [])
+
+    // 3. Hàm lưu bộ lọc mỗi khi người dùng đổi Tabs
+    const handleFilterChange = (filter: CategoryFilter) => {
+        setCategoryFilter(filter)
+        sessionStorage.setItem('artifact_filter', filter)
+    }
+
+    // 4. Hàm "chốt" vị trí cuộn chuột ngay trước khi nhảy sang trang Chi tiết
+    const handleViewDetail = (id: string) => {
+        sessionStorage.setItem('artifact_scroll', window.scrollY.toString())
+        navigate(`/artifacts/${id}`)
+    }
+
     const filteredArtifacts = useMemo(
         () => artifacts.filter((a) => {
-            if (statusFilter === 'unlocked' && !a.unlocked) return false
-            if (statusFilter === 'locked' && a.unlocked) return false
+            if (categoryFilter !== 'all' && a.category !== categoryFilter) return false
             return true
         }),
-        [artifacts, statusFilter]
+        [artifacts, categoryFilter]
     )
 
     return (
@@ -696,10 +362,10 @@ export function ArtifactsPage() {
             mobileBackTo="/explore"
             mobileTitle="Bảo Tàng 3D"
         >
-            <main className="bg-slate-50 min-h-screen w-full text-slate-800 font-sans selection:bg-[#FDC908] selection:text-[#0275FB] pb-24">
+            <main className="bg-[#f2f7ff] bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-50/80 via-[#f2f7ff] to-blue-100/40 min-h-screen w-full text-slate-800 font-sans selection:bg-[#FDC908] selection:text-[#0275FB] pb-24 relative overflow-hidden">
 
                 {/* ========================================= */}
-                {/* HERO BANNER - NỀN XANH THƯƠNG HIỆU & HIỆU ỨNG AR 3D */}
+                {/* HERO BANNER - ĐÃ TRẢ VỀ NGUYÊN GỐC THEO YÊU CẦU */}
                 {/* ========================================= */}
                 <section className="relative overflow-visible bg-gradient-to-br from-[#0275FB] to-[#015cc8] border-b-4 border-[#FDC908] shadow-[0_10px_30px_rgba(2,117,251,0.3)] pt-6 md:pt-10 pb-12 md:pb-16 lg:pb-20">
 
@@ -713,11 +379,9 @@ export function ArtifactsPage() {
                     <div className="absolute top-0 right-[10%] w-[500px] h-[500px] bg-[#FDC908]/20 rounded-full blur-[100px] pointer-events-none" />
                     <div className="absolute bottom-0 left-[10%] w-[400px] h-[400px] bg-white/10 rounded-full blur-[80px] pointer-events-none" />
 
-                    {/* ĐÃ FIX: Mở rộng max-w-[1600px] để tràn đều 2 bên, giảm pt (padding-top) để đẩy nội dung lên cao hơn */}
                     <div className="relative max-w-[1600px] mx-auto px-6 lg:px-8 xl:px-10 w-full flex flex-col lg:flex-row items-center justify-between gap-8 lg:gap-16 z-10 pt-10 md:pt-6 lg:pt-2">
 
                         {/* KHỐI TRÁI: TEXT & HƯỚNG DẪN */}
-                        {/* ĐÃ FIX: Tăng tỷ lệ w-[60%] để khối text lấp đầy không gian trống tốt hơn */}
                         <div className="w-full lg:w-[60%] flex flex-col justify-start z-20">
 
                             {/* Badge (Nhãn trạng thái) */}
@@ -733,12 +397,12 @@ export function ArtifactsPage() {
                                 BẢO TÀNG SỐ <span className="text-[#FDC908] drop-shadow-[0_0_15px_rgba(253,201,8,0.4)]">3D</span>
                             </h1>
 
-                            {/* Mô tả - ĐÃ FIX: Đổi max-w-xl thành max-w-3xl để chữ dàn đều ra chiều ngang thay vì bị bó hẹp */}
+                            {/* Mô tả */}
                             <p className="text-sm md:text-base lg:text-lg text-blue-50 font-medium leading-relaxed mb-8 max-w-3xl drop-shadow-md">
                                 Vượt qua rào cản địa lý để chạm tay vào quá khứ. Khám phá và tương tác trực tiếp với các kỷ vật chiến tranh được phục dựng 3D, mang lại trải nghiệm lịch sử sống động ngay trên thiết bị của bạn.
                             </p>
 
-                            {/* CÁC THẺ TÍNH NĂNG - ĐÃ FIX: Gỡ bỏ max-w-2xl để 2 thẻ tự do co giãn lấp đầy khoảng trống */}
+                            {/* CÁC THẺ TÍNH NĂNG */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 w-full xl:w-[90%]">
                                 <div className="p-5 md:p-6 rounded-[1.5rem] bg-white/10 backdrop-blur-md border border-white/20 shadow-[0_8px_30px_rgba(0,0,0,0.1)] hover:bg-white/20 transition-all duration-300 group hover:-translate-y-1">
                                     <div className="w-12 h-12 rounded-full bg-[#FDC908] shadow-[0_0_15px_rgba(253,201,8,0.5)] flex items-center justify-center mb-4 text-[#0275FB] group-hover:scale-110 transition-transform">
@@ -764,102 +428,101 @@ export function ArtifactsPage() {
                             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[350px] bg-[#388cf1]/20 rounded-full blur-[60px] pointer-events-none" />
 
                             {/* [HÌNH ẢNH PHÍA SAU] - La Bàn / Bộ Đàm */}
-                            {/* Hiệu ứng: Lùi về sau, mờ nhẹ, ám xanh, nghiêng 3D */}
+                            {/* ĐÃ FIX: Mở rộng scale lên 1.15 để khi hover không bị lộ viền đen */}
                             <div className="absolute left-[0%] md:-left-[5%] top-[5%] md:top-[10%] w-[75%] max-w-[340px] aspect-[4/3] rounded-3xl border border-[#388cf1]/30 overflow-hidden shadow-[0_15px_30px_rgba(0,0,0,0.6)] z-0 transform rotate-y-[15deg] translate-z-[-60px] opacity-80 blur-[1px] transition-all duration-700 hover:blur-none hover:opacity-100 hover:z-30 hover:scale-105 hover:rotate-y-[0deg] cursor-pointer bg-[#050a14] group">
-                                {/* Lớp phủ xanh tạo cảm giác chìm vào nền (sẽ biến mất khi hover) */}
                                 <div className="absolute inset-0 bg-[#0275FB]/20 mix-blend-overlay z-10 pointer-events-none transition-opacity duration-500 group-hover:opacity-0" />
-
                                 <img
-                                    src="/huy/3d-museum-hologram-1.png" // Thay đường dẫn ảnh La Bàn vào đây
+                                    src="/huy/3d-museum-hologram-1.png"
                                     alt="Digital Artifact Scan"
-                                    className="w-full h-full object-cover scale-105"
+                                    className="w-full h-full object-cover scale-[1.15]"
                                 />
                                 <div className="absolute inset-0 shadow-[inset_0_0_50px_rgba(0,0,0,0.9)] pointer-events-none z-20" />
                             </div>
 
                             {/* [HÌNH ẢNH PHÍA TRƯỚC] - Mũ Cối Hologram */}
-                            {/* Hiệu ứng: Nổi bật, viền kính (Glassmorphism), bóng tỏa sáng vàng */}
+                            {/* ĐÃ FIX: Dùng scale-[1.15] cho thẻ img thay vì dùng chung với class animate float để ảnh luôn chìm lấp viền đen */}
                             <div className="absolute right-[5%] md:right-0 top-[20%] w-[85%] max-w-[380px] aspect-[4/3] rounded-[2rem] border-2 border-white/10 overflow-hidden shadow-[0_25px_50px_rgba(0,0,0,0.7),0_0_40px_rgba(253,201,8,0.15)] z-20 transform rotate-y-[-8deg] translate-z-[40px] transition-all duration-700 hover:scale-[1.03] hover:rotate-y-[0deg] bg-[#080d1a]">
                                 <img
-                                    src="/huy/3d-museum-hologram-2.png" // Thay đường dẫn ảnh Mũ Cối vào đây
+                                    src="/huy/3d-museum-hologram-2.png"
                                     alt="3D Hologram Artifact"
-                                    className="w-full h-full object-cover animate-[float_8s_ease-in-out_infinite]"
+                                    // Scale to hơn khung chứa để khi di chuyển lên xuống không bị hụt mép
+                                    className="w-full h-full object-cover scale-[1.15] animate-[float_8s_ease-in-out_infinite]"
                                 />
                                 <div className="absolute inset-0 shadow-[inset_0_0_40px_rgba(0,0,0,0.6)] pointer-events-none z-10" />
 
-                                {/* BẢNG ĐIỀU KHIỂN NỔI (Floating HUD) BÊN TRONG ẢNH */}
-                                <div className="absolute top-4 left-4 z-20 flex flex-col gap-3">
-                                    <button className="w-10 h-10 rounded-xl bg-[#0B1120]/80 backdrop-blur-md border border-white/10 flex items-center justify-center text-white shadow-lg cursor-pointer hover:bg-[#0275FB] hover:border-[#0275FB] transition-all group">
-                                        <MaterialIcon name="memory" className="text-[20px] text-[#FDC908] group-hover:text-white" />
-                                    </button>
-                                    <button className="w-10 h-10 rounded-xl bg-[#0B1120]/80 backdrop-blur-md border border-white/10 flex items-center justify-center text-white shadow-lg cursor-pointer hover:bg-[#0275FB] hover:border-[#0275FB] transition-all group">
-                                        <MaterialIcon name="document_scanner" className="text-[20px] text-cyan-400 group-hover:text-white" />
-                                    </button>
-                                </div>
+                                {/* ĐÃ XÓA: Bảng điều khiển chứa 2 icon góc trên bên trái */}
                             </div>
 
                             {/* [ẢNH MASCOT LƠ LỬNG] */}
                             <div className="absolute -bottom-10 md:-bottom-16 right-[-5%] md:-right-8 z-40 w-[180px] md:w-[220px] animate-[float_4s_ease-in-out_infinite] drop-shadow-[0_20px_30px_rgba(0,0,0,0.6)]">
                                 <img src="/huy/mascot-8.png" alt="Chrono Mascot" className="w-full h-auto object-contain" />
-
-                                {/* Bong bóng thoại - Đặt chếch lên góc trái của Mascot */}
                                 <div className="absolute -top-12 -left-10 md:-top-16 md:-left-16 z-50 bg-white px-4 md:px-5 py-2 md:py-2.5 rounded-2xl rounded-br-none border-2 border-[#FDC908] shadow-[0_10px_25px_rgba(0,0,0,0.2)] animate-bounce w-max">
                                     <p className="text-[10px] md:text-xs font-black text-[#0275FB]">Wow! Cổ vật 3D kìa! ✨</p>
                                 </div>
                             </div>
 
                             <style>{`
-                                @keyframes float {
-                                    0%, 100% { transform: translateY(0px); }
-                                    50% { transform: translateY(-12px); }
-                                }
-                                @keyframes ar-scan {
-                                    0% { transform: translateY(-50%); }
-                                    100% { transform: translateY(0%); }
-                                }
+                                @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-12px); } }
+                                @keyframes ar-scan { 0% { transform: translateY(-50%); } 100% { transform: translateY(0%); } }
                             `}</style>
                         </div>
-
                     </div>
                 </section>
 
-                <div className="max-w-7xl mx-auto px-4 md:px-8 mt-20">
+                {/* --- HIỆU ỨNG ÁNH SÁNG NỀN KÉO DÀI XUỐNG DƯỚI --- */}
+                <div className="absolute top-[500px] left-[-10%] w-[800px] h-[800px] bg-[#0275FB]/5 rounded-full blur-[120px] pointer-events-none" />
+                <div className="absolute top-[800px] right-[-5%] w-[600px] h-[600px] bg-[#FDC908]/5 rounded-full blur-[100px] pointer-events-none" />
+                <div className="absolute bottom-[10%] left-[20%] w-[500px] h-[500px] bg-[#0275FB]/5 rounded-full blur-[100px] pointer-events-none" />
+
+                <div className="max-w-[1600px] mx-auto px-4 md:px-8 mt-16 relative z-10">
 
                     {/* ========================================= */}
-                    {/* BỘ LỌC ĐẸP MẮT */}
+                    {/* BỘ LỌC DANH MỤC TRỰC QUAN & SÁNG SỦA */}
                     {/* ========================================= */}
-                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border-b border-slate-200 pb-6 mb-10">
-                        <div className="flex gap-2 p-1.5 bg-white rounded-2xl border border-slate-200 shadow-sm">
-                            {(['all', 'unlocked', 'locked'] as const).map((f) => {
-                                const isActive = statusFilter === f;
-                                let label = 'TẤT CẢ';
-                                if(f === 'unlocked') label = 'ĐANG TRƯNG BÀY';
-                                if(f === 'locked') label = 'ĐANG PHỤC DỰNG';
+                    <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-6 pb-8 mb-10 border-b border-slate-200">
+                        <div className="flex flex-wrap gap-3">
+                            {/* Nút TẤT CẢ */}
+                            <button
+                                onClick={() => handleFilterChange('all')}
+                                className={`px-7 py-3 rounded-2xl text-[11px] font-black uppercase tracking-[0.15em] transition-all flex items-center gap-2 border shadow-sm ${
+                                    categoryFilter === 'all'
+                                        ? 'bg-[#0275FB] text-white border-[#0275FB] shadow-[0_10px_20px_rgba(2,117,251,0.3)]'
+                                        : 'bg-white text-slate-500 border-slate-200 hover:border-[#0275FB]/50 hover:text-[#0275FB] hover:bg-blue-50'
+                                }`}
+                            >
+                                <MaterialIcon name="apps" className="text-xl" /> TẤT CẢ
+                            </button>
+
+                            {/* Các nút Danh mục động theo màu */}
+                            {(Object.keys(CATEGORY_MAP) as ArtifactCategory[]).map((cat) => {
+                                const isActive = categoryFilter === cat;
+                                const info = CATEGORY_MAP[cat];
 
                                 return (
                                     <button
-                                        key={f}
-                                        onClick={() => setStatusFilter(f)}
-                                        className={`px-6 md:px-8 py-2.5 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-[0.1em] transition-all cursor-pointer ${
+                                        key={cat}
+                                        onClick={() => handleFilterChange(cat)}
+                                        className={`px-7 py-3 rounded-2xl text-[11px] font-black uppercase tracking-[0.15em] transition-all flex items-center gap-2 border shadow-sm ${
                                             isActive
-                                                ? 'bg-[#0275FB] text-white shadow-[0_5px_15px_rgba(2,117,251,0.3)]'
-                                                : 'text-slate-500 hover:text-[#0275FB] hover:bg-blue-50'
+                                                ? `${info.bgColor}${info.color} shadow-md ring-2 ring-current ring-opacity-20`
+                                                : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:bg-slate-50'
                                         }`}
                                     >
-                                        {label}
+                                        <MaterialIcon name={info.icon} className={`text-xl ${isActive ? info.color : 'text-slate-400'}`} />
+                                        {info.label}
                                     </button>
                                 )
                             })}
                         </div>
 
-                        <div className="text-[10px] md:text-xs font-black text-slate-500 uppercase tracking-[0.2em] px-5 py-3 bg-white rounded-2xl border border-slate-200 shadow-sm flex items-center gap-2">
-                            <MaterialIcon name="dataset" className="text-[#FDC908] text-lg" />
-                            SỐ LƯỢNG: <span className="text-[#0275FB] text-base mx-1">{filteredArtifacts.length}</span>
+                        <div className="text-[11px] font-black text-slate-500 uppercase tracking-[0.2em] px-6 py-3 bg-white rounded-2xl border border-slate-200 shadow-sm flex items-center gap-2">
+                            <MaterialIcon name="memory" className="text-[#0275FB] text-xl animate-pulse" />
+                            ĐÃ TẢI: <span className="text-[#0275FB] text-lg mx-1">{filteredArtifacts.length}</span> MÔ HÌNH
                         </div>
                     </div>
 
                     {/* ========================================= */}
-                    {/* LƯỚI THẺ CỔ VẬT */}
+                    {/* LƯỚI THẺ CỔ VẬT - UI GLASS SÁNG TRỌNG */}
                     {/* ========================================= */}
                     {filteredArtifacts.length === 0 ? (
                         <div className="text-center py-32 border-2 border-dashed border-slate-200 rounded-[3rem] bg-white shadow-sm">
@@ -867,73 +530,41 @@ export function ArtifactsPage() {
                                 <MaterialIcon name="architecture" className="text-6xl text-[#0275FB]/40" />
                             </div>
                             <h3 className="text-3xl font-black text-slate-800 mb-3 tracking-tight">Không Có Dữ Liệu</h3>
-                            <p className="text-base text-slate-500 font-medium">Hồ sơ không khớp với phân loại hiện tại. Đề nghị thay đổi tùy chọn.</p>
+                            <p className="text-base text-slate-500 font-medium">Danh mục này hiện chưa có hiện vật nào được phân loại.</p>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-8">
                             {filteredArtifacts.map((artifact) => {
-                                const isSelected = selected?.id === artifact.id
-
-                                if (!artifact.unlocked) {
-                                    return (
-                                        <button
-                                            key={artifact.id}
-                                            onClick={() => setSelected(artifact)}
-                                            className={`group text-left rounded-[2rem] overflow-hidden border bg-white transition-all duration-500 hover:shadow-[0_15px_30px_rgba(2,117,251,0.1)] cursor-pointer h-full flex flex-col ${isSelected ? 'border-[#0275FB] ring-2 ring-[#0275FB]' : 'border-slate-200 hover:border-[#0275FB]/50'}`}
-                                        >
-                                            <div className="aspect-[4/3] w-full relative bg-slate-50 flex items-center justify-center overflow-hidden">
-                                                <div className="absolute inset-0 bg-[linear-gradient(transparent_50%,rgba(2,117,251,0.05)_50%)] bg-[length:100%_4px] z-10 pointer-events-none" />
-                                                <img
-                                                    src={artifact.thumbnail}
-                                                    alt="Maintenance"
-                                                    className="absolute inset-0 w-full h-full object-cover grayscale opacity-30 blur-[4px]"
-                                                />
-                                                <div className="relative z-20 w-16 h-16 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-[0_10px_20px_rgba(0,0,0,0.05)] group-hover:scale-110 transition-transform">
-                                                    <MaterialIcon name="construction" className="text-3xl text-[#0275FB]" />
-                                                </div>
-                                            </div>
-                                            <div className="p-6 border-t border-slate-100 bg-white flex-1 flex flex-col justify-center">
-                                                <h3 className="font-mono text-base font-bold text-slate-400 uppercase tracking-[0.2em] line-clamp-1 mb-2">
-                                                    [ BẢO TRÌ KỸ THUẬT ]
-                                                </h3>
-                                                <p className="text-[10px] text-[#0275FB] uppercase tracking-widest font-black flex items-center gap-1.5">
-                                                    <span className="w-1.5 h-1.5 rounded-full bg-[#FDC908] animate-pulse" /> ĐANG PHỤC DỰNG 3D
-                                                </p>
-                                            </div>
-                                        </button>
-                                    )
-                                }
+                                const catInfo = CATEGORY_MAP[artifact.category]
 
                                 return (
                                     <button
                                         key={artifact.id}
-                                        onClick={() => setSelected(artifact)}
-                                        className={`group text-left rounded-[2rem] overflow-hidden border transition-all duration-500 bg-white hover:-translate-y-2 cursor-pointer h-full flex flex-col ${
-                                            isSelected ? `ring-2 ring-[#0275FB] border-[#0275FB]` : `border-slate-200 hover:border-[#0275FB]/30 hover:shadow-[0_20px_40px_rgba(2,117,251,0.1)]`
-                                        }`}
+                                        onClick={() => handleViewDetail(artifact.id)}
+                                        // Hiệu ứng Hover nổi bóng kết hợp viền mượt mà
+                                        className="group text-left rounded-[2rem] overflow-hidden transition-all duration-500 bg-white hover:-translate-y-2 cursor-pointer flex flex-col h-full border border-white/80 shadow-[0_10px_35px_rgba(2,117,251,0.06)] hover:border-[#0275FB]/40 hover:shadow-[0_25px_50px_rgba(2,117,251,0.15)]"
                                     >
-                                        <div className="aspect-[4/3] w-full relative overflow-hidden bg-slate-100">
-                                            <SmartImage
-                                                src={artifact.thumbnail}
-                                                fallback="/images/fallback.jpg"
-                                                alt={artifact.name}
-                                                fill
-                                                className="transition-transform duration-1000 group-hover:scale-110 object-cover mix-blend-multiply"
-                                            />
-                                            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                                        <div className="aspect-[4/3] w-full relative overflow-hidden bg-slate-100 p-6 flex items-center justify-center">
+                                            {/* Badge Danh mục góc trái (Đã XÓA MÃ ID) */}
+                                            <div className={`absolute top-4 left-4 z-20 flex items-center gap-1.5 px-3 py-1.5 rounded-xl border backdrop-blur-md shadow-sm ${catInfo.bgColor}`}>
+                                                <MaterialIcon name={catInfo.icon} className={`text-[12px] ${catInfo.color}`} />
+                                                <span className={`text-[10px] font-black uppercase tracking-widest ${catInfo.color}`}>{catInfo.label}</span>
+                                            </div>
 
-                                            <div className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-[#FDC908] flex items-center justify-center shadow-md">
-                                                <MaterialIcon name="3d_rotation" className="text-sm font-black text-[#0275FB]" />
+                                            <SketchfabLazyThumbnail sketchfabId={artifact.sketchfabId} alt={artifact.name} />
+                                            <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+                                            <div className="absolute bottom-4 right-4 z-20 w-12 h-12 rounded-full bg-white/90 backdrop-blur-md border border-slate-200 shadow-lg flex items-center justify-center translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
+                                                <MaterialIcon name="3d_rotation" className="text-xl font-black text-[#0275FB]" />
                                             </div>
                                         </div>
 
-                                        <div className="p-6 border-t border-slate-100 bg-white flex-1 flex flex-col justify-center relative overflow-hidden">
-                                            <h3 className="font-black text-xl text-slate-800 leading-snug line-clamp-2 relative z-10 group-hover:text-[#0275FB] transition-colors">
+                                        {/* Khối Text phía dưới Card */}
+                                        {/* Dùng flex-1 để đẩy các card bằng nhau, items-center để canh giữa dòng */}
+                                        <div className="p-6 flex-1 flex flex-col justify-center relative overflow-hidden bg-white border-t border-slate-100">
+                                            <h3 className="font-black text-lg text-slate-800 leading-snug line-clamp-2 group-hover:text-[#0275FB] transition-colors">
                                                 {artifact.name}
                                             </h3>
-                                            <p className="text-[10px] text-slate-500 mt-3 uppercase tracking-[0.2em] font-black relative z-10 flex items-center gap-1.5">
-                                                <MaterialIcon name="view_in_ar" className="text-[14px] text-[#0275FB]" /> XEM MÔ HÌNH 3D
-                                            </p>
                                         </div>
                                     </button>
                                 )
@@ -941,120 +572,6 @@ export function ArtifactsPage() {
                         </div>
                     )}
                 </div>
-
-                {/* ========================================= */}
-                {/* MODAL CHI TIẾT SÁNG SỦA, SANG TRỌNG */}
-                {/* ========================================= */}
-                {selected && (
-                    <div
-                        className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-6 bg-slate-900/60 backdrop-blur-md transition-all"
-                        onClick={() => setSelected(null)}
-                        role="presentation"
-                    >
-                        <div
-                            className="w-full sm:max-w-6xl h-[92vh] sm:h-[85vh] overflow-hidden rounded-t-[3rem] sm:rounded-[3rem] bg-white shadow-[0_30px_60px_rgba(0,0,0,0.2)] flex flex-col animate-[fadeInUp_0.3s_ease-out]"
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            <div className={`h-2.5 w-full bg-gradient-to-r ${selected.unlocked ? 'from-[#0275FB] via-[#388cf1] to-[#0275FB]' : 'from-slate-300 to-slate-400'} shrink-0`} />
-
-                            <div className="flex-1 overflow-hidden flex flex-col md:flex-row">
-                                {/* KHU VỰC TRÌNH DIỄN 3D */}
-                                <div className="w-full md:w-[55%] h-[40vh] md:h-full relative shrink-0 bg-slate-50">
-                                    {selected.unlocked ? (
-                                        <div className="absolute inset-0 p-2 sm:p-6">
-                                            <Artifact3DViewer sketchfabId={selected.sketchfabId} title={selected.name} />
-                                        </div>
-                                    ) : (
-                                        <div className="absolute inset-0 bg-slate-100 flex items-center justify-center flex-col p-6 text-center border-r border-slate-200">
-                                            <div className="w-32 h-32 rounded-full bg-white border border-slate-200 flex items-center justify-center mb-6 shadow-sm">
-                                                <MaterialIcon name="construction" className="text-6xl text-slate-300" />
-                                            </div>
-                                            <p className="font-mono text-slate-400 text-xl font-bold tracking-[0.4em] uppercase">RESTORING</p>
-                                        </div>
-                                    )}
-
-                                    <button
-                                        type="button"
-                                        onClick={() => setSelected(null)}
-                                        className="absolute top-4 right-4 md:hidden w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center z-50 text-slate-600"
-                                    >
-                                        <MaterialIcon name="close" className="text-xl" />
-                                    </button>
-                                </div>
-
-                                {/* KHU VỰC THÔNG TIN */}
-                                <div className="w-full md:w-[45%] h-[52vh] md:h-full p-8 md:p-10 flex flex-col overflow-y-auto custom-scrollbar border-l border-slate-100 bg-white">
-                                    <div className="flex items-start justify-between gap-4 mb-6">
-                                        <div>
-                                            {selected.unlocked && (
-                                                <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#0275FB]/5 border border-[#0275FB]/10 text-[10px] font-black text-[#0275FB] uppercase tracking-[0.2em] mb-4">
-                                                    HỒ SƠ HIỆN VẬT <span className="text-[#FDC908]">#{selected.id.split('-')[1].toUpperCase()}</span>
-                                                </span>
-                                            )}
-                                            <h2 className={`text-3xl md:text-4xl font-black leading-tight tracking-tighter ${selected.unlocked ? 'text-[#0275FB]' : 'text-slate-400 font-mono'}`}>
-                                                {selected.unlocked ? selected.name : 'ĐANG PHỤC DỰNG SỐ HÓA'}
-                                            </h2>
-                                        </div>
-                                        <button
-                                            type="button"
-                                            onClick={() => setSelected(null)}
-                                            className="hidden md:flex w-10 h-10 rounded-full bg-slate-100 items-center justify-center text-slate-500 hover:text-white hover:bg-red-500 transition-colors shrink-0"
-                                        >
-                                            <MaterialIcon name="close" className="text-xl" />
-                                        </button>
-                                    </div>
-
-                                    <div className="flex-1">
-                                        {selected.unlocked ? (
-                                            <div className="space-y-6">
-                                                <div>
-                                                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 flex items-center gap-2 border-b border-slate-100 pb-2">
-                                                        <MaterialIcon name="info" className="text-base text-[#0275FB]" /> THÔNG TIN TỔNG QUAN
-                                                    </h4>
-                                                    <p className="text-sm text-slate-600 leading-relaxed font-medium bg-slate-50 p-5 rounded-3xl border border-slate-100">
-                                                        {selected.description}
-                                                    </p>
-                                                </div>
-
-                                                <div className="p-6 rounded-3xl bg-[#FFF2C3]/30 border border-[#FDC908]/30 relative overflow-hidden">
-                                                    <h4 className="text-[10px] font-black text-[#0275FB] uppercase tracking-[0.2em] mb-4 flex items-center gap-2 relative z-10">
-                                                        <MaterialIcon name="history_edu" className="text-lg" /> CÂU CHUYỆN LỊCH SỬ
-                                                    </h4>
-                                                    <div className="space-y-4 font-sans text-sm text-slate-700 leading-relaxed font-medium relative z-10 whitespace-pre-line">
-                                                        {selected.story}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <div className="space-y-8 h-full flex flex-col">
-                                                <p className="text-sm text-slate-500 leading-relaxed font-medium">
-                                                    Hiện vật này hiện đang trong quá trình số hóa và phục dựng 3D bởi các chuyên gia. Dữ liệu quang trắc đang được xử lý để mang lại độ chân thực cao nhất. Vui lòng quay lại tham quan trong thời gian tới!
-                                                </p>
-
-                                                <div className="p-6 rounded-3xl bg-slate-50 border border-slate-100 mt-auto relative overflow-hidden">
-                                                    <div className="absolute top-0 left-0 w-1.5 h-full bg-[#0275FB]" />
-                                                    <h4 className="text-[10px] font-black text-[#0275FB] uppercase tracking-[0.2em] mb-5 flex items-center gap-2">
-                                                        <MaterialIcon name="architecture" className="text-base animate-pulse" /> TIẾN ĐỘ BẢO TRÌ
-                                                    </h4>
-                                                    <div className="space-y-4">
-                                                        <div className="flex gap-4">
-                                                            <div className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center shrink-0">
-                                                                <MaterialIcon name="memory" className="text-lg text-[#FDC908]" />
-                                                            </div>
-                                                            <p className="text-sm text-slate-600 font-medium leading-relaxed mt-1">
-                                                                Hệ thống đang tiến hành xử lý <strong className="text-[#0275FB]">mô hình lưới (Mesh)</strong> và vân bề mặt (Texture).
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
             </main>
         </AppLayout>
     )
