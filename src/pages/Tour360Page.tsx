@@ -1,6 +1,6 @@
 // src/pages/Tour360Page.tsx
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useParams, useSearchParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { VirtualTourViewer } from '../components/panorama/VirtualTourViewer'
 import { CuChiTourLeafletMap } from '../components/panorama/CuChiTourLeafletMap'
@@ -22,6 +22,7 @@ import { useToast } from '../shared/ui/toast/useToast'
 import { appEnv } from '../shared/config/env'
 import { CU_CHI_LOCATION_ID } from '../shared/config/constants'
 import { useVisitSessionForLocation, useVisitSession } from '../features/visit/VisitSessionProvider'
+import { SA_BAN_FRAGMENT_CODE, SA_BAN_FRAGMENT_PIN, SA_BAN_QUEST_KEY } from '../features/gamification/saBanFragment'
 
 // ĐÃ SỬA THÀNH ĐIỂM SỐ 1 (Bãi gửi xe gắn máy số 1 / Cổng vào)
 const CU_CHI_ENTRANCE_ID = '22222222-2222-2222-2222-222222222221'
@@ -30,8 +31,10 @@ type TourViewMode = 'illustrated' | 'map' | 'panorama'
 
 export function Tour360Page() {
     const { locationId } = useParams<{ locationId?: string }>()
+    const navigate = useNavigate()
     const [searchParams] = useSearchParams()
     const panoramaParam = searchParams.get('panorama')
+    const questRecord = searchParams.get('questRecord')
     const calibrateMode = searchParams.get('calibrate') === '1'
     const viewParam = searchParams.get('view')
     const { isAuthenticated, user } = useAuth()
@@ -45,6 +48,7 @@ export function Tour360Page() {
     const [hotspotsByPanorama, setHotspotsByPanorama] = useState<Record<string, Hotspot[]>>({})
     const [activePanoramaId, setActivePanoramaId] = useState<string | null>(panoramaParam)
     const [viewMode, setViewMode] = useState<TourViewMode>(() => {
+        if (questRecord === SA_BAN_QUEST_KEY) return 'illustrated'
         if (viewParam === 'map' || viewParam === 'illustrated' || viewParam === 'panorama') {
             return viewParam
         }
@@ -61,6 +65,7 @@ export function Tour360Page() {
     const { applyEngagement } = useUserProgress()
 
     const recordedScenes = useRef(new Set<string>())
+    const recordedQuestKeys = useRef(new Set<string>())
     const dwellTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
     const hotspotDwellTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
     const viewModeRef = useRef(viewMode)
@@ -120,6 +125,32 @@ export function Tour360Page() {
         },
         [recordScene],
     )
+
+    useEffect(() => {
+        if (questRecord === SA_BAN_QUEST_KEY) setViewMode('illustrated')
+    }, [questRecord])
+
+    useEffect(() => {
+        if (!questRecord || questRecord === SA_BAN_QUEST_KEY || !isAuthenticated || recordedQuestKeys.current.has(questRecord)) return
+        const dwellMs = appEnv.discoveryDwellMs
+        const timer = window.setTimeout(() => {
+            if (recordedQuestKeys.current.has(questRecord)) return
+            recordedQuestKeys.current.add(questRecord)
+            void recordDiscoveryEngagement({
+                recordKey: questRecord,
+                locationId: activeLocationId,
+                source: 'tour_panorama',
+                onSuccess: (response) => {
+                    notifyEngagementOutcome(response, showToast, applyEngagement, {
+                        locationId: activeLocationId,
+                        visitSessionId,
+                    })
+                },
+                onError: () => showDiscoveryRecordError(showToast, { role: user?.role }),
+            })
+        }, dwellMs > 0 ? dwellMs : 0)
+        return () => window.clearTimeout(timer)
+    }, [questRecord, isAuthenticated, activeLocationId, showToast, applyEngagement, user?.role, visitSessionId])
 
     const onPanoramaEnter = useCallback(
         (panoramaId: string) => {
@@ -422,6 +453,20 @@ export function Tour360Page() {
                                     panoramas={panoramas}
                                     activePanoramaId={activePanoramaId}
                                     onSelectPanorama={handleSelectPanorama}
+                                    fragment={questRecord === SA_BAN_QUEST_KEY ? {
+                                        xPct: SA_BAN_FRAGMENT_PIN.xPct,
+                                        yPct: SA_BAN_FRAGMENT_PIN.yPct,
+                                        code: SA_BAN_FRAGMENT_CODE,
+                                        onSend: () => {
+                                            const params = new URLSearchParams({
+                                                locationId: activeLocationId,
+                                                questRecord: SA_BAN_QUEST_KEY,
+                                                questPrompt: SA_BAN_FRAGMENT_CODE,
+                                                autoSend: '1',
+                                            })
+                                            navigate(`/chat?${params}`)
+                                        },
+                                    } : null}
                                 />
                             </div>
                         )}

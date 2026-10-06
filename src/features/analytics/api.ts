@@ -13,6 +13,11 @@ export type AnalyticsEventType =
   | 'PAYWALL_ERA_UPGRADE_CLICK'
   | 'PAYWALL_CHAT_QUOTA_VIEW'
   | 'PAYWALL_CHAT_UPGRADE_CLICK'
+  | 'quest_start'
+  | 'chapter_done'
+  | 'minigame_start'
+  | 'minigame_fail'
+  | 'minigame_done'
 
 export type RecordAnalyticsEventPayload = {
   locationId?: string

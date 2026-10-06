@@ -10,7 +10,8 @@ export type QuestStep = {
     objective: string
     description?: string
     hint?: string
-    actionType: 'artifact' | 'portal' | 'tour' | 'checkin' | 'briefing' | 'dialogue' | 'reveal'
+    actionType: 'artifact' | 'portal' | 'tour' | 'checkin' | 'briefing' | 'dialogue' | 'reveal' | 'minigame'
+    minigameId?: string | null
     actionLabel?: string
     xpPartial?: number
     chatPrompt?: string
@@ -30,7 +31,10 @@ export type Quest = {
     coverImage?: string | null
     completionTrigger?: string | null
     requireOnsiteCheckin?: boolean
+    requiredOrder?: number | null
     steps?: QuestStep[] // Mới
+    unlockAfterQuestId?: string | null
+    unlockDiscoveryKeys?: string | null
 }
 
 export type QuestProgress = {
@@ -120,6 +124,10 @@ export const gamificationApi = {
         ),
     startQuest: (questId: string) =>
         getData<QuestProgress>(httpClient.post(`/api/quests/${questId}/start`)),
+    claimChapterBonus: (locationId: string, unlockKey: string) =>
+        getData<{ awarded: number; alreadyClaimed: boolean }>(
+            httpClient.post('/api/quests/chapter-bonus', null, { params: { locationId, unlockKey } }),
+        ),
     progress: (questId: string) =>
         getData<QuestProgress>(httpClient.get(`/api/quests/${questId}/progress`)),
     checkin: (body: CheckinRequestBody) =>

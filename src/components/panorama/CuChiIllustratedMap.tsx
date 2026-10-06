@@ -12,10 +12,18 @@ import { resolveMediaUrl } from '../../shared/config/env'
 const MAP_W = 2361
 const MAP_H = 1663
 
+type MapFragment = {
+    xPct: number
+    yPct: number
+    code: string
+    onSend: () => void
+}
+
 type CuChiIllustratedMapProps = {
     panoramas: Panorama[]
     activePanoramaId: string | null
     onSelectPanorama: (id: string) => void
+    fragment?: MapFragment | null
     className?: string
 }
 
@@ -28,9 +36,11 @@ export function CuChiIllustratedMap({
                                         panoramas,
                                         activePanoramaId,
                                         onSelectPanorama,
+                                        fragment = null,
                                         className = '',
                                     }: CuChiIllustratedMapProps) {
     const [hoveredId, setHoveredId] = useState<string | null>(null)
+    const [fragmentOpen, setFragmentOpen] = useState(false)
 
     const panoById = useMemo(
         () => Object.fromEntries(panoramas.map((p) => [p.id, p])),
@@ -120,6 +130,37 @@ export function CuChiIllustratedMap({
                             </button>
                         )
                     })}
+
+                    {fragment && (
+                        <button
+                            type="button"
+                            className="absolute z-40 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#fdb438]/80 shadow-[0_0_12px_#fdb438] animate-pulse cursor-pointer"
+                            style={{ left: `${fragment.xPct}%`, top: `${fragment.yPct}%` }}
+                            aria-label="Mảnh sa bàn"
+                            onClick={() => setFragmentOpen(true)}
+                        />
+                    )}
+
+                    {fragment && fragmentOpen && (
+                        <div
+                            className="absolute z-50 w-56 rounded-2xl border border-[#fdb438]/60 bg-[#161824]/95 p-4 text-left shadow-2xl"
+                            style={{
+                                left: `${fragment.xPct}%`,
+                                top: `${fragment.yPct}%`,
+                                transform: 'translate(-50%, 16px)',
+                            }}
+                        >
+                            <p className="text-[10px] font-black uppercase tracking-widest text-[#fdb438]">Mảnh sa bàn</p>
+                            <p className="mt-2 text-lg font-black text-white">{fragment.code}</p>
+                            <button
+                                type="button"
+                                className="mt-3 w-full rounded-xl bg-[#fe951c] px-3 py-2 text-xs font-black text-black cursor-pointer"
+                                onClick={fragment.onSend}
+                            >
+                                Đưa mã cho Chrono
+                            </button>
+                        </div>
+                    )}
 
                     {/* Thẻ Hover Hologram (ĐÃ CHỈNH NGƯỠNG yPct < 48 ĐỂ KHÔNG BỊ CHE KHUẤT Ở TRÊN) */}
                     {hovered && hoveredPano && (

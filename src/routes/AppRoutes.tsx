@@ -21,6 +21,7 @@ import { ProfilePage } from '../pages/ProfilePage'
 import { SettingsPage } from '../pages/SettingsPage'
 import { QuestDetailPage } from '../pages/QuestDetailPage'
 import { QuestsPage } from '../pages/QuestsPage'
+import { MinigamePage } from '../pages/MinigamePage'
 import { ScanPage } from '../pages/ScanPage'
 import { SecretStoryPage } from '../pages/SecretStoryPage'
 import { SharePage } from '../pages/SharePage'
@@ -120,6 +121,7 @@ export function AppRoutes() {
             />
             <Route path="/tour/360/:locationId?" element={<Tour360Page />} />
             <Route path="/quests" element={<QuestsPage />} />
+            <Route path="/quests/:questId/play/:minigameId" element={<MinigamePage />} />
             <Route path="/quests/:questId" element={<QuestDetailPage />} />
             <Route path="/leaderboard" element={<LeaderboardPage />} />
 

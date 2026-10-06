@@ -1,12 +1,14 @@
 // src/pages/QuestDetailPage.tsx
 import { useCallback, useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { SimpleTopNav } from '../components/layout/TopNav'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { GridTextureOverlay } from '../components/ui/GridTextureOverlay'
 import { collectionApi } from '../features/collection/api'
-import { gamificationApi, type Quest, type QuestProgress } from '../features/gamification/api'
+import { discoveriesApi, gamificationApi, type Quest, type QuestProgress } from '../features/gamification/api'
+import { questBlockedByEarlier, questMissingTourKeys } from '../features/gamification/questGate'
+import { shareProgressCard } from '../features/gamification/shareProgressCard'
 import { locationsApi } from '../features/locations/api'
 import { analyticsApi } from '../features/analytics/api'
 import { DISCOVERY_RECORDED_EVENT } from '../features/gamification/discoveryRouting'
@@ -19,16 +21,21 @@ import { useVisitSession } from '../features/visit/VisitSessionProvider'
 import { pickQuestCover } from '../shared/media/resolveMedia'
 import { SmartImage } from '../shared/ui/SmartImage'
 import { HERITAGE_QUEST_META } from '../features/gamification/heritageQuestSteps'
-import { siteCodeFromLocationId } from '../shared/config/constants'
+import { CU_CHI_LOCATION_ID, siteCodeFromLocationId } from '../shared/config/constants'
+import { INTERVIEW_MINIGAME_ID, isDevMinigameQuestVisible } from '../features/minigame/api'
 
 export function QuestDetailPage() {
     const { questId } = useParams<{ questId: string }>()
+    const navigate = useNavigate()
     const { isAuthenticated } = useAuth()
     const [quest, setQuest] = useState<Quest | null>(null)
     const [progress, setProgress] = useState<QuestProgress | null>(null)
     const [stepImages, setStepImages] = useState<Record<string, string>>({})
     const [locationName, setLocationName] = useState('')
     const [loading, setLoading] = useState(false)
+    const [waitingEarlier, setWaitingEarlier] = useState(false)
+    const [waitingLabel, setWaitingLabel] = useState('Mở sau mật lệnh trước')
+    const [callOffer, setCallOffer] = useState(false)
     const { getSessionId } = useVisitSession()
     const { showToast } = useToast()
 
@@ -66,6 +73,31 @@ export function QuestDetailPage() {
     const meta = questId ? HERITAGE_QUEST_META[questId] : null;
 
     useEffect(() => {
+        if (!questId) return
+        setCallOffer(localStorage.getItem(`histar-quest-call:${questId}`) !== '1')
+    }, [questId])
+
+    useEffect(() => {
+        if (!quest?.locationId) {
+            setWaitingEarlier(false)
+            return
+        }
+        let cancelled = false
+        Promise.all([
+            gamificationApi.quests(quest.locationId),
+            isAuthenticated ? gamificationApi.myQuests(quest.locationId) : Promise.resolve([] as QuestProgress[]),
+            isAuthenticated ? discoveriesApi.summary(quest.locationId) : Promise.resolve({ keys: [] as string[] }),
+        ]).then(([list, mine, summary]) => {
+            if (cancelled) return
+            const done = new Set(mine.filter((item) => item.status === 'completed').map((item) => item.questId))
+            const missingTour = questMissingTourKeys(quest, summary.keys ?? [])
+            setWaitingEarlier(questBlockedByEarlier(quest, list, done) || missingTour)
+            setWaitingLabel(missingTour ? 'Mở sau hai cảnh tour' : 'Mở sau mật lệnh trước')
+        }).catch(() => {})
+        return () => { cancelled = true }
+    }, [quest, isAuthenticated])
+
+    useEffect(() => {
         if (!locationId) return
         locationsApi.getById(locationId).then((loc) => setLocationName(loc.name)).catch(() => {})
 
@@ -84,7 +116,7 @@ export function QuestDetailPage() {
             void analyticsApi.recordEvent({
                 locationId,
                 visitSessionId,
-                eventType: 'QUEST_STEP_COMPLETED',
+                eventType: 'chapter_done',
                 eventKey: detail.recordKey,
                 source: 'quest_detail',
             })
@@ -99,6 +131,12 @@ export function QuestDetailPage() {
         setLoading(true)
         try {
             const started = await gamificationApi.startQuest(questId)
+            void analyticsApi.recordEvent({
+                eventType: 'quest_start',
+                eventKey: questId,
+                locationId: quest?.locationId,
+                source: 'quest_detail',
+            })
             setProgress(started)
             showToast({ message: 'Mật lệnh đã được kích hoạt! Tiến hành giải mã.', type: 'success' })
         } catch (e) {
@@ -106,6 +144,14 @@ export function QuestDetailPage() {
         } finally {
             setLoading(false)
         }
+    }
+
+    if (questId && !isDevMinigameQuestVisible(questId)) {
+        return (
+            <AppLayout activeBorder="left" mobileBackTo="/quests" mobileTitle="Mật lệnh">
+                <main className="p-8 text-white">Mật lệnh thử chỉ mở khi chạy web dev.</main>
+            </AppLayout>
+        )
     }
 
     const coverImg = pickQuestCover(quest?.coverImage, undefined, title, 0)
@@ -221,10 +267,18 @@ export function QuestDetailPage() {
                                     <div className="w-16 h-16 rounded-full bg-[#388cf1]/10 flex items-center justify-center mb-4">
                                         <MaterialIcon name="lock" className="text-3xl text-[#388cf1]" />
                                     </div>
-                                    <h4 className="font-black text-white text-lg mb-2">Hồ Sơ Đang Khóa</h4>
+                                    <h4 className="font-black text-white text-lg mb-2">Chưa mở</h4>
                                     <p className="text-xs text-gray-400 mb-6 px-4">Kích hoạt để cấp quyền giải mã các dữ liệu lịch sử.</p>
 
-                                    {isAuthenticated ? (
+                                    {waitingEarlier ? (
+                                        <button
+                                            type="button"
+                                            disabled
+                                            className="w-full px-6 py-4 rounded-2xl bg-white/5 border border-white/10 text-gray-400 font-black text-xs uppercase tracking-widest cursor-not-allowed"
+                                        >
+                                            {waitingLabel}
+                                        </button>
+                                    ) : isAuthenticated ? (
                                         <button
                                             onClick={startQuest}
                                             disabled={loading}
@@ -249,8 +303,9 @@ export function QuestDetailPage() {
                                         <MaterialIcon name="stars" className="text-xl text-[#fdb438]" />
                                     </div>
                                     <div>
-                                        <p className="text-xs text-gray-400 font-bold uppercase">Kinh nghiệm</p>
+                                        <p className="text-xs text-gray-400 font-bold uppercase">Phá đảo</p>
                                         <p className="text-lg font-black text-white">+{quest?.pointsReward || 0} XP</p>
+                                        <p className="text-[11px] text-gray-500 mt-1">Điểm chương trên từng bước không cộng vào thưởng phá đảo.</p>
                                     </div>
                                 </div>
                                 {meta?.badge && (
@@ -269,6 +324,72 @@ export function QuestDetailPage() {
                     </div>
 
                     {/* TRỤC TỌA ĐỘ BẢN ĐỒ HÀNH TRÌNH (JOURNEY MAP) */}
+                    {callOffer && (
+                        <section className="mx-4 mt-6 rounded-3xl border border-[#fdb438]/40 bg-[#161824] p-5">
+                            <p className="text-sm font-black text-white">Chrono đang gọi</p>
+                            <p className="mt-2 text-xs text-gray-400">Cuộc gọi chỉ hiện lần đầu mở mật lệnh này.</p>
+                            <div className="mt-4 flex gap-3">
+                                <button
+                                    type="button"
+                                    className="rounded-xl bg-white/10 px-4 py-2 text-xs font-black"
+                                    onClick={() => {
+                                        if (questId) localStorage.setItem(`histar-quest-call:${questId}`, '1')
+                                        setCallOffer(false)
+                                    }}
+                                >
+                                    Bỏ qua
+                                </button>
+                                <button
+                                    type="button"
+                                    className="rounded-xl bg-[#fe951c] px-4 py-2 text-xs font-black text-black"
+                                    onClick={() => {
+                                        if (questId) localStorage.setItem(`histar-quest-call:${questId}`, '1')
+                                        setCallOffer(false)
+                                        const params = new URLSearchParams({ call: '1' })
+                                        if (locationId) params.set('locationId', locationId)
+                                        navigate(`/chat?${params.toString()}`)
+                                    }}
+                                >
+                                    Nghe
+                                </button>
+                            </div>
+                        </section>
+                    )}
+                    <div className="mx-4 mt-4 flex flex-wrap gap-3">
+                        {locationId === CU_CHI_LOCATION_ID && questId && (
+                            <Link to={`/quests/${questId}/play/${INTERVIEW_MINIGAME_ID}`} className="rounded-xl bg-white/10 px-4 py-2 text-xs font-black">
+                                Phỏng vấn nhân chứng
+                            </Link>
+                        )}
+                        <button
+                            type="button"
+                            className="rounded-xl bg-white/10 px-4 py-2 text-xs font-black"
+                            onClick={() => {
+                                const stars = stepsTotal > 0 ? Math.round((currentStep / stepsTotal) * 3) : 0
+                                void collectionApi.mine(locationId || CU_CHI_LOCATION_ID).then((mine) => {
+                                    void shareProgressCard({
+                                        title: title,
+                                        stars,
+                                        collected: mine.collected,
+                                        total: mine.total,
+                                        premiumCollected: mine.collectedPremium ?? 0,
+                                        premiumTotal: mine.totalPremium ?? 0,
+                                    })
+                                }).catch(() => {
+                                    void shareProgressCard({
+                                        title,
+                                        stars,
+                                        collected: currentStep,
+                                        total: stepsTotal,
+                                        premiumCollected: 0,
+                                        premiumTotal: 0,
+                                    })
+                                })
+                            }}
+                        >
+                            Chia sẻ tiến độ
+                        </button>
+                    </div>
                     <QuestJourneyPanel
                         steps={steps}
                         questId={questId || ''}

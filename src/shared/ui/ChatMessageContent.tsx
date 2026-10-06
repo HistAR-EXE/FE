@@ -1,7 +1,16 @@
-// src/shared/ui/toast/ChatMessageContent.tsx
 type ChatMessageContentProps = {
   content: string
   className?: string
+}
+
+function renderInline(text: string, keyPrefix: string) {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g)
+  return parts.map((part, index) => {
+    if (part.startsWith('**') && part.endsWith('**') && part.length > 4) {
+      return <strong key={`${keyPrefix}-${index}`}>{part.slice(2, -2)}</strong>
+    }
+    return <span key={`${keyPrefix}-${index}`}>{part}</span>
+  })
 }
 
 export function ChatMessageContent({ content, className = '' }: ChatMessageContentProps) {
@@ -10,13 +19,38 @@ export function ChatMessageContent({ content, className = '' }: ChatMessageConte
   return (
     <div className={className}>
       {lines.map((line, index) => {
-        const isSource = line.trimStart().startsWith('Nguồn:')
+        const trimmed = line.trim()
+        const isSource = trimmed.startsWith('Nguồn:')
+        const isDisclaimer = trimmed.startsWith('Chrono là một AI')
+        const isBullet = /^[-*•]\s+/.test(trimmed)
+        if (!trimmed) {
+          return (
+            <p key={`blank-${index}`} className="font-body-lg text-body-lg leading-relaxed">
+              {'\u00A0'}
+            </p>
+          )
+        }
+        if (isBullet) {
+          return (
+            <div
+              key={`bullet-${index}`}
+              className="flex gap-2 font-body-lg text-body-lg leading-relaxed text-on-surface"
+            >
+              <span aria-hidden="true">•</span>
+              <span>{renderInline(trimmed.replace(/^[-*•]\s+/, ''), String(index))}</span>
+            </div>
+          )
+        }
         return (
           <p
-            key={`${index}-${line.slice(0, 24)}`}
-            className={`font-body-lg text-body-lg leading-relaxed ${isSource ? 'text-sm text-on-surface-variant/70 mt-2' : 'text-on-surface'}`}
+            key={`line-${index}`}
+            className={`leading-relaxed ${
+              isSource || isDisclaimer
+                ? 'text-sm text-on-surface-variant/70 mt-2'
+                : 'font-body-lg text-body-lg text-on-surface'
+            }`}
           >
-            {line || '\u00A0'}
+            {renderInline(line, String(index))}
           </p>
         )
       })}

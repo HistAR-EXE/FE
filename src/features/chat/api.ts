@@ -8,12 +8,20 @@ export type ChatSource = {
     url?: string | null
 }
 
+export type ChatQuiz = {
+    prompt: string
+    options: { id: string; label: string }[]
+    correctId: string
+    state: 'open' | 'wrong' | 'correct'
+}
+
 export type ChatMessage = {
     id: string
     role: 'user' | 'assistant'
     content: string
     createdAt: string
     sources?: ChatSource[]
+    quiz?: ChatQuiz
 }
 
 export type ChatReply = {

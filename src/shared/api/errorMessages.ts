@@ -38,10 +38,10 @@ export function getFriendlyErrorMessage(error: unknown, context: ErrorContext): 
       return 'Trường đã đạt giới hạn CCU. Thử lại sau hoặc liên hệ giáo viên.'
     }
     if (error.status === 503 && context === 'chat') {
-      return 'Dịch vụ AI tạm thời không khả dụng. Kiểm tra AI service (:8100) và Ollama, hoặc cấu hình GEMINI_API_KEY trên BE.'
+      return 'Dịch vụ AI tạm thời không khả dụng. Kiểm tra AI service (:8100), hoặc cấu hình GEMINI_API_KEY trên BE.'
     }
     if (error.status === 500 && context === 'chat') {
-      return 'Lỗi máy chủ chat. Chạy scripts/diagnose-chat.ps1 hoặc bật AI service + Ollama.'
+      return 'Lỗi máy chủ chat. Chạy scripts/diagnose-chat.ps1 hoặc bật AI service.'
     }
     if (error.status === 403) return 'Bạn chưa đủ điều kiện truy cập nội dung này.'
     if (error.code === 'VALIDATION_ERROR') return error.message || 'Dữ liệu gửi lên không hợp lệ.'

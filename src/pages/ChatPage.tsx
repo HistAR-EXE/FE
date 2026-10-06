@@ -7,16 +7,20 @@ import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { Button } from '../components/ui/Button'
 import { images } from '../assets/images'
 import { resolveMediaUrl } from '../shared/config/env'
-import { chatApi, normalizeChatSources, type ChatMessage, type ChatPrompt, type ChatSource } from '../features/chat/api'
+import { chatApi, normalizeChatSources, type ChatMessage, type ChatSource } from '../features/chat/api'
 import { emitEvent } from '../lib/pilotEvents'
 import { setActiveStationCode } from '../lib/stationSafety'
 import { ReportContentButton } from '../components/feedback/ReportContentModal'
-import { ChatSourcesBlock } from '../components/chat/ChatSourcesBlock'
 import { analyticsApi } from '../features/analytics/api'
 import { buildChatTimeline } from '../features/chat/chatTimeline'
-import { stopActiveRecorder, voiceChatStepwise, type VoicePhase } from '../features/chat/voice'
+import type { MascotMode } from '../features/chat/MascotAvatar'
+import { MascotCallOverlay } from '../features/chat/MascotCallOverlay'
+import { MascotStage } from '../features/chat/MascotStage'
+import { listenForUtterance, speakReply, startDictation, stopActiveSpeech, type VoicePhase } from '../features/chat/voice'
 import { locationsApi, type Character } from '../features/locations/api'
+import { gamificationApi } from '../features/gamification/api'
 import { questRecordFromSearch, recordQuestStepEngagement } from '../features/gamification/questEngagement'
+import { SA_BAN_FRAGMENT_CODE, SA_BAN_QUEST_KEY, SA_BAN_QUIZ, messageHasSaBanCode } from '../features/gamification/saBanFragment'
 import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
 import { ApiError } from '../shared/api/contracts'
 import { ChatMessageContent } from '../shared/ui/ChatMessageContent'
@@ -34,7 +38,7 @@ const MESSAGE_PAGE_SIZE = 20
 
 const VOICE_STATUS: Record<VoicePhase, string> = {
     idle: '',
-    recording: '🔴 Đang thu âm... Nhấn nút Dừng để gửi câu hỏi giọng nói',
+    recording: 'Chrono đang nghe',
     stt: '⚡ Đang chuyển giọng nói thành văn bản RAG...',
     chat: '🧠 Trợ lý AI đang suy nghĩ sử liệu...',
     tts: '🔊 Đang tạo giọng đọc nhân vật lịch sử...',
@@ -52,44 +56,18 @@ interface AmbassadorPersona {
     themeColor: string
     accentBorder: string
     badgeBg: string
-    quickPrompts: string[]
 }
 
-const AMBASSADORS: Record<string, AmbassadorPersona> = {
-    'chi-nam': {
-        id: 'chi-nam',
-        name: 'Chị Năm Du Kích',
-        era: 'Củ Chi 1968',
-        role: 'Đại sứ Đời sống & Nghĩa tình',
-        desc: 'Người con gái kiên trung Đất Thép. Chị tường tận từng ngóc ngách hầm ngầm, sẵn sàng kể bạn nghe chuyện sinh hoạt kháng chiến và nghĩa tình quân dân.',
-        avatar: '/media/characters/nu-du-kich.png',
-        themeColor: 'text-[#fdb438]',
-        accentBorder: 'border-[#fe951c]/60 shadow-[0_0_25px_rgba(254,149,28,0.25)]',
-        badgeBg: 'bg-[#fe951c]/20 text-[#fdb438] border-[#fe951c]/40',
-        quickPrompts: [
-            'Chị Năm ơi, cuộc sống sinh hoạt dưới hầm ngầm thế nào?',
-            'Bếp Hoàng Cầm hoạt động ra sao để nấu ăn mà không có khói?',
-            'Tình quân dân vùng giải phóng Củ Chi những năm 1968 ra sao?',
-            'Đèn dầu mù u dưới địa đạo được làm từ chất liệu gì?'
-        ]
-    },
-    'anh-ba': {
-        id: 'anh-ba',
-        name: 'Anh Ba Chiến Sĩ',
-        era: 'Củ Chi 1968',
-        role: 'Đại sứ Kỹ thuật & Tác chiến',
-        desc: 'Chuyên gia sa bàn và tác chiến du kích. Anh hướng dẫn chi tiết cấu trúc phòng thủ 3 tầng ngầm, bẫy chông tự tạo và nghệ thuật ngụy trang tài tình.',
-        avatar: '/media/characters/nam-du-kich.png',
-        themeColor: 'text-[#388cf1]',
-        accentBorder: 'border-[#388cf1]/60 shadow-[0_0_25px_rgba(56,140,241,0.25)]',
-        badgeBg: 'bg-[#388cf1]/20 text-cyan-300 border-[#388cf1]/40',
-        quickPrompts: [
-            'Anh Ba hãy phân tích cấu trúc địa đạo 3 tầng ngầm Củ Chi?',
-            'Giải thích cơ chế hoạt động của bẫy chông kẹp nách du kích?',
-            'Làm thế nào quân dân ta ngụy trang lỗ thông hơi ổ mối trước địch?',
-            'Khí tài ngoài trời như xe tăng M41 Mỹ bị phá hủy bằng chiến thuật nào?'
-        ]
-    }
+const MASCOT_PROFILE: AmbassadorPersona = {
+    id: 'mascot',
+    name: 'Chrono',
+    era: 'TimeLens',
+    role: 'Linh vật TimeLens',
+    desc: 'Chrono đi cùng bạn ở mọi di tích trên TimeLens và kể tất cả thông tin mà Chrono biết.',
+    avatar: '/mascot/mascot-1.png',
+    themeColor: 'text-[#fdb438]',
+    accentBorder: 'border-[#fe951c]/60 shadow-[0_0_25px_rgba(254,149,28,0.25)]',
+    badgeBg: 'bg-[#fe951c]/20 text-[#fdb438] border-[#fe951c]/40',
 }
 
 function sortChronological(items: ChatMessage[]): ChatMessage[] {
@@ -131,7 +109,7 @@ function TimelineDivider({ label }: { label: string }) {
 
 export function ChatPage() {
     const { characterId: routeCharacterId } = useParams<{ characterId?: string }>()
-    const [params] = useSearchParams()
+    const [params, setSearchParams] = useSearchParams()
     const navigate = useNavigate()
     const locationId = resolveChatLocationId(params.get('locationId'))
     const personaParam = params.get('persona') // Nhận 'chi-nam' hoặc 'anh-ba' từ ExplorePage
@@ -146,6 +124,8 @@ export function ChatPage() {
     const { isAuthenticated, user } = useAuth()
     const questDialogueRecorded = useRef(false)
     const prefilledQuestPrompt = useRef(false)
+    const autoSentSaBan = useRef(false)
+    const claimedQuizIds = useRef(new Set<string>())
 
     const [characters, setCharacters] = useState<Character[]>([])
     const [characterId, setCharacterId] = useState(initialCharacterId || personaParam || 'chi-nam')
@@ -171,10 +151,19 @@ export function ChatPage() {
         () => sessionStorage.getItem('premiumBannerDismissed') === '1',
     )
     const [voicePhase, setVoicePhase] = useState<VoicePhase>('idle')
+    const [dictating, setDictating] = useState(false)
+    const [callOpen, setCallOpen] = useState(false)
+    const [callMuted, setCallMuted] = useState(false)
+    const [stagePaused, setStagePaused] = useState(false)
+    const [heardText, setHeardText] = useState('')
     const [aiServiceOnline, setAiServiceOnline] = useState<boolean | null>(null)
-    const [stationChips, setStationChips] = useState<ChatPrompt[]>([])
-    const recorderRef = useRef<MediaRecorder | null>(null)
-    const recordPromiseRef = useRef<Promise<Blob> | null>(null)
+    const dictateStopRef = useRef<(() => void) | null>(null)
+    const callRunRef = useRef(0)
+    const callMutedRef = useRef(false)
+    const conversationIdRef = useRef<string | null>(null)
+    conversationIdRef.current = conversationId
+    const beginCallRef = useRef<() => void>(() => undefined)
+    const MASCOT_STILL = '/mascot/mascot-5.png'
     const messagesScrollRef = useRef<HTMLDivElement | null>(null)
     const messagesEndRef = useRef<HTMLDivElement | null>(null)
     const loadMoreRef = useRef<HTMLDivElement | null>(null)
@@ -222,30 +211,15 @@ export function ChatPage() {
 
     useEffect(() => {
         if (stationCode) setActiveStationCode(stationCode)
-        if (!stationCode) {
-            setStationChips([])
-            return
-        }
-        let cancelled = false
-        chatApi
-            .getStationPrompts(siteCode, stationCode, activePersonaKey)
-            .then((chips) => {
-                if (!cancelled) setStationChips(chips)
-            })
-            .catch(() => {
-                if (!cancelled) setStationChips([])
-            })
-        return () => {
-            cancelled = true
-        }
-    }, [stationCode, activePersonaKey, siteCode])
+    }, [stationCode])
 
     // Chọn Persona hiển thị (Ưu tiên Đại sứ Củ Chi, fallback API)
-    const currentAmbassador = useMemo(() => AMBASSADORS[activePersonaKey], [activePersonaKey])
     const apiCharacter = useMemo(() => characters.find((c) => c.id === characterId), [characters, characterId])
 
+    const showMascot = !apiCharacter || /chị năm|anh ba|du kích|chiến sĩ|chrono/i.test(apiCharacter.name)
+
     const displayProfile = useMemo(() => {
-        if (apiCharacter) {
+        if (!showMascot && apiCharacter) {
             return {
                 name: apiCharacter.name,
                 era: apiCharacter.era,
@@ -255,11 +229,18 @@ export function ChatPage() {
                 themeColor: 'text-[#fdb438]',
                 accentBorder: 'border-[#fe951c]/50',
                 badgeBg: 'bg-[#fe951c]/20 text-[#fdb438] border-[#fe951c]/40',
-                quickPrompts: currentAmbassador.quickPrompts
             }
         }
-        return currentAmbassador
-    }, [apiCharacter, currentAmbassador])
+        return MASCOT_PROFILE
+    }, [apiCharacter, showMascot])
+    const mascotMode: MascotMode =
+        dictating || voicePhase === 'recording'
+            ? 'listening'
+            : voicePhase === 'playing' || voicePhase === 'tts'
+              ? 'speaking'
+              : voicePhase === 'stt' || voicePhase === 'chat' || sending
+                ? 'thinking'
+                : 'idle'
 
     const voiceBusy = voicePhase !== 'idle' && voicePhase !== 'recording'
     const busy = sending || voiceBusy
@@ -399,11 +380,70 @@ export function ChatPage() {
     }, [resolvedCharacterId, loadLatestMessages])
 
     useEffect(() => {
+        if (params.get('autoSend') === '1') return
         if (questPrompt && !prefilledQuestPrompt.current) {
             prefilledQuestPrompt.current = true
             setInput(questPrompt)
         }
-    }, [questPrompt])
+    }, [params, questPrompt])
+
+    const acceptSaBanCode = useCallback((text: string) => {
+        const now = new Date().toISOString()
+        shouldStickToBottomRef.current = true
+        setInput('')
+        setMessages((prev) => [
+            ...prev,
+            { id: `user-${Date.now()}`, role: 'user', content: text, createdAt: now },
+            {
+                id: `quiz-${Date.now()}`,
+                role: 'assistant',
+                content: SA_BAN_QUIZ.prompt,
+                createdAt: now,
+                quiz: {
+                    prompt: SA_BAN_QUIZ.prompt,
+                    options: SA_BAN_QUIZ.options,
+                    correctId: SA_BAN_QUIZ.correctId,
+                    state: 'open',
+                },
+            },
+        ])
+        if (locationId && isAuthenticated && !questDialogueRecorded.current) {
+            questDialogueRecorded.current = true
+            void recordQuestStepEngagement(SA_BAN_QUEST_KEY, locationId, 'map')
+        }
+    }, [isAuthenticated, locationId])
+
+    const answerSaBanQuiz = useCallback(async (messageId: string, optionId: string) => {
+        const correct = optionId === SA_BAN_QUIZ.correctId
+        if (correct && claimedQuizIds.current.has(messageId)) return
+        if (correct) claimedQuizIds.current.add(messageId)
+        setMessages((prev) => prev.map((item) => {
+            if (item.id !== messageId || !item.quiz || item.quiz.state === 'correct') return item
+            return { ...item, quiz: { ...item.quiz, state: correct ? 'correct' : 'wrong' } }
+        }))
+        if (!correct) {
+            setMessages((prev) => [...prev, {
+                id: `quiz-retry-${Date.now()}`,
+                role: 'assistant',
+                content: 'Chưa đúng. Xem lại tầng sâu nhất rồi chọn lại.',
+                createdAt: new Date().toISOString(),
+            }])
+            return
+        }
+        if (!locationId) return
+        try {
+            const result = await gamificationApi.claimChapterBonus(locationId, SA_BAN_QUEST_KEY)
+            showToast({
+                message: result.alreadyClaimed
+                    ? 'Bạn đã nhận điểm chương này rồi.'
+                    : `Chính xác. +${result.awarded} điểm chương sa bàn`,
+                type: result.alreadyClaimed ? 'info' : 'success',
+            })
+        } catch (error) {
+            claimedQuizIds.current.delete(messageId)
+            showToast({ message: getFriendlyErrorMessage(error, 'quest'), type: 'error' })
+        }
+    }, [locationId, showToast])
 
     useEffect(() => {
         const root = messagesScrollRef.current
@@ -428,6 +468,19 @@ export function ChatPage() {
         scrollToBottom('auto')
     }, [messages, scrollToBottom])
 
+    const recordDialogueQuest = () => {
+        if (
+            locationId &&
+            questRecordKey &&
+            questRecordKey !== SA_BAN_QUEST_KEY &&
+            isAuthenticated &&
+            !questDialogueRecorded.current
+        ) {
+            questDialogueRecorded.current = true
+            void recordQuestStepEngagement(questRecordKey, locationId, 'map')
+        }
+    }
+
     const appendExchange = (userText: string, reply: string, convId: string, sources?: ChatSource[]) => {
         setConversationId(convId)
         shouldStickToBottomRef.current = true
@@ -448,7 +501,16 @@ export function ChatPage() {
                 },
             ]),
         )
+        recordDialogueQuest()
     }
+
+    useEffect(() => {
+        if (params.get('call') !== '1') return
+        beginCallRef.current()
+        const next = new URLSearchParams(params)
+        next.delete('call')
+        setSearchParams(next, { replace: true })
+    }, [params, setSearchParams])
 
     const handleMessagesScroll = () => {
         const el = messagesScrollRef.current
@@ -457,7 +519,20 @@ export function ChatPage() {
         shouldStickToBottomRef.current = distanceFromBottom < 120
     }
 
+    useEffect(() => {
+        if (autoSentSaBan.current) return
+        if (params.get('autoSend') !== '1') return
+        if (!messageHasSaBanCode(questPrompt)) return
+        autoSentSaBan.current = true
+        acceptSaBanCode(SA_BAN_FRAGMENT_CODE)
+    }, [acceptSaBanCode, params, questPrompt])
+
     const send = async () => {
+        const pending = input.trim()
+        if (questRecordKey === SA_BAN_QUEST_KEY && messageHasSaBanCode(pending)) {
+            acceptSaBanCode(pending)
+            return
+        }
         if (!resolvedCharacterId) {
             showToast({
                 message: locationId
@@ -508,15 +583,7 @@ export function ChatPage() {
                     source: 'chat',
                 })
             }
-            if (
-                locationId &&
-                questRecordKey &&
-                isAuthenticated &&
-                !questDialogueRecorded.current
-            ) {
-                questDialogueRecorded.current = true
-                void recordQuestStepEngagement(questRecordKey, locationId, 'map')
-            }
+            recordDialogueQuest()
             setMessages((prev) => {
                 const withoutOptimistic = prev.filter((m) => m.id !== optimistic.id)
                 if (withoutOptimistic.some((m) => m.id === assistantId)) {
@@ -564,7 +631,40 @@ export function ChatPage() {
         }
     }
 
-    const toggleVoice = async () => {
+    const stopDictation = () => {
+        dictateStopRef.current?.()
+        dictateStopRef.current = null
+        setDictating(false)
+    }
+
+    const toggleDictate = () => {
+        if (dictateStopRef.current) {
+            stopDictation()
+            return
+        }
+        const session = startDictation((text) => setInput(text))
+        if (!session) {
+            showToast({
+                message: 'Trình duyệt này không đổi giọng nói thành chữ. Hãy dùng Chrome hoặc Edge.',
+                type: 'error',
+            })
+            return
+        }
+        dictateStopRef.current = session.stop
+        setDictating(true)
+    }
+
+    const hangUp = () => {
+        callRunRef.current += 1
+        callMutedRef.current = false
+        stopActiveSpeech()
+        setHeardText('')
+        setVoicePhase('idle')
+        setCallMuted(false)
+        setCallOpen(false)
+    }
+
+    const beginCall = () => {
         if (!resolvedCharacterId) {
             showToast({
                 message: locationId
@@ -574,68 +674,75 @@ export function ChatPage() {
             })
             return
         }
+        stopDictation()
+        const runId = callRunRef.current + 1
+        callRunRef.current = runId
+        callMutedRef.current = false
+        setCallMuted(false)
+        setCallOpen(true)
+        setHeardText('')
         const targetId = resolvedCharacterId
+        const personaKey = activePersonaKey
 
-        if (voicePhase === 'recording') {
-            stopActiveRecorder(recorderRef.current)
-            setVoicePhase('stt')
-            try {
-                const blob = await (recordPromiseRef.current ?? Promise.reject(new Error('No recording')))
-                setVoicePhase('chat')
-                const result = await voiceChatStepwise(
-                    {
-                        audio: blob,
+        const loop = async () => {
+            while (callRunRef.current === runId) {
+                if (callMutedRef.current) {
+                    setVoicePhase('idle')
+                    await new Promise((resolve) => window.setTimeout(resolve, 250))
+                    continue
+                }
+                setVoicePhase('recording')
+                setHeardText('')
+                let said = ''
+                try {
+                    said = await listenForUtterance(
+                        (text) => setHeardText(text),
+                        () => callRunRef.current !== runId || callMutedRef.current,
+                    )
+                } catch (error) {
+                    if (callRunRef.current !== runId) return
+                    setVoicePhase('idle')
+                    callMutedRef.current = true
+                    setCallMuted(true)
+                    showToast({
+                        message: error instanceof Error && error.message === 'not-allowed'
+                            ? 'Hãy cho phép micro, rồi bật mic trên cuộc gọi.'
+                            : 'Trình duyệt không nghe được. Hãy dùng Chrome hoặc Edge.',
+                        type: 'error',
+                    })
+                    continue
+                }
+                if (callRunRef.current !== runId || callMutedRef.current) continue
+                if (!said) {
+                    await new Promise((resolve) => window.setTimeout(resolve, 400))
+                    continue
+                }
+                try {
+                    setVoicePhase('chat')
+                    const reply = await chatApi.send({
                         characterId: targetId,
-                        conversationId,
-                    },
-                    {
-                        onFirstAudio: () => setVoicePhase('playing'),
-                    },
-                )
-                appendExchange(
-                    result.userText,
-                    result.reply,
-                    result.conversationId,
-                    normalizeChatSources(result.sources),
-                )
-                setVoicePhase('idle')
-            } catch (e) {
-                setVoicePhase('idle')
-                showToast({
-                    message: `${getFriendlyErrorMessage(e, 'chat')} Bạn có thể gõ text thay thế.`,
-                    type: 'error',
-                })
-            } finally {
-                recorderRef.current = null
-                recordPromiseRef.current = null
+                        message: said,
+                        conversationId: conversationIdRef.current,
+                        stationCode,
+                        siteCode,
+                    })
+                    if (callRunRef.current !== runId) return
+                    conversationIdRef.current = reply.conversationId
+                    appendExchange(said, reply.reply, reply.conversationId, normalizeChatSources(reply.sources))
+                    setHeardText(reply.reply)
+                    setVoicePhase('playing')
+                    await speakReply(reply.reply, personaKey)
+                    await new Promise((resolve) => window.setTimeout(resolve, 350))
+                } catch (error) {
+                    if (callRunRef.current !== runId) return
+                    showToast({ message: getFriendlyErrorMessage(error, 'chat'), type: 'error' })
+                }
             }
-            return
+            if (callRunRef.current === runId) setVoicePhase('idle')
         }
-
-        if (busy) return
-
-        try {
-            setVoicePhase('recording')
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-            const chunks: Blob[] = []
-            const recorder = new MediaRecorder(stream)
-            recorderRef.current = recorder
-            recordPromiseRef.current = new Promise((resolve, reject) => {
-                recorder.ondataavailable = (e) => {
-                    if (e.data.size > 0) chunks.push(e.data)
-                }
-                recorder.onerror = () => reject(new Error('Ghi âm thất bại'))
-                recorder.onstop = () => {
-                    stream.getTracks().forEach((t) => t.stop())
-                    resolve(new Blob(chunks, { type: recorder.mimeType || 'audio/webm' }))
-                }
-            })
-            recorder.start()
-        } catch {
-            setVoicePhase('idle')
-            showToast({ message: 'Không truy cập được micro. Dùng chat text.', type: 'error' })
-        }
+        void loop()
     }
+    beginCallRef.current = beginCall
 
     const voiceHint = VOICE_STATUS[voicePhase]
     const showTypingIndicator = sending && messages.at(-1)?.role === 'user'
@@ -654,37 +761,35 @@ export function ChatPage() {
                 <section className="hidden lg:flex lg:h-full lg:shrink-0 w-[360px] xl:w-[400px] bg-[#161824] rounded-3xl border border-white/10 flex-col overflow-hidden relative shadow-2xl">
                     <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#fe951c] via-[#fdb438] to-[#388cf1] z-20" />
 
-                    {/* Chuyển đổi nhanh 2 Đại sứ */}
-                    <div className="p-4 pb-2 bg-[#12141f] border-b border-white/10 flex items-center justify-between gap-2">
-                        <button
-                            onClick={() => { setActivePersonaKey('chi-nam'); setCharacterId('') }}
-                            className={`flex-1 py-2 px-3 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                                activePersonaKey === 'chi-nam'
-                                    ? 'bg-gradient-to-r from-[#fe951c] to-[#fdb438] text-black shadow-md scale-[1.02]'
-                                    : 'bg-white/5 text-gray-300 hover:bg-white/10'
-                            }`}
-                        >
-                            <span>👩 Chị Năm Du Kích</span>
-                        </button>
-                        <button
-                            onClick={() => { setActivePersonaKey('anh-ba'); setCharacterId('') }}
-                            className={`flex-1 py-2 px-3 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                                activePersonaKey === 'anh-ba'
-                                    ? 'bg-gradient-to-r from-[#388cf1] to-cyan-400 text-white shadow-md scale-[1.02]'
-                                    : 'bg-white/5 text-gray-300 hover:bg-white/10'
-                            }`}
-                        >
-                            <span>👨 Anh Ba Chiến Sĩ</span>
-                        </button>
+                    <div className="px-4 py-3 bg-[#12141f] border-b border-white/10">
+                        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#fdb438]">Sân khấu</p>
+                        <p className="text-sm font-black text-white">Kéo ngang để mascot bay qua lại</p>
                     </div>
 
-                    {/* Khối khung ảnh Đại sứ */}
-                    <div className="h-[280px] shrink-0 w-full relative overflow-hidden bg-black/60 flex items-end justify-center">
-                        <img
-                            alt={displayProfile.name}
-                            className="h-full w-auto object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.9)] filter contrast-105 transition-all duration-500 hover:scale-105"
-                            src={resolveMediaUrl(displayProfile.avatar)}
-                        />
+                    <div className="relative min-h-[340px] flex-1 w-full overflow-hidden bg-[radial-gradient(circle_at_50%_40%,rgba(56,140,241,0.22),transparent_55%),linear-gradient(180deg,#10131d_0%,#070910_100%)]">
+                        {showMascot ? (
+                            <MascotStage
+                                mode={mascotMode}
+                                paused={stagePaused}
+                                className="absolute inset-0 cursor-grab active:cursor-grabbing"
+                            />
+                        ) : (
+                            <img
+                                alt={displayProfile.name}
+                                className="h-full w-auto object-contain mx-auto drop-shadow-[0_10px_20px_rgba(0,0,0,0.9)]"
+                                src={resolveMediaUrl(displayProfile.avatar)}
+                            />
+                        )}
+                        {showMascot && (
+                            <button
+                                type="button"
+                                onClick={() => setStagePaused((value) => !value)}
+                                aria-pressed={stagePaused}
+                                className="absolute top-3 right-3 z-30 px-3 py-1.5 rounded-full bg-black/70 border border-white/20 text-[11px] font-black text-white cursor-pointer hover:bg-black/90"
+                            >
+                                {stagePaused ? 'Tiếp tục' : 'Tạm dừng'}
+                            </button>
+                        )}
                         <div className="absolute inset-0 bg-gradient-to-t from-[#161824] via-transparent to-transparent pointer-events-none" />
 
                         <div className="absolute bottom-4 left-4 right-4 z-20 text-left">
@@ -713,21 +818,6 @@ export function ChatPage() {
                             {displayProfile.desc}
                         </p>
 
-                        {characters.length > 0 && (
-                            <div className="mt-auto pt-4 border-t border-white/10">
-                                <label className="text-xs font-bold text-gray-400 block mb-1">Chọn nhân vật theo Di tích khác:</label>
-                                <select
-                                    value={characterId}
-                                    onChange={(e) => setCharacterId(e.target.value)}
-                                    className="w-full bg-[#1b1e2c] border border-white/15 rounded-xl px-3 py-2 text-xs text-white font-bold focus:outline-none focus:border-[#fe951c]"
-                                >
-                                    <option value="">-- Mặc định (Đại sứ Củ Chi) --</option>
-                                    {characters.map((c) => (
-                                        <option key={c.id} value={c.id}>{c.name} ({c.era})</option>
-                                    ))}
-                                </select>
-                            </div>
-                        )}
                     </div>
                 </section>
 
@@ -737,16 +827,17 @@ export function ChatPage() {
                     {/* Header Mobile cho Persona */}
                     <div className="lg:hidden p-3 bg-[#12141f] border-b border-white/10 flex items-center justify-between">
                         <div className="flex items-center gap-2.5">
-                            <img src={resolveMediaUrl(displayProfile.avatar)} alt="" className="w-9 h-9 rounded-full object-cover border border-[#fdb438]" />
+                            {showMascot ? (
+                                <img src={MASCOT_STILL} alt="" className="w-9 h-12 object-contain" />
+                            ) : (
+                                <img src={resolveMediaUrl(displayProfile.avatar)} alt="" className="w-9 h-9 rounded-full object-cover border border-[#fdb438]" />
+                            )}
                             <div className="text-left">
                                 <h4 className="text-sm font-black text-white leading-none">{displayProfile.name}</h4>
                                 <span className="text-[10px] text-emerald-400 font-bold">● Trợ lý lịch sử sẵn sàng</span>
                             </div>
                         </div>
-                        <div className="flex gap-1">
-                            <button onClick={() => setActivePersonaKey('chi-nam')} className={`px-2.5 py-1 rounded-lg text-[10px] font-bold ${activePersonaKey === 'chi-nam' ? 'bg-[#fe951c] text-black' : 'bg-white/10 text-white'}`}>Chị Năm</button>
-                            <button onClick={() => setActivePersonaKey('anh-ba')} className={`px-2.5 py-1 rounded-lg text-[10px] font-bold ${activePersonaKey === 'anh-ba' ? 'bg-[#388cf1] text-white' : 'bg-white/10 text-white'}`}>Anh Ba</button>
-                        </div>
+                        <span className="text-[10px] font-black uppercase tracking-wider text-[#fdb438]">Đang bay</span>
                     </div>
 
                     {aiServiceOnline === false && (
@@ -785,54 +876,27 @@ export function ChatPage() {
                         {/* Màn chào mừng Welcome & Gợi ý câu hỏi chuẩn */}
                         {messages.length === 0 && !loadingMessages && (
                             <div className="flex flex-col gap-5 max-w-2xl mx-auto my-auto text-center py-6">
-                                <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#fe951c] to-[#388cf1] p-0.5 mx-auto shadow-xl">
-                                    <div className="w-full h-full rounded-2xl bg-[#1b1e2c] flex items-center justify-center overflow-hidden">
-                                        <img src={resolveMediaUrl(displayProfile.avatar)} alt="" className="w-full h-full object-cover" />
-                                    </div>
+                                <div className={`mx-auto ${showMascot ? 'h-28 w-24 lg:hidden' : 'w-24 h-28'}`}>
+                                    {showMascot ? (
+                                        <img src={MASCOT_STILL} alt="" className="h-full w-full object-contain" />
+                                    ) : (
+                                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#fe951c] to-[#388cf1] p-0.5 mx-auto shadow-xl">
+                                            <div className="w-full h-full rounded-2xl bg-[#1b1e2c] flex items-center justify-center overflow-hidden">
+                                                <img src={resolveMediaUrl(displayProfile.avatar)} alt="" className="w-full h-full object-cover" />
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="space-y-2">
                                     <h3 className="text-xl sm:text-2xl font-black text-white">
-                                        Xin chào! Tôi là <span className={displayProfile.themeColor}>{displayProfile.name}</span>
+                                        Xin chào! Mình là <span className={displayProfile.themeColor}>{displayProfile.name}</span>
                                     </h3>
                                     <p className="text-xs sm:text-sm text-gray-300 font-medium leading-relaxed">
-                                        Tôi ở đây để đồng hành và giải đáp mọi thắc mắc của bạn về lịch sử, chiến thuật và đời sống vùng Đất Thép Củ Chi. Bạn muốn bắt đầu từ đâu?
+                                        Mình đi cùng bạn ở các di tích trên TimeLens và chỉ kể phần có trong tư liệu. Bạn muốn bắt đầu từ đâu?
                                     </p>
                                 </div>
 
-                                {stationCode && (
-                                    <p
-                                        data-testid="chat-station-badge"
-                                        className="text-[10px] font-black uppercase tracking-widest text-[#fdb438]"
-                                    >
-                                        Trạm {stationCode} · gợi ý theo ngữ cảnh
-                                    </p>
-                                )}
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-left pt-2">
-                                    {(stationChips.length > 0
-                                        ? stationChips.map((c) => ({
-                                              key: c.id,
-                                              label: c.chipLabel,
-                                              text: c.questionText,
-                                          }))
-                                        : displayProfile.quickPrompts.map((prompt, idx) => ({
-                                              key: `qp-${idx}`,
-                                              label: prompt,
-                                              text: prompt,
-                                          }))
-                                    ).map((chip) => (
-                                        <button
-                                            key={chip.key}
-                                            type="button"
-                                            data-testid={stationChips.length > 0 ? 'station-chat-chip' : undefined}
-                                            onClick={() => setInput(chip.text)}
-                                            className="p-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-[#fdb438]/50 text-xs font-semibold text-gray-200 hover:text-white transition-all flex items-center justify-between group cursor-pointer"
-                                        >
-                                            <span className="line-clamp-2">"{chip.label}"</span>
-                                            <MaterialIcon name="send" className="text-sm text-gray-500 group-hover:text-[#fdb438] shrink-0 ml-2" />
-                                        </button>
-                                    ))}
-                                </div>
                                 <div className="pt-2">
                                     <ReportContentButton stationCode={stationCode ?? undefined} context="chat" />
                                 </div>
@@ -848,8 +912,12 @@ export function ChatPage() {
                             const isUser = m.role === 'user'
                             return (
                                 <div key={m.id} className={`flex gap-3 max-w-[88%] sm:max-w-[80%] ${isUser ? 'self-end flex-row-reverse' : 'self-start'}`}>
-                                    <div className="w-8 h-8 rounded-full overflow-hidden border border-white/15 shrink-0 hidden sm:block">
-                                        <img alt={m.role} className="w-full h-full object-cover" src={isUser ? images.chatUserAvatar : resolveMediaUrl(displayProfile.avatar)} />
+                                    <div className={`w-8 shrink-0 hidden sm:block ${showMascot && !isUser ? 'h-12' : 'h-8 rounded-full overflow-hidden border border-white/15'}`}>
+                                        {showMascot && !isUser ? (
+                                            <img src={MASCOT_STILL} alt={m.role} className="h-full w-full object-contain" />
+                                        ) : (
+                                            <img alt={m.role} className="w-full h-full object-cover" src={isUser ? images.chatUserAvatar : resolveMediaUrl(displayProfile.avatar)} />
+                                        )}
                                     </div>
 
                                     <div className={`p-4 rounded-2xl border relative shadow-md text-left ${
@@ -858,9 +926,19 @@ export function ChatPage() {
                                             : 'bg-[#1b1e2c] border-white/10 rounded-tl-sm text-gray-200'
                                     }`}>
                                         <ChatMessageContent content={m.content} />
-                                        {m.role === 'assistant' && m.sources && m.sources.length > 0 && (
-                                            <div className="mt-3 pt-3 border-t border-white/10">
-                                                <ChatSourcesBlock sources={m.sources} />
+                                        {m.quiz && (
+                                            <div className="mt-3 flex flex-col gap-2">
+                                                {m.quiz.options.map((option) => (
+                                                    <button
+                                                        key={option.id}
+                                                        type="button"
+                                                        disabled={m.quiz?.state === 'correct'}
+                                                        onClick={() => void answerSaBanQuiz(m.id, option.id)}
+                                                        className="rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-left text-sm font-bold text-white hover:border-[#fdb438] disabled:cursor-default disabled:opacity-60 cursor-pointer"
+                                                    >
+                                                        {option.label}
+                                                    </button>
+                                                ))}
                                             </div>
                                         )}
                                         {m.role === 'assistant' &&
@@ -880,8 +958,12 @@ export function ChatPage() {
 
                         {showTypingIndicator && (
                             <div className="flex gap-3 max-w-[80%] items-end self-start">
-                                <div className="w-8 h-8 rounded-full overflow-hidden border border-white/15 hidden sm:block">
-                                    <img alt="ai" className="w-full h-full object-cover" src={resolveMediaUrl(displayProfile.avatar)} />
+                                <div className={`w-8 hidden sm:block ${showMascot ? 'h-12' : 'h-8 rounded-full overflow-hidden border border-white/15'}`}>
+                                    {showMascot ? (
+                                        <img src={MASCOT_STILL} alt="ai" className="h-full w-full object-contain" />
+                                    ) : (
+                                        <img alt="ai" className="w-full h-full object-cover" src={resolveMediaUrl(displayProfile.avatar)} />
+                                    )}
                                 </div>
                                 <div className="bg-[#1b1e2c] px-4 py-3 rounded-2xl rounded-tl-sm border border-white/10 flex items-center gap-1.5 h-11">
                                     <span className="w-2 h-2 bg-[#fdb438] rounded-full animate-bounce" />
@@ -895,22 +977,6 @@ export function ChatPage() {
 
                     {/* Thanh nhập liệu Bar bên dưới */}
                     <div className="shrink-0 p-4 border-t border-white/10 bg-[#12141f]">
-                        {messages.length > 0 && (
-                            <div className="flex overflow-x-auto gap-2 pb-3 custom-scrollbar">
-                                {displayProfile.quickPrompts.map((item, i) => (
-                                    <button
-                                        key={i}
-                                        type="button"
-                                        onClick={() => setInput(item)}
-                                        disabled={busy}
-                                        className="shrink-0 px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full text-xs font-semibold text-gray-300 hover:text-white transition-all disabled:opacity-50 cursor-pointer"
-                                    >
-                                        {item}
-                                    </button>
-                                ))}
-                            </div>
-                        )}
-
                         <div className="relative flex items-center bg-[#1b1e2c] rounded-2xl border border-white/15 focus-within:border-[#fe951c] transition-all p-1 pl-3 shadow-inner">
                             <input
                                 value={input}
@@ -923,24 +989,35 @@ export function ChatPage() {
                                 }}
                                 disabled={busy}
                                 className="flex-1 bg-transparent border-none focus:ring-0 text-sm font-medium text-white placeholder:text-gray-500 px-2 disabled:opacity-60"
-                                placeholder={`Nhắn tin cho ${displayProfile.name}...`}
+                                placeholder={dictating ? 'Đang nghe, chữ hiện ở đây…' : `Nhắn tin cho ${displayProfile.name}...`}
                             />
                             <div className="flex items-center gap-1 pr-1">
+                                {showMascot && (
+                                    <button
+                                        type="button"
+                                        onClick={() => beginCall()}
+                                        disabled={voiceBusy || sending}
+                                        className="p-2.5 text-gray-400 hover:text-white hover:bg-white/5 transition-all rounded-xl cursor-pointer disabled:opacity-40"
+                                        title="Gọi mascot"
+                                    >
+                                        <MaterialIcon name="videocam" className="text-xl" />
+                                    </button>
+                                )}
                                 <button
                                     type="button"
-                                    onClick={() => toggleVoice().catch(() => undefined)}
-                                    disabled={voiceBusy || sending}
+                                    onClick={toggleDictate}
+                                    disabled={voiceBusy || sending || callOpen}
                                     className={`p-2.5 transition-all rounded-xl cursor-pointer ${
-                                        voicePhase === 'recording' ? 'bg-red-500 text-white animate-pulse shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'
+                                        dictating ? 'bg-red-500 text-white animate-pulse shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'
                                     }`}
-                                    title="Ghi âm câu hỏi"
+                                    title={dictating ? 'Dừng, chữ nằm trong ô nhắn' : 'Nói để điền chữ'}
                                 >
-                                    <MaterialIcon name={voicePhase === 'recording' ? 'stop_circle' : 'mic'} className="text-xl" />
+                                    <MaterialIcon name={dictating ? 'stop_circle' : 'mic'} className="text-xl" />
                                 </button>
                                 <button
                                     onClick={() => send()}
                                     type="button"
-                                    disabled={busy || !input.trim()}
+                                    disabled={busy || dictating || !input.trim()}
                                     className="bg-gradient-to-r from-[#fe951c] to-[#fdb438] text-black font-black p-2.5 rounded-xl hover:scale-105 transition-all disabled:opacity-40 cursor-pointer shadow-md"
                                 >
                                     <MaterialIcon name="send" className="text-xl font-bold" />
@@ -990,6 +1067,32 @@ export function ChatPage() {
                     setOrgQuotaModalOpen(false)
                 }}
                 upgradePackage={orgUpgradePackage}
+            />
+            <MascotCallOverlay
+                open={callOpen && showMascot}
+                name={displayProfile.name}
+                mode={mascotMode}
+                status={
+                    callMuted
+                        ? 'Mic đang tắt. Bật mic để nói tiếp.'
+                        : voicePhase === 'playing' || voicePhase === 'tts'
+                          ? 'Chrono đang trả lời'
+                          : voicePhase === 'chat' || voicePhase === 'stt'
+                            ? 'Chrono đang suy nghĩ'
+                            : 'Chrono đang nghe. Nói xong sẽ được trả lời.'
+                }
+                recording={voicePhase === 'recording'}
+                heardText={heardText}
+                analyser={null}
+                muted={callMuted}
+                onToggleMute={() => {
+                    const next = !callMutedRef.current
+                    callMutedRef.current = next
+                    setCallMuted(next)
+                    if (next) stopActiveSpeech()
+                }}
+                onHangUp={hangUp}
+                onSkip={hangUp}
             />
         </AppLayout>
     )

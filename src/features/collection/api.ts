@@ -12,12 +12,20 @@ export type Artifact = {
   reliability: string
   sortOrder: number
   unlocked: boolean
+  collectionName?: string | null
+  rarity?: string | null
+  sourceUrl?: string | null
+  imageSource?: string | null
+  imageLicense?: string | null
+  factVerified?: boolean
 }
 
 export type MyArtifactsResponse = {
   items: Artifact[]
   collected: number
   total: number
+  collectedPremium?: number
+  totalPremium?: number
 }
 
 export const collectionApi = {

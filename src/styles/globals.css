@@ -1,5 +1,5 @@
 /* src/styles/globals.css */
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,700&family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap');
 @import 'tailwindcss';
 @config '../../tailwind.config.ts';
 
@@ -58,7 +58,7 @@
     body {
         background-color: #0f1015; /* Chuẩn nền đen sâu luxury của Ảnh 1 */
         color: #f1f5f9;
-        font-family: 'Montserrat', 'Be Vietnam Pro', sans-serif;
+        font-family: 'Be Vietnam Pro', sans-serif;
         font-size: 14px;
         line-height: 1.6;
         -webkit-font-smoothing: antialiased;
@@ -777,7 +777,7 @@
     color: #e3e1ed !important;
     border-radius: 8px !important;
     padding: 6px 10px !important;
-    font-family: Montserrat, 'Be Vietnam Pro', sans-serif !important;
+    font-family: 'Be Vietnam Pro', Montserrat, sans-serif !important;
     font-size: 12px !important;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
 }
@@ -806,7 +806,7 @@
 }
 
 .vn-sovereign-pin__label {
-    font-family: Montserrat, 'Be Vietnam Pro', sans-serif;
+    font-family: 'Be Vietnam Pro', Montserrat, sans-serif;
     font-size: 11px;
     font-weight: 600;
     color: #1a2a4a;
@@ -823,7 +823,7 @@
     color: #fff !important;
     border-radius: 8px !important;
     padding: 5px 10px !important;
-    font-family: Montserrat, 'Be Vietnam Pro', sans-serif !important;
+    font-family: 'Be Vietnam Pro', Montserrat, sans-serif !important;
     font-size: 11px !important;
     font-weight: 600 !important;
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3) !important;
@@ -840,7 +840,7 @@
 
 .vn-place-label {
     display: inline-block;
-    font-family: Montserrat, 'Be Vietnam Pro', sans-serif;
+    font-family: 'Be Vietnam Pro', Montserrat, sans-serif;
     font-weight: 700;
     white-space: nowrap;
     transform: translate(-50%, -50%);
@@ -876,7 +876,7 @@
 
 .vn-city-label {
     display: inline-block;
-    font-family: Montserrat, 'Be Vietnam Pro', sans-serif;
+    font-family: 'Be Vietnam Pro', Montserrat, sans-serif;
     font-size: 13px;
     font-weight: 700;
     white-space: nowrap;
@@ -1220,7 +1220,7 @@
 .tour360-viewer .psv-canvas-container {
     width: 100% !important;
     height: 100% !important;
-    font-family: 'Montserrat', 'Be Vietnam Pro', sans-serif;
+    font-family: 'Be Vietnam Pro', 'Montserrat', sans-serif;
 }
 
 /* HUD — thanh mỏng trên cùng */

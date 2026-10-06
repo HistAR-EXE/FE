@@ -3,7 +3,8 @@ import { useCallback, useEffect, useMemo, useState, type MouseEvent } from 'reac
 import { Link, useSearchParams, useNavigate } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { SimpleTopNav } from '../components/layout/TopNav'
-import { gamificationApi, type Quest, type QuestProgress } from '../features/gamification/api'
+import { discoveriesApi, gamificationApi, type Quest, type QuestProgress } from '../features/gamification/api'
+import { questBlockedByEarlier, questMissingTourKeys } from '../features/gamification/questGate'
 import { DISCOVERY_RECORDED_EVENT } from '../features/gamification/discoveryRouting'
 import { locationsApi, type Location } from '../features/locations/api'
 import { ApiError } from '../shared/api/contracts'
@@ -14,6 +15,8 @@ import { GridTextureOverlay } from '../components/ui/GridTextureOverlay'
 import { isLocationLocked } from '../features/explore/locationUnlock'
 import { pickQuestCover } from '../shared/media/resolveMedia'
 import { SmartImage } from '../shared/ui/SmartImage'
+import { analyticsApi } from '../features/analytics/api'
+import { isDevMinigameQuestVisible } from '../features/minigame/api'
 import { CU_CHI_LOCATION_ID } from '../shared/config/constants'
 import { HERITAGE_QUEST_META } from '../features/gamification/heritageQuestSteps'
 
@@ -27,6 +30,7 @@ export function QuestsPage() {
     const [locationInfo, setLocationInfo] = useState<Location | null>(null)
     const [quests, setQuests] = useState<Quest[]>([])
     const [progresses, setProgresses] = useState<QuestProgress[]>([])
+    const [discoveredKeys, setDiscoveredKeys] = useState<string[]>([])
     const [loading, setLoading] = useState(true)
     const [statusFilter, setStatusFilter] = useState<'all' | 'not_started' | 'in_progress' | 'completed'>('all')
     const { showToast } = useToast()
@@ -41,18 +45,21 @@ export function QuestsPage() {
         try {
             setLoading(true)
             const list = await gamificationApi.quests(lockedLocationId)
-            const sortedList = [...list].sort((a, b) => {
-                const orderA = HERITAGE_QUEST_META[a.id]?.difficulty === 'thử thách' ? 1 : 2;
-                const orderB = HERITAGE_QUEST_META[b.id]?.difficulty === 'thử thách' ? 1 : 2;
-                return orderA - orderB;
-            });
+            const sortedList = [...list]
+                .filter((quest) => isDevMinigameQuestVisible(quest.id))
+                .sort((a, b) => (a.requiredOrder ?? 999) - (b.requiredOrder ?? 999))
             setQuests(sortedList)
 
             if (isAuthenticated) {
-                const mine = await gamificationApi.myQuests(lockedLocationId)
+                const [mine, summary] = await Promise.all([
+                    gamificationApi.myQuests(lockedLocationId),
+                    discoveriesApi.summary(lockedLocationId),
+                ])
                 setProgresses(mine)
+                setDiscoveredKeys(summary.keys ?? [])
             } else {
                 setProgresses([])
+                setDiscoveredKeys([])
             }
         } catch (e) {
             showToast({ message: 'Không tải được danh sách chiến dịch.', type: 'error' })
@@ -106,6 +113,12 @@ export function QuestsPage() {
         }
         try {
             const started = await gamificationApi.startQuest(questId)
+            void analyticsApi.recordEvent({
+                eventType: 'quest_start',
+                eventKey: questId,
+                locationId: lockedLocationId,
+                source: 'quests',
+            })
             setProgresses((prev) => [...prev.filter((p) => p.questId !== questId), started])
             showToast({ message: 'Mật lệnh đã được kích hoạt. Chúc may mắn!', type: 'success' })
             setStatusFilter('in_progress')
@@ -222,6 +235,14 @@ export function QuestsPage() {
                             // BỌC THÉP CHỐNG CRASH TẠI ĐÂY (An toàn tuyệt đối với optional chaining)
                             const totalNodes = progress?.stepsTotal ?? q.stepsTotal ?? q.steps?.length ?? meta?.steps?.length ?? 3;
                             const pct = progressPct(status, progress?.currentStep, totalNodes);
+                            const completedIds = new Set(quests.filter((other) => getStatus(other.id) === 'completed').map((other) => other.id))
+                            const waitingEarlier = questBlockedByEarlier(q, quests, completedIds) || questMissingTourKeys(q, discoveredKeys)
+                            const waitingLabel = questMissingTourKeys(q, discoveredKeys)
+                                ? 'Mở sau hai cảnh tour'
+                                : 'Mở sau mật lệnh trước'
+                            const finale = q.steps?.[q.steps.length - 1]
+                            const premiumClimax = finale?.actionType === 'portal' && (finale.portalEra === 1948 || finale.portalEra === 1968)
+                            const storyLine = (q.story || q.description || '').trim()
 
                             // Trạng thái bị khóa
                             if (isLocked) {
@@ -247,7 +268,7 @@ export function QuestsPage() {
                                 <Link
                                     key={q.id}
                                     to={`/quests/${q.id}`}
-                                    className="group relative rounded-3xl overflow-hidden border border-white/10 bg-[#161824] hover:bg-[#1a1d2c] hover:border-[#388cf1]/50 transition-all duration-500 hover:-translate-y-2 shadow-[0_15px_40px_rgba(0,0,0,0.5)] flex flex-col lg:flex-row h-auto lg:h-[260px]"
+                                    className="group relative rounded-3xl overflow-hidden border border-white/10 bg-[#161824] hover:bg-[#1a1d2c] hover:border-[#388cf1]/50 transition-all duration-500 hover:-translate-y-2 shadow-[0_15px_40px_rgba(0,0,0,0.5)] flex flex-col lg:flex-row h-auto lg:min-h-[280px]"
                                 >
                                     {/* CỘT TRÁI: ẢNH COVER */}
                                     <div className="w-full lg:w-[35%] h-52 lg:h-full relative shrink-0 overflow-hidden">
@@ -258,7 +279,7 @@ export function QuestsPage() {
                                         {/* Overlay Tags Trái */}
                                         <div className="absolute top-4 left-4 flex flex-col gap-2">
                                             <span className="w-max px-2.5 py-1 rounded-lg bg-black/70 backdrop-blur-md border border-white/10 text-[10px] font-black text-[#fe951c] flex items-center gap-1.5 shadow-lg">
-                                                <MaterialIcon name="stars" className="text-sm" /> +{q.pointsReward} XP
+                                                <MaterialIcon name="stars" className="text-sm" /> Phá đảo +{q.pointsReward} XP
                                             </span>
                                         </div>
                                     </div>
@@ -283,29 +304,55 @@ export function QuestsPage() {
                                                 )}
                                             </div>
 
-                                            <h2 className="text-xl sm:text-2xl font-black text-white leading-tight mb-3 group-hover:text-[#388cf1] transition-colors line-clamp-2">{q.title}</h2>
+                                            <h2 className="text-xl sm:text-2xl font-black text-white leading-tight mb-2 group-hover:text-[#388cf1] transition-colors line-clamp-2">{q.title}</h2>
 
-                                            {/* Mission Hook / Briefing */}
-                                            <div className="relative pl-3 border-l-2 border-[#fdb438]/50">
-                                                <p className="text-sm text-gray-300 line-clamp-2 leading-relaxed font-medium italic">
-                                                    "{meta?.missionHook || q.description}"
+                                            {meta && (
+                                                <p className="text-[11px] font-bold text-[#fdb438] mb-2">
+                                                    {meta.difficulty === 'dễ' ? 'Dễ' : meta.difficulty === 'trung bình' ? 'Trung bình' : 'Thử thách'}
+                                                    {' · '}
+                                                    {meta.estimatedMinutes} phút
                                                 </p>
-                                            </div>
+                                            )}
+
+                                            {storyLine && (
+                                                <p className="text-sm text-gray-300 line-clamp-2 leading-relaxed">
+                                                    {storyLine}
+                                                </p>
+                                            )}
+                                            <p className="mt-2 text-xs font-bold text-gray-300">Khám phá +10 điểm mỗi khóa</p>
+                                            {q.steps?.some((step) => step.unlockKey === 'tour:sa-ban') && (
+                                                <p className="mt-1 text-xs font-bold text-gray-300">Đố sa bàn đúng +50 một lần</p>
+                                            )}
+                                            <p className="mt-1 text-xs font-black text-[#fe951c]">Phá đảo +{q.pointsReward} một lần</p>
+                                            {premiumClimax && (
+                                                <p className="mt-1 text-[11px] font-bold text-amber-200/90">Cao trào mở bằng Premium</p>
+                                            )}
                                         </div>
 
                                         {/* KHU VỰC TRẠNG THÁI VÀ NÚT BẤM DƯỚI CÙNG */}
                                         <div className="mt-5 pt-4 border-t border-white/5 flex-shrink-0">
                                             {status === 'not_started' && (
-                                                <div className="flex items-center justify-between">
-                                                    <div className="flex items-center gap-1.5 text-xs font-bold text-gray-500">
-                                                        <MaterialIcon name="lock" className="text-sm" /> <span>Đang khóa</span>
+                                                <div className="flex items-center justify-between gap-3">
+                                                    <div className="flex items-center gap-1.5 text-xs font-bold text-gray-400">
+                                                        <MaterialIcon name="folder" className="text-sm" /> <span>Chưa mở</span>
                                                     </div>
-                                                    <button
-                                                        onClick={(e) => handleStartQuest(q.id, e)}
-                                                        className="px-5 py-2.5 rounded-xl bg-white/5 hover:bg-[#388cf1] text-white font-black text-xs uppercase tracking-wider transition-all hover:scale-105 border border-white/10 hover:border-[#388cf1] flex items-center gap-2 cursor-pointer shadow-md"
-                                                    >
-                                                        Mở Hồ Sơ <MaterialIcon name="folder_open" className="text-sm" />
-                                                    </button>
+                                                    {waitingEarlier ? (
+                                                        <button
+                                                            type="button"
+                                                            disabled
+                                                            className="px-4 py-2.5 rounded-xl bg-white/5 text-gray-400 font-black text-[11px] uppercase tracking-wider border border-white/10 cursor-not-allowed"
+                                                        >
+                                                            {waitingLabel}
+                                                        </button>
+                                                    ) : (
+                                                        <button
+                                                            type="button"
+                                                            onClick={(e) => handleStartQuest(q.id, e)}
+                                                            className="px-5 py-2.5 rounded-xl bg-white/5 hover:bg-[#388cf1] text-white font-black text-xs uppercase tracking-wider transition-all hover:scale-105 border border-white/10 hover:border-[#388cf1] flex items-center gap-2 cursor-pointer shadow-md"
+                                                        >
+                                                            Mở Hồ Sơ <MaterialIcon name="folder_open" className="text-sm" />
+                                                        </button>
+                                                    )}
                                                 </div>
                                             )}
 

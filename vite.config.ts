@@ -63,7 +63,14 @@ export default defineConfig({
     proxy: {
       '/api': { target: 'http://localhost:8080', changeOrigin: true },
       '/ai': { target: 'http://localhost:8100', changeOrigin: true },
-      '/media': { target: 'https://media.timelens.asia', changeOrigin: true, secure: true },
+      '/media': {
+        target: 'https://media.timelens.asia',
+        changeOrigin: true,
+        secure: true,
+        bypass(req) {
+          if (req.url?.startsWith('/media/mascot/')) return req.url
+        },
+      },
       '/__/auth': {
         target: 'https://histar-a08c1.firebaseapp.com',
         changeOrigin: true,

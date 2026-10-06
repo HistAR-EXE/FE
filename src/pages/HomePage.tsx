@@ -507,7 +507,7 @@ export function HomePage() {
                                     <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
                                     <span className="text-xs font-black text-[#388cf1] tracking-wider uppercase">TRỢ LÝ LỊCH SỬ RAG AI</span>
                                 </div>
-                                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-white/10 text-gray-300">Ollama 3B</span>
+                                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-white/10 text-gray-300">Gemini</span>
                             </div>
 
                             <h3 className="text-2xl font-black text-white leading-snug">

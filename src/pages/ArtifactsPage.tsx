@@ -1,9 +1,10 @@
 // src/pages/ArtifactsPage.tsx
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { SimpleTopNav } from '../components/layout/TopNav'
 import { collectionApi, type Artifact } from '../features/collection/api'
+import { shareProgressCard } from '../features/gamification/shareProgressCard'
 import { recordDiscoveryEngagement } from '../features/gamification/discoveryRouting'
 import { showDiscoveryRecordError } from '../features/gamification/discoveryEngagementToast'
 import { notifyEngagementOutcome } from '../features/gamification/handleEngagement'
@@ -26,7 +27,7 @@ type StatusFilter = 'all' | 'unlocked' | 'locked'
 // ==========================================
 // VÒNG TRÒN NĂNG LƯỢNG SƯU TẬP (HUD THU GỌN)
 // ==========================================
-function CollectionProgress({ collected, total }: { collected: number; total: number }) {
+function CollectionProgress({ collected, total, premiumCollected = 0, premiumTotal = 0 }: { collected: number; total: number; premiumCollected?: number; premiumTotal?: number }) {
     const pct = total > 0 ? Math.round((collected / total) * 100) : 0
     const r = 24
     const c = 2 * Math.PI * r
@@ -56,6 +57,11 @@ function CollectionProgress({ collected, total }: { collected: number; total: nu
                 <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
                     Đã thu thập: <strong className="text-[#fdb438] text-xs mx-1">{collected} / {total}</strong> Kỷ vật
                 </p>
+                {premiumTotal > 0 && (
+                    <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-amber-200/90">
+                        {premiumCollected}/{premiumTotal} món Premium
+                    </p>
+                )}
             </div>
         </div>
     )
@@ -68,11 +74,14 @@ export function ArtifactsPage() {
     const { applyEngagement } = useUserProgress()
     const recordedKeys = useRef(new Set<string>())
 
-    const locationId = CU_CHI_LOCATION_ID
+    const [searchParams] = useSearchParams()
+    const locationId = searchParams.get('locationId') || CU_CHI_LOCATION_ID
 
     const [artifacts, setArtifacts] = useState<Artifact[]>([])
     const [collected, setCollected] = useState(0)
     const [total, setTotal] = useState(0)
+    const [premiumCollected, setPremiumCollected] = useState(0)
+    const [premiumTotal, setPremiumTotal] = useState(0)
     const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
     const [selected, setSelected] = useState<Artifact | null>(null)
 
@@ -88,11 +97,17 @@ export function ArtifactsPage() {
                     setArtifacts(mine.items)
                     setCollected(mine.collected)
                     setTotal(mine.total)
+                    setPremiumCollected(mine.collectedPremium ?? 0)
+                    setPremiumTotal(mine.totalPremium ?? 0)
                 } else {
                     const list = await collectionApi.catalog(locationId)
+                    const tagged = list.filter((item) => item.collectionName)
+                    const pool = tagged.length ? tagged : list
                     setArtifacts(list.map((a) => ({ ...a, unlocked: false })))
                     setCollected(0)
-                    setTotal(list.length)
+                    setTotal(pool.filter((item) => item.rarity !== 'epic').length || list.length)
+                    setPremiumCollected(0)
+                    setPremiumTotal(pool.filter((item) => item.rarity === 'epic').length)
                 }
             } catch {
                 // Fallback
@@ -102,7 +117,9 @@ export function ArtifactsPage() {
     }, [isAuthenticated, locationId])
 
     const recordArtifactDiscovery = useCallback(
-        (unlockKey: string | undefined) => {
+        (artifact: Artifact) => {
+            if (artifact.rarity === 'rare' || artifact.rarity === 'epic') return
+            const unlockKey = artifact.unlockKey
             if (!isAuthenticated || !unlockKey?.startsWith('artifact:')) return
             if (recordedKeys.current.has(unlockKey)) return
             recordedKeys.current.add(unlockKey)
@@ -131,7 +148,7 @@ export function ArtifactsPage() {
 
     const openArtifactDetail = useCallback((artifact: Artifact) => {
         setSelected(artifact)
-        recordArtifactDiscovery(artifact.unlockKey)
+        recordArtifactDiscovery(artifact)
     }, [recordArtifactDiscovery])
 
     return (
@@ -263,7 +280,23 @@ export function ArtifactsPage() {
 
                             {/* --- BẢNG HUD TIẾN ĐỘ TRÔI NỔI --- */}
                             <div className="absolute -bottom-24 left-1/2 -translate-x-1/2 z-30 transform hover:scale-105 transition-transform w-max">
-                                <CollectionProgress collected={collected} total={total} />
+                                <CollectionProgress collected={collected} total={total} premiumCollected={premiumCollected} premiumTotal={premiumTotal} />
+                                <button
+                                    type="button"
+                                    className="rounded-2xl border border-white/10 bg-[#161824] px-4 py-3 text-[10px] font-black uppercase tracking-widest text-white"
+                                    onClick={() => {
+                                        void shareProgressCard({
+                                            title: 'Bộ sưu tập',
+                                            stars: total > 0 ? Math.round((collected / total) * 3) : 0,
+                                            collected,
+                                            total,
+                                            premiumCollected,
+                                            premiumTotal,
+                                        })
+                                    }}
+                                >
+                                    Chia sẻ
+                                </button>
                             </div>
                         </div>
 
@@ -488,6 +521,13 @@ export function ArtifactsPage() {
                                                         <p className="text-sm md:text-base text-gray-300 leading-relaxed font-medium bg-[#161824] p-5 rounded-2xl border border-white/5 shadow-inner">
                                                             {selected.description}
                                                         </p>
+                                                        {selected.sourceUrl && (
+                                                            <p className="mt-3 text-xs text-gray-400">
+                                                                Nguồn: {selected.sourceUrl}
+                                                                {selected.imageLicense ? ` · Ảnh: ${selected.imageSource ?? 'Minh họa'} (${selected.imageLicense})` : ''}
+                                                                {selected.factVerified ? '' : ' · Chưa đánh dấu đã đọc nguồn'}
+                                                            </p>
+                                                        )}
                                                     </div>
 
                                                     {selected.story && (

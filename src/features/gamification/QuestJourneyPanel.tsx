@@ -108,12 +108,32 @@ export function QuestJourneyPanel({
                     // Logic tạo Link truy xuất
                     let href = `/explore/${locationId}`
                     if (step.actionType === 'artifact') href = `/artifacts?locationId=${locationId}&discoverKey=${step.unlockKey}`
-                    if (step.actionType === 'tour') href = `/tour/360/${locationId}?panorama=${step.unlockKey.replace('scene:', '')}`
-                    if (step.actionType === 'portal') href = `/time-portal/${locationId}?era=${step.portalEra ?? 2026}`
+                    if (step.actionType === 'tour') {
+                        const tourParams = new URLSearchParams({ questRecord: step.unlockKey })
+                        if (step.unlockKey === 'tour:sa-ban') {
+                            tourParams.set('view', 'illustrated')
+                        } else if (step.unlockKey.startsWith('scene:')) {
+                            tourParams.set('panorama', step.unlockKey.slice('scene:'.length))
+                        }
+                        href = `/tour/360/${locationId}?${tourParams}`
+                    }
+                    if (step.actionType === 'portal') {
+                        const portalParams = new URLSearchParams({ era: String(step.portalEra ?? 2026) })
+                        if (step.unlockKey.startsWith('era:')) portalParams.set('questRecord', step.unlockKey)
+                        href = `/time-portal/${locationId}?${portalParams}`
+                    }
+                    if (step.minigameId) href = `/quests/${questId}/play/${step.minigameId}`
                     if (step.actionType === 'checkin') href = `/scan?locationId=${locationId}`
                     if (step.actionType === 'dialogue') {
                         const persona = step.unlockKey.replace('dialogue:', '')
-                        href = `/chat?locationId=${locationId}&persona=${persona}&questPrompt=${encodeURIComponent(step.chatPrompt || '')}&questId=${questId}`
+                        const chatParams = new URLSearchParams({
+                            locationId,
+                            persona,
+                            questRecord: step.unlockKey,
+                            questId,
+                        })
+                        if (step.chatPrompt) chatParams.set('questPrompt', step.chatPrompt)
+                        href = `/chat?${chatParams}`
                     }
 
                     // Tên Action Label thông minh phân biệt Online/Offline
@@ -226,7 +246,7 @@ export function QuestJourneyPanel({
                                         <div className="shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-black/40 border border-white/5 shadow-inner">
                                             <MaterialIcon name="stars" className={`text-lg ${isCompleted ? 'text-emerald-400' : 'text-[#fdb438]'}`} />
                                             <span className={`text-xs font-black ${isCompleted ? 'text-emerald-400' : 'text-white'}`}>
-                                                +{step.xpPartial} XP
+                                                +{step.xpPartial} điểm chương
                                             </span>
                                         </div>
                                     )}

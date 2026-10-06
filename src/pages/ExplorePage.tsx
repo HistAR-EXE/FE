@@ -6,6 +6,7 @@ import { ExploreTopNav } from '../components/layout/TopNav'
 import { CU_CHI_LOCATION_ID } from '../shared/config/constants'
 import { resolveMediaUrl } from '../shared/config/env'
 import { buildChatPath } from '../features/chat/chatRoute'
+import { MascotStage } from '../features/chat/MascotStage'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 
 type ZoneFilter = 'all' | 'military' | 'memorial' | 'underground' | 'tech'
@@ -114,31 +115,16 @@ export function ExplorePage() {
                             </div>
 
                             <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-white leading-tight">
-                                Gặp Gỡ Người Dẫn Đường <br />
+                                Gặp người dẫn đường <br />
                                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#fe951c] via-[#fff2a1] to-[#388cf1]">
-                                    Chị Năm & Anh Ba
+                                    Mascot
                                 </span>
                             </h1>
 
-                            {/* Thẻ giới thiệu cốt truyện gần gũi */}
-                            <div className="bg-black/40 border border-white/10 rounded-2xl p-4 sm:p-5 space-y-3 backdrop-blur-md shadow-inner text-left">
+                            <div className="bg-black/40 border border-white/10 rounded-2xl p-4 sm:p-5 backdrop-blur-md shadow-inner text-left">
                                 <p className="text-xs sm:text-sm text-gray-200 leading-relaxed font-normal">
-                                    Chào mừng bạn đến với vùng Đất Thép! Hãy để hai đại sứ AI đồng hành cùng bạn xuyên suốt hành trình khám phá:
+                                    Mascot bay trong không gian 3D và kể chuyện Địa đạo Củ Chi. Kéo ngang để đẩy mascot sang hai phía. Câu trả lời chỉ lấy từ tư liệu đã có.
                                 </p>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-white/10">
-                                    <div className="flex items-start gap-2.5">
-                                        <span className="w-2 h-2 rounded-full bg-[#fdb438] shrink-0 mt-1.5 shadow-[0_0_8px_#fdb438]" />
-                                        <p className="text-xs text-gray-300 leading-normal">
-                                            <strong className="text-[#fff2a1] font-bold">Chị Năm (Nữ du kích):</strong> Người con gái kiên trung, am hiểu từng ngóc ngách địa đạo. Chị sẽ kể cho bạn nghe những câu chuyện sinh hoạt, nghĩa tình quân dân ấm áp dưới lòng đất.
-                                        </p>
-                                    </div>
-                                    <div className="flex items-start gap-2.5">
-                                        <span className="w-2 h-2 rounded-full bg-[#388cf1] shrink-0 mt-1.5 shadow-[0_0_8px_#388cf1]" />
-                                        <p className="text-xs text-gray-300 leading-normal">
-                                            <strong className="text-cyan-300 font-bold">Anh Ba (Chiến sĩ):</strong> Chuyên gia sa bàn và kỹ thuật quân sự. Anh sẽ hướng dẫn bạn giải mã cấu trúc hầm chông, bẫy du kích và chiến thuật chiến tranh nhân dân độc đáo.
-                                        </p>
-                                    </div>
-                                </div>
                             </div>
 
                             {/* Các nút thao tác nhanh */}
@@ -148,7 +134,7 @@ export function ExplorePage() {
                                     className="px-6 py-3.5 rounded-xl bg-gradient-to-r from-[#fe951c] via-[#fdb438] to-[#e07d0b] hover:scale-105 text-black font-black text-xs uppercase tracking-wider transition-all shadow-[0_0_25px_rgba(254,149,28,0.5)] flex items-center gap-2 cursor-pointer"
                                 >
                                     <MaterialIcon name="forum" className="text-lg" />
-                                    <span>Trò Chuyện Cùng Đại Sứ</span>
+                                    <span>Trò chuyện với Mascot</span>
                                 </button>
 
                                 <button
@@ -161,75 +147,14 @@ export function ExplorePage() {
                             </div>
                         </div>
 
-                        {/* Cột phải 5 phần: Sân khấu 2 Nhân vật đứng kề vai sát cánh */}
-                        <div className="lg:col-span-5 relative flex items-center justify-center pt-8 lg:pt-0">
-
-                            {/* Thảm hào quang nền mờ dưới chân (Chỉ giữ ánh sáng blur mờ, ĐÃ XÓA SẠCH thanh khung ngang có viền) */}
-                            <div className="absolute bottom-10 w-64 sm:w-80 h-16 bg-gradient-to-r from-[#fe951c]/25 via-transparent to-[#388cf1]/25 rounded-full blur-2xl pointer-events-none" />
-
-                            {/* Khối chứa 2 nhân vật kề sát nhau */}
-                            <div className="relative z-10 flex items-end justify-center gap-4 sm:gap-8 h-64 sm:h-72 pb-2">
-
-                                {/* Nhân vật Nữ (Chị Năm Du Kích - VÀNG CAM) */}
-                                <div
-                                    onClick={() => navigate(buildChatPath({ persona: 'chi-nam' }))}
-                                    className="relative group cursor-pointer flex flex-col items-center transform transition-all duration-500 hover:scale-110 hover:-translate-y-2 z-10"
-                                >
-                                    {/* Bong bóng thoại */}
-                                    <div className="absolute -top-11 bg-[#1b1e2c]/95 border border-[#fdb438]/60 text-[#fff2a1] text-[11px] font-bold px-3 py-1.5 rounded-2xl shadow-2xl opacity-0 group-hover:opacity-100 transition-all duration-300 whitespace-nowrap z-30 pointer-events-none">
-                                        Hỏi Chị chuyện về địa đạo nha!
-                                    </div>
-
-                                    {/* Ảnh nhân vật */}
-                                    <img
-                                        src={resolveMediaUrl('/media/characters/nu-du-kich.png')}
-                                        alt="Chị Năm Du Kích"
-                                        className="h-56 sm:h-64 object-contain drop-shadow-[0_12px_20px_rgba(0,0,0,0.9)] filter contrast-105 transition-transform duration-500 group-hover:drop-shadow-[0_0_25px_rgba(253,180,56,0.5)] relative z-10"
-                                        onError={(e) => { e.currentTarget.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80' }}
-                                    />
-
-                                    {/* Đốm hào quang ngay dưới bàn chân Chị Năm */}
-                                    <div className="absolute bottom-7 w-20 sm:w-24 h-3 bg-[#fe951c]/50 rounded-full blur-md z-0 group-hover:bg-[#fe951c]/80 transition-all" />
-
-                                    {/* Thẻ tên màu Vàng Cam (Độc lập, không bị thanh nào đè phía sau) */}
-                                    <div className="mt-2 px-3 py-1 rounded-lg bg-[#161824]/95 border border-[#fdb438]/60 shadow-lg flex items-center gap-1.5 z-20">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-[#fdb438] animate-ping" />
-                                        <span className="text-[10px] font-black text-[#fdb438] tracking-wide">
-                                            CHỊ NĂM DU KÍCH
-                                        </span>
-                                    </div>
-                                </div>
-
-                                {/* Nhân vật Nam (Anh Ba Chiến Sĩ - XANH CÔNG NGHỆ) */}
-                                <div
-                                    onClick={() => navigate(buildChatPath({ persona: 'anh-ba' }))}
-                                    className="relative group cursor-pointer flex flex-col items-center transform transition-all duration-500 hover:scale-110 hover:-translate-y-2 z-10"
-                                >
-                                    {/* Bong bóng thoại */}
-                                    <div className="absolute -top-11 bg-[#1b1e2c]/95 border border-[#388cf1]/60 text-cyan-300 text-[11px] font-bold px-3 py-1.5 rounded-2xl shadow-2xl opacity-0 group-hover:opacity-100 transition-all duration-300 whitespace-nowrap z-30 pointer-events-none">
-                                        Xem sa bàn tác chiến cùng Anh!
-                                    </div>
-
-                                    {/* Ảnh nhân vật */}
-                                    <img
-                                        src={resolveMediaUrl('/media/characters/nam-du-kich.png')}
-                                        alt="Anh Ba Chiến Sĩ"
-                                        className="h-56 sm:h-64 object-contain drop-shadow-[0_12px_20px_rgba(0,0,0,0.9)] filter contrast-105 transition-transform duration-500 group-hover:drop-shadow-[0_0_25px_rgba(56,140,241,0.5)] relative z-10"
-                                        onError={(e) => { e.currentTarget.src = resolveMediaUrl('/media/characters/nam-du-kich.jpg') }}
-                                    />
-
-                                    {/* Đốm hào quang ngay dưới bàn chân Anh Ba */}
-                                    <div className="absolute bottom-7 w-20 sm:w-24 h-3 bg-[#388cf1]/50 rounded-full blur-md z-0 group-hover:bg-[#388cf1]/80 transition-all" />
-
-                                    {/* Thẻ tên màu Xanh Cyan (Độc lập, sắc nét) */}
-                                    <div className="mt-2 px-3 py-1 rounded-lg bg-[#161824]/95 border border-[#388cf1]/60 shadow-lg flex items-center gap-1.5 z-20">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-[#388cf1] animate-ping" />
-                                        <span className="text-[10px] font-black text-[#388cf1] tracking-wide">
-                                            ANH BA CHIẾN SĨ
-                                        </span>
-                                    </div>
-                                </div>
-
+                        <div
+                            className="lg:col-span-5 relative h-80 sm:h-96 cursor-pointer"
+                            onClick={() => navigate(buildChatPath())}
+                        >
+                            <MascotStage mode="idle" className="absolute inset-0" />
+                            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-lg bg-[#161824]/95 border border-[#fdb438]/60 shadow-lg flex items-center gap-1.5 z-20 pointer-events-none">
+                                <span className="w-1.5 h-1.5 rounded-full bg-[#fdb438] animate-ping" />
+                                <span className="text-[10px] font-black text-[#fdb438] tracking-wide">MASCOT</span>
                             </div>
                         </div>
 
