@@ -5,7 +5,9 @@ import { AppLayout } from '../components/layout/AppLayout'
 import { Tour360Hud } from '../components/panorama/Tour360Hud'
 
 const CU_CHI_LOCATION_ID = '11111111-1111-1111-1111-111111111111'
-const EXTERNAL_360_URL = 'https://map3d.visithcmc.vn/?startscene=scene_cuchi_view2'
+
+// ĐÃ CẬP NHẬT: Đổi sang link Tour 360 của Yoolife để test thử CSP
+const EXTERNAL_360_URL = 'https://vr360.yoolife.vn/ia-ao-cu-chi-zbdsc253u26822s3642'
 
 // TỐI ƯU HIỆU NĂNG 1: Dùng React.memo để cô lập iFrame.
 // Đảm bảo iFrame chỉ load ĐÚNG 1 LẦN duy nhất, không bị re-render (gây đen màn hình) khi thao tác với UI bên ngoài.
@@ -14,9 +16,9 @@ const OptimizedExternalTour = React.memo(() => {
         <iframe
             src={EXTERNAL_360_URL}
             className="w-full h-full border-0"
-            allow="xr-spatial-tracking; gyroscope; accelerometer; fullscreen"
-            loading="lazy" // Tối ưu: Chỉ tải khi hiển thị trên màn hình
-            referrerPolicy="no-referrer" // Tối ưu: Giảm thiểu việc bị Server gốc block do khác domain
+            allow="xr-spatial-tracking; gyroscope; accelerometer; fullscreen; microphone; camera" // Thêm microphone/camera phòng trường hợp cô gái AI của Yoolife cần
+            loading="lazy"
+            referrerPolicy="no-referrer"
             title="Virtual Tour 360"
         />
     )
@@ -30,10 +32,10 @@ export function Tour360Page() {
     const [menuOpen, setMenuOpen] = useState(false)
     const [loading, setLoading] = useState(true)
 
-    // TỐI ƯU HIỆU NĂNG 2 & CHE LOGO: Giữ màn hình Loading của TimeLens trong 4.5 giây
-    // để đợi iFrame bên dưới chạy xong phần logo thương hiệu của họ.
+    // TỐI ƯU HIỆU NĂNG 2 & CHE LOGO: Giữ màn hình Loading của TimeLens trong 5 giây
+    // để đợi iFrame bên dưới tải xong dữ liệu 3D nặng của Yoolife.
     useEffect(() => {
-        const timer = setTimeout(() => setLoading(false), 10000)
+        const timer = setTimeout(() => setLoading(false), 5000)
         return () => clearTimeout(timer)
     }, [])
 
@@ -53,28 +55,26 @@ export function Tour360Page() {
             <main className={`relative w-full h-full bg-[#0B1120] overflow-hidden flex flex-col ${immersive ? '' : 'tour360-main--with-nav'}`}>
 
                 {/* KHỐI TRUNG TÂM: NHÚNG IFRAME ĐÃ TỐI ƯU */}
-                {/* overflow-hidden: Cắt bỏ mọi thứ tràn ra ngoài khung này */}
                 <div className="absolute inset-0 z-10 bg-black overflow-hidden">
                     {/*
-                        Thủ thuật CSS mở rộng:
-                        - Đẩy khối sang trái 60px (-left-[60px]) để giấu menu hồng bên trái.
-                        - Tăng chiều rộng thêm 140px (60px trái + 80px phải) bằng w-[calc(100%+140px)]
-                          để đẩy luôn cụm nút công cụ bên phải ra khỏi màn hình hiển thị.
+                        THỦ THUẬT CẮT (CROP) UI CHÍNH XÁC:
+                        - top-0 left-0: Neo chặt góc trên trái để GIỮ NGUYÊN icon menu.
+                        - ĐÃ TĂNG: w-[calc(100%+220px)]: Mở rộng sang phải 220px (thay vì 160px) để giấu triệt để cụm icon đỏ bên phải.
+                        - h-[calc(100%+100px)]: Kéo dài xuống dưới 100px để CẮT BỎ 3 icon công cụ dưới đáy.
                     */}
-                    <div className="absolute top-0 bottom-0 -left-[60px] w-[calc(100%+140px)]">
+                    <div className="absolute top-0 left-0 w-[calc(100%+220px)] h-[calc(100%+100px)]">
                         <OptimizedExternalTour />
                     </div>
                 </div>
 
-                {/* TRẠNG THÁI LOADING UI TỐI ƯU (Nằm đè lên iFrame trong lúc chờ) */}
+                {/* TRẠNG THÁI LOADING UI TỐI ƯU */}
                 {loading && (
                     <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-[#0B1120] pointer-events-none transition-opacity duration-500">
                         <div className="relative w-24 h-24 mb-6">
                             <div className="absolute inset-0 border-4 border-[#0275FB]/20 rounded-full"></div>
                             <div className="absolute inset-0 border-4 border-[#0275FB] rounded-full border-t-transparent animate-spin"></div>
                         </div>
-                        <p className="text-sm font-black text-[#0275FB] uppercase tracking-widest animate-pulse">Đang kết nối cổng không gian...</p>
-                        {/*<p className="text-xs font-medium text-gray-500 mt-2">Quá trình này phụ thuộc vào tốc độ máy chủ đối tác.</p>*/}
+                        <p className="text-sm font-black text-[#0275FB] uppercase tracking-widest animate-pulse">Đang kết nối không gian Yoolife...</p>
                     </div>
                 )}
 
