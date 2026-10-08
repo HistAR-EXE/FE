@@ -24,7 +24,7 @@ export function LeaderboardPage() {
     const [searchParams] = useSearchParams()
     const groupId = searchParams.get('groupId')
 
-    const [scope, setScope] = useState<'all' | 'city' | 'week'>('all')
+    const [scope, setScope] = useState<'all' | 'city' | 'week' | 'school'>('all')
     const [city, setCity] = useState('TP.HCM')
     const [data, setData] = useState<LeaderboardResponse | null>(null)
     const [loading, setLoading] = useState(true)
@@ -303,11 +303,12 @@ export function LeaderboardPage() {
                         {!groupId && (
                             <div className="flex flex-col md:flex-row items-center justify-between gap-6 border-b border-white/10 pb-8 mb-16">
                                 <div className="flex gap-2 p-1.5 bg-[#161b29] rounded-2xl border border-white/5 shadow-inner w-full md:w-auto overflow-x-auto custom-scrollbar">
-                                    {(['all', 'city', 'week'] as const).map((s) => {
+                                    {(['all', 'city', 'week', 'school'] as const).map((s) => {
                                         const isActive = scope === s;
                                         let label = 'MỌI LÚC';
                                         if(s === 'city') label = 'THÀNH PHỐ';
                                         if(s === 'week') label = 'TUẦN NÀY';
+                                        if(s === 'school') label = 'TRƯỜNG TÔI';
 
                                         return (
                                             <button

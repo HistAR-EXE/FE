@@ -180,6 +180,7 @@ export const chatApi = {
         })
         return readGuidedSse(response, onEvent)
     },
+    recordVoiceFallback: () => httpClient.post('/api/chat/telemetry/voice-fallback').catch(() => undefined),
 }
 
 export type GuidedConfidence = 'VERIFIED' | 'CAUTION' | 'ROLEPLAY'

@@ -19,6 +19,31 @@ export type QuestStep = {
     previewImage?: string
 }
 
+export type QuestRewardType = 'EXPLORE_XP' | 'CHAPTER_REWARD' | 'QUEST_COMPLETION_REWARD'
+
+export type QuestReward = {
+    type: QuestRewardType
+    xp: number
+    triggerKey?: string | null
+}
+
+export type QuestRewardSummary = {
+    rewards: QuestReward[]
+}
+
+export type NarrativeChoice = { code: string; targetNodeCode: string }
+export type NarrativeNode = {
+    code: string
+    type: string
+    choices: NarrativeChoice[]
+    title?: string | null
+    prompt?: string | null
+    actionHref?: string | null
+    minimumEvidence?: number | null
+}
+export type NarrativeQuestGraph = { startNodeCode: string; nodes: NarrativeNode[]; evidenceNodeCodes: string[]; outcomeNodeCodes: string[] }
+export type NarrativeInvestigation = { questId: string; version: number; graph: NarrativeQuestGraph }
+
 export type Quest = {
     id: string
     locationId: string
@@ -35,6 +60,7 @@ export type Quest = {
     steps?: QuestStep[] // Mới
     unlockAfterQuestId?: string | null
     unlockDiscoveryKeys?: string | null
+    rewardSummary?: QuestRewardSummary
 }
 
 export type QuestProgress = {
@@ -130,6 +156,7 @@ export const gamificationApi = {
         ),
     progress: (questId: string) =>
         getData<QuestProgress>(httpClient.get(`/api/quests/${questId}/progress`)),
+    investigation: (questId: string) => getData<NarrativeInvestigation>(httpClient.get(`/api/quests/${questId}/investigation`)),
     checkin: (body: CheckinRequestBody) =>
         getData<CheckinResult>(httpClient.post('/api/checkins', body)),
     secretStory: (locationId: string) =>

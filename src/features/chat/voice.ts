@@ -291,6 +291,7 @@ export async function speakReply(
 ): Promise<SpeechEnd> {
   const nativeResult = await speakWithBrowser(reply, locale, hooks)
   if (nativeResult !== null) return nativeResult
+  void chatApi.recordVoiceFallback()
   const generation = speechGeneration
   const controller = new AbortController()
   speakAbort = controller

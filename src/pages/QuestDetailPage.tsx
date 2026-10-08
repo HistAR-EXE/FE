@@ -6,13 +6,14 @@ import { SimpleTopNav } from '../components/layout/TopNav'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { GridTextureOverlay } from '../components/ui/GridTextureOverlay'
 import { collectionApi } from '../features/collection/api'
-import { discoveriesApi, gamificationApi, type Quest, type QuestProgress } from '../features/gamification/api'
+import { discoveriesApi, gamificationApi, type NarrativeInvestigation, type Quest, type QuestProgress } from '../features/gamification/api'
 import { questBlockedByEarlier, questMissingTourKeys } from '../features/gamification/questGate'
 import { shareProgressCard } from '../features/gamification/shareProgressCard'
 import { locationsApi } from '../features/locations/api'
 import { analyticsApi } from '../features/analytics/api'
 import { DISCOVERY_RECORDED_EVENT } from '../features/gamification/discoveryRouting'
 import { QuestJourneyPanel } from '../features/gamification/QuestJourneyPanel'
+import { NarrativeInvestigationBoard } from '../features/gamification/NarrativeInvestigationBoard'
 import { StoryJourneyPanel } from '../features/story/StoryJourneyPanel'
 import { useAuth } from '../shared/auth/useAuth'
 import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
@@ -30,6 +31,7 @@ export function QuestDetailPage() {
     const { isAuthenticated } = useAuth()
     const [quest, setQuest] = useState<Quest | null>(null)
     const [progress, setProgress] = useState<QuestProgress | null>(null)
+    const [investigation, setInvestigation] = useState<NarrativeInvestigation | null>(null)
     const [stepImages, setStepImages] = useState<Record<string, string>>({})
     const [locationName, setLocationName] = useState('')
     const [loading, setLoading] = useState(false)
@@ -42,6 +44,7 @@ export function QuestDetailPage() {
     useEffect(() => {
         if (!questId) return
         gamificationApi.questById(questId).then(setQuest).catch(() => setQuest(null))
+        gamificationApi.investigation(questId).then(setInvestigation).catch(() => setInvestigation(null))
     }, [questId])
 
     useEffect(() => {
@@ -295,17 +298,39 @@ export function QuestDetailPage() {
                                 </div>
                             )}
 
-                            {/* Panel Thù lao (Rewards) */}
+                            {/* Only server-issued reward events are shown as XP. */}
                             <div className="p-6 rounded-3xl bg-[#161824] border border-white/5 flex flex-col gap-4">
-                                <h3 className="font-black text-gray-500 text-xs uppercase tracking-widest">THÙ LAO NHIỆM VỤ</h3>
+                                <h3 className="font-black text-gray-500 text-xs uppercase tracking-widest">PHẦN THƯỞNG MINH BẠCH</h3>
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 rounded-full bg-[#fe951c]/10 flex items-center justify-center border border-[#fe951c]/20">
                                         <MaterialIcon name="stars" className="text-xl text-[#fdb438]" />
                                     </div>
                                     <div>
-                                        <p className="text-xs text-gray-400 font-bold uppercase">Phá đảo</p>
-                                        <p className="text-lg font-black text-white">+{quest?.pointsReward || 0} XP</p>
-                                        <p className="text-[11px] text-gray-500 mt-1">Điểm chương trên từng bước không cộng vào thưởng phá đảo.</p>
+                                        <p className="text-xs text-gray-400 font-bold uppercase">Khám phá</p>
+                                        <p className="text-lg font-black text-white">+{quest?.rewardSummary?.rewards.find((reward) => reward.type === 'EXPLORE_XP')?.xp ?? 10} XP</p>
+                                        <p className="text-[11px] text-gray-500 mt-1">Cộng ngay khi hệ thống ghi nhận điểm khám phá mới.</p>
+                                    </div>
+                                </div>
+                                {quest?.rewardSummary?.rewards.find((reward) => reward.type === 'CHAPTER_REWARD') && (
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-full bg-[#388cf1]/10 flex items-center justify-center border border-[#388cf1]/20">
+                                            <MaterialIcon name="extension" className="text-xl text-[#388cf1]" />
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-gray-400 font-bold uppercase">Chương / minigame</p>
+                                            <p className="text-lg font-black text-white">+{quest.rewardSummary.rewards.find((reward) => reward.type === 'CHAPTER_REWARD')?.xp} XP</p>
+                                            <p className="text-[11px] text-gray-500 mt-1">Chỉ cộng một lần khi hoàn thành thử thách có thưởng.</p>
+                                        </div>
+                                    </div>
+                                )}
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-full bg-[#fdb438]/10 flex items-center justify-center border border-[#fdb438]/20">
+                                        <MaterialIcon name="emoji_events" className="text-xl text-[#fdb438]" />
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-gray-400 font-bold uppercase">Hoàn tất toàn bộ quest</p>
+                                        <p className="text-lg font-black text-white">+{quest?.rewardSummary?.rewards.find((reward) => reward.type === 'QUEST_COMPLETION_REWARD')?.xp ?? (quest?.pointsReward || 0)} XP</p>
+                                        <p className="text-[11px] text-gray-500 mt-1">Cộng một lần khi phá đảo; không cộng lại điểm khám phá.</p>
                                     </div>
                                 </div>
                                 {meta?.badge && (
@@ -390,14 +415,14 @@ export function QuestDetailPage() {
                             Chia sẻ tiến độ
                         </button>
                     </div>
-                    <QuestJourneyPanel
+                    {investigation ? <NarrativeInvestigationBoard investigation={investigation} /> : <QuestJourneyPanel
                         steps={steps}
                         questId={questId || ''}
                         locationId={locationId}
                         status={status}
                         currentStep={currentStep}
                         stepImages={stepImages}
-                    />
+                    />}
 
                     {/* B4: chương truyện theo site của quest (1–2 miễn phí, 3+ Premium / Journey Pass) */}
                     <StoryJourneyPanel siteCode={siteCodeFromLocationId(locationId)} />
