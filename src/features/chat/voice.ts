@@ -2,10 +2,28 @@
 import { chatApi, type ChatSource } from './api'
 import { spokenChunks, spokenSentences } from './callCopy'
 import { aiClient, synthesizeSpeechSentence } from '../../shared/api/aiClient'
+import type { AppLocale } from '../../shared/i18n'
 
 export type VoicePhase = 'idle' | 'recording' | 'stt' | 'chat' | 'tts' | 'playing' | 'answered'
 
 export type SpeechEnd = 'played' | 'silent' | 'stopped'
+
+export function speechLocale(locale: string): string {
+  switch (locale) {
+    case 'en': return 'en-US'
+    case 'ko': return 'ko-KR'
+    case 'zh-CN': return 'zh-CN'
+    default: return 'vi-VN'
+  }
+}
+
+export function browserVoiceCapabilities() {
+  const host = window as Window & { speechSynthesis?: SpeechSynthesis }
+  return {
+    recognition: speechCtor() !== null,
+    synthesis: Boolean(host.speechSynthesis),
+  }
+}
 
 export async function transcribeAudio(blob: Blob, filename = 'recording.webm'): Promise<string> {
   const form = new FormData()
@@ -172,12 +190,12 @@ function transcriptOf(event: { results: ArrayLike<SpeechResult> }) {
 }
 
 /** Điền chữ vào ô nhắn khi đang nói. Không gửi lên server. */
-export function startDictation(onText: (text: string) => void): { stop: () => void } | null {
+export function startDictation(onText: (text: string) => void, locale: AppLocale = 'vi'): { stop: () => void } | null {
   const Ctor = speechCtor()
   if (!Ctor) return null
   const recognition = new Ctor()
   let stopped = false
-  recognition.lang = 'vi-VN'
+  recognition.lang = speechLocale(locale)
   recognition.continuous = true
   recognition.interimResults = true
   recognition.onresult = (event) => onText(transcriptOf(event))
@@ -215,6 +233,7 @@ export function startDictation(onText: (text: string) => void): { stop: () => vo
 export function listenForUtterance(
   onUpdate: (text: string) => void,
   shouldStop: () => boolean,
+  locale: AppLocale = 'vi',
 ): Promise<string> {
   const Ctor = speechCtor()
   if (!Ctor) return Promise.reject(new Error('unsupported'))
@@ -236,7 +255,7 @@ export function listenForUtterance(
         finish('')
       }
     }, 200)
-    recognition.lang = 'vi-VN'
+    recognition.lang = speechLocale(locale)
     recognition.continuous = false
     recognition.interimResults = true
     recognition.onresult = (event) => {
@@ -268,7 +287,10 @@ export async function speakReply(
   reply: string,
   personaKey?: string | null,
   hooks?: { onAudible?: () => void },
+  locale: AppLocale = 'vi',
 ): Promise<SpeechEnd> {
+  const nativeResult = await speakWithBrowser(reply, locale, hooks)
+  if (nativeResult !== null) return nativeResult
   const generation = speechGeneration
   const controller = new AbortController()
   speakAbort = controller
@@ -307,12 +329,36 @@ export async function speakReply(
   return played ? 'played' : 'silent'
 }
 
+/** Browser TTS is privacy-preserving and available without sending visitor audio to another service. */
+function speakWithBrowser(
+  reply: string,
+  locale: AppLocale,
+  hooks?: { onAudible?: () => void },
+): Promise<SpeechEnd | null> {
+  if (!('speechSynthesis' in window) || typeof SpeechSynthesisUtterance === 'undefined') return Promise.resolve(null)
+  const generation = speechGeneration
+  return new Promise((resolve) => {
+    const utterance = new SpeechSynthesisUtterance(reply)
+    utterance.lang = speechLocale(locale)
+    utterance.onstart = () => {
+      if (generation === speechGeneration) hooks?.onAudible?.()
+    }
+    utterance.onend = () => resolve(generation === speechGeneration ? 'played' : 'stopped')
+    utterance.onerror = () => resolve(null)
+    try {
+      window.speechSynthesis.speak(utterance)
+    } catch {
+      resolve(null)
+    }
+  })
+}
+
 /** Chữ hiện ngay khi đang nói. */
-export function startBrowserCaption(onText: (text: string) => void): (() => void) | null {
+export function startBrowserCaption(onText: (text: string) => void, locale: AppLocale = 'vi'): (() => void) | null {
   const Ctor = speechCtor()
   if (!Ctor) return null
   const recognition = new Ctor()
-  recognition.lang = 'vi-VN'
+  recognition.lang = speechLocale(locale)
   recognition.continuous = true
   recognition.interimResults = true
   recognition.onresult = (event) => {

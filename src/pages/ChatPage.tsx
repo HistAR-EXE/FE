@@ -1,5 +1,6 @@
 // src/pages/ChatPage.tsx
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { SimpleTopNav } from '../components/layout/TopNav'
@@ -111,6 +112,8 @@ function TimelineDivider({ label }: { label: string }) {
 }
 
 export function ChatPage() {
+    const { i18n } = useTranslation()
+    const voiceLocale = (['vi', 'en', 'ko', 'zh-CN'].includes(i18n.language) ? i18n.language : 'vi') as import('../shared/i18n').AppLocale
     const { characterId: routeCharacterId } = useParams<{ characterId?: string }>()
     const [params, setSearchParams] = useSearchParams()
     const navigate = useNavigate()
@@ -173,7 +176,6 @@ export function ChatPage() {
     const replayAnswerRef = useRef<() => void>(() => undefined)
     const answerEpochRef = useRef(0)
     const conversationIdRef = useRef<string | null>(null)
-    conversationIdRef.current = conversationId
     const beginCallRef = useRef<() => void>(() => undefined)
     const MASCOT_STILL = '/mascot/mascot-5.png'
     const messagesScrollRef = useRef<HTMLDivElement | null>(null)
@@ -182,6 +184,10 @@ export function ChatPage() {
     const shouldStickToBottomRef = useRef(true)
     const chatStartedRef = useRef<string | null>(null)
     const { showToast } = useToast()
+
+    useEffect(() => {
+        conversationIdRef.current = conversationId
+    }, [conversationId])
 
     useEffect(() => {
         if (!quotaModalOpen || !shouldShowB2CPaywall(user)) return
@@ -512,14 +518,6 @@ export function ChatPage() {
         recordDialogueQuest()
     }
 
-    useEffect(() => {
-        if (params.get('call') !== '1') return
-        beginCallRef.current()
-        const next = new URLSearchParams(params)
-        next.delete('call')
-        setSearchParams(next, { replace: true })
-    }, [params, setSearchParams])
-
     const handleMessagesScroll = () => {
         const el = messagesScrollRef.current
         if (!el) return
@@ -570,19 +568,44 @@ export function ChatPage() {
 
         try {
             setSending(true)
-            const reply = await chatApi.send({
+            const guided = await chatApi.sendGuidedStream({
                 characterId: targetId,
                 message: userText,
                 conversationId,
                 stationCode,
                 siteCode,
+            }, (event) => {
+                if (event.name !== 'delta' || !event.data || typeof event.data !== 'object') return
+                const block = event.data as { content?: string; sources?: ChatSource[] }
+                const streamedContent = block.content
+                if (!streamedContent) return
+                setMessages((prev) => {
+                    const existing = prev.find((message) => message.id === assistantId)
+                    if (existing) {
+                        return prev.map((message) => message.id === assistantId
+                            ? { ...message, content: `${message.content}${streamedContent}`, sources: block.sources ?? message.sources }
+                            : message)
+                    }
+                    return [...prev, {
+                        id: assistantId,
+                        role: 'assistant',
+                        content: streamedContent,
+                        sources: block.sources ?? [],
+                        createdAt: new Date().toISOString(),
+                    }]
+                })
             })
+            const reply = {
+                reply: guided.blocks.map((block) => block.content).join('\n\n'),
+                conversationId: guided.conversationId ?? conversationId ?? '',
+                sources: guided.sources,
+            }
             emitEvent('chat_message', {
                 stationCode: stationCode ?? undefined,
                 payload: { hasCitation: Boolean(reply.sources?.length), stationCode, siteCode },
             })
 
-            setConversationId(reply.conversationId)
+            if (reply.conversationId) setConversationId(reply.conversationId)
             if (chatStartedRef.current !== targetId) {
                 chatStartedRef.current = targetId
                 void analyticsApi.recordEvent({
@@ -653,7 +676,7 @@ export function ChatPage() {
             stopDictation()
             return
         }
-        const session = startDictation((text) => setInput(text))
+        const session = startDictation((text) => setInput(text), voiceLocale)
         if (!session) {
             showToast({
                 message: 'Trình duyệt này không đổi giọng nói thành chữ. Hãy dùng Chrome hoặc Edge.',
@@ -715,11 +738,12 @@ export function ChatPage() {
                 setAnswerLines([])
                 setCallImages([])
                 setHeardText('')
-                let said = ''
+                let said: string
                 try {
                     said = await listenForUtterance(
                         (text) => setHeardText(text),
                         () => callRunRef.current !== runId || callMutedRef.current,
+                        voiceLocale,
                     )
                 } catch (error) {
                     if (callRunRef.current !== runId) return
@@ -772,7 +796,7 @@ export function ChatPage() {
                                 setHearing(true)
                                 setHeardAudio(true)
                             },
-                        }).then((end) => {
+                        }, voiceLocale).then((end) => {
                             if (!stillThisAnswer() || end === 'stopped') return
                             setHearing(false)
                             setHeardAudio(end === 'played')
@@ -786,7 +810,7 @@ export function ChatPage() {
                             setHearing(true)
                             setHeardAudio(true)
                         },
-                    })
+                    }, voiceLocale)
                     if (callRunRef.current !== runId) return
                     if (stillThisAnswer() && result !== 'stopped') {
                         setHearing(false)
@@ -822,7 +846,17 @@ export function ChatPage() {
         }
         void loop()
     }
-    beginCallRef.current = beginCall
+    useEffect(() => {
+        beginCallRef.current = beginCall
+    })
+
+    useEffect(() => {
+        if (params.get('call') !== '1') return
+        beginCallRef.current()
+        const next = new URLSearchParams(params)
+        next.delete('call')
+        setSearchParams(next, { replace: true })
+    }, [params, setSearchParams])
 
     const voiceHint = VOICE_STATUS[voicePhase]
     const showTypingIndicator = sending && messages.at(-1)?.role === 'user'

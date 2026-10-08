@@ -37,14 +37,13 @@ export function fallbackCopyText(text: string): boolean {
   document.body.appendChild(ta)
   ta.focus()
   ta.select()
-  let ok = false
   try {
-    ok = document.execCommand('copy')
+    return document.execCommand('copy')
   } catch {
-    ok = false
+    return false
+  } finally {
+    document.body.removeChild(ta)
   }
-  document.body.removeChild(ta)
-  return ok
 }
 
 export function buildLinkJsonSnippet(link: {

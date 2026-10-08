@@ -1,0 +1,30 @@
+name: Frontend quality
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: read
+
+jobs:
+  lint-and-build-windows:
+    name: Lint and production build (Windows)
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.14.0
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Lint and build
+        run: npm run ci

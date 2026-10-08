@@ -1,0 +1,16 @@
+{
+  "nav": {
+    "back": "返回",
+    "searchPlaceholder": "搜索遗址和历史时期...",
+    "themeLight": "浅色模式",
+    "themeDark": "深色模式",
+    "langVi": "Tiếng Việt",
+    "langEn": "English",
+    "langKo": "한국어",
+    "langZh": "简体中文"
+  },
+  "map": { "title": "越南文化遗产地图", "points": "{{count}}处", "layerMap": "地图", "layerSatellite": "卫星", "hintMap": "地图标签随语言变化", "hintHybrid": "卫星图和标签", "regionLegend": "地区", "islandsLegend": "岛屿", "zoomIn": "放大", "zoomOut": "缩小", "resetView": "查看整个越南", "lockedHint": "完成任务以解锁", "missingApiKey": "缺少 Google Maps API 密钥。", "attribution": "© Google Maps" },
+  "modeSelect": { "step1Title": "选择体验方式", "step2Title": "选择探索目的地", "onlineBadge": "远程学习与探索", "offlineBadge": "实地 O2O 陪伴", "continue": "继续", "back": "返回", "confirm": "确认并开始" },
+  "regions": { "north": "北部", "central": "中部", "south": "南部" },
+  "islands": { "hoangSa": "西沙群岛", "truongSa": "南沙群岛", "hoangSaHover": "越南的西沙群岛", "truongSaHover": "越南的南沙群岛" }
+}

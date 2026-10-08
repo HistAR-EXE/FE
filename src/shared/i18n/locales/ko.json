@@ -1,0 +1,16 @@
+{
+  "nav": {
+    "back": "뒤로",
+    "searchPlaceholder": "유적지와 시대 검색...",
+    "themeLight": "라이트 모드",
+    "themeDark": "다크 모드",
+    "langVi": "Tiếng Việt",
+    "langEn": "English",
+    "langKo": "한국어",
+    "langZh": "简体中文"
+  },
+  "map": { "title": "베트남 문화유산 지도", "points": "{{count}}곳", "layerMap": "지도", "layerSatellite": "위성", "hintMap": "언어에 따른 지도 라벨", "hintHybrid": "위성 및 라벨", "regionLegend": "지역", "islandsLegend": "섬", "zoomIn": "확대", "zoomOut": "축소", "resetView": "전체 베트남 보기", "lockedHint": "퀘스트를 완료하여 잠금을 해제하세요", "missingApiKey": "Google Maps API 키가 없습니다.", "attribution": "© Google Maps" },
+  "modeSelect": { "step1Title": "체험 방식 선택", "step2Title": "탐험할 장소 선택", "onlineBadge": "원격 학습과 탐험", "offlineBadge": "현장 O2O 동행", "continue": "계속", "back": "뒤로", "confirm": "확인 및 시작" },
+  "regions": { "north": "북부", "central": "중부", "south": "남부" },
+  "islands": { "hoangSa": "파라셀 제도", "truongSa": "스프래틀리 제도", "hoangSaHover": "베트남의 파라셀 제도", "truongSaHover": "베트남의 스프래틀리 제도" }
+}

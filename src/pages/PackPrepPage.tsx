@@ -89,7 +89,7 @@ export function PackPrepPage() {
     setError(null)
     setStates({})
     ;(async () => {
-      let next: PackManifest | null = null
+      let next: PackManifest | null
       try {
         next = await getData<PackManifest>(httpClient.get(`/api/sites/${SITE_CODE}/pack`, { params: { tier } }))
         localStorage.setItem(`${MANIFEST_KEY}:${SITE_CODE}:${tier}`, JSON.stringify(next))

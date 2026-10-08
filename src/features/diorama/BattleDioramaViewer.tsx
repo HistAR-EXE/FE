@@ -49,6 +49,13 @@ const LOCATION_TAGS = [
     { name: "BẾN CÁT", top: "60%", left: "70%" },
 ];
 
+const REVIVAL_STARS = Array.from({ length: 15 }, (_, index) => ({
+    top: 30 + (index * 17) % 40,
+    left: 10 + (index * 29) % 80,
+    duration: 2 + (index % 4),
+    delay: (index % 5) * 0.4,
+}))
+
 export function BattleDioramaViewer() {
     const [isIntro, setIsIntro] = useState(true);
     const [currentStep, setCurrentStep] = useState(0);
@@ -353,13 +360,13 @@ export function BattleDioramaViewer() {
                     <div className="absolute top-[60%] left-[30%] w-36 h-20 bg-[#FDC908]/40 blur-[30px] animate-[pulse_4.5s_ease-in-out_infinite] mix-blend-screen" style={{ animationDelay: '0.8s' }}></div>
 
                     {/* Điểm nhấn ngôi sao lấp lánh tượng trưng cho mầm sống/hy vọng */}
-                    {[...Array(15)].map((_, i) => (
+                    {REVIVAL_STARS.map((star, i) => (
                         <div key={`star-${i}`} className="absolute w-1.5 h-1.5 bg-white rounded-full blur-[1px] animate-ping"
                              style={{
-                                 top: `${30 + Math.random() * 40}%`,
-                                 left: `${10 + Math.random() * 80}%`,
-                                 animationDuration: `${2 + Math.random() * 3}s`,
-                                 animationDelay: `${Math.random() * 2}s`
+                                 top: `${star.top}%`,
+                                 left: `${star.left}%`,
+                                 animationDuration: `${star.duration}s`,
+                                 animationDelay: `${star.delay}s`
                              }}>
                         </div>
                     ))}

@@ -44,7 +44,7 @@ export function LeaderboardPage() {
         const handleLeaderboardError = (error: unknown) => {
             if (error instanceof ApiError && (error.code === 'TRIAL_EXPIRED' || error.status === 403)) {
                 setArchivedMessage(error.message || 'Gói của trường đã hết hạn, bảng xếp hạng hiện ở chế độ lưu trữ.')
-                setData({ scope: groupId ? 'group' : scope, city: scope === 'city' ? city.trim() || null : null, entries: [] } as any)
+                setData({ scope: groupId ? 'group' : scope, city: scope === 'city' ? city.trim() || null : null, entries: [] })
             } else if (error instanceof ApiError && error.status === 422) {
                 // Âm thầm bỏ qua lỗi 422 từ Backend (nếu có lọt vào) vì giao diện Khóa Premium đã tự giải thích
                 setArchivedMessage(null)

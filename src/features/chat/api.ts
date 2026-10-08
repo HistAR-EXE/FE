@@ -1,6 +1,8 @@
 // src/features/chat/api.ts
 import { getData, getListData, getPageData, httpClient } from '../../shared/api/httpClient'
 import type { PageResponse } from '../../shared/api/contracts'
+import { getToken } from '../../shared/auth/session'
+import { appEnv } from '../../shared/config/env'
 
 export type ChatSource = {
     title: string
@@ -60,6 +62,55 @@ export type ChatPrompt = {
     sortOrder: number
 }
 
+async function readGuidedSse(
+    response: Response,
+    onEvent?: (event: GuidedStreamEvent) => void,
+): Promise<GuidedChatReply> {
+    if (!response.ok || !response.body) throw new Error(`Guided chat failed (${response.status})`)
+    const reader = response.body.getReader()
+    const decoder = new TextDecoder()
+    let buffer = ''
+    const result: GuidedChatReply = { conversationId: null, blocks: [], sources: [], suggestions: [], followUpQuestion: null, safetyBlocked: false }
+    const apply = (name: GuidedStreamEvent['name'], raw: string) => {
+        const data = JSON.parse(raw) as unknown
+        onEvent?.({ name, data })
+        if (name === 'meta' && data && typeof data === 'object') {
+            const meta = data as { conversationId?: string | null; safetyBlocked?: boolean }
+            result.conversationId = meta.conversationId ?? null
+            result.safetyBlocked = Boolean(meta.safetyBlocked)
+        } else if (name === 'delta' && data && typeof data === 'object') {
+            result.blocks.push(data as GuidedAnswerBlock)
+        } else if (name === 'sources' && Array.isArray(data)) {
+            result.sources = data as ChatSource[]
+        } else if (name === 'suggestions' && Array.isArray(data)) {
+            result.suggestions = data.filter((value): value is string => typeof value === 'string')
+        } else if (name === 'complete' && data && typeof data === 'object') {
+            result.followUpQuestion = (data as { followUpQuestion?: string | null }).followUpQuestion ?? null
+        } else if (name === 'error') {
+            throw new Error('Guided chat stream failed')
+        }
+    }
+    while (true) {
+        const { value, done } = await reader.read()
+        buffer += decoder.decode(value ?? new Uint8Array(), { stream: !done })
+        let separator = buffer.indexOf('\n\n')
+        while (separator >= 0) {
+            const frame = buffer.slice(0, separator)
+            buffer = buffer.slice(separator + 2)
+            let eventName = ''
+            let payload = ''
+            for (const line of frame.split('\n')) {
+                if (line.startsWith('event:')) eventName = line.slice(6).trim()
+                if (line.startsWith('data:')) payload += line.slice(5).trim()
+            }
+            if (eventName && payload) apply(eventName as GuidedStreamEvent['name'], payload)
+            separator = buffer.indexOf('\n\n')
+        }
+        if (done) break
+    }
+    return result
+}
+
 export const chatApi = {
     /** Suggested question chips for a station (public endpoint). */
     getStationPrompts: (siteCode: string, stationCode: string, persona = 'chi-nam') =>
@@ -108,4 +159,46 @@ export const chatApi = {
     }): Promise<ChatReply> {
         return chatApi.sendOrchestrated(payload)
     },
+
+    sendGuidedStream: async (payload: {
+        characterId: string
+        message: string
+        conversationId?: string | null
+        stationCode?: string | null
+        siteCode?: string | null
+        mode?: 'LIGHT_HINT' | 'DEEP_EXPLAIN' | 'KNOWLEDGE_CHECK'
+    }, onEvent?: (event: GuidedStreamEvent) => void, signal?: AbortSignal): Promise<GuidedChatReply> => {
+        const token = getToken()
+        const response = await fetch(`${appEnv.apiUrl || ''}/api/chat/messages/stream`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            signal,
+            body: JSON.stringify({ ...payload, conversationId: payload.conversationId ?? undefined, mode: payload.mode ?? 'LIGHT_HINT' }),
+        })
+        return readGuidedSse(response, onEvent)
+    },
+}
+
+export type GuidedConfidence = 'VERIFIED' | 'CAUTION' | 'ROLEPLAY'
+export type GuidedAnswerType = 'VERIFIED_FACT' | 'INTERPRETATION' | 'ROLEPLAY'
+export type GuidedAnswerBlock = {
+    type: GuidedAnswerType
+    confidence: GuidedConfidence
+    content: string
+    sources: ChatSource[]
+}
+export type GuidedStreamEvent = {
+    name: 'meta' | 'delta' | 'sources' | 'suggestions' | 'complete' | 'error'
+    data: unknown
+}
+export type GuidedChatReply = {
+    conversationId: string | null
+    blocks: GuidedAnswerBlock[]
+    sources: ChatSource[]
+    suggestions: string[]
+    followUpQuestion: string | null
+    safetyBlocked: boolean
 }

@@ -14,8 +14,11 @@ export function MascotStage({ mode = 'idle', paused = false, className }: Mascot
   const hostRef = useRef<HTMLDivElement>(null)
   const modeRef = useRef(mode)
   const pausedRef = useRef(paused)
-  modeRef.current = mode
-  pausedRef.current = paused
+
+  useEffect(() => {
+    modeRef.current = mode
+    pausedRef.current = paused
+  }, [mode, paused])
 
   useEffect(() => {
     const host = hostRef.current

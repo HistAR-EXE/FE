@@ -183,8 +183,12 @@ function XepTang({ view, disabled, onSubmit }: { view: MinigameView['view']; dis
 
 function SoiNap({ view, disabled, onSubmit }: { view: MinigameView['view']; disabled: boolean; onSubmit: (taps: Tap[]) => void }) {
     const taps = useRef<Tap[]>([])
-    const started = useRef(performance.now())
+    const started = useRef(0)
     const box = useRef<HTMLButtonElement>(null)
+
+    useEffect(() => {
+        started.current = performance.now()
+    }, [])
 
         const tap = (event: PointerEvent) => {
         if (disabled || !box.current) return
@@ -326,7 +330,10 @@ function ImLang({
     const sent = useRef(false)
     const holdStart = useRef(0)
     const submitRef = useRef(onSubmit)
-    submitRef.current = onSubmit
+
+    useEffect(() => {
+        submitRef.current = onSubmit
+    }, [onSubmit])
 
     useEffect(() => {
         if (disabled) return
