@@ -16,11 +16,12 @@ export const aiClient = axios.create({
 export async function synthesizeSpeechSentence(
   sentence: string,
   personaKey?: string | null,
+  signal?: AbortSignal,
 ): Promise<Blob> {
   const res = await aiClient.post<Blob>(
     '/ai/voice/tts',
     { text: sentence, persona_key: personaKey ?? undefined },
-    { responseType: 'blob', timeout: 120_000 },
+    { responseType: 'blob', timeout: 120_000, signal },
   )
   return res.data
 }

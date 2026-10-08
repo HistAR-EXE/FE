@@ -3,8 +3,23 @@ import { ApiError } from './contracts'
 
 type ErrorContext = 'chat' | 'checkin' | 'leaderboard' | 'upload' | 'demoCheckin' | 'quest'
 
+function isChatProviderBusy(error: ApiError): boolean {
+  return /Gọi RAG AI thất bại|RAG AI không khả dụng|Tất cả AI providers|Gemini unavailable|providers đều thất bại/i.test(
+    error.message,
+  )
+}
+
 export function getFriendlyErrorMessage(error: unknown, context: ErrorContext): string {
   if (error instanceof ApiError) {
+    if (context === 'chat' && (error.status === 429 || error.code === 'QUOTA_EXCEEDED')) {
+      return error.message || 'Bạn đã hết lượt chat hôm nay.'
+    }
+    if (context === 'chat' && (error.status === 503 || (error.status === 422 && isChatProviderBusy(error)))) {
+      return 'Chrono đang bận. Hãy gửi lại sau một lát.'
+    }
+    if (error.status === 500 && context === 'chat') {
+      return 'Lỗi máy chủ. Hãy gửi lại.'
+    }
     if (error.code === 'BUSINESS_RULE') {
       switch (context) {
         case 'chat':
@@ -31,17 +46,8 @@ export function getFriendlyErrorMessage(error: unknown, context: ErrorContext): 
       return error.message || 'LMS đầy đủ chỉ có ở gói Premium B2B'
     }
     if (error.code === 'UNAUTHORIZED') return 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.'
-    if (error.code === 'QUOTA_EXCEEDED' && context === 'chat') {
-      return error.message || 'Đã đạt giới hạn chat. Nâng cấp Premium hoặc thử lại ngày mai.'
-    }
     if (error.code === 'CCU_LIMIT_EXCEEDED') {
       return 'Trường đã đạt giới hạn CCU. Thử lại sau hoặc liên hệ giáo viên.'
-    }
-    if (error.status === 503 && context === 'chat') {
-      return 'Dịch vụ AI tạm thời không khả dụng. Kiểm tra AI service (:8100), hoặc cấu hình GEMINI_API_KEY trên BE.'
-    }
-    if (error.status === 500 && context === 'chat') {
-      return 'Lỗi máy chủ chat. Chạy scripts/diagnose-chat.ps1 hoặc bật AI service.'
     }
     if (error.status === 403) return 'Bạn chưa đủ điều kiện truy cập nội dung này.'
     if (error.code === 'VALIDATION_ERROR') return error.message || 'Dữ liệu gửi lên không hợp lệ.'

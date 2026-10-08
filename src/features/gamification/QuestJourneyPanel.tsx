@@ -8,6 +8,7 @@ import { shouldShowB2CPaywall } from '../../shared/access/contentAccess'
 import { useAuth } from '../../shared/auth/useAuth'
 import { useAppMode } from '../../shared/context/useAppMode'
 import type { QuestStep } from './api'
+import { TRAM_XA_PANORAMA_ID } from './saBanFragment'
 
 type QuestJourneyPanelProps = {
     steps: QuestStep[]
@@ -112,6 +113,9 @@ export function QuestJourneyPanel({
                         const tourParams = new URLSearchParams({ questRecord: step.unlockKey })
                         if (step.unlockKey === 'tour:sa-ban') {
                             tourParams.set('view', 'illustrated')
+                        } else if (step.unlockKey === 'tour:tram-xa') {
+                            tourParams.set('panorama', TRAM_XA_PANORAMA_ID)
+                            tourParams.set('view', 'panorama')
                         } else if (step.unlockKey.startsWith('scene:')) {
                             tourParams.set('panorama', step.unlockKey.slice('scene:'.length))
                         }

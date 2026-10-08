@@ -1,8 +1,11 @@
 // src/features/chat/voice.ts
 import { chatApi, type ChatSource } from './api'
+import { spokenChunks, spokenSentences } from './callCopy'
 import { aiClient, synthesizeSpeechSentence } from '../../shared/api/aiClient'
 
-export type VoicePhase = 'idle' | 'recording' | 'stt' | 'chat' | 'tts' | 'playing'
+export type VoicePhase = 'idle' | 'recording' | 'stt' | 'chat' | 'tts' | 'playing' | 'answered'
+
+export type SpeechEnd = 'played' | 'silent' | 'stopped'
 
 export async function transcribeAudio(blob: Blob, filename = 'recording.webm'): Promise<string> {
   const form = new FormData()
@@ -22,40 +25,74 @@ export type VoiceStepwiseOptions = {
 let activeAudio: HTMLAudioElement | null = null
 let activeAudioUrl: string | null = null
 let speechGeneration = 0
+let speakAbort: AbortController | null = null
+let releasePlayback: (() => void) | null = null
 
 export function stopActiveSpeech() {
   speechGeneration += 1
-  if (activeAudio) {
-    activeAudio.pause()
-    activeAudio.src = ''
-    activeAudio = null
+  speakAbort?.abort()
+  speakAbort = null
+  const audio = activeAudio
+  const url = activeAudioUrl
+  activeAudio = null
+  activeAudioUrl = null
+  if (audio) {
+    audio.onended = null
+    audio.onpause = null
+    audio.onerror = null
+    audio.pause()
+    audio.src = ''
   }
-  if (activeAudioUrl) {
-    URL.revokeObjectURL(activeAudioUrl)
-    activeAudioUrl = null
-  }
+  if (url) URL.revokeObjectURL(url)
+  releasePlayback?.()
+  releasePlayback = null
 }
 
-function playSpeechBlob(blob: Blob, generation: number): Promise<void> {
-  if (generation !== speechGeneration) return Promise.resolve()
+/** Đợi tiếng tắt hẳn rồi mới cho mic mở, tránh thu tiếng vọng. */
+export function waitForSpeechToSettle(): Promise<void> {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, 400)
+  })
+}
+
+function playSpeechBlob(
+  blob: Blob,
+  generation: number,
+  onAudible?: () => void,
+): Promise<SpeechEnd> {
+  if (generation !== speechGeneration) return Promise.resolve('stopped')
+  if (!blob.size) return Promise.resolve('silent')
   if (activeAudioUrl) URL.revokeObjectURL(activeAudioUrl)
   const url = URL.createObjectURL(blob)
   activeAudioUrl = url
   const audio = new Audio(url)
+  audio.volume = 1
   activeAudio = audio
-  return new Promise((resolve, reject) => {
-    const finish = () => {
+  return new Promise((resolve) => {
+    let settled = false
+    const finish = (end: SpeechEnd) => {
+      if (settled) return
+      settled = true
+      if (releasePlayback === finish) releasePlayback = null
       if (activeAudio === audio) activeAudio = null
       if (activeAudioUrl === url) {
         URL.revokeObjectURL(url)
         activeAudioUrl = null
       }
-      resolve()
+      resolve(end)
     }
-    audio.onended = finish
-    audio.onpause = finish
-    audio.onerror = () => reject(new Error('Không phát được giọng đọc'))
-    audio.play().catch(reject)
+    releasePlayback = () => finish('stopped')
+    audio.onplaying = () => {
+      if (generation === speechGeneration) onAudible?.()
+    }
+    audio.onended = () => {
+      if (generation === speechGeneration) finish('played')
+    }
+    audio.onpause = () => {
+      if (generation !== speechGeneration) finish('stopped')
+    }
+    audio.onerror = () => finish('silent')
+    audio.play().catch(() => finish('silent'))
   })
 }
 
@@ -80,8 +117,8 @@ export async function voiceChatStepwise(
   })
   options?.onPartialReply?.(chatReply.reply)
 
-  const sentences = chatReply.reply.split(/(?<=[.!?…])\s+/).filter(Boolean)
-  for (const sentence of sentences.slice(0, 3)) {
+  const sentences = spokenSentences(chatReply.reply).slice(0, 3)
+  for (const sentence of sentences) {
     if (generation !== speechGeneration) break
     try {
       const blob = await synthesizeSpeechSentence(sentence, payload.personaKey)
@@ -227,24 +264,47 @@ export function listenForUtterance(
   })
 }
 
-export async function speakReply(reply: string, personaKey?: string | null, onStart?: () => void) {
+export async function speakReply(
+  reply: string,
+  personaKey?: string | null,
+  hooks?: { onAudible?: () => void },
+): Promise<SpeechEnd> {
   const generation = speechGeneration
-  const sentences = reply.split(/(?<=[.!?…])\s+/).filter(Boolean)
-  let started = false
-  for (const sentence of sentences.slice(0, 3)) {
-    if (generation !== speechGeneration) break
-    try {
-      const blob = await synthesizeSpeechSentence(sentence, personaKey)
-      if (generation !== speechGeneration) break
-      if (!started) {
-        started = true
-        onStart?.()
+  const controller = new AbortController()
+  speakAbort = controller
+  const chunks = spokenChunks(reply)
+  let played = false
+  const loadChunk = async (text: string): Promise<Blob | null> => {
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      if (generation !== speechGeneration) return null
+      try {
+        const next = await synthesizeSpeechSentence(text, personaKey, controller.signal)
+        if (next.size > 0) return next
+      } catch {
+        if (controller.signal.aborted || generation !== speechGeneration) return null
       }
-      await playSpeechBlob(blob, generation)
-    } catch {
-      break
     }
+    return null
   }
+  try {
+    let upcoming = chunks.length > 0 ? loadChunk(chunks[0]) : null
+    for (let index = 0; index < chunks.length; index += 1) {
+      if (generation !== speechGeneration) return 'stopped'
+      const blob = await upcoming
+      upcoming = index + 1 < chunks.length ? loadChunk(chunks[index + 1]) : null
+      if (generation !== speechGeneration) return 'stopped'
+      if (!blob) continue
+      const end = await playSpeechBlob(blob, generation, () => {
+        played = true
+        hooks?.onAudible?.()
+      })
+      if (end === 'stopped') return 'stopped'
+      if (end === 'played') played = true
+    }
+  } finally {
+    if (speakAbort === controller) speakAbort = null
+  }
+  return played ? 'played' : 'silent'
 }
 
 /** Chữ hiện ngay khi đang nói. */

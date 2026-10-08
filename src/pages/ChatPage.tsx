@@ -16,7 +16,9 @@ import { buildChatTimeline } from '../features/chat/chatTimeline'
 import type { MascotMode } from '../features/chat/MascotAvatar'
 import { MascotCallOverlay } from '../features/chat/MascotCallOverlay'
 import { MascotStage } from '../features/chat/MascotStage'
-import { listenForUtterance, speakReply, startDictation, stopActiveSpeech, type VoicePhase } from '../features/chat/voice'
+import { answerCardLines } from '../features/chat/callCopy'
+import { imagesForReply } from '../features/chat/callVisuals'
+import { listenForUtterance, speakReply, startDictation, stopActiveSpeech, waitForSpeechToSettle, type VoicePhase } from '../features/chat/voice'
 import { locationsApi, type Character } from '../features/locations/api'
 import { gamificationApi } from '../features/gamification/api'
 import { questRecordFromSearch, recordQuestStepEngagement } from '../features/gamification/questEngagement'
@@ -43,6 +45,7 @@ const VOICE_STATUS: Record<VoicePhase, string> = {
     chat: '🧠 Trợ lý AI đang suy nghĩ sử liệu...',
     tts: '🔊 Đang tạo giọng đọc nhân vật lịch sử...',
     playing: '🟢 Đang phát lời thoại nhân vật...',
+    answered: 'Câu trả lời đang hiện',
 }
 
 // CẤU HÌNH 2 ĐẠI SỨ DI SẢN CỦ CHI (AMBASSADORS FALLBACK & OVERRIDE)
@@ -156,10 +159,19 @@ export function ChatPage() {
     const [callMuted, setCallMuted] = useState(false)
     const [stagePaused, setStagePaused] = useState(false)
     const [heardText, setHeardText] = useState('')
+    const [answerLines, setAnswerLines] = useState<string[]>([])
+    const [callImages, setCallImages] = useState<string[]>([])
+    const [hearing, setHearing] = useState(false)
+    const [heardAudio, setHeardAudio] = useState(false)
+    const [retryMessage, setRetryMessage] = useState<string | null>(null)
     const [aiServiceOnline, setAiServiceOnline] = useState<boolean | null>(null)
     const dictateStopRef = useRef<(() => void) | null>(null)
     const callRunRef = useRef(0)
     const callMutedRef = useRef(false)
+    const releaseAnswerRef = useRef<(() => void) | null>(null)
+    const skipAnswerRef = useRef(false)
+    const replayAnswerRef = useRef<() => void>(() => undefined)
+    const answerEpochRef = useRef(0)
     const conversationIdRef = useRef<string | null>(null)
     conversationIdRef.current = conversationId
     const beginCallRef = useRef<() => void>(() => undefined)
@@ -407,11 +419,7 @@ export function ChatPage() {
                 },
             },
         ])
-        if (locationId && isAuthenticated && !questDialogueRecorded.current) {
-            questDialogueRecorded.current = true
-            void recordQuestStepEngagement(SA_BAN_QUEST_KEY, locationId, 'map')
-        }
-    }, [isAuthenticated, locationId])
+    }, [])
 
     const answerSaBanQuiz = useCallback(async (messageId: string, optionId: string) => {
         const correct = optionId === SA_BAN_QUIZ.correctId
@@ -527,8 +535,8 @@ export function ChatPage() {
         acceptSaBanCode(SA_BAN_FRAGMENT_CODE)
     }, [acceptSaBanCode, params, questPrompt])
 
-    const send = async () => {
-        const pending = input.trim()
+    const send = async (override?: string) => {
+        const pending = (override ?? input).trim()
         if (questRecordKey === SA_BAN_QUEST_KEY && messageHasSaBanCode(pending)) {
             acceptSaBanCode(pending)
             return
@@ -542,10 +550,11 @@ export function ChatPage() {
             })
             return
         }
-        if (!input.trim() || busy) return
+        if (!pending || busy) return
         const targetId = resolvedCharacterId
-        const userText = input.trim()
-        setInput('')
+        const userText = pending
+        setRetryMessage(null)
+        if (override === undefined) setInput('')
         shouldStickToBottomRef.current = true
 
         const optimistic: ChatMessage = {
@@ -604,6 +613,8 @@ export function ChatPage() {
             })
         } catch (e) {
             setMessages((prev) => prev.filter((m) => m.id !== optimistic.id))
+            const quota = e instanceof ApiError && (e.code === 'QUOTA_EXCEEDED' || e.status === 429 || (e.status === 422 && /giới hạn/i.test(e.message)))
+            if (!quota && !(e instanceof ApiError && e.status === 401)) setRetryMessage(userText)
             if (e instanceof ApiError && (e.code === 'QUOTA_EXCEEDED' || (e.status === 403 && /quota/i.test(e.code)))) {
                 setChatLimitReached(true)
                 if (e.quotaType === 'ORG_MONTHLY' || user?.orgId) {
@@ -659,6 +670,13 @@ export function ChatPage() {
         callMutedRef.current = false
         stopActiveSpeech()
         setHeardText('')
+        setAnswerLines([])
+        setCallImages([])
+        setHearing(false)
+        setHeardAudio(false)
+        answerEpochRef.current += 1
+        releaseAnswerRef.current?.()
+        releaseAnswerRef.current = null
         setVoicePhase('idle')
         setCallMuted(false)
         setCallOpen(false)
@@ -681,6 +699,8 @@ export function ChatPage() {
         setCallMuted(false)
         setCallOpen(true)
         setHeardText('')
+        setAnswerLines([])
+        setCallImages([])
         const targetId = resolvedCharacterId
         const personaKey = activePersonaKey
 
@@ -692,6 +712,8 @@ export function ChatPage() {
                     continue
                 }
                 setVoicePhase('recording')
+                setAnswerLines([])
+                setCallImages([])
                 setHeardText('')
                 let said = ''
                 try {
@@ -729,10 +751,68 @@ export function ChatPage() {
                     if (callRunRef.current !== runId) return
                     conversationIdRef.current = reply.conversationId
                     appendExchange(said, reply.reply, reply.conversationId, normalizeChatSources(reply.sources))
-                    setHeardText(reply.reply)
+                    setHeardText(said)
+                    setAnswerLines(answerCardLines(reply.reply))
+                    setCallImages(imagesForReply(reply.reply))
+                    setHeardAudio(false)
+                    setHearing(false)
+                    skipAnswerRef.current = false
+                    const epoch = answerEpochRef.current
                     setVoicePhase('playing')
-                    await speakReply(reply.reply, personaKey)
-                    await new Promise((resolve) => window.setTimeout(resolve, 350))
+                    const stillThisAnswer = () =>
+                        callRunRef.current === runId && answerEpochRef.current === epoch
+                    const playThis = () => {
+                        if (!stillThisAnswer()) return
+                        stopActiveSpeech()
+                        setVoicePhase('playing')
+                        setHearing(false)
+                        void speakReply(reply.reply, personaKey, {
+                            onAudible: () => {
+                                if (!stillThisAnswer()) return
+                                setHearing(true)
+                                setHeardAudio(true)
+                            },
+                        }).then((end) => {
+                            if (!stillThisAnswer() || end === 'stopped') return
+                            setHearing(false)
+                            setHeardAudio(end === 'played')
+                            setVoicePhase('answered')
+                        })
+                    }
+                    replayAnswerRef.current = playThis
+                    const result = await speakReply(reply.reply, personaKey, {
+                        onAudible: () => {
+                            if (!stillThisAnswer()) return
+                            setHearing(true)
+                            setHeardAudio(true)
+                        },
+                    })
+                    if (callRunRef.current !== runId) return
+                    if (stillThisAnswer() && result !== 'stopped') {
+                        setHearing(false)
+                        setHeardAudio(result === 'played')
+                        setVoicePhase('answered')
+                    }
+                    if (!skipAnswerRef.current) {
+                        await new Promise<void>((resolve) => {
+                            if (callRunRef.current !== runId || skipAnswerRef.current) {
+                                resolve()
+                                return
+                            }
+                            releaseAnswerRef.current = () => {
+                                releaseAnswerRef.current = null
+                                resolve()
+                            }
+                        })
+                    }
+                    skipAnswerRef.current = false
+                    if (callRunRef.current !== runId) return
+                    await waitForSpeechToSettle()
+                    if (callRunRef.current !== runId) return
+                    setAnswerLines([])
+                    setCallImages([])
+                    setHearing(false)
+                    setHeardAudio(false)
                 } catch (error) {
                     if (callRunRef.current !== runId) return
                     showToast({ message: getFriendlyErrorMessage(error, 'chat'), type: 'error' })
@@ -795,11 +875,11 @@ export function ChatPage() {
                         <div className="absolute bottom-4 left-4 right-4 z-20 text-left">
                             <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border mb-2 backdrop-blur-md shadow-sm text-[10px] font-black uppercase tracking-wider bg-black/60 border-white/20 text-[#fdb438]">
                                 <span className={`w-1.5 h-1.5 rounded-full ${aiServiceOnline === false ? 'bg-amber-400' : 'bg-emerald-400 animate-ping'}`} />
-                                <span>
+                                {/* <span>
                                     {aiServiceOnline === false
                                         ? 'RAG tắt · trả lời LLM (không hứa trích nguồn 100%)'
                                         : 'Trợ lý lịch sử · nguồn khi RAG_ENABLED'}
-                                </span>
+                                </span> */}
                             </div>
                             <h2 className="text-2xl font-black text-white leading-tight drop-shadow-md">{displayProfile.name}</h2>
                             <p className={`text-xs font-bold ${displayProfile.themeColor}`}>{displayProfile.era} — {displayProfile.role}</p>
@@ -840,13 +920,13 @@ export function ChatPage() {
                         <span className="text-[10px] font-black uppercase tracking-wider text-[#fdb438]">Đang bay</span>
                     </div>
 
-                    {aiServiceOnline === false && (
+                    {/* {aiServiceOnline === false && (
                         <div className="px-4 py-2 border-b border-amber-500/30 bg-amber-500/10 text-xs text-amber-200 shrink-0">
                             <MaterialIcon name="warning" className="text-sm align-middle mr-1" />
                             Chat dùng BE (pgvector khi RAG_ENABLED, hoặc LLM fallback). Chạy{' '}
                             <code className="text-amber-100">scripts/diagnose-chat.ps1</code>
                         </div>
-                    )}
+                    )} */}
 
                     {voiceHint && (
                         <div className="px-4 py-2.5 border-b border-white/10 bg-gradient-to-r from-[#fe951c]/20 to-[#388cf1]/20 text-xs font-bold text-white flex items-center gap-2 shrink-0 animate-pulse">
@@ -977,6 +1057,16 @@ export function ChatPage() {
 
                     {/* Thanh nhập liệu Bar bên dưới */}
                     <div className="shrink-0 p-4 border-t border-white/10 bg-[#12141f]">
+                        {retryMessage && (
+                            <button
+                                type="button"
+                                onClick={() => void send(retryMessage)}
+                                disabled={busy}
+                                className="mb-3 rounded-xl bg-white px-4 py-2 text-sm font-black text-black disabled:opacity-40 cursor-pointer"
+                            >
+                                Gửi lại
+                            </button>
+                        )}
                         <div className="relative flex items-center bg-[#1b1e2c] rounded-2xl border border-white/15 focus-within:border-[#fe951c] transition-all p-1 pl-3 shadow-inner">
                             <input
                                 value={input}
@@ -1073,16 +1163,27 @@ export function ChatPage() {
                 name={displayProfile.name}
                 mode={mascotMode}
                 status={
-                    callMuted
-                        ? 'Mic đang tắt. Bật mic để nói tiếp.'
-                        : voicePhase === 'playing' || voicePhase === 'tts'
-                          ? 'Chrono đang trả lời'
-                          : voicePhase === 'chat' || voicePhase === 'stt'
-                            ? 'Chrono đang suy nghĩ'
-                            : 'Chrono đang nghe. Nói xong sẽ được trả lời.'
+                    hearing
+                        ? 'Chrono đang nói. Nút xanh là tiếng đang phát.'
+                        : callMuted
+                          ? 'Mic đang tắt. Bấm Mic để nói tiếp.'
+                          : voicePhase === 'playing' || voicePhase === 'tts'
+                            ? 'Đang chuẩn bị tiếng. Nếu im, bấm Nghe.'
+                            : voicePhase === 'answered'
+                              ? heardAudio
+                                  ? 'Đã nói xong. Bấm Nghe lại, hoặc Tiếp tục để hỏi câu mới.'
+                                  : 'Câu trả lời đã hiện. Bấm nút Nghe để nghe Chrono.'
+                              : voicePhase === 'chat' || voicePhase === 'stt'
+                                ? 'Chrono đang soạn câu trả lời.'
+                                : 'Mic đang mở. Hãy nói.'
                 }
                 recording={voicePhase === 'recording'}
                 heardText={heardText}
+                answerLines={answerLines}
+                images={callImages}
+                speaking={voicePhase === 'playing' || voicePhase === 'answered'}
+                hearing={hearing}
+                heardAudio={heardAudio}
                 analyser={null}
                 muted={callMuted}
                 onToggleMute={() => {
@@ -1092,7 +1193,14 @@ export function ChatPage() {
                     if (next) stopActiveSpeech()
                 }}
                 onHangUp={hangUp}
-                onSkip={hangUp}
+                onHear={() => replayAnswerRef.current()}
+                onContinue={() => {
+                    answerEpochRef.current += 1
+                    stopActiveSpeech()
+                    setHearing(false)
+                    skipAnswerRef.current = true
+                    releaseAnswerRef.current?.()
+                }}
             />
         </AppLayout>
     )

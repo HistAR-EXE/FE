@@ -35,6 +35,7 @@ import { VerifyEmailPendingPage } from '../pages/VerifyEmailPendingPage'
 import { ForgotPasswordPage } from '../pages/ForgotPasswordPage'
 import { ModeSelectPage } from '../pages/ModeSelectPage'
 import { Tour360Page } from '../pages/Tour360Page'
+import { TimePortalPage } from '../pages/TimePortalPage'
 import { AdminAnalyticsPage } from '../pages/AdminAnalyticsPage'
 import { AdminBillingPage } from '../pages/AdminBillingPage'
 import { AdminContentPage } from '../pages/AdminContentPage'
@@ -105,6 +106,7 @@ export function AppRoutes() {
             <Route path="/explore" element={<ExplorePage />} />
             <Route path="/explore/:locationId" element={<HeritageDetailPage />} />
             <Route path="/diorama/:locationId?" element={<BattleDioramaPage />} />
+            <Route path="/time-portal/:locationId" element={<TimePortalPage />} />
             <Route path="/tour/360/:locationId?" element={<Tour360Page />} />
             <Route path="/quests" element={<QuestsPage />} />
             <Route path="/quests/:questId/play/:minigameId" element={<MinigamePage />} />

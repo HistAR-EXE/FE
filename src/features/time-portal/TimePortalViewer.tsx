@@ -27,7 +27,7 @@ type TimePortalViewerProps = {
   onEngagement?: () => void
   initialEra?: EraValue
   isPremium?: boolean
-  onPremiumRequired?: () => void
+  onPremiumRequired?: (era: EraValue) => void
   /** Đèn dầu hotspots (x/y % hoặc yaw/pitch). Hiển thị cả khi không có depth map. */
   lampHotspots?: LampHotspot[]
   onLampActivate?: (hotspot: LampHotspot) => void
@@ -261,7 +261,7 @@ export function TimePortalViewer({
   const triggerVortex = useCallback(
     (nextEra: EraValue) => {
       if (!isPremium && nextEra !== defaultEra) {
-        onPremiumRequired?.()
+        onPremiumRequired?.(nextEra)
         return
       }
       setVortex(true)
