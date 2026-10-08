@@ -60,6 +60,7 @@ import { ProtectedRoute } from '../shared/router/ProtectedRoute'
 import { VisitSessionProvider } from '../features/visit/VisitSessionProvider'
 import { AboutPage } from '../pages/AboutPage'
 import { GoogleRedirectCompletion } from '../shared/auth/GoogleRedirectCompletion'
+import { ArtifactDetailPage } from '../pages/ArtifactDetailPage'
 
 export function AppRoutes() {
   return (
@@ -132,6 +133,7 @@ export function AppRoutes() {
               <Route path="/characters" element={<CharacterExplorePage />} />
               <Route path="/characters/:characterId" element={<CharacterDetailPage />} />
               <Route path="/artifacts" element={<ArtifactsPage />} />
+              <Route path="/artifacts/:id" element={<ArtifactDetailPage />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/journey-wrapped" element={<JourneyWrappedPage />} />
               <Route path="/groups" element={<GroupHubPage />} />
