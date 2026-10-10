@@ -11,13 +11,15 @@ import { defineConfig, devices } from '@playwright/test'
  * Điều kiện chạy:
  *   - BE Spring Boot phải chạy sẵn ở http://localhost:8080 (mvn spring-boot:run)
  *   - AI service (:8100) tuỳ chọn — test chat sẽ skip nếu AI down
- *   - Playwright tự khởi động Vite dev server (:5173) và tái sử dụng nếu đã chạy
+ *   - Playwright khởi động Vite riêng trên :5174 để không dùng nhầm server phát triển :5173
  */
 
 const BE_URL = process.env.HISTAR_BE_URL ?? 'http://localhost:8080'
-const FE_URL = process.env.HISTAR_FE_URL ?? 'http://localhost:5173'
+const FE_URL = process.env.HISTAR_FE_URL ?? 'http://127.0.0.1:5174'
+const E2E_STORAGE = 'test-results/e2e-consent.json'
 
 export default defineConfig({
+  globalSetup: './tests/e2e-consent.setup.ts',
   testDir: './tests',
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
@@ -32,6 +34,7 @@ export default defineConfig({
   expect: { timeout: 10_000 },
   use: {
     baseURL: FE_URL,
+    storageState: E2E_STORAGE,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
@@ -66,12 +69,24 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'], baseURL: FE_URL },
     },
   ],
-  webServer: {
-    command: 'npm run dev',
-    url: FE_URL,
-    reuseExistingServer: true,
-    timeout: 120_000,
-    stdout: 'ignore',
-    stderr: 'pipe',
-  },
+  webServer: [
+    {
+      command: 'node scripts/e2e-ai-mock.mjs',
+      url: process.env.HISTAR_AI_URL ?? 'http://127.0.0.1:8100/ai/health',
+      reuseExistingServer: true,
+      timeout: 30_000,
+      stdout: 'ignore',
+      stderr: 'pipe',
+    },
+    {
+      // Demo-only controls are deliberately build-time gated. Enable them only for the local E2E server;
+      // production builds still require VITE_DEMO_ENABLED to be set explicitly.
+      command: 'set VITE_DEMO_ENABLED=true&& npm run dev -- --host 127.0.0.1 --port 5174 --strictPort',
+      url: FE_URL,
+      reuseExistingServer: true,
+      timeout: 120_000,
+      stdout: 'ignore',
+      stderr: 'pipe',
+    },
+  ],
 })

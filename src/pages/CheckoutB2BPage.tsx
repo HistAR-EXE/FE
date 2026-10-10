@@ -40,6 +40,18 @@ export function CheckoutB2BPage() {
         return next && isSafeRedirect(next) ? next : '/teacher'
     }, [searchParams])
 
+    // Authentication is restored asynchronously. Keep an administrator's
+    // prefilled details when they become available, without overwriting text
+    // they have already entered in the checkout form.
+    useEffect(() => {
+        if (user?.orgName) {
+            setOrgName((current) => current || user.orgName || '')
+        }
+        if (user?.email) {
+            setContactEmail((current) => current || user.email || '')
+        }
+    }, [user?.email, user?.orgName])
+
     useEffect(() => {
         billingApi.getOrgPlans().then((plans) =>
             setPlanPrices(plans.reduce<Record<string, number>>((acc, item) => {
@@ -266,6 +278,7 @@ export function CheckoutB2BPage() {
                                     </p>
                                     <Button
                                         type="button"
+                                        aria-label="Tạo thanh toán SePay"
                                         disabled={loading}
                                         onClick={() => void handleCheckout()}
                                         className="w-full max-w-[300px] h-12 rounded-xl bg-gradient-to-r from-[#1a79e5] via-[#388cf1] to-[#1a79e5] hover:from-[#388cf1] hover:to-[#1a79e5] text-white font-black text-xs uppercase tracking-wider shadow-[0_5px_25px_rgba(56,140,241,0.5)] hover:shadow-[0_8px_35px_rgba(56,140,241,0.8)] hover:scale-105 transition-all cursor-pointer flex items-center justify-center gap-2"
@@ -293,7 +306,7 @@ export function CheckoutB2BPage() {
                                         <div className="bg-white p-3 rounded-2xl shadow-[0_0_50px_rgba(56,140,241,0.2)] relative group mb-2 xl:mb-0">
                                             <div className="absolute inset-0 border-[3px] border-dashed border-gray-200 rounded-2xl pointer-events-none group-hover:border-[#388cf1] transition-colors duration-500" />
                                             <div className="w-[180px] h-[180px] sm:w-[220px] sm:h-[220px] relative z-10 flex items-center justify-center bg-white rounded-xl">
-                                                <img src={payment.qrUrl} alt="QR Code" className="max-w-full max-h-full object-contain" />
+                                                <img src={payment.qrUrl} alt="SePay QR" className="max-w-full max-h-full object-contain" />
                                             </div>
                                         </div>
                                     </div>
@@ -301,6 +314,9 @@ export function CheckoutB2BPage() {
                                     {/* BÊN PHẢI CỦA CỘT PHẢI: INFO NGÂN HÀNG & NÚT */}
                                     <div className="flex flex-col justify-center w-full max-w-[420px]">
                                         <div className="bg-[#0B1120]/60 border border-white/10 rounded-xl p-5 sm:p-6 space-y-3 shadow-xl backdrop-blur-md mb-5">
+                                            <p className="text-sm font-bold text-white">
+                                                Số tiền: {payment.amountVnd.toLocaleString('vi-VN')}đ
+                                            </p>
                                             <div className="flex flex-col gap-0.5">
                                                 <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest whitespace-nowrap">Ngân hàng thụ hưởng</span>
                                                 <span className="text-sm sm:text-base font-black text-white">{payment.bankCode}</span>

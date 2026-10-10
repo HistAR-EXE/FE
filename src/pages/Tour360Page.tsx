@@ -1,6 +1,6 @@
 // src/pages/Tour360Page.tsx
 import React, { useCallback, useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { Tour360Hud } from '../components/panorama/Tour360Hud'
 
@@ -26,6 +26,7 @@ const OptimizedExternalTour = React.memo(() => {
 
 export function Tour360Page() {
     const { locationId } = useParams<{ locationId?: string }>()
+    const navigate = useNavigate()
     const activeLocationId = locationId ?? CU_CHI_LOCATION_ID
 
     const [immersive, setImmersive] = useState(false)
@@ -69,7 +70,7 @@ export function Tour360Page() {
 
                 {/* TRẠNG THÁI LOADING UI TỐI ƯU */}
                 {loading && (
-                    <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-[#0B1120] pointer-events-none transition-opacity duration-500">
+                    <div className="tour360-loading absolute inset-0 z-50 flex flex-col items-center justify-center bg-[#0B1120] pointer-events-none transition-opacity duration-500" role="status" aria-live="polite">
                         <div className="relative w-24 h-24 mb-6">
                             <div className="absolute inset-0 border-4 border-[#0275FB]/20 rounded-full"></div>
                             <div className="absolute inset-0 border-4 border-[#0275FB] rounded-full border-t-transparent animate-spin"></div>
@@ -90,7 +91,7 @@ export function Tour360Page() {
                         immersive={immersive}
                         onSelectPanorama={() => {}}
                         onInfoHotspot={() => {}}
-                        onOpenMap={() => {}}
+                        onOpenMap={() => navigate(`/explore/${activeLocationId}`)}
                         onToggleImmersive={handleToggleImmersive}
                         menuOpen={menuOpen}
                         onToggleMenu={() => setMenuOpen((v) => !v)}

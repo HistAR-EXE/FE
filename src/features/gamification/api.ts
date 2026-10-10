@@ -157,6 +157,8 @@ export const gamificationApi = {
     progress: (questId: string) =>
         getData<QuestProgress>(httpClient.get(`/api/quests/${questId}/progress`)),
     investigation: (questId: string) => getData<NarrativeInvestigation>(httpClient.get(`/api/quests/${questId}/investigation`)),
+    investigationProgress: (questId: string) => getData<NarrativeProgress>(httpClient.get(`/api/quests/${questId}/investigation/progress`)),
+    investigationAction: (questId: string, action: NarrativeActionType, nodeCode: string, investigationVersion: number) => getData<NarrativeProgress>(httpClient.post(`/api/quests/${questId}/investigation/actions`, { action, nodeCode, investigationVersion })),
     checkin: (body: CheckinRequestBody) =>
         getData<CheckinResult>(httpClient.post('/api/checkins', body)),
     secretStory: (locationId: string) =>
@@ -175,3 +177,6 @@ export const discoveriesApi = {
             httpClient.post('/api/me/discoveries', { unlockKey, source, locationId: locationId || undefined }),
         ),
 }
+
+export type NarrativeActionType = 'VISIT_NODE' | 'COLLECT_EVIDENCE' | 'SELECT_OUTCOME'
+export type NarrativeProgress = { investigation: NarrativeInvestigation; progress: { version: number; visitedNodeCodes: string[]; evidenceCodes: string[]; selectedOutcome: string | null } }

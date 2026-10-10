@@ -620,7 +620,9 @@ export function ChatPage() {
                 const withoutOptimistic = prev.filter((m) => m.id !== optimistic.id)
                 if (withoutOptimistic.some((m) => m.id === assistantId)) {
                     return withoutOptimistic.map((m) =>
-                        m.id === assistantId ? { ...m, content: reply.reply } : m
+                        m.id === assistantId
+                            ? { ...m, content: reply.reply, sources: normalizeChatSources(reply.sources) }
+                            : m
                     )
                 }
                 return mergeMessages(withoutOptimistic, [
@@ -1061,6 +1063,29 @@ export function ChatPage() {
                                                 <p className="mt-3 pt-3 border-t border-white/10 text-xs text-[#fdb438]/90">
                                                     Nâng cấp Premium để xem nguồn tài liệu chính thống kèm câu trả lời.
                                                 </p>
+                                            )}
+                                        {m.role === 'assistant' &&
+                                            !shouldShowB2CPaywall(user) &&
+                                            (m.sources?.length ?? 0) > 0 && (
+                                                <section className="mt-3 border-t border-white/10 pt-3" aria-label="Nguồn kho tư liệu di tích">
+                                                    <p className="text-xs font-black uppercase tracking-wider text-[#fdb438]">
+                                                        Nguồn (kho tư liệu di tích)
+                                                    </p>
+                                                    <ul className="mt-2 space-y-2">
+                                                        {m.sources!.map((source, index) => (
+                                                            <li key={`${source.title}-${index}`} className="text-xs text-gray-300">
+                                                                {source.url ? (
+                                                                    <a className="font-semibold text-[#8fc2ff] hover:underline" href={source.url} target="_blank" rel="noreferrer">
+                                                                        {source.title}
+                                                                    </a>
+                                                                ) : (
+                                                                    <span className="font-semibold text-[#8fc2ff]">{source.title}</span>
+                                                                )}
+                                                                {source.excerpt && <p className="mt-0.5 text-gray-400">{source.excerpt}</p>}
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                </section>
                                             )}
                                         <span className="text-[10px] font-bold text-gray-400 mt-2 block text-right">
                       {new Date(m.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}

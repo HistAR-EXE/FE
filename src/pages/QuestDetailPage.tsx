@@ -213,6 +213,11 @@ export function QuestDetailPage() {
                                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
                                 KHU VỰC TÁC CHIẾN: {locationName || 'ĐANG TẢI...'}
                             </span>
+                            {quest?.requireOnsiteCheckin && (
+                                <span data-testid="quest-onsite-required" className="px-3 py-1.5 rounded-full bg-[#fe951c]/15 border border-[#fe951c]/40 text-[#fdb438] text-[10px] md:text-xs font-black uppercase tracking-widest flex items-center gap-2 shadow-sm">
+                                    <MaterialIcon name="location_on" className="text-sm" /> Cần đến tận nơi
+                                </span>
+                            )}
                         </div>
                         <h1 className="font-black text-4xl md:text-7xl text-white drop-shadow-2xl mb-4 tracking-tighter leading-tight">{title}</h1>
                         <p className="text-sm md:text-base text-gray-400 font-medium leading-relaxed drop-shadow-md">
@@ -284,6 +289,7 @@ export function QuestDetailPage() {
                                     ) : isAuthenticated ? (
                                         <button
                                             onClick={startQuest}
+                                            aria-label="Nhận nhiệm vụ"
                                             disabled={loading}
                                             className="w-full px-6 py-4 rounded-2xl bg-gradient-to-r from-[#fe951c] to-[#e07d0b] text-black font-black text-sm uppercase tracking-widest shadow-[0_5px_20px_rgba(254,149,28,0.4)] hover:scale-105 transition-all cursor-pointer flex items-center justify-center gap-2"
                                         >

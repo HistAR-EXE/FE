@@ -1,5 +1,5 @@
 // src/routes/AppRoutes.tsx
-import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom'
 import { ArtifactsPage } from '../pages/ArtifactsPage'
 import { CharacterExplorePage } from '../pages/CharacterExplorePage'
 import { CharacterDetailPage } from '../pages/CharacterDetailPage'
@@ -62,6 +62,18 @@ import { AboutPage } from '../pages/AboutPage'
 import { GoogleRedirectCompletion } from '../shared/auth/GoogleRedirectCompletion'
 import { ArtifactDetailPage } from '../pages/ArtifactDetailPage'
 
+/**
+ * Preserve the previously published AR deep link while the current portal
+ * keeps AR as a view of the canonical time-portal route.
+ */
+function LegacyTimePortalArRedirect() {
+  const { locationId } = useParams<{ locationId: string }>()
+  const location = useLocation()
+  const params = new URLSearchParams(location.search)
+  params.set('view', 'ar')
+  return <Navigate replace to={`/time-portal/${locationId ?? ''}?${params.toString()}`} />
+}
+
 export function AppRoutes() {
   return (
     <BrowserRouter>
@@ -107,6 +119,7 @@ export function AppRoutes() {
             <Route path="/explore" element={<ExplorePage />} />
             <Route path="/explore/:locationId" element={<HeritageDetailPage />} />
             <Route path="/diorama/:locationId?" element={<BattleDioramaPage />} />
+            <Route path="/time-portal/:locationId/ar" element={<LegacyTimePortalArRedirect />} />
             <Route path="/time-portal/:locationId" element={<TimePortalPage />} />
             <Route path="/tour/360/:locationId?" element={<Tour360Page />} />
             <Route path="/quests" element={<QuestsPage />} />

@@ -1,6 +1,6 @@
 // src/features/chat/api.ts
 import { getData, getListData, getPageData, httpClient } from '../../shared/api/httpClient'
-import type { PageResponse } from '../../shared/api/contracts'
+import { ApiError, type ApiErrorPayload, type PageResponse } from '../../shared/api/contracts'
 import { getToken } from '../../shared/auth/session'
 import { appEnv } from '../../shared/config/env'
 
@@ -66,7 +66,24 @@ async function readGuidedSse(
     response: Response,
     onEvent?: (event: GuidedStreamEvent) => void,
 ): Promise<GuidedChatReply> {
-    if (!response.ok || !response.body) throw new Error(`Guided chat failed (${response.status})`)
+    if (!response.ok) {
+        let payload: Partial<ApiErrorPayload> | null = null
+        try {
+            payload = await response.json() as Partial<ApiErrorPayload>
+        } catch {
+            // Keep the stable ApiError shape even when a proxy returns an empty error response.
+        }
+        throw new ApiError({
+            message: payload?.message ?? `Guided chat failed (${response.status})`,
+            code: payload?.code,
+            status: response.status,
+            fieldErrors: payload?.fieldErrors,
+            upgradeUrl: payload?.upgradeUrl,
+            quotaType: payload?.type,
+            upgradePackage: payload?.upgradePackage,
+        })
+    }
+    if (!response.body) throw new ApiError({ message: 'Guided chat returned an empty response', status: response.status })
     const reader = response.body.getReader()
     const decoder = new TextDecoder()
     let buffer = ''
@@ -87,12 +104,29 @@ async function readGuidedSse(
         } else if (name === 'complete' && data && typeof data === 'object') {
             result.followUpQuestion = (data as { followUpQuestion?: string | null }).followUpQuestion ?? null
         } else if (name === 'error') {
-            throw new Error('Guided chat stream failed')
+            const error = data && typeof data === 'object'
+                ? data as Partial<ApiErrorPayload> & { status?: number; quotaType?: string; upgradePackage?: string | null }
+                : null
+            throw new ApiError({
+                message: error?.message ?? 'Guided chat stream failed',
+                code: error?.code,
+                // SSE has already started, so an HTTP status can no longer be sent. The stable error code
+                // remains sufficient for callers to distinguish quota, auth, and provider failures.
+                status: error?.status ?? 500,
+                fieldErrors: error?.fieldErrors,
+                upgradeUrl: error?.upgradeUrl,
+                quotaType: error?.quotaType ?? error?.type,
+                upgradePackage: error?.upgradePackage,
+            })
         }
     }
     while (true) {
         const { value, done } = await reader.read()
         buffer += decoder.decode(value ?? new Uint8Array(), { stream: !done })
+        // Servlet containers commonly serialize SSE with CRLF line endings, while mocked
+        // streams and the browser examples often use LF. Normalize before frame detection
+        // so a real `event:error` cannot be silently treated as an empty successful reply.
+        buffer = buffer.replace(/\r\n?/g, '\n')
         let separator = buffer.indexOf('\n\n')
         while (separator >= 0) {
             const frame = buffer.slice(0, separator)

@@ -7,12 +7,16 @@ import mascotImg from '../assets/mascot.png'
 import { PublicHeader } from '../components/layout/PublicHeader'
 import { PublicFooter } from '../components/layout/PublicFooter'
 import { billingApi } from '../features/billing/api'
+import { useAuth } from '../shared/auth/useAuth'
 
 export const PricingPage: React.FC = () => {
     const navigate = useNavigate()
     const [searchParams] = useSearchParams()
     const [b2cPrice, setB2cPrice] = useState(49_000)
     const [journeyPassPrice, setJourneyPassPrice] = useState(29_000)
+    const [startingTrial, setStartingTrial] = useState(false)
+    const [trialError, setTrialError] = useState<string | null>(null)
+    const { isAuthenticated, user, updateUser } = useAuth()
     const next = searchParams.get('next')
     const site = searchParams.get('site') || 'cu-chi'
 
@@ -34,6 +38,32 @@ export const PricingPage: React.FC = () => {
             setJourneyPassPrice(data.b2cJourneyPassPriceVnd ?? 29_000)
         }).catch(() => undefined)
     }, [])
+
+    const startClassroomTrial = async () => {
+        if (!isAuthenticated || !user) {
+            navigate('/login?returnTo=%2Fpricing%23b2b')
+            return
+        }
+        setStartingTrial(true)
+        setTrialError(null)
+        try {
+            const trial = await billingApi.createOrgTrial({
+                orgName: `Lớp học của ${user.displayName}`,
+                contactEmail: user.email,
+            })
+            updateUser({
+                role: 'TEACHER',
+                orgId: trial.organizationId,
+                orgName: trial.orgName,
+                orgSubscription: 'STANDARD',
+            })
+            navigate('/teacher')
+        } catch {
+            setTrialError('Không thể khởi tạo lớp học dùng thử. Vui lòng thử lại hoặc liên hệ hỗ trợ.')
+        } finally {
+            setStartingTrial(false)
+        }
+    }
 
     return (
         <div className="bg-[#FAF8F3] text-[#1E293B] min-h-screen flex flex-col font-sans select-none overflow-x-hidden selection:bg-[#0275FB] selection:text-white">
@@ -246,6 +276,22 @@ export const PricingPage: React.FC = () => {
                         </div>
                     </div>
 
+                    <div className="rounded-2xl border border-[#0275FB]/20 bg-[#0275FB]/5 px-5 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <div>
+                            <p className="font-black text-[#1E293B]">Dành cho giáo viên muốn thử nghiệm cùng lớp</p>
+                            <p className="text-sm text-[#475569]">Kích hoạt Standard trong 14 ngày; bạn có thể dừng trước khi mua gói tổ chức.</p>
+                            {trialError && <p role="alert" className="mt-1 text-sm font-semibold text-red-700">{trialError}</p>}
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => void startClassroomTrial()}
+                            disabled={startingTrial}
+                            className="shrink-0 rounded-xl bg-[#0275FB] px-5 py-3 text-sm font-black text-white disabled:opacity-60"
+                        >
+                            {startingTrial ? 'Đang khởi tạo…' : 'Dùng thử lớp học 14 ngày'}
+                        </button>
+                    </div>
+
                     {/* 3 Pricing Cards B2B */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch pt-4">
                         {/* GÓI 1: MICRO */}
@@ -348,6 +394,10 @@ export const PricingPage: React.FC = () => {
                                         <li className="flex items-start gap-3">
                                             <MaterialIcon name="check_circle" className="text-[#94A3B8] group-hover:text-emerald-500 text-xl shrink-0 mt-0.5 transition-colors" />
                                             <span className="leading-snug">Hệ thống quản lý <strong>B2B Dashboard</strong>: Giao nhiệm vụ, xem heatmap & xuất báo cáo.</span>
+                                        </li>
+                                        <li className="flex items-start gap-3">
+                                            <MaterialIcon name="check_circle" className="text-[#94A3B8] group-hover:text-emerald-500 text-xl shrink-0 mt-0.5 transition-colors" />
+                                            <span className="leading-snug"><strong>LMS Premium</strong>: giao bài quest, theo dõi tiến độ và xuất báo cáo lớp học.</span>
                                         </li>
                                     </ul>
                                 </div>

@@ -1,6 +1,7 @@
 // src/shared/router/ModeGuardRoute.tsx
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAppMode } from '../context/useAppMode'
+import { isOnlinePriorityRoute } from '../context/appModeUtils'
 
 const MODE_EXEMPT_PATHS = ['/mode-select', '/login', '/']
 
@@ -14,6 +15,10 @@ export function ModeGuardRoute() {
 
   if (mode === 'online' && location.pathname === '/scan') {
     return <Navigate to="/explore" replace />
+  }
+
+  if (mode === 'offline' && isOnlinePriorityRoute(location.pathname)) {
+    return <Navigate to="/scan" replace />
   }
 
   return <Outlet />

@@ -20,8 +20,8 @@ function BarChart({ items, labelKey }: { items: { label: string; value: number; 
     const max = Math.max(...items.map((i) => i.value), 1)
     return (
         <div className="space-y-2">
-            {items.map((item) => (
-                <div key={item.label}>
+            {items.map((item, index) => (
+                <div key={`${item.label}-${index}`}>
                     <div className="flex justify-between text-xs mb-1">
                         <span className="text-on-surface-variant truncate pr-2">{item.label}</span>
                         <span className="text-on-surface tabular-nums shrink-0">{item.value}</span>
@@ -192,8 +192,8 @@ export function AdminAnalyticsPage() {
                                     ['Camera mở', pilotKpi.byEventType?.camera_opened ?? 0],
                                     ['Báo sai liệu', pilotKpi.byEventType?.content_report ?? 0],
                                 ] as const
-                            ).map(([label, value]) => (
-                                <div key={label} className="bg-surface-container-high rounded-lg p-sm border border-outline-variant">
+                            ).map(([label, value], index) => (
+                                <div key={`${label}-${index}`} className="bg-surface-container-high rounded-lg p-sm border border-outline-variant">
                                     <p className="text-[11px] uppercase text-on-surface-variant">{label}</p>
                                     <p className="font-title-md text-on-surface tabular-nums">{value}</p>
                                 </div>

@@ -322,6 +322,7 @@ export function LoginPage({ defaultMode = 'login' }: LoginPageProps) {
                                 <button
                                     type="button"
                                     onClick={() => { setMode('register'); setFieldErrors({}); setTermsAccepted(false); }}
+                                    aria-label="Đăng Ký Mới"
                                     className={`flex-1 py-3 rounded-xl font-black text-xs tracking-wider uppercase transition-all duration-300 cursor-pointer ${
                                         mode === 'register'
                                             ? 'bg-white text-[#0275FB] shadow-md scale-[1.02]'

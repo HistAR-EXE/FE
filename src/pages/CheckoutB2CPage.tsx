@@ -269,6 +269,7 @@ export function CheckoutB2CPage() {
                                     )}
                                     <Button
                                         type="button"
+                                        aria-label={loading ? 'Đang khởi tạo thanh toán SePay' : 'Tạo thanh toán SePay'}
                                         disabled={loading || emailVerified === false}
                                         onClick={() => void handleCheckout()}
                                         className="w-full max-w-[280px] h-12 rounded-2xl bg-gradient-to-r from-[#1a79e5] via-[#388cf1] to-[#1a79e5] hover:from-[#388cf1] hover:to-[#1a79e5] text-white font-black text-xs uppercase tracking-wider shadow-[0_5px_25px_rgba(56,140,241,0.5)] hover:shadow-[0_8px_35px_rgba(56,140,241,0.8)] hover:scale-105 transition-all cursor-pointer flex items-center justify-center gap-2"
@@ -289,12 +290,15 @@ export function CheckoutB2CPage() {
                                             {status === 'PAID' ? 'Đã Nhận Tiền' : status === 'EXPIRED' ? 'Đã Hết Hạn' : status === 'UNDERPAID' ? 'Chuyển Thiếu' : 'Đang Chờ Quét...'}
                                         </span>
                                     </div>
+                                    <p className="mb-3 text-center text-xs text-gray-300">
+                                        Mã thanh toán: <span className="font-mono font-bold text-white">{payment.orderCode}</span>
+                                    </p>
 
                                     {/* ĐÃ THU NHỎ KÍCH THƯỚC QR (220px) ĐỂ TIẾT KIỆM CHIỀU CAO */}
                                     <div className="bg-white p-4 rounded-[1.5rem] shadow-[0_0_60px_rgba(56,140,241,0.3)] relative group mb-6">
                                         <div className="absolute inset-0 border-[4px] border-dashed border-gray-200 rounded-[1.5rem] pointer-events-none group-hover:border-[#388cf1] transition-colors duration-500" />
                                         <div className="w-[180px] h-[180px] sm:w-[220px] sm:h-[220px] relative z-10 flex items-center justify-center bg-white rounded-xl">
-                                            <img src={payment.qrUrl} alt="QR Code" className="max-w-full max-h-full object-contain" />
+                                            <img src={payment.qrUrl} alt="SePay QR" className="max-w-full max-h-full object-contain" />
                                         </div>
                                     </div>
 

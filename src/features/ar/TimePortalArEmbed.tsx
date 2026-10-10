@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { buildArUrl } from './arDeepLink'
 import { CU_CHI_AR_SCENES, getArSceneBySlug } from './cuChiArScenes'
 import { eraTimelineLabel } from '../time-portal/eraLabels'
-import type { CuChiSceneSlug, EraValue } from './types'
+import type { ARMode, CuChiSceneSlug, EraValue } from './types'
 import { useArPhotoScenes } from './useArPhotoScenes'
 
 const ARWebcamViewer = lazy(() => import('./ARWebcamViewer').then((m) => ({ default: m.ARWebcamViewer })))
@@ -16,6 +16,7 @@ type TimePortalArEmbedProps = {
   onSceneSlugChange: (slug: CuChiSceneSlug) => void
   onEraChange: (era: EraValue) => void
   discoverKey?: string | null
+  initialMode?: ARMode
 }
 
 export function TimePortalArEmbed({
@@ -25,12 +26,13 @@ export function TimePortalArEmbed({
   onSceneSlugChange,
   onEraChange,
   discoverKey,
+  initialMode = 'webcam',
 }: TimePortalArEmbedProps) {
   const config = getArSceneBySlug(sceneSlug)
   const { captionForEra, overlayImageForEra } = useArPhotoScenes(locationId, sceneSlug)
   const caption = captionForEra(era)
   const overlayImage = overlayImageForEra(era)
-  const [useCamera, setUseCamera] = useState(true)
+  const [useCamera, setUseCamera] = useState(initialMode !== 'sim')
 
   const fullArUrl = useMemo(
     () =>

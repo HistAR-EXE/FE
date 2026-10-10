@@ -77,6 +77,10 @@ export function HeritageDetailPage() {
 
   useEffect(() => {
     if (!locationId) return
+    // Reset the local view as soon as the route changes.  Doing this after the
+    // asynchronous location request resolves can overwrite a tab the visitor
+    // has already selected on a slow connection.
+    setActiveTab('overview')
     void preloadDiscoveryBindings(locationId)
     const run = async () => {
       try {
@@ -87,7 +91,6 @@ export function HeritageDetailPage() {
         setLocation(loc)
         setCharacters(chars)
         setDescriptionExpanded(false)
-        setActiveTab('overview')
       } catch (e) {
         setFailed(true)
         showToast({

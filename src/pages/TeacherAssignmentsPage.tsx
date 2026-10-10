@@ -12,6 +12,7 @@ type Assignment = {
   id: string
   title: string
   questId: string
+  campaignId: string | null
   questTitle: string
   dueAt: string | null
   createdAt: string
@@ -29,6 +30,7 @@ type TeacherAiDraft = {
   id: string
   title: string
   questId: string
+  campaignId: string | null
   sourceVersion: string
   answerBlocks: Array<{ content: string; sources: Array<{ title: string }> }>
   approvedLocales: string[]
@@ -44,8 +46,10 @@ export function TeacherAssignmentsPage() {
   const [drafts, setDrafts] = useState<TeacherAiDraft[]>([])
   const [title, setTitle] = useState('')
   const [questId, setQuestId] = useState('')
+  const [campaignId, setCampaignId] = useState('')
   const [draftTitle, setDraftTitle] = useState('')
   const [draftQuestId, setDraftQuestId] = useState('')
+  const [draftCampaignId, setDraftCampaignId] = useState('')
   const [sourceVersion, setSourceVersion] = useState('')
   const [draftContent, setDraftContent] = useState('')
   const [citationTitle, setCitationTitle] = useState('')
@@ -70,6 +74,7 @@ export function TeacherAssignmentsPage() {
       const body = {
         title: draftTitle.trim(),
         questId: draftQuestId.trim(),
+        campaignId: draftCampaignId.trim(),
         sourceVersion: sourceVersion.trim(),
         answerBlocks: [{
           type: 'VERIFIED_FACT',
@@ -84,6 +89,7 @@ export function TeacherAssignmentsPage() {
         : httpClient.post('/api/lms/teacher-ai-drafts', body))
       setDraftTitle('')
       setDraftQuestId('')
+      setDraftCampaignId('')
       setSourceVersion('')
       setDraftContent('')
       setCitationTitle('')
@@ -101,6 +107,7 @@ export function TeacherAssignmentsPage() {
     setEditingDraftId(draft.id)
     setDraftTitle(draft.title)
     setDraftQuestId(draft.questId)
+    setDraftCampaignId(draft.campaignId ?? '')
     setSourceVersion(draft.sourceVersion)
     setDraftContent(draft.answerBlocks[0]?.content ?? '')
     setCitationTitle(draft.answerBlocks[0]?.sources[0]?.title ?? '')
@@ -128,9 +135,14 @@ export function TeacherAssignmentsPage() {
     if (!title.trim() || !questId.trim()) return
     try {
       setLoading(true)
-      await getData(httpClient.post('/api/lms/assignments', { title: title.trim(), questId: questId.trim() }))
+      await getData(httpClient.post('/api/lms/assignments', {
+        title: title.trim(),
+        questId: questId.trim(),
+        ...(campaignId.trim() ? { campaignId: campaignId.trim() } : {}),
+      }))
       setTitle('')
       setQuestId('')
+      setCampaignId('')
       reload()
       showToast({ message: 'Đã tạo bài tập quest', type: 'success' })
     } catch (err) {
@@ -226,6 +238,16 @@ export function TeacherAssignmentsPage() {
             className="w-full neo-input rounded-lg px-md py-sm"
           />
           <input
+            id="assignment-campaign-id"
+            aria-label="Campaign UUID bài tập"
+            value={campaignId}
+            onChange={(e) => setCampaignId(e.target.value)}
+            placeholder="Campaign UUID"
+            className="w-full neo-input rounded-lg px-md py-sm font-mono text-xs"
+          />
+          <input
+            id="assignment-quest-id"
+            aria-label="Quest UUID bài tập"
             value={questId}
             onChange={(e) => setQuestId(e.target.value)}
             placeholder="Quest UUID"
@@ -243,7 +265,8 @@ export function TeacherAssignmentsPage() {
           </div>
           <form onSubmit={(e) => void onCreateDraft(e)} className="space-y-sm">
             <input value={draftTitle} onChange={(e) => setDraftTitle(e.target.value)} placeholder="Tiêu đề draft" className="w-full neo-input rounded-lg px-md py-sm" />
-            <input value={draftQuestId} onChange={(e) => setDraftQuestId(e.target.value)} placeholder="Quest UUID" className="w-full neo-input rounded-lg px-md py-sm font-mono text-xs" />
+            <input id="teacher-draft-quest-id" aria-label="Quest UUID draft AI" value={draftQuestId} onChange={(e) => setDraftQuestId(e.target.value)} placeholder="Quest UUID" className="w-full neo-input rounded-lg px-md py-sm font-mono text-xs" />
+            <input id="teacher-draft-campaign-id" aria-label="Campaign UUID draft AI" value={draftCampaignId} onChange={(e) => setDraftCampaignId(e.target.value)} placeholder="Campaign UUID" className="w-full neo-input rounded-lg px-md py-sm font-mono text-xs" />
             <input value={sourceVersion} onChange={(e) => setSourceVersion(e.target.value)} placeholder="Phiên bản nguồn đã duyệt, ví dụ cu-chi-v1" className="w-full neo-input rounded-lg px-md py-sm" />
             <textarea value={draftContent} onChange={(e) => setDraftContent(e.target.value)} placeholder="Câu hỏi, đáp án hoặc nội dung AI draft đã được giáo viên rà soát" className="w-full neo-input rounded-lg px-md py-sm min-h-24" />
             <input value={citationTitle} onChange={(e) => setCitationTitle(e.target.value)} placeholder="Tên tư liệu/citation đã duyệt" className="w-full neo-input rounded-lg px-md py-sm" />
@@ -257,7 +280,7 @@ export function TeacherAssignmentsPage() {
             {drafts.length === 0 ? <p className="text-sm text-on-surface-variant">Chưa có draft AI.</p> : drafts.map((draft) => (
               <article key={draft.id} className="border border-outline-variant rounded-lg p-sm space-y-2">
                 <div className="flex flex-wrap justify-between gap-sm">
-                  <div><h3 className="font-title-sm">{draft.title}</h3><p className="text-xs text-on-surface-variant">{draft.sourceVersion} · {draft.status}</p></div>
+                  <div><h3 className="font-title-sm">{draft.title}</h3><p className="text-xs text-on-surface-variant">{draft.sourceVersion} · campaign {draft.campaignId} · {draft.status}</p></div>
                   <span className={draft.evaluationPassed ? 'text-xs text-green-500 font-bold' : 'text-xs text-red-500 font-bold'}>{draft.evaluationPassed ? 'Evaluation đạt' : 'Evaluation bị chặn'}</span>
                 </div>
                 <p className="text-sm">{draft.answerBlocks[0]?.content}</p>
@@ -277,7 +300,7 @@ export function TeacherAssignmentsPage() {
           {assignments.map((assignment) => (
             <article key={assignment.id} className="bg-surface-container border border-outline-variant rounded-xl p-md">
               <h3 className="font-title-md">{assignment.title}</h3>
-              <p className="text-xs text-on-surface-variant mt-1">Quest: {assignment.questTitle}</p>
+              <p className="text-xs text-on-surface-variant mt-1">Quest: {assignment.questTitle} · campaign: {assignment.campaignId ?? '—'}</p>
               <ul className="mt-sm space-y-1 text-sm">
                 {assignment.submissions.length === 0 ? (
                   <li className="text-on-surface-variant">Chưa có bài nộp</li>

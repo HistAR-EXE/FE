@@ -11,8 +11,8 @@ import { peekReturnTo, popReturnTo } from '../shared/router/returnTo'
 import { useToast } from '../shared/ui/toast/useToast'
 import { images } from '../assets/images'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
-import { httpClient } from '../shared/api/httpClient'
 import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
+import { emailVerificationApi } from '../features/auth/emailVerificationApi'
 
 export function VerifyEmailPendingPage() {
     const navigate = useNavigate()
@@ -21,9 +21,10 @@ export function VerifyEmailPendingPage() {
 
     const [checking, setChecking] = useState(false)
     const [isResending, setIsResending] = useState(false)
+    const [debugToken, setDebugToken] = useState<string | null>(null)
 
     // State cho đếm ngược thời gian gửi lại email
-    const [countdown, setCountdown] = useState(60)
+    const [countdown, setCountdown] = useState(0)
 
     // Logic Đếm ngược 60 giây
     useEffect(() => {
@@ -85,7 +86,8 @@ export function VerifyEmailPendingPage() {
         if (countdown > 0 || isResending) return
         try {
             setIsResending(true)
-            await httpClient.post('/api/auth/verify-email/resend')
+            const response = await emailVerificationApi.resend()
+            setDebugToken(response.debugToken ?? null)
             showToast({ message: 'Đã gửi lại email xác thực. Vui lòng kiểm tra hộp thư.', type: 'success' })
             setCountdown(60) // Reset lại 60 giây sau khi gửi thành công
         } catch (error) {
@@ -154,7 +156,7 @@ export function VerifyEmailPendingPage() {
                                     <MaterialIcon name="mark_email_unread" className="text-3xl text-[#388cf1] animate-bounce" />
                                 </div>
 
-                                <h1 className="text-3xl sm:text-4xl font-black text-white mb-3 tracking-tight">Xác thực tài khoản</h1>
+                                <h1 className="text-3xl sm:text-4xl font-black text-white mb-3 tracking-tight">Kích hoạt tài khoản</h1>
 
                                 <p className="text-sm text-gray-400 font-medium mb-8 leading-relaxed">
                                     Mã truy cập hệ thống đã được gửi đến địa chỉ email: <br/>
@@ -237,6 +239,14 @@ export function VerifyEmailPendingPage() {
                                             ? `Gửi lại email sau ${countdown}s`
                                             : 'Chưa nhận được? Gửi lại email'}
                                 </button>
+                                {debugToken && (
+                                    <p className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-left text-xs text-amber-100">
+                                        Môi trường local chưa gửi SMTP thật.{' '}
+                                        <Link className="font-bold underline" to={`/verify-email?token=${encodeURIComponent(debugToken)}`}>
+                                            Mở liên kết xác thực
+                                        </Link>
+                                    </p>
+                                )}
                             </div>
 
                             {/* NÚT THOÁT RA */}

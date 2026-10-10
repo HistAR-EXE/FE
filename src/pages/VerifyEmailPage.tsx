@@ -174,7 +174,10 @@ export function VerifyEmailPage() {
 
                                 <h1 className="text-3xl font-black text-white mb-3 tracking-tight">Xác thực thành công!</h1>
                                 <p className="text-sm text-gray-300 font-medium mb-8 leading-relaxed">
-                                    {message || 'Tuyệt vời! Địa chỉ email của bạn đã được kích hoạt. Bạn hiện đã có thể bắt đầu khám phá TimeLens với thẻ Đặc quyền Gói Free.'}
+                                    {message || 'Tuyệt vời! Địa chỉ email của bạn đã được kích hoạt.'}
+                                </p>
+                                <p className="-mt-5 mb-8 text-xs font-bold text-emerald-200">
+                                    Tài khoản của bạn đang dùng Gói Free và sẵn sàng bắt đầu khám phá TimeLens.
                                 </p>
 
                                 <Button

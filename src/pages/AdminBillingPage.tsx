@@ -8,7 +8,8 @@ import { adminApi, type AdminBillingSettings, type AdminB2b2cInquiry, type Admin
 import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
 import { useToast } from '../shared/ui/toast/useToast'
 
-function formatCurrency(value: number) {
+function formatCurrency(value: number | null | undefined) {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return '—'
   return `${value.toLocaleString('vi-VN')}đ`
 }
 
@@ -306,8 +307,8 @@ export function AdminBillingPage() {
                 <p className="text-sm text-on-surface-variant">Chưa có dữ liệu hoặc API chưa bật.</p>
               ) : (
                 <ul className="space-y-sm text-sm">
-                  {recentPayments.map((p) => (
-                    <li key={p.id} className="flex flex-wrap justify-between gap-2 border-b border-outline-variant/40 pb-sm">
+                  {recentPayments.map((p, index) => (
+                    <li key={p.id ?? p.orderCode ?? `${p.createdAt}-${index}`} className="flex flex-wrap justify-between gap-2 border-b border-outline-variant/40 pb-sm">
                       <span className="font-mono text-xs">{p.orderCode}</span>
                       <span>{formatCurrency(p.amountVnd)} · {p.status}</span>
                       <span className="text-on-surface-variant text-xs w-full">
