@@ -26,9 +26,12 @@ export function getActionLinkErrorMessage(error: unknown): string {
 export function handleActionLinkError(
   error: unknown,
   navigate: NavigateFunction,
-  showToast: (opts: { message: string; type: 'error' | 'info' }) => void,
+  showToast: (opts: { message: string; type: 'error' | 'info'; durationMs?: number }) => void,
   fallbackPath = '/home',
 ): void {
-  showToast({ message: getActionLinkErrorMessage(error), type: 'error' })
+  // A link hand-off can traverse /join -> /settings -> fallback. Keep the
+  // recovery message visible long enough for that navigation to settle; users
+  // can still dismiss it immediately with the toast close button.
+  showToast({ message: getActionLinkErrorMessage(error), type: 'error', durationMs: 20_000 })
   navigate(fallbackPath, { replace: true })
 }

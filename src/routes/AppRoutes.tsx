@@ -1,46 +1,24 @@
 // src/routes/AppRoutes.tsx
+import { lazy, Suspense } from 'react'
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom'
-import { ArtifactsPage } from '../pages/ArtifactsPage'
 import { CharacterExplorePage } from '../pages/CharacterExplorePage'
 import { CharacterDetailPage } from '../pages/CharacterDetailPage'
-import { TeacherDashboardPage } from '../pages/TeacherDashboardPage'
-import { TeacherAssignmentsPage } from '../pages/TeacherAssignmentsPage'
-import { TeacherLiveBoardPage } from '../pages/TeacherLiveBoardPage'
 import { TeacherRoute } from '../shared/router/TeacherRoute'
-import { ChatPage } from '../pages/ChatPage'
-import { ExplorePage } from '../pages/ExplorePage'
-import { HeritageDetailPage } from '../pages/HeritageDetailPage'
 import { HomePage } from '../pages/HomePage'
-import { LeaderboardPage } from '../pages/LeaderboardPage'
 import { LoginPage } from '../pages/LoginPage'
 import { NotFoundPage } from '../pages/NotFoundPage'
 import { OnboardingPage } from '../pages/OnboardingPage'
 import { PhotoFramePage } from '../pages/PhotoFramePage'
 import { ProfilePage } from '../pages/ProfilePage'
 import { SettingsPage } from '../pages/SettingsPage'
-import { QuestDetailPage } from '../pages/QuestDetailPage'
-import { QuestsPage } from '../pages/QuestsPage'
-import { MinigamePage } from '../pages/MinigamePage'
 import { ScanPage } from '../pages/ScanPage'
 import { SecretStoryPage } from '../pages/SecretStoryPage'
 import { SharePage } from '../pages/SharePage'
-import { BattleDioramaPage } from '../pages/BattleDioramaPage'
-import { PricingPage } from '../pages/PricingPage'
-import { CheckoutB2CPage } from '../pages/CheckoutB2CPage'
-import { CheckoutB2BPage } from '../pages/CheckoutB2BPage'
-import { CheckoutB2B2CPage } from '../pages/CheckoutB2B2CPage'
 import { JoinPage } from '../pages/JoinPage'
 import { VerifyEmailPage } from '../pages/VerifyEmailPage'
 import { VerifyEmailPendingPage } from '../pages/VerifyEmailPendingPage'
 import { ForgotPasswordPage } from '../pages/ForgotPasswordPage'
 import { ModeSelectPage } from '../pages/ModeSelectPage'
-import { Tour360Page } from '../pages/Tour360Page'
-import { TimePortalPage } from '../pages/TimePortalPage'
-import { AdminAnalyticsPage } from '../pages/AdminAnalyticsPage'
-import { AdminBillingPage } from '../pages/AdminBillingPage'
-import { AdminContentPage } from '../pages/AdminContentPage'
-import { AdminOrganizationsPage } from '../pages/AdminOrganizationsPage'
-import { AdminUsersPage } from '../pages/AdminUsersPage'
 import { GroupHubPage } from '../pages/GroupHubPage'
 import { SquadLobbyPage } from '../pages/SquadLobbyPage'
 import { GroupProgressPage } from '../pages/GroupProgressPage'
@@ -60,7 +38,39 @@ import { ProtectedRoute } from '../shared/router/ProtectedRoute'
 import { VisitSessionProvider } from '../features/visit/VisitSessionProvider'
 import { AboutPage } from '../pages/AboutPage'
 import { GoogleRedirectCompletion } from '../shared/auth/GoogleRedirectCompletion'
-import { ArtifactDetailPage } from '../pages/ArtifactDetailPage'
+
+const ArtifactsPage = lazy(() => import('../pages/ArtifactsPage').then((module) => ({ default: module.ArtifactsPage })))
+const ArtifactDetailPage = lazy(() => import('../pages/ArtifactDetailPage').then((module) => ({ default: module.ArtifactDetailPage })))
+const TeacherDashboardPage = lazy(() => import('../pages/TeacherDashboardPage').then((module) => ({ default: module.TeacherDashboardPage })))
+const TeacherAssignmentsPage = lazy(() => import('../pages/TeacherAssignmentsPage').then((module) => ({ default: module.TeacherAssignmentsPage })))
+const TeacherLiveBoardPage = lazy(() => import('../pages/TeacherLiveBoardPage').then((module) => ({ default: module.TeacherLiveBoardPage })))
+const ChatPage = lazy(() => import('../pages/ChatPage').then((module) => ({ default: module.ChatPage })))
+const ExplorePage = lazy(() => import('../pages/ExplorePage').then((module) => ({ default: module.ExplorePage })))
+const HeritageDetailPage = lazy(() => import('../pages/HeritageDetailPage').then((module) => ({ default: module.HeritageDetailPage })))
+const LeaderboardPage = lazy(() => import('../pages/LeaderboardPage').then((module) => ({ default: module.LeaderboardPage })))
+const QuestDetailPage = lazy(() => import('../pages/QuestDetailPage').then((module) => ({ default: module.QuestDetailPage })))
+const QuestsPage = lazy(() => import('../pages/QuestsPage').then((module) => ({ default: module.QuestsPage })))
+const MinigamePage = lazy(() => import('../pages/MinigamePage').then((module) => ({ default: module.MinigamePage })))
+const BattleDioramaPage = lazy(() => import('../pages/BattleDioramaPage').then((module) => ({ default: module.BattleDioramaPage })))
+const PricingPage = lazy(() => import('../pages/PricingPage').then((module) => ({ default: module.PricingPage })))
+const CheckoutB2CPage = lazy(() => import('../pages/CheckoutB2CPage').then((module) => ({ default: module.CheckoutB2CPage })))
+const CheckoutB2BPage = lazy(() => import('../pages/CheckoutB2BPage').then((module) => ({ default: module.CheckoutB2BPage })))
+const CheckoutB2B2CPage = lazy(() => import('../pages/CheckoutB2B2CPage').then((module) => ({ default: module.CheckoutB2B2CPage })))
+const Tour360Page = lazy(() => import('../pages/Tour360Page').then((module) => ({ default: module.Tour360Page })))
+const TimePortalPage = lazy(() => import('../pages/TimePortalPage').then((module) => ({ default: module.TimePortalPage })))
+const AdminAnalyticsPage = lazy(() => import('../pages/AdminAnalyticsPage').then((module) => ({ default: module.AdminAnalyticsPage })))
+const AdminBillingPage = lazy(() => import('../pages/AdminBillingPage').then((module) => ({ default: module.AdminBillingPage })))
+const AdminContentPage = lazy(() => import('../pages/AdminContentPage').then((module) => ({ default: module.AdminContentPage })))
+const AdminOrganizationsPage = lazy(() => import('../pages/AdminOrganizationsPage').then((module) => ({ default: module.AdminOrganizationsPage })))
+const AdminUsersPage = lazy(() => import('../pages/AdminUsersPage').then((module) => ({ default: module.AdminUsersPage })))
+
+function RouteLoadingFallback() {
+  return (
+    <main className="min-h-screen bg-slate-950 text-white grid place-items-center" data-testid="route-loading" role="status">
+      Đang tải trải nghiệm…
+    </main>
+  )
+}
 
 /**
  * Preserve the previously published AR deep link while the current portal
@@ -79,6 +89,7 @@ export function AppRoutes() {
     <BrowserRouter>
       <GoogleRedirectCompletion />
       <VisitSessionProvider>
+      <Suspense fallback={<RouteLoadingFallback />}>
       <Routes>
           {/* Public — guest landing only */}
           <Route path="/" element={<OnboardingPage />} />
@@ -165,6 +176,7 @@ export function AppRoutes() {
         <Route path="/404" element={<NotFoundPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
+      </Suspense>
       </VisitSessionProvider>
     </BrowserRouter>
   )
