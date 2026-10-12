@@ -129,12 +129,15 @@ export function QuestJourneyPanel({
                     if (step.minigameId) href = `/quests/${questId}/play/${step.minigameId}`
                     if (step.actionType === 'checkin') href = `/scan?locationId=${locationId}`
                     if (step.actionType === 'dialogue') {
-                        const persona = step.unlockKey.replace('dialogue:', '')
+                        // unlockKey names a quest record, not a backend character UUID.  Passing it as
+                        // `persona` makes ChatPage request an invalid character and drops its context.
+                        const persona = 'chi-nam'
                         const chatParams = new URLSearchParams({
                             locationId,
                             persona,
                             questRecord: step.unlockKey,
                             questId,
+                            autoSend: '1',
                         })
                         if (step.chatPrompt) chatParams.set('questPrompt', step.chatPrompt)
                         href = `/chat?${chatParams}`

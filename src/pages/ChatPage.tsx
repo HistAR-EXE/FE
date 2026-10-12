@@ -131,6 +131,7 @@ export function ChatPage() {
     const questDialogueRecorded = useRef(false)
     const prefilledQuestPrompt = useRef(false)
     const autoSentSaBan = useRef(false)
+    const autoSentQuestPrompt = useRef(false)
     const claimedQuizIds = useRef(new Set<string>())
 
     const [characters, setCharacters] = useState<Character[]>([])
@@ -142,6 +143,7 @@ export function ChatPage() {
     const [messages, setMessages] = useState<ChatMessage[]>([])
     const [input, setInput] = useState('')
     const [conversationId, setConversationId] = useState<string | null>(null)
+    const [chatContextReady, setChatContextReady] = useState(false)
     const [loadingMessages, setLoadingMessages] = useState(false)
     const [loadingOlder, setLoadingOlder] = useState(false)
     const [historyPage, setHistoryPage] = useState(0)
@@ -367,6 +369,7 @@ export function ChatPage() {
             setConversationId(null)
             setMessages([])
             setHasOlder(false)
+            setChatContextReady(false)
             return
         }
 
@@ -376,6 +379,7 @@ export function ChatPage() {
             setConversationId(null)
             setHistoryPage(0)
             setHasOlder(false)
+            setChatContextReady(false)
 
             try {
                 const ctx = await chatApi.getContext(resolvedCharacterId)
@@ -388,6 +392,8 @@ export function ChatPage() {
                 if (!cancelled) {
                     // Bắt đầu đoạn hội thoại mới sạch sẽ
                 }
+            } finally {
+                if (!cancelled) setChatContextReady(true)
             }
         }
 
@@ -617,16 +623,17 @@ export function ChatPage() {
             }
             recordDialogueQuest()
             setMessages((prev) => {
-                const withoutOptimistic = prev.filter((m) => m.id !== optimistic.id)
-                if (withoutOptimistic.some((m) => m.id === assistantId)) {
-                    return withoutOptimistic.map((m) =>
+                const withPersistedUser = prev.map((m) =>
+                    m.id === optimistic.id ? { ...m, id: userMessageId } : m,
+                )
+                if (withPersistedUser.some((m) => m.id === assistantId)) {
+                    return withPersistedUser.map((m) =>
                         m.id === assistantId
                             ? { ...m, content: reply.reply, sources: normalizeChatSources(reply.sources) }
                             : m
                     )
                 }
-                return mergeMessages(withoutOptimistic, [
-                    { ...optimistic, id: userMessageId },
+                return mergeMessages(withPersistedUser, [
                     {
                         id: assistantId,
                         role: 'assistant',
@@ -666,6 +673,16 @@ export function ChatPage() {
             setSending(false)
         }
     }
+
+    useEffect(() => {
+        if (autoSentQuestPrompt.current || params.get('autoSend') !== '1' || !questPrompt) return
+        if (messageHasSaBanCode(questPrompt) || !resolvedCharacterId || !chatContextReady || busy) return
+        autoSentQuestPrompt.current = true
+        const nextParams = new URLSearchParams(params)
+        nextParams.delete('autoSend')
+        setSearchParams(nextParams, { replace: true })
+        void send(questPrompt)
+    }, [busy, chatContextReady, params, questPrompt, resolvedCharacterId, send, setSearchParams])
 
     const stopDictation = () => {
         dictateStopRef.current?.()

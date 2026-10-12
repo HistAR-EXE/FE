@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { MaterialIcon } from '../../components/ui/MaterialIcon'
 import { gamificationApi, type NarrativeInvestigation, type NarrativeNode, type NarrativeProgress } from './api'
 
-type Props = { investigation: NarrativeInvestigation }
+type Props = { investigation: NarrativeInvestigation; locationId: string }
 type TaskPresentation = { icon: string; label: string; guidance: string }
 
 const taskPresentation: Record<string, TaskPresentation> = {
@@ -19,7 +19,7 @@ const taskPresentation: Record<string, TaskPresentation> = {
 const presentationFor = (type: string): TaskPresentation => taskPresentation[type] ?? taskPresentation.OBSERVATION
 const outcomeLabel = (node: NarrativeNode) => node.title || node.code.replaceAll('-', ' ')
 
-export function NarrativeInvestigationBoard({ investigation }: Props) {
+export function NarrativeInvestigationBoard({ investigation, locationId }: Props) {
   const graph = investigation.graph
   const [remote, setRemote] = useState<NarrativeProgress | null>(null)
   const [error, setError] = useState('')
@@ -32,6 +32,11 @@ export function NarrativeInvestigationBoard({ investigation }: Props) {
   const evidenceTotal = graph.evidenceNodeCodes.length
   const progress = evidenceTotal ? Math.round((evidence.size / evidenceTotal) * 100) : 0
   const currentTask = presentationFor(current?.type ?? 'OBSERVATION')
+  // V52 used the legacy `/tour-360` route. Keep existing pilot data usable while
+  // routing every narrative observation to the location-specific Tour 360 page.
+  const actionHref = current?.type === 'TOUR_360_OBSERVATION' && current.actionHref === '/tour-360'
+    ? `/tour/360/${locationId}`
+    : current?.actionHref
   const outcomes = graph.outcomeNodeCodes
     .map((code) => graph.nodes.find((node) => node.code === code))
     .filter((node): node is NarrativeNode => Boolean(node))
@@ -61,7 +66,7 @@ export function NarrativeInvestigationBoard({ investigation }: Props) {
         <div className="rounded-2xl border border-white/10 bg-[#161824]/95 p-5">
           <div className="flex items-center gap-3"><div className="grid h-12 w-12 place-items-center rounded-2xl bg-[#388cf1]/15 text-[#79b7ff]"><MaterialIcon name={currentTask.icon} className="text-2xl" /></div><div><p className="text-[10px] font-black uppercase tracking-[.22em] text-[#388cf1]">{currentTask.label}</p><h3 className="font-black text-white">{current.title || current.code.replaceAll('-', ' ')}</h3></div></div>
           <p className="mt-5 text-sm font-medium leading-relaxed text-gray-300">{current.prompt || currentTask.guidance}</p>
-          {current.actionHref && <Link to={current.actionHref} className="mt-5 inline-flex items-center gap-2 rounded-xl border border-[#388cf1]/40 bg-[#388cf1]/10 px-4 py-3 text-sm font-black text-[#b9d8ff] transition hover:border-[#388cf1] hover:bg-[#388cf1]/20"><MaterialIcon name={currentTask.icon} className="text-lg" /> Mở không gian nhiệm vụ</Link>}
+          {actionHref && <Link to={actionHref} className="mt-5 inline-flex items-center gap-2 rounded-xl border border-[#388cf1]/40 bg-[#388cf1]/10 px-4 py-3 text-sm font-black text-[#b9d8ff] transition hover:border-[#388cf1] hover:bg-[#388cf1]/20"><MaterialIcon name={currentTask.icon} className="text-lg" /> Mở không gian nhiệm vụ</Link>}
           <div className="mt-5 grid gap-3 sm:grid-cols-2">{current.choices.map((choice) => <button key={choice.code} type="button" onClick={() => collectAndMove(choice.targetNodeCode)} className="group rounded-2xl border border-white/10 bg-black/20 p-4 text-left transition hover:-translate-y-1 hover:border-[#fe951c]/70 hover:bg-[#fe951c]/10"><div className="flex items-center justify-between gap-3"><span className="font-black text-white">{choice.code.replaceAll('-', ' ')}</span><MaterialIcon name="arrow_forward" className="text-[#fdb438] transition group-hover:translate-x-1" /></div><span className="mt-2 block text-xs text-gray-500">Mở nhánh điều tra</span></button>)}</div>
           {current.choices.length === 0 && current.type !== 'OUTCOME' && <button disabled={saving} type="button" onClick={() => act(current.type === 'EVIDENCE' ? 'COLLECT_EVIDENCE' : 'VISIT_NODE', current.code)} className="mt-5 rounded-xl bg-gradient-to-r from-[#fe951c] to-[#fdb438] px-5 py-3 text-sm font-black text-black disabled:opacity-50">Ghi nhận vào hồ sơ</button>}
         </div>

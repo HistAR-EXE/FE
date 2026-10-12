@@ -18,6 +18,7 @@ import { StoryJourneyPanel } from '../features/story/StoryJourneyPanel'
 import { useAuth } from '../shared/auth/useAuth'
 import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
 import { useToast } from '../shared/ui/toast/useToast'
+import { ApiError } from '../shared/api/contracts'
 import { useVisitSession } from '../features/visit/VisitSessionProvider'
 import { pickQuestCover } from '../shared/media/resolveMedia'
 import { SmartImage } from '../shared/ui/SmartImage'
@@ -32,6 +33,7 @@ export function QuestDetailPage() {
     const [quest, setQuest] = useState<Quest | null>(null)
     const [progress, setProgress] = useState<QuestProgress | null>(null)
     const [investigation, setInvestigation] = useState<NarrativeInvestigation | null>(null)
+    const [narrativeNotice, setNarrativeNotice] = useState('')
     const [stepImages, setStepImages] = useState<Record<string, string>>({})
     const [locationName, setLocationName] = useState('')
     const [loading, setLoading] = useState(false)
@@ -44,7 +46,14 @@ export function QuestDetailPage() {
     useEffect(() => {
         if (!questId) return
         gamificationApi.questById(questId).then(setQuest).catch(() => setQuest(null))
-        gamificationApi.investigation(questId).then(setInvestigation).catch(() => setInvestigation(null))
+        setInvestigation(null)
+        setNarrativeNotice('')
+        gamificationApi.investigation(questId).then(setInvestigation).catch((error) => {
+            setInvestigation(null)
+            if (questId === '33333333-3333-3333-3333-333333333338' && error instanceof ApiError && error.status === 404) {
+                setNarrativeNotice('Hồ sơ điều tra đang chờ duyệt nội dung. Trong lúc này, bạn vẫn có thể trải nghiệm hành trình tuyến tính.')
+            }
+        })
     }, [questId])
 
     useEffect(() => {
@@ -421,7 +430,8 @@ export function QuestDetailPage() {
                             Chia sẻ tiến độ
                         </button>
                     </div>
-                    {investigation ? <NarrativeInvestigationBoard investigation={investigation} /> : <QuestJourneyPanel
+                    {narrativeNotice && <div role="status" className="mb-5 rounded-2xl border border-[#fdb438]/30 bg-[#fdb438]/10 p-4 text-sm font-medium text-[#ffe2a9]">{narrativeNotice}</div>}
+                    {investigation ? <NarrativeInvestigationBoard investigation={investigation} locationId={locationId} /> : <QuestJourneyPanel
                         steps={steps}
                         questId={questId || ''}
                         locationId={locationId}
