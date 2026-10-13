@@ -11,7 +11,7 @@ type UpgradePromptProps = {
 
 export function UpgradePrompt({
   title = 'Nâng cấp Premium',
-  message = 'Mở khóa nội dung cao cấp và chat không giới hạn với nhân vật lịch sử.',
+  message = 'Mở khóa nội dung cao cấp và chat không giới hạn cùng Chrono.',
   compact = false,
   onUpgrade,
 }: UpgradePromptProps) {

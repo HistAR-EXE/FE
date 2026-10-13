@@ -144,7 +144,7 @@ export const HERITAGE_QUEST_META: Record<string, HeritageQuestMeta> = {
         checkinStep: CHECKIN_STEP,
     },
 
-    // CHIẾN DỊCH MỚI 1: MẬT MÃ SA BÀN TÁC CHIẾN (Anh Ba)
+    // CHIẾN DỊCH MỚI 1: MẬT MÃ SA BÀN TÁC CHIẾN
     '33333333-3333-3333-3333-333333333334': {
         locationId: '11111111-1111-1111-1111-111111111111',
         city: 'TP.HCM',
@@ -156,7 +156,7 @@ export const HERITAGE_QUEST_META: Record<string, HeritageQuestMeta> = {
         steps: [],
     },
 
-    // CHIẾN DỊCH MỚI 2: ÁNH SÁNG ĐÈN MÙ U (Chị Năm)
+    // CHIẾN DỊCH MỚI 2: ÁNH SÁNG ĐÈN MÙ U
     '33333333-3333-3333-3333-333333333335': {
         locationId: '11111111-1111-1111-1111-111111111111',
         city: 'TP.HCM',

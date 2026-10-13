@@ -22,6 +22,8 @@ export type ApiErrorPayload = {
   upgradeUrl?: string
   type?: string
   upgradePackage?: string
+  retryable?: boolean
+  requestId?: string
 }
 
 export class ApiError extends Error {
@@ -31,6 +33,8 @@ export class ApiError extends Error {
   upgradeUrl?: string
   quotaType?: string
   upgradePackage?: string
+  retryable?: boolean
+  requestId?: string
 
   constructor(payload: {
     message: string
@@ -40,6 +44,8 @@ export class ApiError extends Error {
     upgradeUrl?: string
     quotaType?: string
     upgradePackage?: string
+    retryable?: boolean
+    requestId?: string
   }) {
     super(payload.message)
     this.name = 'ApiError'
@@ -49,6 +55,8 @@ export class ApiError extends Error {
     this.upgradeUrl = payload.upgradeUrl
     this.quotaType = payload.quotaType
     this.upgradePackage = payload.upgradePackage
+    this.retryable = payload.retryable
+    this.requestId = payload.requestId
   }
 }
 

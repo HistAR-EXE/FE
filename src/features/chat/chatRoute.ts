@@ -1,12 +1,13 @@
 import { CU_CHI_LOCATION_ID } from '../../shared/config/constants'
+import { normalizeChatPersona } from './chatPersona'
 
 const SELECTED_LOCATION_KEY = 'timelens_selected_location_id'
 
-export type ChatPersona = 'chi-nam' | 'anh-ba'
+export type { ChatPersona } from './chatPersona'
 
 export type BuildChatPathOptions = {
     locationId?: string
-    persona?: ChatPersona
+    persona?: string
     prompt?: string
     questPrompt?: string
     questId?: string
@@ -32,7 +33,7 @@ export function resolveChatLocationId(urlLocationId?: string | null): string {
 export function buildChatPath(options: BuildChatPathOptions = {}): string {
     const locationId = resolveChatLocationId(options.locationId)
     const params = new URLSearchParams({ locationId })
-    if (options.persona) params.set('persona', options.persona)
+    if (options.persona) params.set('persona', normalizeChatPersona(options.persona))
     if (options.prompt) params.set('prompt', options.prompt)
     if (options.questPrompt) params.set('questPrompt', options.questPrompt)
     if (options.questId) params.set('questId', options.questId)

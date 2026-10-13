@@ -1,10 +1,6 @@
 // src/pages/AdminContentPage.tsx
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
-import { Link } from 'react-router-dom'
-import { AppLayout } from '../components/layout/AppLayout'
-import { SimpleTopNav } from '../components/layout/TopNav'
 import { AdminModal } from '../components/admin/AdminModal'
-import { AdminSubNav } from '../components/admin/AdminSubNav'
 import { ImageFilePicker } from '../components/admin/ImageFilePicker'
 import {
   CheckboxInput,
@@ -204,8 +200,7 @@ export function AdminContentPage() {
   }
 
   return (
-    <AppLayout activeBorder="left" topNav={<SimpleTopNav title="Quản trị nội dung" />}>
-      <main className="mt-14 md:mt-16 p-md md:p-lg max-w-5xl mx-auto w-full pb-20">
+      <section className="max-w-5xl w-full pb-20">
         <div className="flex flex-wrap items-center justify-between gap-2 mb-md">
           <div>
             <h1 className="font-display-lg text-on-surface">
@@ -213,14 +208,7 @@ export function AdminContentPage() {
             </h1>
             <p className="text-xs text-on-surface-variant mt-0.5">CMS nội bộ — tạo và chỉnh sửa theo địa điểm (chọn tab Hiện vật / Nhiệm vụ để thêm mới)</p>
           </div>
-          <div className="flex gap-2 text-sm shrink-0">
-            <Link to="/profile" className="text-secondary inline-flex items-center gap-1 hover:underline">
-              <MaterialIcon name="arrow_back" className="text-sm" /> Hồ sơ
-            </Link>
-          </div>
         </div>
-
-        <AdminSubNav />
 
         <div className="mb-md flex flex-wrap items-end gap-sm">
           <FormField label="Địa điểm">
@@ -435,8 +423,7 @@ export function AdminContentPage() {
             />
           </AdminModal>
         )}
-      </main>
-    </AppLayout>
+      </section>
   )
 }
 

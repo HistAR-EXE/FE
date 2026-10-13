@@ -1,9 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { AdminSubNav } from '../components/admin/AdminSubNav'
-import { AppLayout } from '../components/layout/AppLayout'
-import { SimpleTopNav } from '../components/layout/TopNav'
-import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { adminApi, type AdminBillingSettings, type AdminB2b2cInquiry, type AdminRecentPayment } from '../features/admin/api'
 import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
 import { useToast } from '../shared/ui/toast/useToast'
@@ -141,21 +137,15 @@ export function AdminBillingPage() {
   }
 
   return (
-    <AppLayout activeBorder="left" topNav={<SimpleTopNav title="Billing settings" />}>
-      <main className="mt-14 md:mt-16 p-md md:p-lg max-w-5xl mx-auto w-full space-y-md">
-        <div className="flex items-center justify-between gap-sm">
+      <section className="max-w-5xl w-full space-y-md">
+        <div>
           <div>
             <h1 className="font-display-md text-on-surface">Billing settings</h1>
             <p className="text-sm text-on-surface-variant mt-1">
               Điều chỉnh giá B2C Premium runtime và xem cấu hình QR/account đang được publish từ backend.
             </p>
           </div>
-          <Link to="/profile" className="text-secondary inline-flex items-center gap-1 text-sm hover:underline">
-            <MaterialIcon name="arrow_back" className="text-sm" /> Hồ sơ
-          </Link>
         </div>
-
-        <AdminSubNav />
 
         {loading && <div className="h-48 rounded-xl bg-surface-container animate-pulse border border-outline-variant" />}
 
@@ -409,7 +399,6 @@ export function AdminBillingPage() {
             </section>
           </>
         )}
-      </main>
-    </AppLayout>
+      </section>
   )
 }

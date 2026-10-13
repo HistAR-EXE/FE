@@ -32,6 +32,7 @@ import { billingApi } from '../features/billing/api'
 import { useToast } from '../shared/ui/toast/useToast'
 import { probeRagAiHealth } from '../shared/api/aiHealth'
 import { resolveChatLocationId, saveSelectedLocationId } from '../features/chat/chatRoute'
+import { normalizeChatPersona } from '../features/chat/chatPersona'
 import { isPilotSiteCode, siteCodeFromLocationId } from '../shared/config/constants'
 
 const MESSAGE_PAGE_SIZE = 20
@@ -41,8 +42,8 @@ const VOICE_STATUS: Record<VoicePhase, string> = {
     recording: 'Chrono đang nghe',
     stt: '⚡ Đang chuyển giọng nói thành văn bản RAG...',
     chat: '🧠 Trợ lý AI đang suy nghĩ sử liệu...',
-    tts: '🔊 Đang tạo giọng đọc nhân vật lịch sử...',
-    playing: '🟢 Đang phát lời thoại nhân vật...',
+    tts: '🔊 Chrono đang tạo giọng đọc...',
+    playing: '🟢 Chrono đang trả lời...',
     answered: 'Câu trả lời đang hiện',
 }
 
@@ -81,20 +82,14 @@ function mergeMessages(existing: ChatMessage[], incoming: ChatMessage[]): ChatMe
     return sortChronological([...map.values()])
 }
 
-/** BE chỉ nhận UUID character — map Đại sứ FE sang nhân vật API theo location. */
-const PERSONA_KEYS = new Set(['chi-nam', 'anh-ba'])
-
 function resolveChatCharacterId(
     characterId: string,
     characters: Character[],
-    activePersonaKey: 'chi-nam' | 'anh-ba',
 ): string | null {
-    if (characterId && !PERSONA_KEYS.has(characterId)) return characterId
     if (characters.length === 0) return null
-    if (activePersonaKey === 'chi-nam') {
-        return characters.find((c) => /chị năm/i.test(c.name))?.id ?? characters[0].id
-    }
-    return characters.find((c) => /anh ba|chiến sĩ/i.test(c.name))?.id ?? characters[0].id
+    return characters.find((character) => character.id === characterId)?.id
+        ?? characters.find((character) => /chrono/i.test(character.name))?.id
+        ?? characters[0].id
 }
 
 export function ChatPage() {
@@ -104,7 +99,8 @@ export function ChatPage() {
     const [params, setSearchParams] = useSearchParams()
     const navigate = useNavigate()
     const locationId = resolveChatLocationId(params.get('locationId'))
-    const personaParam = params.get('persona') // Nhận 'chi-nam' hoặc 'anh-ba' từ ExplorePage
+    const personaParam = params.get('persona')
+    const activePersonaKey = normalizeChatPersona(personaParam)
     const stationCode = (params.get('station') || params.get('stationCode') || '').trim().toUpperCase() || null
     const siteCode = isPilotSiteCode(params.get('site'))
         ? params.get('site')!
@@ -112,6 +108,11 @@ export function ChatPage() {
     const initialCharacterId = routeCharacterId ?? params.get('characterId') ?? ''
     const questRecordKey = questRecordFromSearch(params)
     const questPrompt = params.get('questPrompt') ?? params.get('prompt') ?? ''
+
+    // Gộp logic từ đồng đội: Narrative Quests
+    const narrativeQuestId = params.get('questId')
+    const narrativeNode = params.get('narrativeNode')
+    const narrativeVersion = Number(params.get('narrativeVersion') || '') || null
 
     const { isAuthenticated, user } = useAuth()
     const questDialogueRecorded = useRef(false)
@@ -121,10 +122,7 @@ export function ChatPage() {
     const claimedQuizIds = useRef(new Set<string>())
 
     const [characters, setCharacters] = useState<Character[]>([])
-    const [characterId, setCharacterId] = useState(initialCharacterId || personaParam || 'chi-nam')
-    const [activePersonaKey, setActivePersonaKey] = useState<'chi-nam' | 'anh-ba'>(
-        (personaParam === 'anh-ba' ? 'anh-ba' : 'chi-nam')
-    )
+    const [characterId, setCharacterId] = useState(initialCharacterId || activePersonaKey)
 
     const [messages, setMessages] = useState<ChatMessage[]>([])
     const [input, setInput] = useState('')
@@ -153,8 +151,11 @@ export function ChatPage() {
     const [callImages, setCallImages] = useState<string[]>([])
     const [hearing, setHearing] = useState(false)
     const [heardAudio, setHeardAudio] = useState(false)
+
+    // Gộp state từ cả 2 nhánh conflict
     const [retryMessage, setRetryMessage] = useState<string | null>(null)
     const [, setAiServiceOnline] = useState<boolean | null>(null)
+
     const dictateStopRef = useRef<(() => void) | null>(null)
     const callRunRef = useRef(0)
     const callMutedRef = useRef(false)
@@ -218,7 +219,7 @@ export function ChatPage() {
         if (stationCode) setActiveStationCode(stationCode)
     }, [stationCode])
 
-    // Chọn Persona hiển thị (Ưu tiên Đại sứ Củ Chi, fallback API)
+    // GIỮ NGUYÊN BẢN GIAO DIỆN HEAD CỦA BẠN (Fallback Persona chuẩn UI)
     const apiCharacter = useMemo(() => characters.find((c) => c.id === characterId), [characters, characterId])
 
     const showMascot = !apiCharacter || /chị năm|anh ba|du kích|chiến sĩ|chrono/i.test(apiCharacter.name)
@@ -238,21 +239,22 @@ export function ChatPage() {
         }
         return MASCOT_PROFILE
     }, [apiCharacter, showMascot])
+
     const mascotMode: MascotMode =
         dictating || voicePhase === 'recording'
             ? 'listening'
             : voicePhase === 'playing' || voicePhase === 'tts'
-              ? 'speaking'
-              : voicePhase === 'stt' || voicePhase === 'chat' || sending
-                ? 'thinking'
-                : 'idle'
+                ? 'speaking'
+                : voicePhase === 'stt' || voicePhase === 'chat' || sending
+                    ? 'thinking'
+                    : 'idle'
 
     const voiceBusy = voicePhase !== 'idle' && voicePhase !== 'recording'
     const busy = sending || voiceBusy
 
     const resolvedCharacterId = useMemo(
-        () => resolveChatCharacterId(characterId, characters, activePersonaKey),
-        [characterId, characters, activePersonaKey],
+        () => resolveChatCharacterId(characterId, characters),
+        [characterId, characters],
     )
 
     const dismissPremiumBanner = () => {
@@ -334,10 +336,15 @@ export function ChatPage() {
 
     useEffect(() => {
         if (initialCharacterId) setCharacterId(initialCharacterId)
-        if (personaParam === 'chi-nam' || personaParam === 'anh-ba') {
-            setActivePersonaKey(personaParam)
+    }, [initialCharacterId])
+
+    useEffect(() => {
+        if (personaParam !== activePersonaKey) {
+            const nextParams = new URLSearchParams(params)
+            nextParams.set('persona', activePersonaKey)
+            setSearchParams(nextParams, { replace: true })
         }
-    }, [initialCharacterId, personaParam])
+    }, [activePersonaKey, params, personaParam, setSearchParams])
 
     useEffect(() => {
         if (!locationId) return
@@ -345,9 +352,11 @@ export function ChatPage() {
             .getCharacters(locationId)
             .then((data) => {
                 setCharacters(data)
-                if (!characterId && data[0]) setCharacterId(data[0].id)
+                if (data[0]) {
+                    setCharacterId((current) => data.some((character) => character.id === current) ? current : data[0].id)
+                }
             })
-            .catch(() => showToast({ message: 'Sử dụng chế độ Đại sứ mặc định.', type: 'info' }))
+            .catch(() => showToast({ message: 'Không thể tải Chrono cho địa điểm này.', type: 'info' }))
     }, [locationId, characterId, showToast])
 
     useEffect(() => {
@@ -525,7 +534,8 @@ export function ChatPage() {
         acceptSaBanCode(SA_BAN_FRAGMENT_CODE)
     }, [acceptSaBanCode, params, questPrompt])
 
-    const send = async (override?: string) => {
+    // Gộp logic retryMessage của đồng đội vào hàm send()
+    const send = async (override?: string, retryMessageTarget?: ChatMessage) => {
         const pending = (override ?? input).trim()
         if (questRecordKey === SA_BAN_QUEST_KEY && messageHasSaBanCode(pending)) {
             acceptSaBanCode(pending)
@@ -547,7 +557,7 @@ export function ChatPage() {
         if (override === undefined) setInput('')
         shouldStickToBottomRef.current = true
 
-        const optimistic: ChatMessage = {
+        const optimistic: ChatMessage = retryMessageTarget ?? {
             id: `local-${Date.now()}`,
             role: 'user',
             content: userText,
@@ -556,7 +566,9 @@ export function ChatPage() {
         const userMessageId = `user-${Date.now()}`
         const assistantId = `assistant-${Date.now()}`
 
-        setMessages((prev) => [...prev, optimistic])
+        setMessages((prev) => retryMessageTarget
+            ? prev.map((m) => m.id === optimistic.id ? { ...m, failure: undefined } : m)
+            : [...prev, optimistic])
 
         try {
             setSending(true)
@@ -566,6 +578,11 @@ export function ChatPage() {
                 conversationId,
                 stationCode,
                 siteCode,
+                ...({
+                    narrativeQuestId,
+                    narrativeNodeCode: narrativeNode,
+                    narrativeVersion,
+                } as unknown as Record<string, unknown>),
             }, (event) => {
                 if (event.name !== 'delta' || !event.data || typeof event.data !== 'object') return
                 const block = event.data as { content?: string; sources?: ChatSource[] }
@@ -630,9 +647,23 @@ export function ChatPage() {
                 ])
             })
         } catch (e) {
-            setMessages((prev) => prev.filter((m) => m.id !== optimistic.id))
+            // Logic bắt lỗi và hiển thị retry của đồng đội
             const quota = e instanceof ApiError && (e.code === 'QUOTA_EXCEEDED' || e.status === 429 || (e.status === 422 && /giới hạn/i.test(e.message)))
-            if (!quota && !(e instanceof ApiError && e.status === 401)) setRetryMessage(userText)
+            const retryable = !quota && !(e instanceof ApiError && (e.status === 401 || e.retryable === false))
+
+            // Xử lý song song 2 flow (Local Retry vs Global Retry)
+            if (retryMessageTarget) {
+                setMessages((prev) => prev.filter((m) => m.id !== assistantId).map((m) => m.id === optimistic.id
+                    ? {
+                        ...m,
+                        ...({ failure: { retryable, requestId: e instanceof ApiError ? e.requestId : undefined } } as unknown as Record<string, unknown>)
+                    } as ChatMessage
+                    : m))
+            } else {
+                setMessages((prev) => prev.filter((m) => m.id !== optimistic.id))
+                if (retryable) setRetryMessage(userText)
+            }
+
             if (e instanceof ApiError && (e.code === 'QUOTA_EXCEEDED' || (e.status === 403 && /quota/i.test(e.code)))) {
                 setChatLimitReached(true)
                 if (e.quotaType === 'ORG_MONTHLY' || user?.orgId) {
@@ -959,7 +990,7 @@ export function ChatPage() {
                         </div>
                     </div>
 
-                    {/* Chi tiết: 3 chip xanh – vàng – kem */}
+                    {/* Chi tiết: 3 chip xanh – vàng – kem (GIỮ NGUYÊN GIAO DIỆN HEAD) */}
                     <div className="p-5 shrink-0 flex flex-col gap-4 text-left bg-white relative z-10 border-t-2 border-[#FDC908]/50">
                         <div className="flex flex-wrap gap-2">
                             <span className="px-3 py-1.5 bg-[#FDC908] rounded-full text-[11px] font-black text-[#0F1B33] shadow-sm">Minh bạch sử liệu</span>
@@ -1150,6 +1181,27 @@ export function ChatPage() {
                                     }`}>
                                         <ChatMessageContent content={m.content} className={isUser ? "text-white" : "text-gray-800"} />
 
+                                        {/* Đã chỉnh sửa UI báo lỗi của đồng đội (Dark Mode) sang Light Mode cho hợp mắt */}
+                                        {(() => {
+                                            const msgObj = m as unknown as { failure?: { requestId?: string; retryable?: boolean } };
+                                            return msgObj.failure ? (
+                                                <div role="status" className="mt-3 pt-3 border-t border-red-200 text-xs text-red-600">
+                                                    <p className="font-medium">Chưa nhận được câu trả lời. Câu hỏi của bạn vẫn được giữ lại.</p>
+                                                    {msgObj.failure.requestId && <p className="mt-1 opacity-70">Mã yêu cầu: {msgObj.failure.requestId}</p>}
+                                                    {msgObj.failure.retryable && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => void send(m.content, m)}
+                                                            disabled={busy}
+                                                            className="mt-2 rounded-lg bg-red-50 border border-red-200 px-4 py-2 text-sm font-bold text-red-600 disabled:opacity-40 cursor-pointer hover:bg-red-100 transition-colors"
+                                                        >
+                                                            Thử gửi lại
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            ) : null;
+                                        })()}
+
                                         {m.quiz && (
                                             <div className="mt-4 flex flex-col gap-2">
                                                 {m.quiz.options.map((option) => (
@@ -1225,6 +1277,15 @@ export function ChatPage() {
 
                     {/* ───────── Ô NHẬP ───────── */}
                     <div className="shrink-0 p-4 sm:p-6 bg-white border-t-2 border-[#0275FB]/15 shadow-[0_-8px_24px_-12px_rgba(2,117,251,0.25)] z-20 relative">
+                        {/* CỦA ĐỒNG ĐỘI: Hồ sơ điều tra (Narrative Quest) - Đã làm đẹp chuẩn Light Mode */}
+                        {narrativeQuestId && narrativeNode && (
+                            <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border-2 border-[#FDC908]/50 bg-[#FFF2C3]/50 px-4 py-2.5 text-xs text-[#0F1B33]">
+                                <span><strong className="text-[#0275FB]">Hồ sơ điều tra:</strong> câu hỏi này sẽ được Chrono dùng để kiểm chứng bước “{narrativeNode.replaceAll('-', ' ')}”.</span>
+                                <button type="button" onClick={() => navigate(`/quests/${narrativeQuestId}`)} className="font-black text-[#0275FB] underline hover:text-blue-700 cursor-pointer">Quay lại hồ sơ</button>
+                            </div>
+                        )}
+
+                        {/* Nút gửi lại của bạn (Retry) */}
                         {retryMessage && (
                             <button
                                 type="button"
@@ -1236,6 +1297,7 @@ export function ChatPage() {
                                 Thử gửi lại tin nhắn
                             </button>
                         )}
+
                         <div className="relative flex items-center bg-[#F2F7FF] rounded-full border-2 border-[#0275FB]/25 focus-within:border-[#0275FB] focus-within:bg-white focus-within:ring-4 focus-within:ring-[#0275FB]/15 transition-all p-1.5 pl-5 shadow-sm">
                             <input
                                 value={input}
