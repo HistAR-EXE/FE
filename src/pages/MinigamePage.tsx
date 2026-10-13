@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type PointerEvent } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { analyticsApi } from '../features/analytics/api'
 import { gamificationApi } from '../features/gamification/api'
@@ -17,12 +17,15 @@ type BrowserSpeech = {
 
 export function MinigamePage() {
     const { questId, minigameId } = useParams<{ questId: string; minigameId: string }>()
+    const navigate = useNavigate()
+    const [searchParams] = useSearchParams()
     const { isAuthenticated } = useAuth()
     const { showToast } = useToast()
     const [game, setGame] = useState<MinigameView | null>(null)
     const [result, setResult] = useState<MinigameAttemptResult | null>(null)
     const [busy, setBusy] = useState(false)
     const startedAt = useRef(0)
+    const returnNarrative = searchParams.get('returnNarrative')
 
     useEffect(() => {
         if (!minigameId || !isAuthenticated) return
@@ -123,6 +126,11 @@ export function MinigamePage() {
                                 <button type="button" className="mt-4 rounded-xl bg-[#fe951c] px-4 py-2 text-sm font-black text-black" onClick={replay}>
                                     Chơi mức khác
                                 </button>
+                                {returnNarrative && questId && result.passed && (
+                                    <button type="button" className="ml-2 mt-4 rounded-xl border border-[#79b7ff]/40 bg-[#388cf1]/10 px-4 py-2 text-sm font-black text-[#b9d8ff]" onClick={() => navigate(`/quests/${questId}?narrativeEvidence=${encodeURIComponent(returnNarrative)}`)}>
+                                        Quay lại hồ sơ điều tra
+                                    </button>
+                                )}
                             </div>
                         )}
                     </>

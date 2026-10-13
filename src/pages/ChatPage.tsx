@@ -35,6 +35,7 @@ import { billingApi } from '../features/billing/api'
 import { useToast } from '../shared/ui/toast/useToast'
 import { probeRagAiHealth } from '../shared/api/aiHealth'
 import { resolveChatLocationId, saveSelectedLocationId } from '../features/chat/chatRoute'
+import { normalizeChatPersona } from '../features/chat/chatPersona'
 import { isPilotSiteCode, siteCodeFromLocationId } from '../shared/config/constants'
 
 const MESSAGE_PAGE_SIZE = 20
@@ -44,12 +45,11 @@ const VOICE_STATUS: Record<VoicePhase, string> = {
     recording: 'Chrono đang nghe',
     stt: '⚡ Đang chuyển giọng nói thành văn bản RAG...',
     chat: '🧠 Trợ lý AI đang suy nghĩ sử liệu...',
-    tts: '🔊 Đang tạo giọng đọc nhân vật lịch sử...',
-    playing: '🟢 Đang phát lời thoại nhân vật...',
+    tts: '🔊 Chrono đang tạo giọng đọc...',
+    playing: '🟢 Chrono đang trả lời...',
     answered: 'Câu trả lời đang hiện',
 }
 
-// CẤU HÌNH 2 ĐẠI SỨ DI SẢN CỦ CHI (AMBASSADORS FALLBACK & OVERRIDE)
 interface AmbassadorPersona {
     id: string
     name: string
@@ -66,8 +66,8 @@ const MASCOT_PROFILE: AmbassadorPersona = {
     id: 'mascot',
     name: 'Chrono',
     era: 'TimeLens',
-    role: 'Linh vật TimeLens',
-    desc: 'Chrono đi cùng bạn ở mọi di tích trên TimeLens và kể tất cả thông tin mà Chrono biết.',
+    role: 'Trợ lý TimeLens',
+    desc: 'Chrono đi cùng bạn ở mọi di tích trên TimeLens và chỉ trả lời theo tư liệu có trong hệ thống.',
     avatar: '/mascot/mascot-1.png',
     themeColor: 'text-[#fdb438]',
     accentBorder: 'border-[#fe951c]/60 shadow-[0_0_25px_rgba(254,149,28,0.25)]',
@@ -85,20 +85,14 @@ function mergeMessages(existing: ChatMessage[], incoming: ChatMessage[]): ChatMe
     return sortChronological([...map.values()])
 }
 
-/** BE chỉ nhận UUID character — map Đại sứ FE sang nhân vật API theo location. */
-const PERSONA_KEYS = new Set(['chi-nam', 'anh-ba'])
-
 function resolveChatCharacterId(
     characterId: string,
     characters: Character[],
-    activePersonaKey: 'chi-nam' | 'anh-ba',
 ): string | null {
-    if (characterId && !PERSONA_KEYS.has(characterId)) return characterId
     if (characters.length === 0) return null
-    if (activePersonaKey === 'chi-nam') {
-        return characters.find((c) => /chị năm/i.test(c.name))?.id ?? characters[0].id
-    }
-    return characters.find((c) => /anh ba|chiến sĩ/i.test(c.name))?.id ?? characters[0].id
+    return characters.find((character) => character.id === characterId)?.id
+        ?? characters.find((character) => /chrono/i.test(character.name))?.id
+        ?? characters[0].id
 }
 
 function TimelineDivider({ label }: { label: string }) {
@@ -118,7 +112,8 @@ export function ChatPage() {
     const [params, setSearchParams] = useSearchParams()
     const navigate = useNavigate()
     const locationId = resolveChatLocationId(params.get('locationId'))
-    const personaParam = params.get('persona') // Nhận 'chi-nam' hoặc 'anh-ba' từ ExplorePage
+    const personaParam = params.get('persona')
+    const activePersonaKey = normalizeChatPersona(personaParam)
     const stationCode = (params.get('station') || params.get('stationCode') || '').trim().toUpperCase() || null
     const siteCode = isPilotSiteCode(params.get('site'))
         ? params.get('site')!
@@ -126,6 +121,9 @@ export function ChatPage() {
     const initialCharacterId = routeCharacterId ?? params.get('characterId') ?? ''
     const questRecordKey = questRecordFromSearch(params)
     const questPrompt = params.get('questPrompt') ?? params.get('prompt') ?? ''
+    const narrativeQuestId = params.get('questId')
+    const narrativeNode = params.get('narrativeNode')
+    const narrativeVersion = Number(params.get('narrativeVersion') || '') || null
 
     const { isAuthenticated, user } = useAuth()
     const questDialogueRecorded = useRef(false)
@@ -135,10 +133,7 @@ export function ChatPage() {
     const claimedQuizIds = useRef(new Set<string>())
 
     const [characters, setCharacters] = useState<Character[]>([])
-    const [characterId, setCharacterId] = useState(initialCharacterId || personaParam || 'chi-nam')
-    const [activePersonaKey, setActivePersonaKey] = useState<'chi-nam' | 'anh-ba'>(
-        (personaParam === 'anh-ba' ? 'anh-ba' : 'chi-nam')
-    )
+    const [characterId, setCharacterId] = useState(initialCharacterId || activePersonaKey)
 
     const [messages, setMessages] = useState<ChatMessage[]>([])
     const [input, setInput] = useState('')
@@ -168,7 +163,6 @@ export function ChatPage() {
     const [callImages, setCallImages] = useState<string[]>([])
     const [hearing, setHearing] = useState(false)
     const [heardAudio, setHeardAudio] = useState(false)
-    const [retryMessage, setRetryMessage] = useState<string | null>(null)
     const [aiServiceOnline, setAiServiceOnline] = useState<boolean | null>(null)
     const dictateStopRef = useRef<(() => void) | null>(null)
     const callRunRef = useRef(0)
@@ -233,26 +227,8 @@ export function ChatPage() {
         if (stationCode) setActiveStationCode(stationCode)
     }, [stationCode])
 
-    // Chọn Persona hiển thị (Ưu tiên Đại sứ Củ Chi, fallback API)
-    const apiCharacter = useMemo(() => characters.find((c) => c.id === characterId), [characters, characterId])
-
-    const showMascot = !apiCharacter || /chị năm|anh ba|du kích|chiến sĩ|chrono/i.test(apiCharacter.name)
-
-    const displayProfile = useMemo(() => {
-        if (!showMascot && apiCharacter) {
-            return {
-                name: apiCharacter.name,
-                era: apiCharacter.era,
-                role: 'Nhân vật lịch sử AI',
-                desc: 'AI trả lời theo ngữ cảnh di tích chuẩn RAG có nguồn minh bạch.',
-                avatar: apiCharacter.portraitUrl,
-                themeColor: 'text-[#fdb438]',
-                accentBorder: 'border-[#fe951c]/50',
-                badgeBg: 'bg-[#fe951c]/20 text-[#fdb438] border-[#fe951c]/40',
-            }
-        }
-        return MASCOT_PROFILE
-    }, [apiCharacter, showMascot])
+    const showMascot = true
+    const displayProfile = MASCOT_PROFILE
     const mascotMode: MascotMode =
         dictating || voicePhase === 'recording'
             ? 'listening'
@@ -266,8 +242,8 @@ export function ChatPage() {
     const busy = sending || voiceBusy
 
     const resolvedCharacterId = useMemo(
-        () => resolveChatCharacterId(characterId, characters, activePersonaKey),
-        [characterId, characters, activePersonaKey],
+        () => resolveChatCharacterId(characterId, characters),
+        [characterId, characters],
     )
 
     const dismissPremiumBanner = () => {
@@ -348,10 +324,15 @@ export function ChatPage() {
 
     useEffect(() => {
         if (initialCharacterId) setCharacterId(initialCharacterId)
-        if (personaParam === 'chi-nam' || personaParam === 'anh-ba') {
-            setActivePersonaKey(personaParam)
+    }, [initialCharacterId])
+
+    useEffect(() => {
+        if (personaParam !== activePersonaKey) {
+            const nextParams = new URLSearchParams(params)
+            nextParams.set('persona', activePersonaKey)
+            setSearchParams(nextParams, { replace: true })
         }
-    }, [initialCharacterId, personaParam])
+    }, [activePersonaKey, params, personaParam, setSearchParams])
 
     useEffect(() => {
         if (!locationId) return
@@ -359,9 +340,11 @@ export function ChatPage() {
             .getCharacters(locationId)
             .then((data) => {
                 setCharacters(data)
-                if (!characterId && data[0]) setCharacterId(data[0].id)
+                if (data[0]) {
+                    setCharacterId((current) => data.some((character) => character.id === current) ? current : data[0].id)
+                }
             })
-            .catch(() => showToast({ message: 'Sử dụng chế độ Đại sứ mặc định.', type: 'info' }))
+            .catch(() => showToast({ message: 'Không thể tải Chrono cho địa điểm này.', type: 'info' }))
     }, [locationId, characterId, showToast])
 
     useEffect(() => {
@@ -539,7 +522,7 @@ export function ChatPage() {
         acceptSaBanCode(SA_BAN_FRAGMENT_CODE)
     }, [acceptSaBanCode, params, questPrompt])
 
-    const send = async (override?: string) => {
+    const send = async (override?: string, retryMessage?: ChatMessage) => {
         const pending = (override ?? input).trim()
         if (questRecordKey === SA_BAN_QUEST_KEY && messageHasSaBanCode(pending)) {
             acceptSaBanCode(pending)
@@ -548,7 +531,7 @@ export function ChatPage() {
         if (!resolvedCharacterId) {
             showToast({
                 message: locationId
-                    ? 'Chưa tải được nhân vật cho địa điểm này.'
+                    ? 'Chưa tải được Chrono cho địa điểm này.'
                     : 'Chọn địa điểm trước khi trò chuyện.',
                 type: 'error',
             })
@@ -557,11 +540,10 @@ export function ChatPage() {
         if (!pending || busy) return
         const targetId = resolvedCharacterId
         const userText = pending
-        setRetryMessage(null)
         if (override === undefined) setInput('')
         shouldStickToBottomRef.current = true
 
-        const optimistic: ChatMessage = {
+        const optimistic: ChatMessage = retryMessage ?? {
             id: `local-${Date.now()}`,
             role: 'user',
             content: userText,
@@ -570,7 +552,9 @@ export function ChatPage() {
         const userMessageId = `user-${Date.now()}`
         const assistantId = `assistant-${Date.now()}`
 
-        setMessages((prev) => [...prev, optimistic])
+        setMessages((prev) => retryMessage
+            ? prev.map((m) => m.id === optimistic.id ? { ...m, failure: undefined } : m)
+            : [...prev, optimistic])
 
         try {
             setSending(true)
@@ -580,6 +564,9 @@ export function ChatPage() {
                 conversationId,
                 stationCode,
                 siteCode,
+                narrativeQuestId,
+                narrativeNodeCode: narrativeNode,
+                narrativeVersion,
             }, (event) => {
                 if (event.name !== 'delta' || !event.data || typeof event.data !== 'object') return
                 const block = event.data as { content?: string; sources?: ChatSource[] }
@@ -644,9 +631,11 @@ export function ChatPage() {
                 ])
             })
         } catch (e) {
-            setMessages((prev) => prev.filter((m) => m.id !== optimistic.id))
             const quota = e instanceof ApiError && (e.code === 'QUOTA_EXCEEDED' || e.status === 429 || (e.status === 422 && /giới hạn/i.test(e.message)))
-            if (!quota && !(e instanceof ApiError && e.status === 401)) setRetryMessage(userText)
+            const retryable = !quota && !(e instanceof ApiError && (e.status === 401 || e.retryable === false))
+            setMessages((prev) => prev.filter((m) => m.id !== assistantId).map((m) => m.id === optimistic.id
+                ? { ...m, failure: { retryable, requestId: e instanceof ApiError ? e.requestId : undefined } }
+                : m))
             if (e instanceof ApiError && (e.code === 'QUOTA_EXCEEDED' || (e.status === 403 && /quota/i.test(e.code)))) {
                 setChatLimitReached(true)
                 if (e.quotaType === 'ORG_MONTHLY' || user?.orgId) {
@@ -943,7 +932,7 @@ export function ChatPage() {
                     <div className="p-6 flex-1 min-h-0 overflow-y-auto flex flex-col gap-4 text-left">
                         <div className="flex flex-wrap gap-1.5">
                             <span className="px-3 py-1 bg-white/5 rounded-full border border-white/10 text-[11px] font-bold text-gray-300">Minh bạch sử liệu</span>
-                            <span className="px-3 py-1 bg-white/5 rounded-full border border-white/10 text-[11px] font-bold text-gray-300">Nhập vai lịch sử</span>
+                            <span className="px-3 py-1 bg-white/5 rounded-full border border-white/10 text-[11px] font-bold text-gray-300">Trợ lý học tập</span>
                             <span className="px-3 py-1 bg-white/5 rounded-full border border-white/10 text-[11px] font-bold text-gray-300">EdTech AI</span>
                         </div>
 
@@ -967,7 +956,7 @@ export function ChatPage() {
                             )}
                             <div className="text-left">
                                 <h4 className="text-sm font-black text-white leading-none">{displayProfile.name}</h4>
-                                <span className="text-[10px] text-emerald-400 font-bold">● Trợ lý lịch sử sẵn sàng</span>
+                                <span className="text-[10px] text-emerald-400 font-bold">● Chrono sẵn sàng</span>
                             </div>
                         </div>
                         <span className="text-[10px] font-black uppercase tracking-wider text-[#fdb438]">Đang bay</span>
@@ -1059,6 +1048,22 @@ export function ChatPage() {
                                             : 'bg-[#1b1e2c] border-white/10 rounded-tl-sm text-gray-200'
                                     }`}>
                                         <ChatMessageContent content={m.content} />
+                                        {m.failure && (
+                                            <div role="status" className="mt-3 text-xs text-[#fdb438]">
+                                                <p>Chưa nhận được câu trả lời. Câu hỏi của bạn vẫn được giữ lại.</p>
+                                                {m.failure.requestId && <p>Mã yêu cầu: {m.failure.requestId}</p>}
+                                                {m.failure.retryable && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => void send(m.content, m)}
+                                                        disabled={busy}
+                                                        className="mt-2 rounded-xl bg-white px-4 py-2 text-sm font-black text-black disabled:opacity-40 cursor-pointer"
+                                                    >
+                                                        Gửi lại
+                                                    </button>
+                                                )}
+                                            </div>
+                                        )}
                                         {m.quiz && (
                                             <div className="mt-3 flex flex-col gap-2">
                                                 {m.quiz.options.map((option) => (
@@ -1133,15 +1138,11 @@ export function ChatPage() {
 
                     {/* Thanh nhập liệu Bar bên dưới */}
                     <div className="shrink-0 p-4 border-t border-white/10 bg-[#12141f]">
-                        {retryMessage && (
-                            <button
-                                type="button"
-                                onClick={() => void send(retryMessage)}
-                                disabled={busy}
-                                className="mb-3 rounded-xl bg-white px-4 py-2 text-sm font-black text-black disabled:opacity-40 cursor-pointer"
-                            >
-                                Gửi lại
-                            </button>
+                        {narrativeQuestId && narrativeNode && (
+                            <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#fdb438]/30 bg-[#fdb438]/10 px-3 py-2 text-xs text-[#ffe1a0]">
+                                <span><strong>Hồ sơ điều tra:</strong> câu hỏi này sẽ được Chrono dùng để kiểm chứng bước “{narrativeNode.replaceAll('-', ' ')}”.</span>
+                                <button type="button" onClick={() => navigate(`/quests/${narrativeQuestId}`)} className="font-black underline hover:text-white">Quay lại hồ sơ</button>
+                            </div>
                         )}
                         <div className="relative flex items-center bg-[#1b1e2c] rounded-2xl border border-white/15 focus-within:border-[#fe951c] transition-all p-1 pl-3 shadow-inner">
                             <input

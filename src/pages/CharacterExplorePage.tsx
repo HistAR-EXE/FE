@@ -29,7 +29,7 @@ export function CharacterExplorePage() {
   }, [locationId])
 
   return (
-    <AppLayout activeBorder="right" topNav={<SimpleTopNav title="Nhân vật lịch sử" showSearch />}>
+    <AppLayout activeBorder="right" topNav={<SimpleTopNav title="Trợ lý TimeLens" showSearch />}>
       <main className="mt-16 p-lg max-w-6xl mx-auto w-full">
         <div className="mb-md flex items-center gap-sm">
           <MaterialIcon name="filter_list" className="text-primary" />
@@ -63,6 +63,9 @@ export function CharacterExplorePage() {
             </Link>
           ))}
         </div>
+        {characters.length === 0 && (
+          <p className="mt-lg text-sm text-on-surface-variant">Chưa có Chrono cho địa điểm này.</p>
+        )}
       </main>
     </AppLayout>
   )

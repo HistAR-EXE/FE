@@ -303,7 +303,7 @@ export function HeritageDetailPage() {
                 </Link>
                 <Link to={buildChatPath({ locationId: location.id, characterId: characters[0]?.id })} className={`group relative w-full h-[100px] rounded-xl overflow-hidden bg-surface-container border border-outline-variant hover:border-secondary/50 transition-colors flex items-center p-md gap-md ${onlineHighlight(true)}`}>
                   <div className="w-12 h-12 rounded-full bg-surface-variant flex items-center justify-center text-on-surface"><MaterialIcon name="chat_bubble" className="text-2xl" /></div>
-                  <div className="text-left flex-1"><h3 className="font-title-md text-title-md text-on-surface mb-1">Trò chuyện AI</h3><p className="font-label-sm text-label-sm text-on-surface-variant">Hỏi đáp với nhân vật lịch sử</p></div>
+                  <div className="text-left flex-1"><h3 className="font-title-md text-title-md text-on-surface mb-1">Trò chuyện AI</h3><p className="font-label-sm text-label-sm text-on-surface-variant">Hỏi Chrono theo tư liệu đã kiểm chứng</p></div>
                 </Link>
                 {getPilotSite(siteCodeFromLocationId(location.id)) && (
                   <div className="sm:col-span-2 lg:col-span-3 space-y-6">

@@ -129,9 +129,9 @@ export function QuestJourneyPanel({
                     if (step.minigameId) href = `/quests/${questId}/play/${step.minigameId}`
                     if (step.actionType === 'checkin') href = `/scan?locationId=${locationId}`
                     if (step.actionType === 'dialogue') {
-                        // unlockKey names a quest record, not a backend character UUID.  Passing it as
-                        // `persona` makes ChatPage request an invalid character and drops its context.
-                        const persona = 'chi-nam'
+                        // unlockKey names a quest record, not a backend character UUID.  Chrono is
+                        // the one canonical chat assistant; the page resolves its UUID from the API.
+                        const persona = 'chrono'
                         const chatParams = new URLSearchParams({
                             locationId,
                             persona,
@@ -149,7 +149,7 @@ export function QuestJourneyPanel({
                         if (step.actionType === 'artifact') ctaLabel = isOnline ? 'CHIÊM NGƯỠNG HIỆN VẬT' : 'QUÉT AR MÔ HÌNH 3D'
                         if (step.actionType === 'tour') ctaLabel = 'THÂM NHẬP TOUR 360°'
                         if (step.actionType === 'portal') ctaLabel = 'MỞ CỔNG THỜI GIAN'
-                        if (step.actionType === 'dialogue') ctaLabel = 'THẨM VẤN ĐẠI SỨ'
+                        if (step.actionType === 'dialogue') ctaLabel = 'HỎI CHRONO'
                     }
 
                     const getIcon = () => {

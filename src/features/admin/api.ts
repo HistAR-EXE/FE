@@ -152,6 +152,37 @@ export type AdminQuestInput = {
   stepDiscoveryKeys?: string | null
 }
 
+export type NarrativePilotAdmin = {
+  questId: string
+  questTitle: string
+  investigationId: string
+  version: number
+  enabled: boolean
+  reviewStatus: 'DRAFT' | 'APPROVED' | 'REJECTED' | string
+  approvedLocales: string[]
+  reviewedBy: string | null
+  reviewedAt: string | null
+  globalFlagEnabled: boolean
+  graphValid: boolean
+  sourceCount: number
+  readinessErrors: string[]
+}
+
+export type NarrativeReview = {
+  investigationId: string
+  decision: 'APPROVED' | 'REJECTED' | string
+  approvedLocales: string[]
+  reviewedBy: string
+  reviewedAt: string
+  note: string | null
+}
+
+export type NarrativeDraft = {
+  questId: string
+  version: number
+  graphJson: string
+}
+
 export type PoiUnlockRateItem = {
   unlockKey: string
   name: string
@@ -410,6 +441,26 @@ export const adminApi = {
     getData<{ eraCount: number; sufficient: boolean }>(
       httpClient.get(`/api/admin/locations/${locationId}/era-count`),
     ),
+
+  listNarrativePilots: () =>
+    getListData<NarrativePilotAdmin>(httpClient.get('/api/admin/narrative-investigations')),
+  narrativeReadiness: (questId: string) =>
+    getData<NarrativePilotAdmin>(httpClient.get(`/api/admin/narrative-investigations/${questId}/readiness`)),
+  narrativeReviews: (questId: string) =>
+    getListData<NarrativeReview>(httpClient.get(`/api/admin/narrative-investigations/${questId}/reviews`)),
+  draftNarrative: (questId: string) =>
+    getData<NarrativeDraft>(httpClient.get(`/api/admin/narrative-investigations/${questId}/draft`)),
+  updateNarrativeDraft: (questId: string, body: { expectedVersion: number; graphJson: string; reason: string }) =>
+    getData<NarrativeDraft>(httpClient.put(`/api/admin/narrative-investigations/${questId}/draft`, body)),
+  reviewNarrative: (
+    questId: string,
+    body: { decision: 'APPROVED' | 'REJECTED'; approvedLocales: string[]; note: string },
+  ) =>
+    getData<NarrativeReview>(httpClient.post(`/api/admin/narrative-investigations/${questId}/reviews`, body)),
+  enableNarrative: (questId: string, reason: string) =>
+    getData<NarrativePilotAdmin>(httpClient.post(`/api/admin/narrative-investigations/${questId}/enable`, { reason })),
+  disableNarrative: (questId: string, reason: string) =>
+    getData<NarrativePilotAdmin>(httpClient.post(`/api/admin/narrative-investigations/${questId}/disable`, { reason })),
 }
 
 export type { PageResponse }

@@ -601,7 +601,7 @@ export function ModeSelectPage() {
                                     <label className="text-xs font-bold text-emerald-400 uppercase tracking-wider block">3. Phong cách giao tiếp của Trợ lý AI?</label>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         {[
-                                            { id: 'heritage', title: 'Trầm Ấm & Truyền Cảm Hứng', desc: 'Nhập vai nhân vật lịch sử xưa (VD: Chị Năm du kích).' },
+                                            { id: 'heritage', title: 'Trầm Ấm & Truyền Cảm Hứng', desc: 'Kể chuyện giàu cảm hứng, luôn bám sát tư liệu lịch sử.' },
                                             { id: 'modern', title: 'Hiện Đại & Ngắn Gọn', desc: 'Trình bày súc tích, gạch đầu dòng chuẩn giáo dục RAG.' },
                                         ].map((tone) => (
                                             <div

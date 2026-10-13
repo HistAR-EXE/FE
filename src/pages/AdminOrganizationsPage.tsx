@@ -1,9 +1,6 @@
 // src/pages/AdminOrganizationsPage.tsx
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { AppLayout } from '../components/layout/AppLayout'
-import { SimpleTopNav } from '../components/layout/TopNav'
-import { AdminSubNav } from '../components/admin/AdminSubNav'
 import { adminApi, type AdminOrganizationSummary, type OrganizationAnalytics } from '../features/admin/api'
 import { orgApi, type OrgRosterMember } from '../features/org/api'
 
@@ -37,16 +34,13 @@ export function AdminOrganizationsPage() {
   }, [orgId])
 
   return (
-    <AppLayout activeBorder="left" topNav={<SimpleTopNav title="Tổ chức B2B" />}>
-      <main className="mt-14 md:mt-16 p-md md:p-lg max-w-5xl mx-auto w-full space-y-md">
+      <section className="max-w-5xl w-full space-y-md">
         <div className="flex flex-wrap items-center justify-between gap-sm">
           <h1 className="font-display-md text-on-surface">Bảng tổ chức</h1>
           <Link to="/teacher" className="text-sm text-secondary underline hover:no-underline">
             Xem giao diện giáo viên
           </Link>
         </div>
-
-        <AdminSubNav />
 
         {orgsLoading && (
           <div className="h-16 rounded-xl bg-surface-container animate-pulse border border-outline-variant" />
@@ -128,7 +122,6 @@ export function AdminOrganizationsPage() {
             </div>
           </section>
         )}
-      </main>
-    </AppLayout>
+      </section>
   )
 }

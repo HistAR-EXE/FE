@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { MaterialIcon } from '../../components/ui/MaterialIcon'
 import { gamificationApi, type NarrativeInvestigation, type NarrativeNode, type NarrativeProgress } from './api'
 
@@ -25,8 +25,11 @@ export function NarrativeInvestigationBoard({ investigation, locationId }: Props
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const handledReturn = useRef<string | null>(null)
   useEffect(() => { setLoading(true); gamificationApi.investigationProgress(investigation.questId).then(setRemote).catch(() => setError(navigator.onLine ? 'Chưa thể tải hồ sơ điều tra.' : 'Bạn đang offline; cần kết nối để đồng bộ hồ sơ.')).finally(() => setLoading(false)) }, [investigation.questId])
   const currentCode = remote?.progress.visitedNodeCodes.at(-1) ?? graph.startNodeCode
+  const observations = new Set(remote?.progress.observationCodes ?? [])
   const evidence = new Set(remote?.progress.evidenceCodes ?? [])
   const current = graph.nodes.find((node) => node.code === currentCode) ?? graph.nodes[0]
   const evidenceTotal = graph.evidenceNodeCodes.length
@@ -34,14 +37,26 @@ export function NarrativeInvestigationBoard({ investigation, locationId }: Props
   const currentTask = presentationFor(current?.type ?? 'OBSERVATION')
   // V52 used the legacy `/tour-360` route. Keep existing pilot data usable while
   // routing every narrative observation to the location-specific Tour 360 page.
-  const actionHref = current?.type === 'TOUR_360_OBSERVATION' && current.actionHref === '/tour-360'
+  const actionHref = current?.type === 'AI_INTERVIEW'
+    ? `/chat?locationId=${encodeURIComponent(locationId)}&questId=${encodeURIComponent(investigation.questId)}&narrativeNode=${encodeURIComponent(current.code)}&narrativeVersion=${investigation.version}&questPrompt=${encodeURIComponent('Chrono, hãy giúp tôi kiểm chứng bối cảnh lịch sử của nắp hầm Củ Chi bằng các nguồn đã được liệt kê. Hãy tách rõ fact và diễn giải.')}`
+    : current?.linkedMinigameId
+    ? `/quests/${investigation.questId}/play/${current.linkedMinigameId}?returnNarrative=${current.code}`
+    : current?.type === 'TOUR_360_OBSERVATION' && current.actionHref === '/tour-360'
     ? `/tour/360/${locationId}`
     : current?.actionHref
   const outcomes = graph.outcomeNodeCodes
     .map((code) => graph.nodes.find((node) => node.code === code))
     .filter((node): node is NarrativeNode => Boolean(node))
 
-  const act = async (action: 'VISIT_NODE' | 'COLLECT_EVIDENCE' | 'SELECT_OUTCOME', code: string) => { if (!remote) return; setSaving(true); setError(''); try { setRemote(await gamificationApi.investigationAction(investigation.questId, action, code, remote.progress.version)) } catch { setError(navigator.onLine ? 'Hành động chưa được xác minh. Hãy thử lại.' : 'Bạn đang offline; tiến độ chỉ được xác minh khi có kết nối.') } finally { setSaving(false) } }
+  const act = async (action: 'VISIT_NODE' | 'RECORD_OBSERVATION' | 'COLLECT_EVIDENCE' | 'SELECT_OUTCOME', code: string, observationCode?: string) => { if (!remote) return; setSaving(true); setError(''); try { setRemote(await gamificationApi.investigationAction(investigation.questId, action, code, remote.progress.version, observationCode)) } catch { setError(navigator.onLine ? 'Hành động chưa được xác minh. Hãy thử lại.' : 'Bạn đang offline; tiến độ chỉ được xác minh khi có kết nối.') } finally { setSaving(false) } }
+  useEffect(() => {
+    const code = searchParams.get('narrativeEvidence')
+    if (!remote || !code || remote.progress.evidenceCodes.includes(code) || handledReturn.current === code) return
+    handledReturn.current = code
+    searchParams.delete('narrativeEvidence')
+    setSearchParams(searchParams, { replace: true })
+    void act('COLLECT_EVIDENCE', code)
+  }, [remote, searchParams, setSearchParams])
   const collectAndMove = (code: string) => act('VISIT_NODE', code)
 
   const quality = useMemo(() => {
@@ -49,6 +64,9 @@ export function NarrativeInvestigationBoard({ investigation, locationId }: Props
     if (evidence.size < evidenceTotal) return { label: 'Hồ sơ đang được củng cố', className: 'text-[#fdb438]' }
     return { label: 'Hồ sơ đủ mạnh để kết luận', className: 'text-emerald-300' }
   }, [evidence.size, evidenceTotal])
+  const sources = graph.sources ?? []
+  const currentSources = sources.filter((source) => current?.sourceIds?.includes(source.sourceId))
+  const choicesLocked = current.type === 'EVIDENCE' && !evidence.has(current.code)
 
   if (loading) return <section className="my-10 rounded-[2rem] border border-[#388cf1]/25 bg-[#10131f] p-8 text-sm text-gray-300">Đang khôi phục hồ sơ điều tra…</section>
   if (!current) return null
@@ -65,12 +83,16 @@ export function NarrativeInvestigationBoard({ investigation, locationId }: Props
       <div className="relative mt-6 grid gap-5 lg:grid-cols-[1.4fr_.8fr]">
         <div className="rounded-2xl border border-white/10 bg-[#161824]/95 p-5">
           <div className="flex items-center gap-3"><div className="grid h-12 w-12 place-items-center rounded-2xl bg-[#388cf1]/15 text-[#79b7ff]"><MaterialIcon name={currentTask.icon} className="text-2xl" /></div><div><p className="text-[10px] font-black uppercase tracking-[.22em] text-[#388cf1]">{currentTask.label}</p><h3 className="font-black text-white">{current.title || current.code.replaceAll('-', ' ')}</h3></div></div>
-          <p className="mt-5 text-sm font-medium leading-relaxed text-gray-300">{current.prompt || currentTask.guidance}</p>
+          {current.factLabel && <p className="mt-5 text-[10px] font-black uppercase tracking-[.2em] text-[#fdb438]">{current.factLabel}</p>}
+          <p className="mt-2 text-sm font-medium leading-relaxed text-gray-300">{current.prompt || currentTask.guidance}</p>
+          {current.observationChecklist && current.observationChecklist.length > 0 && <div className="mt-5 rounded-2xl border border-[#388cf1]/20 bg-[#388cf1]/5 p-4"><p className="text-xs font-black uppercase tracking-[.15em] text-[#79b7ff]">Checklist bước này</p><div className="mt-3 space-y-2">{current.observationChecklist.map((item) => { const checked = observations.has(item); return <label key={item} className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 text-sm transition ${checked ? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-100' : 'border-white/10 bg-black/10 text-gray-300 hover:border-[#388cf1]/40'}`}><input type="checkbox" checked={checked} disabled={saving || current.type !== 'TOUR_360_OBSERVATION'} onChange={() => { if (!checked) void act('RECORD_OBSERVATION', current.code, item) }} className="mt-0.5 h-4 w-4 accent-[#fdb438]" /><span>{item}</span></label> })}</div><p className="mt-3 text-xs text-gray-400">Đã ghi nhận {current.observationChecklist.filter((item) => observations.has(item)).length}/{current.observationChecklist.length} quan sát.</p></div>}
           {actionHref && <Link to={actionHref} className="mt-5 inline-flex items-center gap-2 rounded-xl border border-[#388cf1]/40 bg-[#388cf1]/10 px-4 py-3 text-sm font-black text-[#b9d8ff] transition hover:border-[#388cf1] hover:bg-[#388cf1]/20"><MaterialIcon name={currentTask.icon} className="text-lg" /> Mở không gian nhiệm vụ</Link>}
-          <div className="mt-5 grid gap-3 sm:grid-cols-2">{current.choices.map((choice) => <button key={choice.code} type="button" onClick={() => collectAndMove(choice.targetNodeCode)} className="group rounded-2xl border border-white/10 bg-black/20 p-4 text-left transition hover:-translate-y-1 hover:border-[#fe951c]/70 hover:bg-[#fe951c]/10"><div className="flex items-center justify-between gap-3"><span className="font-black text-white">{choice.code.replaceAll('-', ' ')}</span><MaterialIcon name="arrow_forward" className="text-[#fdb438] transition group-hover:translate-x-1" /></div><span className="mt-2 block text-xs text-gray-500">Mở nhánh điều tra</span></button>)}</div>
-          {current.choices.length === 0 && current.type !== 'OUTCOME' && <button disabled={saving} type="button" onClick={() => act(current.type === 'EVIDENCE' ? 'COLLECT_EVIDENCE' : 'VISIT_NODE', current.code)} className="mt-5 rounded-xl bg-gradient-to-r from-[#fe951c] to-[#fdb438] px-5 py-3 text-sm font-black text-black disabled:opacity-50">Ghi nhận vào hồ sơ</button>}
+          {current.type === 'EVIDENCE' && !evidence.has(current.code) && <button disabled={saving} type="button" onClick={() => act('COLLECT_EVIDENCE', current.code)} className="mt-5 rounded-xl bg-gradient-to-r from-[#fe951c] to-[#fdb438] px-5 py-3 text-sm font-black text-black disabled:opacity-50">{current.linkedMinigameId ? 'Xác minh sau khi chơi Soi nắp' : 'Ghi nhận mảnh chứng cứ'}</button>}
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">{current.choices.map((choice) => <button key={choice.code} disabled={saving || choicesLocked} type="button" onClick={() => collectAndMove(choice.targetNodeCode)} className="group rounded-2xl border border-white/10 bg-black/20 p-4 text-left transition hover:-translate-y-1 hover:border-[#fe951c]/70 hover:bg-[#fe951c]/10 disabled:cursor-not-allowed disabled:opacity-40"><div className="flex items-center justify-between gap-3"><span className="font-black text-white">{choice.code.replaceAll('-', ' ')}</span><MaterialIcon name={choicesLocked ? 'lock' : 'arrow_forward'} className="text-[#fdb438] transition group-hover:translate-x-1" /></div><span className="mt-2 block text-xs text-gray-500">{choicesLocked ? (current.linkedMinigameId ? 'Hoàn thành Soi nắp để mở' : 'Ghi nhận mảnh chứng cứ để mở') : 'Mở nhánh điều tra'}</span></button>)}</div>
+          {current.choices.length === 0 && current.type !== 'OUTCOME' && current.type !== 'EVIDENCE' && <button disabled={saving} type="button" onClick={() => act('VISIT_NODE', current.code)} className="mt-5 rounded-xl bg-gradient-to-r from-[#fe951c] to-[#fdb438] px-5 py-3 text-sm font-black text-black disabled:opacity-50">Ghi nhận vào hồ sơ</button>}
         </div>
-        <aside className="space-y-3"><div className="rounded-2xl border border-white/10 bg-black/20 p-4"><p className="text-[10px] font-black uppercase tracking-[.18em] text-gray-500">Mảnh tư liệu</p><div className="mt-3 space-y-2">{graph.evidenceNodeCodes.map((code) => <div key={code} className={`flex items-center gap-3 rounded-xl p-3 ${evidence.has(code) ? 'bg-emerald-500/10 text-emerald-300' : 'bg-white/5 text-gray-400'}`}><MaterialIcon name={evidence.has(code) ? 'check_circle' : 'lock'} className="text-lg" /><span className="text-sm font-bold">{code.replaceAll('-', ' ')}</span></div>)}</div></div>
+        <aside className="space-y-3"><div className="rounded-2xl border border-white/10 bg-black/20 p-4"><p className="text-[10px] font-black uppercase tracking-[.18em] text-gray-500">Mảnh tư liệu</p><div className="mt-3 space-y-2">{graph.evidenceNodeCodes.map((code) => { const node = graph.nodes.find((item) => item.code === code); return <div key={code} className={`rounded-xl p-3 ${evidence.has(code) ? 'bg-emerald-500/10 text-emerald-300' : 'bg-white/5 text-gray-400'}`}><div className="flex items-center gap-3"><MaterialIcon name={evidence.has(code) ? 'check_circle' : 'lock'} className="text-lg" /><span className="text-sm font-bold">{node?.title ?? code.replaceAll('-', ' ')}</span></div>{node?.rewardXp ? <span className="mt-1 block pl-7 text-xs text-[#fdb438]">+{node.rewardXp} XP khi xác minh</span> : null}</div> })}</div></div>
+          {currentSources.length > 0 && <div className="rounded-2xl border border-[#388cf1]/25 bg-[#388cf1]/5 p-4"><p className="text-[10px] font-black uppercase tracking-[.18em] text-[#79b7ff]">Nguồn đang đối chiếu</p><div className="mt-3 space-y-3">{currentSources.map((source) => <div key={source.sourceId} className="rounded-xl border border-white/10 bg-black/20 p-3"><p className="text-xs font-black text-white">{source.citation}</p><p className="mt-1 text-[11px] text-gray-400">{source.locale} · {source.version}</p>{source.url && <a className="mt-2 block break-all text-[11px] text-[#79b7ff] underline" href={source.url} target="_blank" rel="noreferrer">Mở nguồn chính thống</a>}</div>)}</div></div>}
           <div className="rounded-2xl border border-[#fdb438]/20 bg-[#fdb438]/5 p-4"><p className="text-[10px] font-black uppercase tracking-[.18em] text-[#fdb438]">Các kết thúc</p><div className="mt-3 space-y-2">{outcomes.map((outcome) => { const minimum = outcome.minimumEvidence ?? 0; const unlocked = evidence.size >= minimum; return <button key={outcome.code} type="button" disabled={!unlocked || saving} onClick={() => act('SELECT_OUTCOME', outcome.code)} className={`flex w-full items-center gap-3 rounded-xl p-3 text-left transition ${unlocked ? 'bg-[#fe951c]/10 text-white hover:bg-[#fe951c]/20' : 'bg-black/20 text-gray-500'}`}><MaterialIcon name={unlocked ? 'emoji_events' : 'lock'} className={unlocked ? 'text-[#fdb438]' : ''} /><span><span className="block text-sm font-black">{outcomeLabel(outcome)}</span><span className="text-xs">Cần {minimum} chứng cứ</span></span></button> })}</div><p className="mt-3 text-xs text-gray-400">Khám phá nhận XP ngay; kết thúc chỉ mở khi hồ sơ đủ chứng cứ.</p></div></aside>
       </div>
     </section>

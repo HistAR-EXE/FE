@@ -22,8 +22,13 @@ dist-ssr
 /test-results
 /playwright/.cache
 
-# Test suite
-/tests
+# Test suite (retain only the self-contained chat failure/retry regressions)
+/tests/*
+!/tests/chat-retry.config.ts
+!/tests/ui/
+/tests/ui/*
+!/tests/ui/chat-stream-contract.spec.ts
+!/tests/ui/chat-failure-retry.spec.ts
 
 # Editor directories and files
 .vscode/*
