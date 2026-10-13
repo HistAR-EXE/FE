@@ -1,13 +1,8 @@
 //src/pages/AdminUserPage.tsx
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { AppLayout } from '../components/layout/AppLayout'
-import { SimpleTopNav } from '../components/layout/TopNav'
-import { AdminSubNav } from '../components/admin/AdminSubNav'
 import { adminApi, type AdminUserSummary } from '../features/admin/api'
 import { useToast } from '../shared/ui/toast/useToast'
 import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
-import { MaterialIcon } from '../components/ui/MaterialIcon'
 
 export function AdminUsersPage() {
   const [users, setUsers] = useState<AdminUserSummary[]>([])
@@ -45,15 +40,7 @@ export function AdminUsersPage() {
   }
 
   return (
-    <AppLayout activeBorder="left" topNav={<SimpleTopNav title="Quản trị người dùng" />}>
-      <main className="mt-14 md:mt-16 p-md md:p-lg max-w-5xl mx-auto w-full">
-        <div className="flex items-center justify-between mb-md">
-          <h1 className="font-display-lg text-on-surface">Người dùng</h1>
-          <Link to="/profile" className="text-secondary inline-flex items-center gap-1 text-sm hover:underline">
-            <MaterialIcon name="arrow_back" className="text-sm" /> Hồ sơ
-          </Link>
-        </div>
-        <AdminSubNav />
+      <section className="max-w-5xl w-full">
         {loading && <p className="text-on-surface-variant text-sm">Đang tải...</p>}
         {!loading && (
           <div className="overflow-x-auto border border-outline-variant rounded-xl">
@@ -108,7 +95,6 @@ export function AdminUsersPage() {
             </table>
           </div>
         )}
-      </main>
-    </AppLayout>
+      </section>
   )
 }

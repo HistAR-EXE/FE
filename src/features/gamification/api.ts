@@ -40,8 +40,15 @@ export type NarrativeNode = {
     prompt?: string | null
     actionHref?: string | null
     minimumEvidence?: number | null
+  observationChecklist?: string[]
+  sourceIds?: string[]
+  factLabel?: string | null
+  evidenceKey?: string | null
+  linkedMinigameId?: string | null
+  rewardXp?: number | null
 }
-export type NarrativeQuestGraph = { startNodeCode: string; nodes: NarrativeNode[]; evidenceNodeCodes: string[]; outcomeNodeCodes: string[] }
+export type NarrativeSource = { sourceId: string; version: string; locale: string; citation: string; url?: string | null; path?: string | null }
+export type NarrativeQuestGraph = { startNodeCode: string; nodes: NarrativeNode[]; evidenceNodeCodes: string[]; outcomeNodeCodes: string[]; sources: NarrativeSource[] }
 export type NarrativeInvestigation = { questId: string; version: number; graph: NarrativeQuestGraph }
 
 export type Quest = {
@@ -158,7 +165,7 @@ export const gamificationApi = {
         getData<QuestProgress>(httpClient.get(`/api/quests/${questId}/progress`)),
     investigation: (questId: string) => getData<NarrativeInvestigation>(httpClient.get(`/api/quests/${questId}/investigation`)),
     investigationProgress: (questId: string) => getData<NarrativeProgress>(httpClient.get(`/api/quests/${questId}/investigation/progress`)),
-    investigationAction: (questId: string, action: NarrativeActionType, nodeCode: string, investigationVersion: number) => getData<NarrativeProgress>(httpClient.post(`/api/quests/${questId}/investigation/actions`, { action, nodeCode, investigationVersion })),
+    investigationAction: (questId: string, action: NarrativeActionType, nodeCode: string, investigationVersion: number, observationCode?: string) => getData<NarrativeProgress>(httpClient.post(`/api/quests/${questId}/investigation/actions`, { action, nodeCode, observationCode, investigationVersion })),
     checkin: (body: CheckinRequestBody) =>
         getData<CheckinResult>(httpClient.post('/api/checkins', body)),
     secretStory: (locationId: string) =>
@@ -178,5 +185,5 @@ export const discoveriesApi = {
         ),
 }
 
-export type NarrativeActionType = 'VISIT_NODE' | 'COLLECT_EVIDENCE' | 'SELECT_OUTCOME'
-export type NarrativeProgress = { investigation: NarrativeInvestigation; progress: { version: number; visitedNodeCodes: string[]; evidenceCodes: string[]; selectedOutcome: string | null } }
+export type NarrativeActionType = 'VISIT_NODE' | 'RECORD_OBSERVATION' | 'COLLECT_EVIDENCE' | 'SELECT_OUTCOME'
+export type NarrativeProgress = { investigation: NarrativeInvestigation; progress: { version: number; visitedNodeCodes: string[]; observationCodes: string[]; chatNodeCodes: string[]; evidenceCodes: string[]; selectedOutcome: string | null } }

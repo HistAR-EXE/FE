@@ -163,7 +163,7 @@ function UserAvatarDropdown({ avatarSrc }: { avatarSrc: string }) {
                         {isAdmin(user) && (
                             <button
                                 type="button"
-                                onClick={() => handleNavigation('/admin/content')}
+                            onClick={() => handleNavigation('/admin')}
                                 className="w-full px-4 py-2.5 text-left text-xs font-bold text-amber-300 hover:text-white hover:bg-white/10 flex items-center gap-3 transition-colors cursor-pointer"
                             >
                                 <MaterialIcon name="admin_panel_settings" className="text-base" />

@@ -1,8 +1,5 @@
 // src/pages/AdminAnalyticsPage.tsx
 import { useEffect, useState } from 'react'
-import { AppLayout } from '../components/layout/AppLayout'
-import { SimpleTopNav } from '../components/layout/TopNav'
-import { AdminSubNav } from '../components/admin/AdminSubNav'
 import {
     adminApi,
     type AdminAnalyticsOverview,
@@ -112,16 +109,13 @@ export function AdminAnalyticsPage() {
     }
 
     return (
-        <AppLayout activeBorder="left" topNav={<SimpleTopNav title="Thống kê quản trị" />}>
-            <main className="mt-14 md:mt-16 p-md md:p-lg max-w-5xl mx-auto w-full space-y-md">
+            <section className="max-w-5xl w-full space-y-md">
                 <div>
                     <h1 className="font-display-md text-on-surface">Bảng thống kê quản lý di tích</h1>
                     <p className="text-sm text-on-surface-variant mt-1">
                         HistAR SaaS — tỷ lệ mở khóa POI, phễu nhiệm vụ, chuyển đổi trực tuyến → tại chỗ
                     </p>
                 </div>
-
-                <AdminSubNav />
 
                 {referralStats.length > 0 && (
                     <section data-testid="referral-stats" className="bg-surface-container border border-outline-variant rounded-xl p-md">
@@ -405,7 +399,6 @@ export function AdminAnalyticsPage() {
                         </section>
                     </>
                 )}
-            </main>
-        </AppLayout>
+            </section>
     )
 }

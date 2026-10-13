@@ -38,6 +38,7 @@ import { ProtectedRoute } from '../shared/router/ProtectedRoute'
 import { VisitSessionProvider } from '../features/visit/VisitSessionProvider'
 import { AboutPage } from '../pages/AboutPage'
 import { GoogleRedirectCompletion } from '../shared/auth/GoogleRedirectCompletion'
+import { AdminConsoleLayout } from '../components/admin/AdminConsoleLayout'
 
 const ArtifactsPage = lazy(() => import('../pages/ArtifactsPage').then((module) => ({ default: module.ArtifactsPage })))
 const ArtifactDetailPage = lazy(() => import('../pages/ArtifactDetailPage').then((module) => ({ default: module.ArtifactDetailPage })))
@@ -63,6 +64,10 @@ const AdminBillingPage = lazy(() => import('../pages/AdminBillingPage').then((mo
 const AdminContentPage = lazy(() => import('../pages/AdminContentPage').then((module) => ({ default: module.AdminContentPage })))
 const AdminOrganizationsPage = lazy(() => import('../pages/AdminOrganizationsPage').then((module) => ({ default: module.AdminOrganizationsPage })))
 const AdminUsersPage = lazy(() => import('../pages/AdminUsersPage').then((module) => ({ default: module.AdminUsersPage })))
+const AdminDashboardPage = lazy(() => import('../pages/AdminDashboardPage').then((module) => ({ default: module.AdminDashboardPage })))
+const AdminNarrativePilotsPage = lazy(() => import('../pages/AdminNarrativePilotsPage').then((module) => ({ default: module.AdminNarrativePilotsPage })))
+const AdminTrashPage = lazy(() => import('../pages/AdminTrashPage').then((module) => ({ default: module.AdminTrashPage })))
+const AdminAuditPage = lazy(() => import('../pages/AdminAuditPage').then((module) => ({ default: module.AdminAuditPage })))
 
 function RouteLoadingFallback() {
   return (
@@ -139,11 +144,17 @@ export function AppRoutes() {
             <Route path="/leaderboard" element={<LeaderboardPage />} />
 
             <Route element={<AdminRoute />}>
-              <Route path="/admin/users" element={<AdminUsersPage />} />
-              <Route path="/admin/content" element={<AdminContentPage />} />
-              <Route path="/admin/analytics" element={<AdminAnalyticsPage />} />
-              <Route path="/admin/billing" element={<AdminBillingPage />} />
-              <Route path="/admin/organizations" element={<AdminOrganizationsPage />} />
+              <Route path="/admin" element={<AdminConsoleLayout />}>
+                <Route index element={<AdminDashboardPage />} />
+                <Route path="content" element={<AdminContentPage />} />
+                <Route path="narrative-pilots" element={<AdminNarrativePilotsPage />} />
+                <Route path="trash" element={<AdminTrashPage />} />
+                <Route path="users" element={<AdminUsersPage />} />
+                <Route path="organizations" element={<AdminOrganizationsPage />} />
+                <Route path="billing" element={<AdminBillingPage />} />
+                <Route path="analytics" element={<AdminAnalyticsPage />} />
+                <Route path="audit" element={<AdminAuditPage />} />
+              </Route>
             </Route>
 
             <Route element={<TeacherRoute />}>

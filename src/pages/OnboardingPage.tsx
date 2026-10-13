@@ -31,7 +31,7 @@ const PLATFORM_6_LAYERS = [
     {
         layer: 'Layer 03',
         title: 'AI Narrative (Trợ Lý Lịch Sử AI)',
-        desc: 'Đối thoại trực tiếp hai chiều cùng nhân vật lịch sử AI được hỗ trợ bởi LLM. Kiến trúc RAG chuẩn hóa kho dữ liệu lịch sử đã xác minh, đảm bảo tính chính xác và minh bạch 100% tài liệu trích dẫn.',
+        desc: 'Đối thoại trực tiếp hai chiều cùng Chrono, Trợ lý TimeLens. Kiến trúc RAG chuẩn hóa kho dữ liệu lịch sử đã xác minh và minh bạch tài liệu trích dẫn.',
         icon: 'record_voice_over',
         color: 'text-[#0275FB]',
         border: 'hover:border-[#0275FB]',
@@ -317,7 +317,7 @@ export const OnboardingPage: React.FC = () => {
                                     <MaterialIcon name="auto_awesome" className="text-4xl" />
                                 </div>
                                 <h3 className="text-2xl font-black text-[#1E293B]">Trợ Lý Lịch Sử AI Chuẩn RAG</h3>
-                                <p className="text-base text-[#475569] leading-relaxed font-medium">Tích hợp Trí tuệ Nhân tạo nhập vai các nhân vật lịch sử. Kiến trúc RAG kiểm soát chặt chẽ nguồn dữ liệu đầu vào, tuyệt đối minh bạch tài liệu trích dẫn chuẩn giáo dục.</p>
+                                <p className="text-base text-[#475569] leading-relaxed font-medium">Chrono là Trợ lý TimeLens dựa trên RAG, kiểm soát chặt chẽ nguồn dữ liệu đầu vào và minh bạch tài liệu trích dẫn chuẩn giáo dục.</p>
                             </div>
                             <div className="pt-6 border-t border-[#0275FB]/20 flex items-center justify-between text-sm font-black text-[#0275FB]">
                                 <span>MINH BẠCH 100% NGUỒN TƯ LIỆU</span>

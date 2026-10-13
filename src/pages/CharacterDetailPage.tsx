@@ -27,7 +27,7 @@ export function CharacterDetailPage() {
   }, [characterId, showToast])
 
   const chatHref = character
-    ? buildChatPath({ locationId: character.locationId, characterId: character.id })
+    ? buildChatPath({ locationId: character.locationId })
     : '/characters'
 
   return (
@@ -57,14 +57,14 @@ export function CharacterDetailPage() {
               <p className="text-xs uppercase tracking-wide text-secondary">{character.era}</p>
               <h1 className="font-display-lg text-on-surface">{character.name}</h1>
               <p className="text-sm text-on-surface-variant">
-                Trò chuyện với nhân vật lịch sử để khám phá câu chuyện tại di tích qua góc nhìn của người trong cuộc.
+                Hỏi Chrono để khám phá di tích dựa trên tư liệu đã được hệ thống cung cấp.
               </p>
               <Link
                 to={chatHref}
                 className="inline-flex items-center justify-center gap-2 w-full mt-md py-md rounded-xl bg-primary text-on-primary font-title-md"
               >
                 <MaterialIcon name="chat" />
-                Trò chuyện
+                Hỏi Chrono
               </Link>
               <Link
                 to={`/explore/${character.locationId}`}
