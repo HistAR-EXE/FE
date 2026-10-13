@@ -902,7 +902,6 @@ export function ChatPage() {
             activeBorder="left"
             mobileBackTo={locationId ? `/explore/${locationId}` : '/explore'}
             mobileTitle="Trò chuyện AI"
-            tone="light"
             className="h-screen max-h-screen overflow-hidden !bg-[#DCEBFF]"
         >
             {/* ───────── NỀN: xanh nhạt đậm hơn hai thẻ để thẻ trắng "nổi" lên ───────── */}
