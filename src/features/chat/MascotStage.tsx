@@ -1,3 +1,4 @@
+//src/features/chat/MascotStage.tsx
 import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import type { MascotMode } from './MascotAvatar'
@@ -45,32 +46,33 @@ export function MascotStage({ mode = 'idle', paused = false, className }: Mascot
     const mascot = new THREE.Mesh(geometry, material)
     scene.add(mascot)
 
-    const shadow = new THREE.Mesh(
-      new THREE.CircleGeometry(0.72, 48),
-      new THREE.MeshBasicMaterial({
-        color: 0x06101f,
-        transparent: true,
-        opacity: 0.45,
-        depthWrite: false,
-      }),
-    )
-    shadow.rotation.x = -Math.PI / 2
-    shadow.position.y = -1.15
-    scene.add(shadow)
+      // Thay thế đoạn tạo shadow và ring trong MascotStage.tsx
+      const shadow = new THREE.Mesh(
+          new THREE.CircleGeometry(0.72, 48),
+          new THREE.MeshBasicMaterial({
+              color: 0x9ca3af, // Chuyển sang bóng xám nhạt (Tailwind gray-400) cho Light UI
+              transparent: true,
+              opacity: 0.3,
+              depthWrite: false,
+          }),
+      )
+      shadow.rotation.x = -Math.PI / 2
+      shadow.position.y = -1.15
+      scene.add(shadow)
 
-    const ring = new THREE.Mesh(
-      new THREE.RingGeometry(0.72, 0.86, 48),
-      new THREE.MeshBasicMaterial({
-        color: 0xfdb438,
-        transparent: true,
-        opacity: 0.55,
-        side: THREE.DoubleSide,
-        depthWrite: false,
-      }),
-    )
-    ring.rotation.x = -Math.PI / 2
-    ring.position.y = -1.14
-    scene.add(ring)
+      const ring = new THREE.Mesh(
+          new THREE.RingGeometry(0.72, 0.86, 48),
+          new THREE.MeshBasicMaterial({
+              color: 0xFDC908, // Giữ màu cam vàng chuẩn brand
+              transparent: true,
+              opacity: 0.8,
+              side: THREE.DoubleSide,
+              depthWrite: false,
+          }),
+      )
+      ring.rotation.x = -Math.PI / 2
+      ring.position.y = -1.14
+      scene.add(ring)
 
     const textures: Array<THREE.Texture | undefined> = []
     const loader = new THREE.TextureLoader()

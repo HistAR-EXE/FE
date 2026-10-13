@@ -73,24 +73,46 @@ export function filterNavItems<T extends NavItem>(
     })
 }
 
-// BỔ SUNG 2 PROPS: isCollapsed và onToggle
+/* ───────────── Giao diện: Khóa cứng Light Mode (sáng, màu thương hiệu) ───────────── */
+const TONES = {
+    light: {
+        shell: 'border-[#0275FB]/20 bg-white/95 shadow-[6px_0_32px_-8px_rgba(2,117,251,0.25)]',
+        shellTablet: 'border-[#0275FB]/20 bg-white/95 shadow-[6px_0_32px_-8px_rgba(2,117,251,0.25)]',
+        shellMobile: 'border-[#0275FB]/20 bg-white/95 shadow-[0_-8px_28px_-8px_rgba(2,117,251,0.25)]',
+        toggle: 'bg-white border-[#0275FB]/40 text-[#0275FB] hover:bg-[#0275FB] hover:text-white',
+        toggleTip: 'bg-[#0F1B33] border-transparent text-white',
+        itemTip: 'bg-[#0F1B33] border-transparent text-white',
+        logoGlow: 'from-[#FDC908] to-[#0275FB]',
+        logoRing: 'border-[#FDC908]',
+        brand: 'from-[#0275FB] via-[#0A66E8] to-[#015CC8]',
+        tagline: 'text-slate-500',
+        divider: 'border-[#0275FB]/15',
+        idle: 'text-slate-600 hover:text-[#0275FB] hover:bg-[#0275FB]/[0.07] border-transparent',
+        active: 'text-[#0275FB] font-bold',
+        activeLeft: 'border-l-[3px] border-[#FDC908] bg-gradient-to-r from-[#FFF2C3] to-transparent shadow-sm',
+        activeRight: 'border-r-[3px] border-[#FDC908] bg-gradient-to-l from-[#FFF2C3] to-transparent shadow-sm',
+        iconActive: 'text-[#0275FB]',
+        iconIdle: 'text-slate-400 group-hover:text-[#0275FB]',
+        cta: 'bg-gradient-to-r from-[#FDC908] via-[#FFD93D] to-[#FDB900] text-[#0F1B33] shadow-[0_6px_20px_rgba(253,201,8,0.45)] hover:shadow-[0_8px_26px_rgba(253,201,8,0.6)]',
+        ctaIcon: 'bg-gradient-to-r from-[#FDC908] to-[#FFD93D] text-[#0F1B33] shadow-[0_4px_14px_rgba(253,201,8,0.5)]',
+        mobileActive: 'text-[#0275FB] scale-105',
+        mobileIdle: 'text-slate-500 hover:text-[#0275FB]',
+    },
+} as const
+
 type SideNavProps = {
     activeBorder?: 'left' | 'right'
     showCta?: boolean
     onCtaClick?: () => void
     isCollapsed: boolean
     onToggle: () => void
+    // Đã gỡ bỏ prop tone để ngăn chặn các component khác ghi đè màu tối
 }
 
 function activeClasses(isActive: boolean, border: 'left' | 'right') {
-    if (!isActive) {
-        return 'text-gray-400 hover:text-white hover:bg-white/[0.05] border-transparent'
-    }
-    const borderClass =
-        border === 'left'
-            ? 'border-l-[3px] border-[#fe951c] bg-gradient-to-r from-[#fe951c]/20 to-transparent shadow-sm'
-            : 'border-r-[3px] border-[#fe951c] bg-gradient-to-l from-[#fe951c]/20 to-transparent shadow-sm'
-    return `text-[#fdb438] font-bold ${borderClass}`
+    const t = TONES.light // Luôn luôn sử dụng Light Mode
+    if (!isActive) return t.idle
+    return `${t.active} ${border === 'left' ? t.activeLeft : t.activeRight}`
 }
 
 export function SideNav({
@@ -103,6 +125,7 @@ export function SideNav({
     const { pathname } = useLocation()
     const { mode } = useAppMode()
     const { user } = useAuth()
+    const t = TONES.light // Luôn luôn sử dụng Light Mode
 
     const chatPath = useMemo(() => buildChatPath(), [])
 
@@ -113,7 +136,7 @@ export function SideNav({
 
     return (
         <aside
-            className={`hidden lg:flex h-screen fixed left-0 top-0 border-r border-white/10 bg-[#141620]/95 backdrop-blur-2xl flex-col py-6 px-4 z-40 transition-all duration-300 shadow-2xl ${
+            className={`hidden lg:flex h-screen fixed left-0 top-0 border-r backdrop-blur-2xl flex-col py-6 px-4 z-40 transition-all duration-300 ${t.shell} ${
                 isCollapsed ? 'w-20 min-w-[5rem]' : 'w-64 min-w-[16rem]'
             }`}
         >
@@ -121,11 +144,11 @@ export function SideNav({
                 <button
                     type="button"
                     onClick={onToggle}
-                    className="w-7 h-7 rounded-full bg-[#1b1e2c] border border-[#fdb438]/50 text-gray-300 hover:text-[#fdb438] flex items-center justify-center shadow-lg transition-transform hover:scale-110 group relative cursor-pointer"
+                    className={`w-7 h-7 rounded-full border flex items-center justify-center shadow-lg transition-transform hover:scale-110 group relative cursor-pointer ${t.toggle}`}
                     title={isCollapsed ? 'Mở rộng thanh bên' : 'Thu gọn thanh bên'}
                 >
                     <MaterialIcon name={isCollapsed ? 'chevron_right' : 'chevron_left'} className="text-lg" />
-                    <span className="absolute left-full ml-3 px-2.5 py-1 bg-[#232636] border border-white/10 text-white text-[11px] font-semibold rounded-md shadow-xl whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity">
+                    <span className={`absolute left-full ml-3 px-2.5 py-1 border text-[11px] font-semibold rounded-md shadow-xl whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity ${t.toggleTip}`}>
                         {isCollapsed ? 'Mở thanh bên' : 'Đóng thanh bên'}
                     </span>
                 </button>
@@ -133,16 +156,16 @@ export function SideNav({
 
             <div className={`mb-8 flex items-center gap-3 min-w-0 transition-all ${isCollapsed ? 'justify-center' : 'px-1'}`}>
                 <div className="relative group shrink-0">
-                    <div className="absolute -inset-1 rounded-full bg-gradient-to-tr from-[#fe951c] to-[#388cf1] blur-sm opacity-60 group-hover:opacity-100 transition-opacity" />
-                    <img src="/brand/icon-192.png" alt="TimeLens Logo" className="relative w-10 h-10 rounded-full border border-[#fdb438]/60 object-cover" />
+                    <div className={`absolute -inset-1 rounded-full bg-gradient-to-tr blur-sm opacity-60 group-hover:opacity-100 transition-opacity ${t.logoGlow}`} />
+                    <img src="/brand/icon-192.png" alt="TimeLens Logo" className={`relative w-10 h-10 rounded-full border object-cover ${t.logoRing}`} />
                 </div>
 
                 {!isCollapsed && (
                     <div className="flex flex-col min-w-0 overflow-hidden">
-                        <span className="text-lg font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-gray-100 to-[#fdb438] truncate">
+                        <span className={`text-lg font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r truncate ${t.brand}`}>
                             TimeLens
                         </span>
-                        <span className="text-[10px] font-semibold text-gray-400 tracking-wide truncate">
+                        <span className={`text-[10px] font-semibold tracking-wide truncate ${t.tagline}`}>
                             Relive History, Reshape Heritage
                         </span>
                     </div>
@@ -161,12 +184,12 @@ export function SideNav({
                                 isCollapsed ? 'justify-center' : 'justify-start'
                             } ${activeClasses(isActive, activeBorder)}`}
                         >
-                            <MaterialIcon name={item.icon} filled={isActive} className={`text-xl shrink-0 transition-transform group-hover:scale-110 ${isActive ? 'text-[#fe951c]' : 'text-gray-400 group-hover:text-white'}`} />
+                            <MaterialIcon name={item.icon} filled={isActive} className={`text-xl shrink-0 transition-transform group-hover:scale-110 ${isActive ? t.iconActive : t.iconIdle}`} />
                             {!isCollapsed && (
                                 <span className="text-sm tracking-wide truncate">{item.label}</span>
                             )}
                             {isCollapsed && (
-                                <span className="absolute left-full ml-4 px-3 py-1.5 bg-[#1b1e2c] border border-white/10 text-white text-xs font-semibold rounded-lg shadow-2xl whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50">
+                                <span className={`absolute left-full ml-4 px-3 py-1.5 border text-xs font-semibold rounded-lg shadow-2xl whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50 ${t.itemTip}`}>
                                     {item.label}
                                 </span>
                             )}
@@ -176,13 +199,13 @@ export function SideNav({
             </div>
 
             {showCta && (
-                <div className="mt-auto pt-4 shrink-0 border-t border-white/10">
+                <div className={`mt-auto pt-4 shrink-0 border-t ${t.divider}`}>
                     {isCollapsed ? (
                         <button
                             type="button"
                             onClick={onCtaClick}
                             title="Bắt đầu hành trình"
-                            className="w-full h-12 rounded-xl bg-gradient-to-r from-[#fe951c] to-[#fdb438] text-black flex items-center justify-center shadow-[0_0_15px_rgba(254,149,28,0.4)] hover:scale-105 transition-all cursor-pointer"
+                            className={`w-full h-12 rounded-xl flex items-center justify-center hover:scale-105 transition-all cursor-pointer ${t.ctaIcon}`}
                         >
                             <MaterialIcon name="rocket_launch" className="text-xl font-bold" />
                         </button>
@@ -190,7 +213,7 @@ export function SideNav({
                         <button
                             type="button"
                             onClick={onCtaClick}
-                            className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-[#fe951c] via-[#fdb438] to-[#e07d0b] text-black font-extrabold text-sm flex items-center justify-center gap-2 shadow-[0_4px_20px_rgba(254,149,28,0.35)] hover:shadow-[0_6px_25px_rgba(254,149,28,0.5)] hover:scale-[1.02] transition-all cursor-pointer"
+                            className={`w-full py-3 px-4 rounded-xl font-extrabold text-sm flex items-center justify-center gap-2 hover:scale-[1.02] transition-all cursor-pointer ${t.cta}`}
                         >
                             <span>Bắt đầu hành trình</span>
                             <MaterialIcon name="arrow_forward" className="text-lg font-bold" />
@@ -206,14 +229,15 @@ export function SideNavTablet({ activeBorder = 'right' }: { activeBorder?: 'left
     const { pathname } = useLocation()
     const { mode } = useAppMode()
     const { user } = useAuth()
+    const t = TONES.light // Luôn luôn sử dụng Light Mode
     const chatPath = useMemo(() => buildChatPath(), [])
     const withChatPath = <T extends { to: string }>(items: readonly T[]) =>
         items.map((item) => (item.to === '/chat' ? { ...item, to: chatPath } : item))
     const items = withChatPath(filterNavItems(navItems, mode, user?.role))
 
     return (
-        <nav className="hidden md:flex lg:hidden h-screen w-20 fixed left-0 top-0 border-r border-white/10 bg-[#141620]/95 backdrop-blur-2xl flex-col py-6 px-2.5 z-40 items-center shadow-xl">
-            <img src="/brand/icon-192.png" alt="TimeLens" className="w-10 h-10 rounded-full border border-[#fdb438]/50 object-cover shrink-0 mb-8 shadow-md" />
+        <nav className={`hidden md:flex lg:hidden h-screen w-20 fixed left-0 top-0 border-r backdrop-blur-2xl flex-col py-6 px-2.5 z-40 items-center ${t.shellTablet}`}>
+            <img src="/brand/icon-192.png" alt="TimeLens" className={`w-10 h-10 rounded-full border object-cover shrink-0 mb-8 shadow-md ${t.logoRing}`} />
             <div className="flex flex-col gap-2 flex-1 w-full overflow-y-auto custom-scrollbar">
                 {items.map((item) => {
                     const isActive = item.prefixes.some((p) => pathname === p || pathname.startsWith(`${p}/`))
@@ -237,13 +261,14 @@ export function SideNavMobile() {
     const { pathname } = useLocation()
     const { mode } = useAppMode()
     const { user } = useAuth()
+    const t = TONES.light // Luôn luôn sử dụng Light Mode
     const chatPath = useMemo(() => buildChatPath(), [])
     const withChatPath = <T extends { to: string }>(items: readonly T[]) =>
         items.map((item) => (item.to === '/chat' ? { ...item, to: chatPath } : item))
     const items = withChatPath(filterNavItems(mobileNavItems, mode, user?.role, { excludeDesktopOnly: true }))
 
     return (
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-[#141620]/95 backdrop-blur-2xl pb-safe shadow-[0_-5px_20px_rgba(0,0,0,0.6)]">
+        <nav className={`md:hidden fixed bottom-0 left-0 right-0 z-50 border-t backdrop-blur-2xl pb-safe ${t.shellMobile}`}>
             <div className="flex justify-around items-center h-16 px-2">
                 {items.map((item) => {
                     const isActive = item.prefixes.some((p) => pathname === p || pathname.startsWith(`${p}/`))
@@ -252,7 +277,7 @@ export function SideNavMobile() {
                             key={item.to}
                             to={item.to}
                             className={`flex flex-col items-center justify-center gap-1 flex-1 py-1.5 transition-all duration-200 ${
-                                isActive ? 'text-[#fdb438] scale-105' : 'text-gray-400 hover:text-white'
+                                isActive ? t.mobileActive : t.mobileIdle
                             }`}
                         >
                             <MaterialIcon name={item.icon} filled={isActive} className="text-2xl" />

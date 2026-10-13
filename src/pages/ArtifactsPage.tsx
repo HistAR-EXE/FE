@@ -560,10 +560,20 @@ export function ArtifactsPage() {
                                         </div>
 
                                         {/* Khối Text phía dưới Card */}
-                                        {/* Dùng flex-1 để đẩy các card bằng nhau, items-center để canh giữa dòng */}
                                         <div className="p-6 flex-1 flex flex-col justify-center relative overflow-hidden bg-white border-t border-slate-100">
-                                            <h3 className="font-black text-lg text-slate-800 leading-snug line-clamp-2 group-hover:text-[#0275FB] transition-colors">
-                                                {artifact.name}
+                                            <h3 className="font-black text-lg text-slate-800 leading-snug group-hover:text-[#0275FB] transition-colors">
+                                                {/* Tách chuỗi theo ' (' để ép phần trong ngoặc rớt xuống dòng */}
+                                                {artifact.name.includes(' (') ? (
+                                                    <>
+                                                        {artifact.name.split(' (')[0]}
+                                                        <br />
+                                                        <span className="text-slate-500 font-bold text-sm mt-1 inline-block">
+                                                            ({artifact.name.split(' (')[1]}
+                                                        </span>
+                                                    </>
+                                                ) : (
+                                                    artifact.name
+                                                )}
                                             </h3>
                                         </div>
                                     </button>

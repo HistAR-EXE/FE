@@ -1,7 +1,7 @@
 // src/components/layout/AppLayout.tsx
 import { useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { SideNav, SideNavMobile, SideNavTablet } from './SideNav'
+import { SideNav, SideNavMobile, SideNavTablet, type NavTone } from './SideNav'
 import { TopNavCompact } from './TopNav'
 import { useAppMode } from '../../shared/context/useAppMode'
 import { useCcuHeartbeat } from '../../shared/hooks/useCcuHeartbeat'
@@ -18,6 +18,8 @@ type AppLayoutProps = {
     mobileBackTo?: string
     mobileTitle?: string
     className?: string
+    /** 'dark' (mặc định, giữ nguyên các trang cũ) hoặc 'light' (thanh bên sáng, màu thương hiệu). */
+    tone?: NavTone
 }
 
 export function AppLayout({
@@ -30,6 +32,7 @@ export function AppLayout({
                               mobileBackTo,
                               mobileTitle,
                               className = '',
+                              tone = 'dark',
                           }: AppLayoutProps) {
     const navigate = useNavigate()
     const { mode } = useAppMode()
@@ -69,8 +72,9 @@ export function AppLayout({
                         onCtaClick={() => navigate(ctaPath)}
                         isCollapsed={isCollapsed}
                         onToggle={handleToggleNav}
+                        tone={tone}
                     />
-                    <SideNavTablet activeBorder={activeBorder} />
+                    <SideNavTablet activeBorder={activeBorder} tone={tone} />
                 </>
             )}
 
@@ -80,12 +84,12 @@ export function AppLayout({
                     hideSideNav ? '' : `md:ml-20 ${desktopMargin}`
                 } ${!hideSideNav && !hideMobileChrome ? 'pb-16 md:pb-0' : ''}`}
             >
-                {!hideMobileChrome && <TopNavCompact backTo={mobileBackTo} title={mobileTitle} />}
+                {!hideMobileChrome && <TopNavCompact backTo={mobileBackTo} title={mobileTitle} tone={tone} />}
                 {topNav}
                 {children}
             </div>
 
-            {!hideSideNav && !hideMobileChrome && <SideNavMobile />}
+            {!hideSideNav && !hideMobileChrome && <SideNavMobile tone={tone} />}
             <CcuLimitModal open={ccuLimitOpen} onClose={dismissCcuLimit} />
         </div>
     )

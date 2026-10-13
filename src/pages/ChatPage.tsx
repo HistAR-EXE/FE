@@ -3,7 +3,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
-import { SimpleTopNav } from '../components/layout/TopNav'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { Button } from '../components/ui/Button'
 import { images } from '../assets/images'
@@ -11,12 +10,10 @@ import { resolveMediaUrl } from '../shared/config/env'
 import { chatApi, normalizeChatSources, type ChatMessage, type ChatSource } from '../features/chat/api'
 import { emitEvent } from '../lib/pilotEvents'
 import { setActiveStationCode } from '../lib/stationSafety'
-import { ReportContentButton } from '../components/feedback/ReportContentModal'
 import { analyticsApi } from '../features/analytics/api'
 import { buildChatTimeline } from '../features/chat/chatTimeline'
 import type { MascotMode } from '../features/chat/MascotAvatar'
 import { MascotCallOverlay } from '../features/chat/MascotCallOverlay'
-import { MascotStage } from '../features/chat/MascotStage'
 import { answerCardLines } from '../features/chat/callCopy'
 import { imagesForReply } from '../features/chat/callVisuals'
 import { listenForUtterance, speakReply, startDictation, stopActiveSpeech, waitForSpeechToSettle, type VoicePhase } from '../features/chat/voice'
@@ -49,7 +46,6 @@ const VOICE_STATUS: Record<VoicePhase, string> = {
     answered: 'Câu trả lời đang hiện',
 }
 
-// CẤU HÌNH 2 ĐẠI SỨ DI SẢN CỦ CHI (AMBASSADORS FALLBACK & OVERRIDE)
 interface AmbassadorPersona {
     id: string
     name: string
@@ -65,13 +61,13 @@ interface AmbassadorPersona {
 const MASCOT_PROFILE: AmbassadorPersona = {
     id: 'mascot',
     name: 'Chrono',
-    era: 'TimeLens',
-    role: 'Linh vật TimeLens',
-    desc: 'Chrono đi cùng bạn ở mọi di tích trên TimeLens và kể tất cả thông tin mà Chrono biết.',
+    era: 'Sứ Giả Xuyên Không',
+    role: 'Người Dẫn Đường TimeLens',
+    desc: 'Được tiếp sức mạnh bởi lõi kiến trúc AI RAG, Chrono sẽ cùng bạn xuyên không về quá khứ, giải mã các mật lệnh lịch sử và kể những câu chuyện hào hùng một cách hiện đại, minh bạch và chân thực nhất.',
     avatar: '/mascot/mascot-1.png',
-    themeColor: 'text-[#fdb438]',
-    accentBorder: 'border-[#fe951c]/60 shadow-[0_0_25px_rgba(254,149,28,0.25)]',
-    badgeBg: 'bg-[#fe951c]/20 text-[#fdb438] border-[#fe951c]/40',
+    themeColor: 'text-[#0275FB]',
+    accentBorder: 'border-[#FDC908]/60 shadow-[0_0_25px_rgba(253,201,8,0.25)]',
+    badgeBg: 'bg-[#FFF2C3] text-[#0275FB] border-[#FDC908]/40',
 }
 
 function sortChronological(items: ChatMessage[]): ChatMessage[] {
@@ -99,16 +95,6 @@ function resolveChatCharacterId(
         return characters.find((c) => /chị năm/i.test(c.name))?.id ?? characters[0].id
     }
     return characters.find((c) => /anh ba|chiến sĩ/i.test(c.name))?.id ?? characters[0].id
-}
-
-function TimelineDivider({ label }: { label: string }) {
-    return (
-        <div className="flex justify-center py-2">
-      <span className="bg-[#1b1e2c] px-4 py-1 rounded-full text-xs font-bold text-gray-400 border border-white/10 shadow-sm">
-        {label}
-      </span>
-        </div>
-    )
 }
 
 export function ChatPage() {
@@ -162,14 +148,13 @@ export function ChatPage() {
     const [dictating, setDictating] = useState(false)
     const [callOpen, setCallOpen] = useState(false)
     const [callMuted, setCallMuted] = useState(false)
-    const [stagePaused, setStagePaused] = useState(false)
     const [heardText, setHeardText] = useState('')
     const [answerLines, setAnswerLines] = useState<string[]>([])
     const [callImages, setCallImages] = useState<string[]>([])
     const [hearing, setHearing] = useState(false)
     const [heardAudio, setHeardAudio] = useState(false)
     const [retryMessage, setRetryMessage] = useState<string | null>(null)
-    const [aiServiceOnline, setAiServiceOnline] = useState<boolean | null>(null)
+    const [, setAiServiceOnline] = useState<boolean | null>(null)
     const dictateStopRef = useRef<(() => void) | null>(null)
     const callRunRef = useRef(0)
     const callMutedRef = useRef(false)
@@ -246,9 +231,9 @@ export function ChatPage() {
                 role: 'Nhân vật lịch sử AI',
                 desc: 'AI trả lời theo ngữ cảnh di tích chuẩn RAG có nguồn minh bạch.',
                 avatar: apiCharacter.portraitUrl,
-                themeColor: 'text-[#fdb438]',
-                accentBorder: 'border-[#fe951c]/50',
-                badgeBg: 'bg-[#fe951c]/20 text-[#fdb438] border-[#fe951c]/40',
+                themeColor: 'text-[#0275FB]',
+                accentBorder: 'border-[#FDC908]/50',
+                badgeBg: 'bg-[#FFF2C3] text-[#0275FB] border-[#FDC908]/40',
             }
         }
         return MASCOT_PROFILE
@@ -292,7 +277,8 @@ export function ChatPage() {
     const timeline = useMemo(() => buildChatTimeline(messages), [messages])
 
     const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
-        messagesEndRef.current?.scrollIntoView({ behavior })
+        const el = messagesScrollRef.current
+        if (el) el.scrollTo({ top: el.scrollHeight, behavior })
     }, [])
 
     const loadLatestMessages = useCallback(
@@ -883,191 +869,296 @@ export function ChatPage() {
     return (
         <AppLayout
             activeBorder="left"
-            topNav={<SimpleTopNav title="Phòng Đối Thoại RAG AI" showSearch />}
             mobileBackTo={locationId ? `/explore/${locationId}` : '/explore'}
             mobileTitle="Trò chuyện AI"
-            className="h-screen overflow-hidden bg-[#0f1015]"
+            tone="light"
+            className="h-screen max-h-screen overflow-hidden !bg-[#DCEBFF]"
         >
-            <main className="flex flex-col lg:flex-row overflow-hidden p-3 md:p-6 gap-6 max-w-[1600px] mx-auto w-full mt-14 md:mt-16 h-[calc(100dvh-4rem)] max-h-[calc(100dvh-4rem)] min-h-0">
+            {/* ───────── NỀN: xanh nhạt đậm hơn hai thẻ để thẻ trắng "nổi" lên ───────── */}
+            <div aria-hidden className="pointer-events-none absolute inset-0 z-0 overflow-hidden bg-[#DCEBFF]">
+                <div className="absolute inset-0 bg-[linear-gradient(135deg,#C7DDFF_0%,#DCEBFF_40%,#EEF5FF_66%,#FFF2C3_100%)]" />
+                <div className="absolute -top-32 -left-24 h-[460px] w-[460px] rounded-full bg-[#0275FB]/25 blur-[120px]" />
+                <div className="absolute -bottom-32 -right-24 h-[480px] w-[480px] rounded-full bg-[#FDC908]/40 blur-[120px]" />
+                <div className="absolute inset-0 bg-[radial-gradient(#0275FB_1px,transparent_1px)] [background-size:22px_22px] opacity-[0.10]" />
+            </div>
 
-                {/* --- CỘT TRÁI: COMMAND CENTER ĐẠI SỨ DI SẢN --- */}
-                <section className="hidden lg:flex lg:h-full lg:shrink-0 w-[360px] xl:w-[400px] bg-[#161824] rounded-3xl border border-white/10 flex-col overflow-hidden relative shadow-2xl">
-                    <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#fe951c] via-[#fdb438] to-[#388cf1] z-20" />
+            {/* KHUNG NỘI DUNG CHÍNH: pt-[4.25rem] chừa chỗ cho thanh trên cố định của mobile (h-14) */}
+            <main className="flex-1 min-h-0 w-full max-w-[1600px] mx-auto px-3 pb-3 pt-[4.25rem] md:p-6 flex flex-col lg:flex-row gap-5 lg:gap-6 relative z-10">
 
-                    <div className="px-4 py-3 bg-[#12141f] border-b border-white/10">
-                        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#fdb438]">Sân khấu</p>
-                        <p className="text-sm font-black text-white">Kéo ngang để mascot bay qua lại</p>
+                {/* ───────── CỘT TRÁI: TRỢ LÝ TƯƠNG TÁC ───────── */}
+                <section className="hidden lg:flex lg:h-full lg:shrink-0 w-[360px] xl:w-[400px] bg-white rounded-3xl border-2 border-[#0275FB]/25 flex-col overflow-hidden relative shadow-[0_24px_60px_-14px_rgba(2,117,251,0.38)]">
+                    {/* Thanh tiêu đề xanh thương hiệu + vạch vàng */}
+                    <div className="relative shrink-0 bg-gradient-to-r from-[#0275FB] via-[#0A66E8] to-[#015CC8] px-5 py-4 text-left">
+                        <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-[#FDC908] via-[#FFF2C3] to-[#FDC908]" />
+                        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#FFF2C3]">Trợ Lý Tương Tác</p>
+                        <p className="text-base font-black text-white">Đồng hành cùng Chrono</p>
                     </div>
 
-                    <div className="relative min-h-[340px] flex-1 w-full overflow-hidden bg-[radial-gradient(circle_at_50%_40%,rgba(56,140,241,0.22),transparent_55%),linear-gradient(180deg,#10131d_0%,#070910_100%)]">
-                        {showMascot ? (
-                            <MascotStage
-                                mode={mascotMode}
-                                paused={stagePaused}
-                                className="absolute inset-0 cursor-grab active:cursor-grabbing"
-                            />
-                        ) : (
-                            <img
-                                alt={displayProfile.name}
-                                className="h-full w-auto object-contain mx-auto drop-shadow-[0_10px_20px_rgba(0,0,0,0.9)]"
-                                src={resolveMediaUrl(displayProfile.avatar)}
-                            />
-                        )}
-                        {showMascot && (
-                            <button
-                                type="button"
-                                onClick={() => setStagePaused((value) => !value)}
-                                aria-pressed={stagePaused}
-                                className="absolute top-3 right-3 z-30 px-3 py-1.5 rounded-full bg-black/70 border border-white/20 text-[11px] font-black text-white cursor-pointer hover:bg-black/90"
-                            >
-                                {stagePaused ? 'Tiếp tục' : 'Tạm dừng'}
-                            </button>
-                        )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#161824] via-transparent to-transparent pointer-events-none" />
+                    {/* Vùng mascot: nền kem ấm để tách khỏi nền xanh của trang */}
+                    <div className="relative flex-1 min-h-0 w-full overflow-hidden bg-gradient-to-b from-[#FFF2C3] via-[#FFF8DC] to-white flex flex-col items-center justify-center pt-12 pb-24">
+                        <div className="absolute inset-0 bg-[radial-gradient(#0275FB_1px,transparent_1px)] [background-size:20px_20px] opacity-[0.07] pointer-events-none" />
 
-                        <div className="absolute bottom-4 left-4 right-4 z-20 text-left">
-                            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border mb-2 backdrop-blur-md shadow-sm text-[10px] font-black uppercase tracking-wider bg-black/60 border-white/20 text-[#fdb438]">
-                                <span className={`w-1.5 h-1.5 rounded-full ${aiServiceOnline === false ? 'bg-amber-400' : 'bg-emerald-400 animate-ping'}`} />
-                                {/* <span>
-                                    {aiServiceOnline === false
-                                        ? 'RAG tắt · trả lời LLM (không hứa trích nguồn 100%)'
-                                        : 'Trợ lý lịch sử · nguồn khi RAG_ENABLED'}
-                                </span> */}
+                        <style>
+                            {`
+                            @keyframes organicFloat {
+                                0%, 100% { transform: translateY(0px) rotate(0deg); }
+                                25% { transform: translateY(-8px) rotate(-1.5deg); }
+                                50% { transform: translateY(3px) rotate(0deg); }
+                                75% { transform: translateY(-5px) rotate(1.5deg); }
+                            }
+                            @keyframes shadowBreathe {
+                                0%, 100% { transform: scale(1); opacity: 0.5; }
+                                25% { transform: scale(0.8); opacity: 0.2; }
+                                50% { transform: scale(1.1); opacity: 0.6; }
+                                75% { transform: scale(0.85); opacity: 0.3; }
+                            }
+                            @keyframes portalPulse {
+                                0%, 100% { transform: scale(1); opacity: 0.7; }
+                                50% { transform: scale(1.05); opacity: 0.4; }
+                            }
+                            .mascot-float { animation: organicFloat 6s ease-in-out infinite; }
+                            .mascot-shadow { animation: shadowBreathe 6s ease-in-out infinite; }
+                            .portal-glow { animation: portalPulse 4s ease-in-out infinite; }
+                            `}
+                        </style>
+
+                        {/* KHUNG CHỨA TỔNG LẤY MASCOT LÀM TRUNG TÂM */}
+                        <div className="relative z-10 w-48 h-48 sm:w-56 sm:h-56 flex flex-col items-center justify-center mt-6">
+
+                            {/* HIỆU ỨNG CÁNH CỔNG KHÔNG THỜI GIAN */}
+                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none z-0">
+                                <div className="absolute w-64 h-64 bg-[radial-gradient(circle,#FFFFFF_0%,rgba(253,201,8,0.28)_45%,rgba(2,117,251,0.14)_62%,transparent_72%)] blur-xl portal-glow" />
+                                <div className="absolute w-[260px] h-[260px] border-[3px] border-dashed border-[#0275FB]/40 rounded-full animate-[spin_20s_linear_infinite]" />
+                                <div className="absolute w-[220px] h-[220px] border-[2px] border-dotted border-[#FDC908] rounded-full animate-[spin_15s_linear_infinite_reverse]" />
+                                <div className="absolute w-[180px] h-[180px] border border-[#0275FB]/25 rounded-full animate-[spin_10s_linear_infinite]" />
                             </div>
-                            <h2 className="text-2xl font-black text-white leading-tight drop-shadow-md">{displayProfile.name}</h2>
-                            <p className={`text-xs font-bold ${displayProfile.themeColor}`}>{displayProfile.era} — {displayProfile.role}</p>
+
+                            {showMascot ? (
+                                <>
+                                    <img
+                                        src={MASCOT_STILL}
+                                        alt="Chrono Mascot"
+                                        className={`w-full h-full object-contain relative z-10 drop-shadow-[0_15px_25px_rgba(2,117,251,0.25)] transition-all duration-500 ${
+                                            mascotMode === 'thinking' ? 'animate-pulse' : 'mascot-float'
+                                        }`}
+                                    />
+                                    <div className="absolute -bottom-3 w-24 h-2 bg-[#0275FB]/25 blur-[4px] rounded-[100%] mascot-shadow" />
+                                </>
+                            ) : (
+                                <img
+                                    alt={displayProfile.name}
+                                    className="h-full w-auto object-contain mx-auto drop-shadow-xl z-10 relative rounded-full border-4 border-white"
+                                    src={resolveMediaUrl(displayProfile.avatar)}
+                                />
+                            )}
+                        </div>
+
+                        <div className="absolute bottom-5 left-5 right-5 z-20 text-left">
+                            <h2 className="text-3xl font-black text-[#0F1B33] leading-tight mb-1">{displayProfile.name}</h2>
+                            <p className={`text-sm font-bold ${displayProfile.themeColor}`}>{displayProfile.era}</p>
                         </div>
                     </div>
 
-                    {/* Chi tiết tiểu sử */}
-                    <div className="p-6 flex-1 min-h-0 overflow-y-auto flex flex-col gap-4 text-left">
-                        <div className="flex flex-wrap gap-1.5">
-                            <span className="px-3 py-1 bg-white/5 rounded-full border border-white/10 text-[11px] font-bold text-gray-300">Minh bạch sử liệu</span>
-                            <span className="px-3 py-1 bg-white/5 rounded-full border border-white/10 text-[11px] font-bold text-gray-300">Nhập vai lịch sử</span>
-                            <span className="px-3 py-1 bg-white/5 rounded-full border border-white/10 text-[11px] font-bold text-gray-300">EdTech AI</span>
+                    {/* Chi tiết: 3 chip xanh – vàng – kem */}
+                    <div className="p-5 shrink-0 flex flex-col gap-4 text-left bg-white relative z-10 border-t-2 border-[#FDC908]/50">
+                        <div className="flex flex-wrap gap-2">
+                            <span className="px-3 py-1.5 bg-[#FDC908] rounded-full text-[11px] font-black text-[#0F1B33] shadow-sm">Minh bạch sử liệu</span>
+                            <span className="px-3 py-1.5 bg-[#FDC908] rounded-full text-[11px] font-black text-[#0F1B33] shadow-sm">Nhập vai lịch sử</span>
+                            <span className="px-3 py-1.5 bg-[#FDC908] rounded-full text-[11px] font-black text-[#0F1B33] shadow-sm">Lõi AI RAG</span>
                         </div>
 
-                        <p className="text-gray-300 font-medium text-xs sm:text-sm leading-relaxed bg-white/[0.03] p-4 rounded-2xl border border-white/5">
-                            {displayProfile.desc}
-                        </p>
-
+                        <div className="bg-[#EAF3FF] p-4 rounded-2xl border border-[#0275FB]/30 shadow-sm mt-1">
+                            <div className="flex items-center gap-1.5 mb-2.5">
+                                <MaterialIcon name="memory" className="text-[#0275FB] text-[18px]" />
+                                <span className="text-xs font-black uppercase tracking-wider text-[#0275FB]">Hạt Nhân Sức Mạnh AI</span>
+                            </div>
+                            <p className="text-[#0F1B33] font-medium text-sm leading-relaxed">
+                                {displayProfile.desc}
+                            </p>
+                        </div>
                     </div>
                 </section>
 
-                {/* --- CỘT PHẢI: KHUNG CHAT RAG AI INTERACTIVE --- */}
-                <section className="flex-1 min-h-0 h-full bg-[#161824]/90 rounded-3xl border border-white/10 flex flex-col overflow-hidden relative shadow-2xl">
+                {/* ───────── CỘT PHẢI: KHUNG CHAT ───────── */}
+                <section className="flex-1 min-h-0 h-full bg-white rounded-3xl border-2 border-[#0275FB]/25 flex flex-col overflow-hidden relative shadow-[0_24px_60px_-14px_rgba(2,117,251,0.38)]">
 
-                    {/* Header Mobile cho Persona */}
-                    <div className="lg:hidden p-3 bg-[#12141f] border-b border-white/10 flex items-center justify-between">
-                        <div className="flex items-center gap-2.5">
+                    {/* Thanh tiêu đề xanh (mọi kích thước màn hình) + trạng thái giọng nói */}
+                    <header className="relative shrink-0 bg-gradient-to-r from-[#0275FB] via-[#0A66E8] to-[#015CC8] px-4 sm:px-6 py-3.5 flex items-center gap-3 text-left">
+                        <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-[#FDC908] via-[#FFF2C3] to-[#FDC908]" />
+                        <div className="h-11 w-11 shrink-0 rounded-full bg-white ring-2 ring-[#FDC908] flex items-center justify-center overflow-hidden shadow-md">
                             {showMascot ? (
-                                <img src={MASCOT_STILL} alt="" className="w-9 h-12 object-contain" />
+                                <img src={MASCOT_STILL} alt="" className="h-9 w-9 object-contain" />
                             ) : (
-                                <img src={resolveMediaUrl(displayProfile.avatar)} alt="" className="w-9 h-9 rounded-full object-cover border border-[#fdb438]" />
+                                <img src={resolveMediaUrl(displayProfile.avatar)} alt="" className="h-full w-full object-cover" />
                             )}
-                            <div className="text-left">
-                                <h4 className="text-sm font-black text-white leading-none">{displayProfile.name}</h4>
-                                <span className="text-[10px] text-emerald-400 font-bold">● Trợ lý lịch sử sẵn sàng</span>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                            <h4 className="text-[15px] font-black text-white leading-tight truncate">{displayProfile.name}</h4>
+                            <p className="mt-0.5 flex items-center gap-1.5 text-[11px] font-bold text-[#FFF2C3] truncate">
+                                {voiceHint ? (
+                                    <>
+                                        <MaterialIcon name="graphic_eq" className="text-[15px] text-[#FDC908] animate-pulse shrink-0" />
+                                        <span className="truncate">{voiceHint}</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <span className="h-2 w-2 shrink-0 rounded-full bg-[#FDC908] animate-pulse" />
+                                        <span className="truncate">Trợ lý lịch sử sẵn sàng</span>
+                                    </>
+                                )}
+                            </p>
+                        </div>
+
+                        {/* Các nút công cụ & Trạng thái Chrono */}
+                        <div className="flex items-center gap-2.5">
+                            {/* Badge trạng thái thay thế cho Lõi AI RAG */}
+                            {/* Badge trạng thái AI (UI Mới: Tương phản cao & Hiệu ứng Online Glow) */}
+                            <div className="hidden sm:inline-flex items-center gap-2.5 rounded-full bg-white px-3.5 py-1.5 text-[11px] font-black text-[#0275FB] shadow-[0_2px_10px_rgba(0,0,0,0.15)]">
+                                {/* Chấm trạng thái có hiệu ứng Ping (nhịp đập) */}
+                                <span className="relative flex h-2.5 w-2.5">
+                                    {mascotMode === 'idle' ? (
+                                        <>
+                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.5)]"></span>
+                                        </>
+                                    ) : mascotMode === 'listening' ? (
+                                        <>
+                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.5)]"></span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#FDC908] opacity-75"></span>
+                                            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#FDC908] shadow-[0_0_6px_rgba(253,201,8,0.6)]"></span>
+                                        </>
+                                    )}
+                                </span>
+
+                                <span className="uppercase tracking-wider">
+                                    {mascotMode === 'listening'
+                                        ? 'Đang nghe'
+                                        : mascotMode === 'thinking'
+                                            ? 'Đang suy nghĩ'
+                                            : mascotMode === 'speaking'
+                                                ? 'Đang nói'
+                                                : 'Sẵn sàng'}
+                                </span>
                             </div>
-                        </div>
-                        <span className="text-[10px] font-black uppercase tracking-wider text-[#fdb438]">Đang bay</span>
-                    </div>
 
-                    {/* {aiServiceOnline === false && (
-                        <div className="px-4 py-2 border-b border-amber-500/30 bg-amber-500/10 text-xs text-amber-200 shrink-0">
-                            <MaterialIcon name="warning" className="text-sm align-middle mr-1" />
-                            Chat dùng BE (pgvector khi RAG_ENABLED, hoặc LLM fallback). Chạy{' '}
-                            <code className="text-amber-100">scripts/diagnose-chat.ps1</code>
+                            {/* Nút Video Call */}
+                            {showMascot && (
+                                <button
+                                    type="button"
+                                    onClick={() => beginCall()}
+                                    disabled={voiceBusy || sending}
+                                    className="h-9 w-9 flex items-center justify-center rounded-full bg-[#FDC908] text-[#0F1B33] hover:bg-[#ffd633] hover:shadow-md transition-all cursor-pointer disabled:opacity-40"
+                                    title="Gọi Video cùng Chrono"
+                                >
+                                    <MaterialIcon name="videocam" className="text-[18px]" />
+                                </button>
+                            )}
                         </div>
-                    )} */}
+                    </header>
 
-                    {voiceHint && (
-                        <div className="px-4 py-2.5 border-b border-white/10 bg-gradient-to-r from-[#fe951c]/20 to-[#388cf1]/20 text-xs font-bold text-white flex items-center gap-2 shrink-0 animate-pulse">
-                            <MaterialIcon name="graphic_eq" className="text-base text-[#fdb438]" />
-                            <span>{voiceHint}</span>
-                        </div>
-                    )}
-
-                    {/* Vùng lăn tin nhắn */}
                     <div
                         ref={messagesScrollRef}
                         onScroll={handleMessagesScroll}
-                        className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-4 sm:p-6 flex flex-col gap-4 custom-scrollbar"
+                        className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-4 sm:p-6 flex flex-col gap-5 custom-scrollbar bg-gradient-to-b from-[#EAF3FF] to-[#F8FBFF]"
                     >
                         <div ref={loadMoreRef} className="h-px shrink-0" aria-hidden />
 
                         {(loadingOlder || (hasOlder && loadingMessages)) && (
                             <div className="flex justify-center py-2">
-                                <span className="text-xs font-bold text-gray-400 animate-pulse">Đang nạp sử liệu hội thoại cũ...</span>
+                                <span className="text-xs font-bold text-[#0275FB] animate-pulse">Đang nạp sử liệu hội thoại cũ...</span>
                             </div>
                         )}
 
                         {loadingMessages && !loadingOlder && (
-                            <p className="text-center text-xs font-bold text-gray-400">Đang kết nối kho kiến thức RAG...</p>
+                            <p className="text-center text-xs font-bold text-[#0275FB]">Đang kết nối kho kiến thức RAG...</p>
                         )}
 
-                        {/* Màn chào mừng Welcome & Gợi ý câu hỏi chuẩn */}
-                        {messages.length === 0 && !loadingMessages && (
-                            <div className="flex flex-col gap-5 max-w-2xl mx-auto my-auto text-center py-6">
-                                <div className={`mx-auto ${showMascot ? 'h-28 w-24 lg:hidden' : 'w-24 h-28'}`}>
+                        {/* HIỂN THỊ XUYÊN SUỐT Ở ĐẦU CUỘC TRÒ CHUYỆN */}
+                        {!loadingMessages && (
+                            <div className="flex flex-col gap-4 max-w-xl mx-auto text-center py-6 pb-8 border-b border-[#0275FB]/10 mb-4 shrink-0">
+                                <div className={`mx-auto ${showMascot ? 'h-32 w-28 lg:hidden' : 'w-24 h-24'}`}>
                                     {showMascot ? (
-                                        <img src={MASCOT_STILL} alt="" className="h-full w-full object-contain" />
+                                        <img src={MASCOT_STILL} alt="" className="h-full w-full object-contain drop-shadow-2xl" />
                                     ) : (
-                                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#fe951c] to-[#388cf1] p-0.5 mx-auto shadow-xl">
-                                            <div className="w-full h-full rounded-2xl bg-[#1b1e2c] flex items-center justify-center overflow-hidden">
+                                        <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-[#FDC908] to-[#0275FB] p-1 mx-auto shadow-xl">
+                                            <div className="w-full h-full rounded-full bg-white flex items-center justify-center overflow-hidden border-2 border-white">
                                                 <img src={resolveMediaUrl(displayProfile.avatar)} alt="" className="w-full h-full object-cover" />
                                             </div>
                                         </div>
                                     )}
                                 </div>
 
-                                <div className="space-y-2">
-                                    <h3 className="text-xl sm:text-2xl font-black text-white">
+                                <div className="space-y-3">
+                                    <h3 className="text-2xl sm:text-3xl font-black text-gray-900 drop-shadow-sm">
                                         Xin chào! Mình là <span className={displayProfile.themeColor}>{displayProfile.name}</span>
                                     </h3>
-                                    <p className="text-xs sm:text-sm text-gray-300 font-medium leading-relaxed">
-                                        Mình đi cùng bạn ở các di tích trên TimeLens và chỉ kể phần có trong tư liệu. Bạn muốn bắt đầu từ đâu?
+                                    <p className="text-sm sm:text-base text-gray-700 font-medium leading-relaxed">
+                                        Người dẫn đường thực thụ xuyên không về quá khứ. Hãy hỏi mình bất kỳ điều gì, mình sẽ giải mã bằng tư liệu minh bạch nhất!
                                     </p>
                                 </div>
-
-                                <div className="pt-2">
-                                    <ReportContentButton stationCode={stationCode ?? undefined} context="chat" />
+                                {/* Gợi ý nhanh: bấm là gửi luôn */}
+                                <div className="flex flex-wrap justify-center gap-2.5 mt-2">
+                                    {[
+                                        'Hãy kể cho mình nghe về di tích này.',
+                                        'Hiện vật nào ở đây đáng chú ý nhất?',
+                                    ].map((prompt) => (
+                                        <button
+                                            key={prompt}
+                                            type="button"
+                                            disabled={busy}
+                                            onClick={() => void send(prompt)}
+                                            className="rounded-full border border-[#0275FB]/25 bg-white px-4 py-2 text-xs sm:text-[13px] font-bold text-[#0275FB] shadow-sm transition-all hover:-translate-y-0.5 hover:border-[#0275FB] hover:bg-[#F4F9FF] hover:shadow-md disabled:opacity-40 disabled:hover:translate-y-0 cursor-pointer"
+                                        >
+                                            {prompt}
+                                        </button>
+                                    ))}
                                 </div>
                             </div>
                         )}
 
                         {timeline.map((item) => {
                             if (item.type === 'day' || item.type === 'session') {
-                                return <TimelineDivider key={item.key} label={item.label} />
+                                return (
+                                    <div key={item.key} className="flex justify-center py-3">
+                                        <span className="bg-[#FFF2C3] px-4 py-1.5 rounded-full text-xs font-black text-[#7A5B00] shadow-sm border border-[#FDC908]/60">
+                                            {item.label}
+                                        </span>
+                                    </div>
+                                )
                             }
 
                             const m = item.message
                             const isUser = m.role === 'user'
                             return (
-                                <div key={m.id} className={`flex gap-3 max-w-[88%] sm:max-w-[80%] ${isUser ? 'self-end flex-row-reverse' : 'self-start'}`}>
-                                    <div className={`w-8 shrink-0 hidden sm:block ${showMascot && !isUser ? 'h-12' : 'h-8 rounded-full overflow-hidden border border-white/15'}`}>
+                                <div key={m.id} className={`flex gap-3 max-w-[90%] sm:max-w-[85%] ${isUser ? 'self-end flex-row-reverse' : 'self-start'}`}>
+                                    <div className={`w-9 shrink-0 hidden sm:block ${showMascot && !isUser ? 'h-12' : 'h-9 rounded-full overflow-hidden border-2 border-white ring-2 ring-[#0275FB]/30 shadow-sm'}`}>
                                         {showMascot && !isUser ? (
-                                            <img src={MASCOT_STILL} alt={m.role} className="h-full w-full object-contain" />
+                                            <img src={MASCOT_STILL} alt={m.role} className="h-full w-full object-contain drop-shadow" />
                                         ) : (
                                             <img alt={m.role} className="w-full h-full object-cover" src={isUser ? images.chatUserAvatar : resolveMediaUrl(displayProfile.avatar)} />
                                         )}
                                     </div>
 
-                                    <div className={`p-4 rounded-2xl border relative shadow-md text-left ${
+                                    <div className={`p-4 rounded-2xl relative text-left ${
                                         isUser
-                                            ? 'bg-gradient-to-r from-[#388cf1]/30 to-[#1a79e5]/30 border-[#388cf1]/50 rounded-tr-sm text-white'
-                                            : 'bg-[#1b1e2c] border-white/10 rounded-tl-sm text-gray-200'
+                                            ? 'bg-gradient-to-br from-[#0275FB] to-[#015CC8] text-white rounded-tr-sm shadow-[0_10px_24px_-8px_rgba(2,117,251,0.55)]'
+                                            : 'bg-white text-gray-800 rounded-tl-sm border-2 border-[#FDC908]/50 shadow-[0_10px_26px_-10px_rgba(2,117,251,0.35)]'
                                     }`}>
-                                        <ChatMessageContent content={m.content} />
+                                        <ChatMessageContent content={m.content} className={isUser ? "text-white" : "text-gray-800"} />
+
                                         {m.quiz && (
-                                            <div className="mt-3 flex flex-col gap-2">
+                                            <div className="mt-4 flex flex-col gap-2">
                                                 {m.quiz.options.map((option) => (
                                                     <button
                                                         key={option.id}
                                                         type="button"
                                                         disabled={m.quiz?.state === 'correct'}
                                                         onClick={() => void answerSaBanQuiz(m.id, option.id)}
-                                                        className="rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-left text-sm font-bold text-white hover:border-[#fdb438] disabled:cursor-default disabled:opacity-60 cursor-pointer"
+                                                        className="rounded-xl border-2 border-[#0275FB]/20 bg-[#F4F9FF] px-4 py-2.5 text-left text-sm font-bold text-[#0F1B33] hover:border-[#0275FB] hover:bg-[#FFF2C3] disabled:cursor-default disabled:opacity-60 cursor-pointer transition-colors"
                                                     >
                                                         {option.label}
                                                     </button>
@@ -1077,36 +1168,37 @@ export function ChatPage() {
                                         {m.role === 'assistant' &&
                                             shouldShowB2CPaywall(user) &&
                                             (!m.sources || m.sources.length === 0) && (
-                                                <p className="mt-3 pt-3 border-t border-white/10 text-xs text-[#fdb438]/90">
-                                                    Nâng cấp Premium để xem nguồn tài liệu chính thống kèm câu trả lời.
+                                                <p className="mt-3 pt-3 border-t border-gray-100 text-xs text-[#0275FB] font-medium">
+                                                    ✨ Nâng cấp Premium để xem nguồn tài liệu chính thống kèm câu trả lời.
                                                 </p>
                                             )}
                                         {m.role === 'assistant' &&
                                             !shouldShowB2CPaywall(user) &&
                                             (m.sources?.length ?? 0) > 0 && (
-                                                <section className="mt-3 border-t border-white/10 pt-3" aria-label="Nguồn kho tư liệu di tích">
-                                                    <p className="text-xs font-black uppercase tracking-wider text-[#fdb438]">
-                                                        Nguồn (kho tư liệu di tích)
+                                                <section className="mt-4 border-t border-[#0275FB]/15 pt-3 bg-[#EAF3FF] -mx-4 -mb-4 p-4 rounded-b-2xl" aria-label="Nguồn kho tư liệu di tích">
+                                                    <p className="text-xs font-black uppercase tracking-wider text-[#0275FB] mb-2 flex items-center gap-1">
+                                                        <MaterialIcon name="library_books" className="text-[14px]" />
+                                                        Nguồn tư liệu trích xuất
                                                     </p>
-                                                    <ul className="mt-2 space-y-2">
+                                                    <ul className="space-y-2">
                                                         {m.sources!.map((source, index) => (
-                                                            <li key={`${source.title}-${index}`} className="text-xs text-gray-300">
+                                                            <li key={`${source.title}-${index}`} className="text-xs text-gray-600">
                                                                 {source.url ? (
-                                                                    <a className="font-semibold text-[#8fc2ff] hover:underline" href={source.url} target="_blank" rel="noreferrer">
+                                                                    <a className="font-bold text-[#0275FB] hover:underline" href={source.url} target="_blank" rel="noreferrer">
                                                                         {source.title}
                                                                     </a>
                                                                 ) : (
-                                                                    <span className="font-semibold text-[#8fc2ff]">{source.title}</span>
+                                                                    <span className="font-bold text-gray-700">{source.title}</span>
                                                                 )}
-                                                                {source.excerpt && <p className="mt-0.5 text-gray-400">{source.excerpt}</p>}
+                                                                {source.excerpt && <p className="mt-1 text-gray-500 italic border-l-2 border-[#FDC908] pl-2">{source.excerpt}</p>}
                                                             </li>
                                                         ))}
                                                     </ul>
                                                 </section>
                                             )}
-                                        <span className="text-[10px] font-bold text-gray-400 mt-2 block text-right">
-                      {new Date(m.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
-                    </span>
+                                        <span className={`text-[10px] font-bold mt-2 block text-right ${isUser ? 'text-blue-100' : 'text-gray-400'}`}>
+                                            {new Date(m.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                                        </span>
                                     </div>
                                 </div>
                             )
@@ -1114,36 +1206,37 @@ export function ChatPage() {
 
                         {showTypingIndicator && (
                             <div className="flex gap-3 max-w-[80%] items-end self-start">
-                                <div className={`w-8 hidden sm:block ${showMascot ? 'h-12' : 'h-8 rounded-full overflow-hidden border border-white/15'}`}>
+                                <div className={`w-9 hidden sm:block ${showMascot ? 'h-12' : 'h-9 rounded-full overflow-hidden border-2 border-white ring-2 ring-[#0275FB]/30'}`}>
                                     {showMascot ? (
                                         <img src={MASCOT_STILL} alt="ai" className="h-full w-full object-contain" />
                                     ) : (
                                         <img alt="ai" className="w-full h-full object-cover" src={resolveMediaUrl(displayProfile.avatar)} />
                                     )}
                                 </div>
-                                <div className="bg-[#1b1e2c] px-4 py-3 rounded-2xl rounded-tl-sm border border-white/10 flex items-center gap-1.5 h-11">
-                                    <span className="w-2 h-2 bg-[#fdb438] rounded-full animate-bounce" />
-                                    <span className="w-2 h-2 bg-[#fdb438] rounded-full animate-bounce [animation-delay:150ms]" />
-                                    <span className="w-2 h-2 bg-[#fdb438] rounded-full animate-bounce [animation-delay:300ms]" />
+                                <div className="bg-white px-5 py-4 rounded-2xl rounded-tl-sm border-2 border-[#FDC908]/50 flex items-center gap-2 h-12 shadow-[0_10px_26px_-10px_rgba(2,117,251,0.35)]">
+                                    <span className="w-2.5 h-2.5 bg-[#FDC908] rounded-full animate-bounce" />
+                                    <span className="w-2.5 h-2.5 bg-[#FDC908] rounded-full animate-bounce [animation-delay:150ms]" />
+                                    <span className="w-2.5 h-2.5 bg-[#0275FB] rounded-full animate-bounce [animation-delay:300ms]" />
                                 </div>
                             </div>
                         )}
                         <div ref={messagesEndRef} className="h-px shrink-0" />
                     </div>
 
-                    {/* Thanh nhập liệu Bar bên dưới */}
-                    <div className="shrink-0 p-4 border-t border-white/10 bg-[#12141f]">
+                    {/* ───────── Ô NHẬP ───────── */}
+                    <div className="shrink-0 p-4 sm:p-6 bg-white border-t-2 border-[#0275FB]/15 shadow-[0_-8px_24px_-12px_rgba(2,117,251,0.25)] z-20 relative">
                         {retryMessage && (
                             <button
                                 type="button"
                                 onClick={() => void send(retryMessage)}
                                 disabled={busy}
-                                className="mb-3 rounded-xl bg-white px-4 py-2 text-sm font-black text-black disabled:opacity-40 cursor-pointer"
+                                className="mb-3 rounded-full bg-red-50 text-red-600 px-4 py-2 text-sm font-bold border border-red-200 disabled:opacity-40 cursor-pointer flex items-center gap-2 hover:bg-red-100 transition-colors"
                             >
-                                Gửi lại
+                                <MaterialIcon name="refresh" className="text-[16px]" />
+                                Thử gửi lại tin nhắn
                             </button>
                         )}
-                        <div className="relative flex items-center bg-[#1b1e2c] rounded-2xl border border-white/15 focus-within:border-[#fe951c] transition-all p-1 pl-3 shadow-inner">
+                        <div className="relative flex items-center bg-[#F2F7FF] rounded-full border-2 border-[#0275FB]/25 focus-within:border-[#0275FB] focus-within:bg-white focus-within:ring-4 focus-within:ring-[#0275FB]/15 transition-all p-1.5 pl-5 shadow-sm">
                             <input
                                 value={input}
                                 onChange={(e) => setInput(e.target.value)}
@@ -1154,46 +1247,38 @@ export function ChatPage() {
                                     }
                                 }}
                                 disabled={busy}
-                                className="flex-1 bg-transparent border-none focus:ring-0 text-sm font-medium text-white placeholder:text-gray-500 px-2 disabled:opacity-60"
+                                className="flex-1 bg-transparent border-none focus:ring-0 text-sm md:text-base font-medium text-[#0F1B33] placeholder:text-slate-400 px-2 disabled:opacity-60 outline-none"
                                 placeholder={dictating ? 'Đang nghe, chữ hiện ở đây…' : `Nhắn tin cho ${displayProfile.name}...`}
                             />
-                            <div className="flex items-center gap-1 pr-1">
-                                {showMascot && (
-                                    <button
-                                        type="button"
-                                        onClick={() => beginCall()}
-                                        disabled={voiceBusy || sending}
-                                        className="p-2.5 text-gray-400 hover:text-white hover:bg-white/5 transition-all rounded-xl cursor-pointer disabled:opacity-40"
-                                        title="Gọi mascot"
-                                    >
-                                        <MaterialIcon name="videocam" className="text-xl" />
-                                    </button>
-                                )}
+                            <div className="flex items-center gap-1.5 pr-1">
+                                {/* Nút Giọng nói (Micro) */}
                                 <button
                                     type="button"
                                     onClick={toggleDictate}
                                     disabled={voiceBusy || sending || callOpen}
-                                    className={`p-2.5 transition-all rounded-xl cursor-pointer ${
-                                        dictating ? 'bg-red-500 text-white animate-pulse shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'
+                                    className={`h-10 w-10 shrink-0 flex items-center justify-center transition-all rounded-full cursor-pointer ${
+                                        dictating ? 'bg-red-500 text-white animate-pulse shadow-lg' : 'bg-[#FFF2C3] text-[#0275FB] hover:bg-[#FDC908] hover:text-[#0F1B33]'
                                     }`}
-                                    title={dictating ? 'Dừng, chữ nằm trong ô nhắn' : 'Nói để điền chữ'}
+                                    title={dictating ? 'Dừng nhập bằng giọng nói' : 'Nhập bằng giọng nói'}
                                 >
                                     <MaterialIcon name={dictating ? 'stop_circle' : 'mic'} className="text-xl" />
                                 </button>
+                                {/* Nút Gửi */}
                                 <button
                                     onClick={() => send()}
                                     type="button"
                                     disabled={busy || dictating || !input.trim()}
-                                    className="bg-gradient-to-r from-[#fe951c] to-[#fdb438] text-black font-black p-2.5 rounded-xl hover:scale-105 transition-all disabled:opacity-40 cursor-pointer shadow-md"
+                                    className="h-10 w-10 shrink-0 flex items-center justify-center bg-gradient-to-br from-[#0275FB] to-[#015CC8] text-white rounded-full hover:shadow-lg hover:-translate-y-0.5 transition-all disabled:opacity-40 disabled:hover:translate-y-0 cursor-pointer shadow-md"
+                                    title="Gửi"
                                 >
-                                    <MaterialIcon name="send" className="text-xl font-bold" />
+                                    <MaterialIcon name="send" className="text-xl ml-1" />
                                 </button>
                             </div>
                         </div>
 
                         {chatLimitReached && shouldShowB2CPaywall(user) && !premiumBannerDismissed && (
-                            <div className="mt-3 p-4 rounded-2xl border border-[#fe951c]/50 bg-[#fe951c]/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-left">
-                                <p className="text-xs sm:text-sm text-gray-200 font-bold">
+                            <div className="mt-4 p-4 rounded-2xl border-2 border-[#FDC908]/60 bg-[#FFF2C3]/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-left">
+                                <p className="text-xs sm:text-sm text-[#0F1B33] font-bold">
                                     ⚠️ Bạn đã hết lượt thoại miễn phí hôm nay. Nâng cấp Premium để trò chuyện không giới hạn!
                                 </p>
                                 <div className="flex gap-2 shrink-0">
@@ -1201,14 +1286,14 @@ export function ChatPage() {
                                         type="button"
                                         variant="outline"
                                         onClick={dismissPremiumBanner}
-                                        className="text-xs font-bold text-gray-300"
+                                        className="text-xs font-bold text-gray-600 bg-white"
                                     >
                                         Để sau
                                     </Button>
                                     <Button
                                         type="button"
                                         onClick={openPricing}
-                                        className="text-xs font-black bg-[#fe951c] text-black"
+                                        className="text-xs font-black bg-[#0275FB] text-white hover:bg-blue-700"
                                     >
                                         Nâng Cấp Premium
                                     </Button>
@@ -1218,6 +1303,7 @@ export function ChatPage() {
                     </div>
                 </section>
             </main>
+
             <QuotaExceededModal
                 open={quotaModalOpen && shouldShowB2CPaywall(user)}
                 onClose={dismissQuotaModal}
@@ -1242,16 +1328,16 @@ export function ChatPage() {
                     hearing
                         ? 'Chrono đang nói. Nút xanh là tiếng đang phát.'
                         : callMuted
-                          ? 'Mic đang tắt. Bấm Mic để nói tiếp.'
-                          : voicePhase === 'playing' || voicePhase === 'tts'
-                            ? 'Đang chuẩn bị tiếng. Nếu im, bấm Nghe.'
-                            : voicePhase === 'answered'
-                              ? heardAudio
-                                  ? 'Đã nói xong. Bấm Nghe lại, hoặc Tiếp tục để hỏi câu mới.'
-                                  : 'Câu trả lời đã hiện. Bấm nút Nghe để nghe Chrono.'
-                              : voicePhase === 'chat' || voicePhase === 'stt'
-                                ? 'Chrono đang soạn câu trả lời.'
-                                : 'Mic đang mở. Hãy nói.'
+                            ? 'Mic đang tắt. Bấm Mic để nói tiếp.'
+                            : voicePhase === 'playing' || voicePhase === 'tts'
+                                ? 'Đang chuẩn bị tiếng. Nếu im, bấm Nghe.'
+                                : voicePhase === 'answered'
+                                    ? heardAudio
+                                        ? 'Đã nói xong. Bấm Nghe lại, hoặc Tiếp tục để hỏi câu mới.'
+                                        : 'Câu trả lời đã hiện. Bấm nút Nghe để nghe Chrono.'
+                                    : voicePhase === 'chat' || voicePhase === 'stt'
+                                        ? 'Chrono đang soạn câu trả lời.'
+                                        : 'Mic đang mở. Hãy nói.'
                 }
                 recording={voicePhase === 'recording'}
                 heardText={heardText}
