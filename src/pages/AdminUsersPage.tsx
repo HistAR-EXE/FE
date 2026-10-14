@@ -1,87 +1,102 @@
-//src/pages/AdminUserPage.tsx
-import { useEffect, useState } from 'react'
-import { adminApi, type AdminUserSummary } from '../features/admin/api'
-import { useToast } from '../shared/ui/toast/useToast'
+import { useCallback, useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { AdminErrorState, AdminEmptyState, AdminLoading } from '../components/admin/AdminAsyncState'
+import { AdminPagination } from '../components/admin/AdminPagination'
+import { adminApi, type AdminUserSummary, type PageResponse } from '../features/admin/api'
+import { parseAdminListState } from '../features/admin/state'
 import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
+import { useToast } from '../shared/ui/toast/useToast'
+
+type AdminRole = 'USER' | 'ORG_MEMBER' | 'TEACHER' | 'ADMIN'
 
 export function AdminUsersPage() {
-  const [users, setUsers] = useState<AdminUserSummary[]>([])
+  const [searchParams, setSearchParams] = useSearchParams()
+  const { page, size } = parseAdminListState(searchParams)
+  const [result, setResult] = useState<PageResponse<AdminUserSummary> | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [updatingId, setUpdatingId] = useState<string | null>(null)
   const { showToast } = useToast()
 
-  const load = () => {
+  const load = useCallback(() => {
     setLoading(true)
+    setError(null)
     adminApi
-      .listUsers()
-      .then((page) => setUsers(page.items))
-      .catch((e) => showToast({ message: getFriendlyErrorMessage(e, 'quest'), type: 'error' }))
+      .listUsers(page, size)
+      .then(setResult)
+      .catch((cause) => {
+        setResult(null)
+        setError(getFriendlyErrorMessage(cause, 'quest'))
+      })
       .finally(() => setLoading(false))
-  }
+  }, [page, size])
 
   useEffect(() => {
     load()
-  }, [showToast])
+  }, [load])
 
-  const onRoleChange = async (userId: string, role: 'USER' | 'ORG_MEMBER' | 'TEACHER' | 'ADMIN') => {
-    if (role === 'ADMIN') {
-      const target = users.find((u) => u.id === userId)
-      const ok = window.confirm(
-        `Promote ${target?.email ?? userId} lên ADMIN? Họ sẽ có quyền quản trị toàn hệ thống.`,
-      )
-      if (!ok) return
-    }
+  const setPage = (nextPage: number) => {
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current)
+      if (nextPage <= 0) next.delete('page')
+      else next.set('page', String(nextPage + 1))
+      return next
+    })
+  }
+
+  const onRoleChange = async (user: AdminUserSummary, role: AdminRole) => {
+    if (role === user.role) return
+    const warning = role === 'ADMIN'
+      ? `Promote ${user.email} lên ADMIN? Họ sẽ có quyền quản trị toàn hệ thống.`
+      : `Đổi vai trò của ${user.email} từ ${user.role} sang ${role}?`
+    if (!window.confirm(warning)) return
+
     try {
-      await adminApi.updateRole(userId, role)
+      setUpdatingId(user.id)
+      await adminApi.updateRole(user.id, role)
       showToast({ message: 'Đã cập nhật quyền', type: 'success' })
       load()
-    } catch (e) {
-      showToast({ message: getFriendlyErrorMessage(e, 'quest'), type: 'error' })
+    } catch (cause) {
+      showToast({ message: getFriendlyErrorMessage(cause, 'quest'), type: 'error' })
+    } finally {
+      setUpdatingId(null)
     }
   }
 
   return (
-      <section className="max-w-5xl w-full">
-        {loading && <p className="text-on-surface-variant text-sm">Đang tải...</p>}
-        {!loading && (
-          <div className="overflow-x-auto border border-outline-variant rounded-xl">
+    <section className="w-full max-w-6xl" aria-busy={loading}>
+      {loading && <AdminLoading label="Đang tải danh sách người dùng" />}
+      {!loading && error && <AdminErrorState message={error} onRetry={load} />}
+      {!loading && !error && result?.items.length === 0 && (
+        <AdminEmptyState title="Chưa có người dùng" detail="Không có tài khoản nào trong trang hiện tại." />
+      )}
+      {!loading && !error && result && result.items.length > 0 && (
+        <>
+          <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
             <table className="w-full text-sm">
-              <thead className="bg-surface-container-high text-on-surface-variant">
+              <thead className="bg-slate-100 text-slate-700">
                 <tr>
-                  <th className="text-left p-sm">Email</th>
-                  <th className="text-left p-sm">Tên</th>
-                  <th className="text-left p-sm">Email verified</th>
-                  <th className="text-left p-sm">Tier</th>
-                  <th className="text-left p-sm">Vai trò</th>
-                  <th className="text-left p-sm">XP</th>
-                  <th className="text-left p-sm">Thao tác</th>
+                  {['Email', 'Tên', 'Xác minh', 'Tier', 'Vai trò', 'XP', 'Thao tác'].map((label) => (
+                    <th key={label} className="p-3 text-left font-bold">{label}</th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
-                {users.map((u) => (
-                  <tr key={u.id} className="border-t border-outline-variant/50">
-                    <td className="p-sm">{u.email}</td>
-                    <td className="p-sm">{u.displayName}</td>
-                    <td className="p-sm">
-                      {u.emailVerified === false ? (
-                        <span className="text-xs text-error">Chưa xác minh</span>
-                      ) : (
-                        <span className="text-xs text-secondary">Đã xác minh</span>
-                      )}
-                    </td>
-                    <td className="p-sm">{u.tier ?? '—'}</td>
-                    <td className="p-sm">
-                      <span className="px-2 py-0.5 rounded-full border border-outline-variant text-xs">
-                        {u.role}
-                      </span>
-                    </td>
-                    <td className="p-sm">{u.totalPoints}</td>
-                    <td className="p-sm">
+                {result.items.map((user) => (
+                  <tr key={user.id} className="border-t border-slate-200">
+                    <td className="p-3">{user.email}</td>
+                    <td className="p-3">{user.displayName}</td>
+                    <td className="p-3">{user.emailVerified === false ? 'Chưa xác minh' : 'Đã xác minh'}</td>
+                    <td className="p-3">{user.tier ?? '—'}</td>
+                    <td className="p-3"><span className="rounded-full border border-slate-300 px-2 py-1 text-xs">{user.role}</span></td>
+                    <td className="p-3 tabular-nums">{user.totalPoints}</td>
+                    <td className="p-3">
                       <select
-                        className="bg-surface border border-outline-variant rounded px-2 py-1"
-                        value={u.role}
-                        onChange={(e) =>
-                          onRoleChange(u.id, e.target.value as 'USER' | 'ORG_MEMBER' | 'TEACHER' | 'ADMIN')
-                        }
+                        aria-label={`Vai trò của ${user.email}`}
+                        className="rounded-lg border border-slate-300 bg-white px-2 py-1.5"
+                        value={user.role}
+                        disabled={updatingId === user.id}
+                        onChange={(event) => void onRoleChange(user, event.target.value as AdminRole)}
                       >
                         <option value="USER">USER</option>
                         <option value="ORG_MEMBER">ORG_MEMBER</option>
@@ -94,7 +109,9 @@ export function AdminUsersPage() {
               </tbody>
             </table>
           </div>
-        )}
-      </section>
+          <AdminPagination page={result.page} totalPages={result.totalPages} totalItems={result.totalItems} onPageChange={setPage} />
+        </>
+      )}
+    </section>
   )
 }

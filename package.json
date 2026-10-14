@@ -18,6 +18,7 @@
     "test:e2e:ui": "playwright test --project=setup --project=2-frontend-ui",
     "test:e2e:full": "playwright test --project=setup --project=3-fullstack-e2e",
     "test:e2e:report": "playwright show-report",
+    "test:admin": "node --experimental-strip-types --test scripts/admin-state.test.mjs",
     "test:all": "powershell -ExecutionPolicy Bypass -File ../scripts/run-all-tests.ps1"
   },
   "dependencies": {

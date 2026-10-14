@@ -1,6 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import { MaterialIcon } from '../ui/MaterialIcon'
+import { getSessionMeta } from '../../shared/auth/session'
+import { appEnv } from '../../shared/config/env'
 
 const pageMeta: Record<string, { title: string; eyebrow: string }> = {
   '/admin': { title: 'Bàn điều hành', eyebrow: 'HISTAR / ADMIN OVERVIEW' },
@@ -43,10 +45,44 @@ const groups = [
 export function AdminConsoleLayout() {
   const { pathname } = useLocation()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const drawerRef = useRef<HTMLElement>(null)
+  const sessionRole = getSessionMeta().role ?? 'UNKNOWN'
   const routeKey = Object.keys(pageMeta)
     .sort((a, b) => b.length - a.length)
     .find((path) => pathname === path || (path !== '/admin' && pathname.startsWith(`${path}/`))) ?? '/admin'
   const { title, eyebrow } = pageMeta[routeKey]
+
+  useEffect(() => {
+    if (!mobileOpen) return
+    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    const drawer = drawerRef.current
+    const focusable = () => Array.from(drawer?.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), select, input, textarea, [tabindex]:not([tabindex="-1"])') ?? [])
+    focusable()[0]?.focus()
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        setMobileOpen(false)
+        return
+      }
+      if (event.key !== 'Tab') return
+      const items = focusable()
+      if (items.length === 0) return
+      const first = items[0]
+      const last = items[items.length - 1]
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault()
+        first.focus()
+      }
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('keydown', onKeyDown)
+      previouslyFocused?.focus()
+    }
+  }, [mobileOpen])
 
   const navigation = (
     <nav aria-label="Điều hướng Admin Console" className="space-y-7">
@@ -61,6 +97,7 @@ export function AdminConsoleLayout() {
                   key={to}
                   to={to}
                   onClick={() => setMobileOpen(false)}
+                  aria-current={active ? 'page' : undefined}
                     className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors ${
                     active
                       ? 'bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-200'
@@ -97,11 +134,11 @@ export function AdminConsoleLayout() {
               </span>
               <span>Admin Console</span>
             </Link>
-            <span className="hidden rounded-md border border-amber-300 bg-amber-50 px-2 py-1 text-[10px] font-black tracking-widest text-amber-800 sm:inline">DEV</span>
+            <span className="hidden rounded-md border border-amber-300 bg-amber-50 px-2 py-1 text-[10px] font-black tracking-widest text-amber-800 sm:inline">{appEnv.environmentLabel}</span>
           </div>
           <div className="flex items-center gap-2 text-xs font-bold text-slate-600">
             <MaterialIcon name="shield_person" className="text-base text-emerald-600" />
-            <span className="hidden sm:inline">ADMIN</span>
+            <span className="hidden sm:inline">{sessionRole}</span>
             <Link to="/home" className="ml-2 rounded-lg border border-slate-200 px-3 py-1.5 text-slate-700 hover:border-amber-400 hover:bg-amber-50 hover:text-amber-900">Về app</Link>
           </div>
         </div>
@@ -114,7 +151,7 @@ export function AdminConsoleLayout() {
         {mobileOpen && (
           <div className="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true" aria-label="Menu quản trị">
             <button type="button" aria-label="Đóng menu quản trị" className="absolute inset-0 w-full bg-black/70" onClick={() => setMobileOpen(false)} />
-            <aside className="relative h-full w-72 overflow-y-auto border-r border-slate-200 bg-white px-4 py-7 shadow-2xl">
+            <aside ref={drawerRef} className="relative h-full w-72 overflow-y-auto border-r border-slate-200 bg-white px-4 py-7 shadow-2xl">
               <div className="mb-8 flex items-center justify-between"><span className="font-black text-slate-950">Admin Console</span><button type="button" onClick={() => setMobileOpen(false)} aria-label="Đóng" className="text-slate-700"><MaterialIcon name="close" /></button></div>
               {navigation}
             </aside>

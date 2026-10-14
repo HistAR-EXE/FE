@@ -48,7 +48,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={value}>
       {children}
-      <div className="fixed top-4 right-4 z-[100] w-[min(92vw,420px)] space-y-2">
+      <div className="fixed top-4 right-4 z-[100] w-[min(92vw,420px)] space-y-2" role="status" aria-live="polite" aria-atomic="false">
         {toasts.map((toast) => (
           <div
             key={toast.id}

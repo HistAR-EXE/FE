@@ -1,127 +1,127 @@
-// src/pages/AdminOrganizationsPage.tsx
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { AdminErrorState, AdminEmptyState, AdminLoading } from '../components/admin/AdminAsyncState'
 import { adminApi, type AdminOrganizationSummary, type OrganizationAnalytics } from '../features/admin/api'
 import { orgApi, type OrgRosterMember } from '../features/org/api'
+import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
+import { createLatestRequestGuard } from '../features/admin/state'
 
 export function AdminOrganizationsPage() {
   const [organizations, setOrganizations] = useState<AdminOrganizationSummary[]>([])
   const [orgId, setOrgId] = useState('')
   const [data, setData] = useState<OrganizationAnalytics | null>(null)
   const [roster, setRoster] = useState<OrgRosterMember[]>([])
-  const [orgsLoading, setOrgsLoading] = useState(true)
+  const [loading, setLoading] = useState(true)
+  const [detailLoading, setDetailLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [detailError, setDetailError] = useState<string | null>(null)
+  const organizationsGuard = useRef(createLatestRequestGuard())
+  const detailsGuard = useRef(createLatestRequestGuard())
 
-  useEffect(() => {
-    setOrgsLoading(true)
+  const loadOrganizations = useCallback(() => {
+    const request = organizationsGuard.current.begin()
+    setLoading(true)
+    setError(null)
     adminApi
       .listOrganizations()
       .then((items) => {
+        if (!request.isLatest()) return
         setOrganizations(items)
-        if (items[0]?.id) setOrgId(items[0].id)
+        setOrgId((current) => current || items[0]?.id || '')
       })
-      .catch(() => setOrganizations([]))
-      .finally(() => setOrgsLoading(false))
+      .catch((cause) => {
+        if (!request.isLatest()) return
+        setOrganizations([])
+        setError(getFriendlyErrorMessage(cause, 'quest'))
+      })
+      .finally(() => { if (request.isLatest()) setLoading(false) })
   }, [])
 
-  useEffect(() => {
-    if (!orgId) {
-      setData(null)
-      setRoster([])
-      return
-    }
-    adminApi.organizationAnalytics(orgId).then(setData).catch(() => setData(null))
-    orgApi.roster(orgId).then(setRoster).catch(() => setRoster([]))
+  const loadDetails = useCallback(() => {
+    if (!orgId) return
+    const request = detailsGuard.current.begin()
+    setDetailLoading(true)
+    setDetailError(null)
+    Promise.all([adminApi.organizationAnalytics(orgId), orgApi.roster(orgId)])
+      .then(([analytics, members]) => {
+        if (!request.isLatest()) return
+        setData(analytics)
+        setRoster(members)
+      })
+      .catch((cause) => {
+        if (!request.isLatest()) return
+        setData(null)
+        setRoster([])
+        setDetailError(getFriendlyErrorMessage(cause, 'quest'))
+      })
+      .finally(() => { if (request.isLatest()) setDetailLoading(false) })
   }, [orgId])
 
+  useEffect(() => {
+    loadOrganizations()
+    return () => organizationsGuard.current.invalidate()
+  }, [loadOrganizations])
+  useEffect(() => {
+    loadDetails()
+    return () => detailsGuard.current.invalidate()
+  }, [loadDetails])
+
   return (
-      <section className="max-w-5xl w-full space-y-md">
-        <div className="flex flex-wrap items-center justify-between gap-sm">
-          <h1 className="font-display-md text-on-surface">Bảng tổ chức</h1>
-          <Link to="/teacher" className="text-sm text-secondary underline hover:no-underline">
-            Xem giao diện giáo viên
-          </Link>
-        </div>
+    <section className="w-full max-w-6xl space-y-5" aria-busy={loading || detailLoading}>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-slate-600">Chọn tổ chức để xem tổng quan và danh sách thành viên.</p>
+        <Link to="/teacher" className="text-sm font-semibold text-amber-800 underline hover:no-underline">Xem giao diện giáo viên</Link>
+      </div>
 
-        {orgsLoading && (
-          <div className="h-16 rounded-xl bg-surface-container animate-pulse border border-outline-variant" />
-        )}
+      {loading && <AdminLoading label="Đang tải danh sách tổ chức" />}
+      {!loading && error && <AdminErrorState message={error} onRetry={loadOrganizations} />}
+      {!loading && !error && organizations.length === 0 && (
+        <AdminEmptyState title="Chưa có tổ chức" detail="Khi tổ chức đầu tiên được tạo, dữ liệu sẽ xuất hiện tại đây." />
+      )}
 
-        {!orgsLoading && organizations.length === 0 && (
-          <p className="text-sm text-on-surface-variant">
-            Chưa có tổ chức (API /api/admin/organizations chưa trả dữ liệu).
-          </p>
-        )}
-
-        {organizations.length > 0 && (
-          <label className="flex flex-wrap items-center gap-sm text-sm">
+      {!loading && !error && organizations.length > 0 && (
+        <>
+          <label className="flex flex-wrap items-center gap-3 text-sm font-semibold text-slate-800">
             Chọn tổ chức
-            <select
-              value={orgId}
-              onChange={(e) => setOrgId(e.target.value)}
-              className="bg-surface-container border border-outline-variant rounded-lg px-md py-sm min-w-[12rem]"
-            >
-              {organizations.map((org) => (
-                <option key={org.id} value={org.id}>
-                  {org.name}
-                  {org.memberCount != null ? ` (${org.memberCount})` : ''}
-                </option>
-              ))}
+            <select value={orgId} onChange={(event) => setOrgId(event.target.value)} className="min-w-64 rounded-lg border border-slate-300 bg-white px-3 py-2">
+              {organizations.map((org) => <option key={org.id} value={org.id}>{org.name} ({org.memberCount ?? 0})</option>)}
             </select>
           </label>
-        )}
 
-        {data && (
-          <section className="bg-surface-container border border-outline-variant rounded-xl p-md space-y-sm">
-            <p className="font-title-md">{data.name}</p>
-            <p className="text-sm text-on-surface-variant">Loại: {data.orgType}</p>
-            <p className="text-sm">Thành viên: {data.memberCount}</p>
-            <p className="text-sm">Hoàn thành nhiệm vụ: {data.completionRatePct}%</p>
-            <p className="text-sm">Full tour Củ Chi: {data.fullTourRatePct}%</p>
-            <p className="text-xs text-on-surface-variant mt-2">{data.note}</p>
-          </section>
-        )}
+          {detailLoading && <AdminLoading label="Đang tải chi tiết tổ chức" />}
+          {!detailLoading && detailError && <AdminErrorState message={detailError} onRetry={loadDetails} />}
+          {!detailLoading && !detailError && data && (
+            <div className="rounded-xl border border-slate-200 bg-white p-5">
+              <h2 className="text-lg font-bold text-slate-950">{data.name}</h2>
+              <dl className="mt-4 grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
+                <div><dt className="text-slate-600">Loại</dt><dd className="font-semibold">{data.orgType}</dd></div>
+                <div><dt className="text-slate-600">Thành viên</dt><dd className="font-semibold">{data.memberCount}</dd></div>
+                <div><dt className="text-slate-600">Hoàn thành nhiệm vụ</dt><dd className="font-semibold">{data.completionRatePct}%</dd></div>
+                <div><dt className="text-slate-600">Full tour Củ Chi</dt><dd className="font-semibold">{data.fullTourRatePct}%</dd></div>
+              </dl>
+              {data.note && <p className="mt-4 text-xs text-slate-600">{data.note}</p>}
+            </div>
+          )}
 
-        {orgId && (
-          <section className="bg-surface-container border border-outline-variant rounded-xl overflow-hidden">
-            <div className="p-md border-b border-outline-variant">
-              <h2 className="font-title-md">Danh sách thành viên</h2>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-surface-container-high text-on-surface-variant">
-                  <tr>
-                    <th className="text-left p-sm">Thành viên</th>
-                    <th className="text-left p-sm">Vai trò</th>
-                    <th className="text-left p-sm">Cấp</th>
-                    <th className="text-left p-sm">XP</th>
-                    <th className="text-left p-sm">Nhiệm vụ</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {roster.map((m) => (
-                    <tr key={m.userId} className="border-t border-outline-variant/40">
-                      <td className="p-sm">
-                        <p>{m.displayName}</p>
-                        <p className="text-xs text-on-surface-variant">{m.email}</p>
-                      </td>
-                      <td className="p-sm">{m.orgRole}</td>
-                      <td className="p-sm">{m.level}</td>
-                      <td className="p-sm">{m.totalPoints}</td>
-                      <td className="p-sm">{m.questsCompleted}</td>
+          {!detailLoading && !detailError && (
+            roster.length === 0 ? (
+              <AdminEmptyState title="Chưa có thành viên" detail="Tổ chức này chưa có thành viên trong roster." />
+            ) : (
+              <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+                <table className="w-full text-sm">
+                  <thead className="bg-slate-100 text-slate-700"><tr>{['Thành viên', 'Vai trò', 'Cấp', 'XP', 'Nhiệm vụ'].map((label) => <th key={label} className="p-3 text-left">{label}</th>)}</tr></thead>
+                  <tbody>{roster.map((member) => (
+                    <tr key={member.userId} className="border-t border-slate-200">
+                      <td className="p-3"><p>{member.displayName}</p><p className="text-xs text-slate-600">{member.email}</p></td>
+                      <td className="p-3">{member.orgRole}</td><td className="p-3">{member.level}</td><td className="p-3">{member.totalPoints}</td><td className="p-3">{member.questsCompleted}</td>
                     </tr>
-                  ))}
-                  {roster.length === 0 && (
-                    <tr>
-                      <td colSpan={5} className="p-md text-center text-on-surface-variant">
-                        Không có thành viên.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </section>
-        )}
-      </section>
+                  ))}</tbody>
+                </table>
+              </div>
+            )
+          )}
+        </>
+      )}
+    </section>
   )
 }
