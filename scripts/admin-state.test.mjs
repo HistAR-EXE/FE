@@ -100,6 +100,11 @@ test('draft preservation is limited to unauthorized responses', () => {
   assert.equal(adminState.shouldPreserveAdminDraft(new Error('offline')), false)
 })
 
+test('forbidden responses use the permission message', async () => {
+  const messages = await readFile(new URL('../src/shared/api/errorMessages.ts', import.meta.url), 'utf8')
+  assert.match(messages, /status\s*===\s*403[\s\S]{0,100}không đủ quyền/i)
+})
+
 test('user change cleanup removes only the previous user admin drafts', () => {
   const storage = new MemoryStorage()
   adminState.writeAdminDraft(storage, 'user-a', '/admin/content', 'quest:create', { title: 'A' })
@@ -217,7 +222,7 @@ test('narrative admin client and page use the Phase 2 contract and structured ta
   assert.match(page, /needsReadiness\s*=\s*action\.action\s*===\s*["']enable["'][\s\S]{0,80}action\.action\s*===\s*["']publish-draft["']/)
   assert.match(page, /publishedReadiness/)
   assert.match(page, /rolloutKeys\.current/)
-  for (const tab of ['Readiness', 'Graph', 'Nguồn & citation', 'Reward & ending', 'Lịch sử']) {
+  for (const tab of ['Độ sẵn sàng', 'Sơ đồ', 'Nguồn & trích dẫn', 'Phần thưởng & kết thúc', 'Lịch sử']) {
     assert.match(page, new RegExp(tab))
   }
   assert.doesNotMatch(page, /Graph JSON draft/)

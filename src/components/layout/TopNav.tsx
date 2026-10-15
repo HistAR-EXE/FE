@@ -76,7 +76,14 @@ export function ModeBadge({ className = '' }: { className?: string }) {
     )
 }
 
-function UserAvatarDropdown({ avatarSrc }: { avatarSrc: string }) {
+export function UserAvatarDropdown({
+    avatarSrc,
+    hideAdminPortal = false,
+}: {
+    avatarSrc: string
+    /** Hide "Cổng quản trị Admin" when already inside /admin */
+    hideAdminPortal?: boolean
+}) {
     const { user, logout } = useAuth()
     const navigate = useNavigate()
     const [isOpen, setIsOpen] = useState(false)
@@ -160,10 +167,10 @@ function UserAvatarDropdown({ avatarSrc }: { avatarSrc: string }) {
                             <span>Đổi chế độ & AI RAG</span>
                         </button>
 
-                        {isAdmin(user) && (
+                        {isAdmin(user) && !hideAdminPortal && (
                             <button
                                 type="button"
-                            onClick={() => handleNavigation('/admin')}
+                                onClick={() => handleNavigation('/admin')}
                                 className="w-full px-4 py-2.5 text-left text-xs font-bold text-amber-300 hover:text-white hover:bg-white/10 flex items-center gap-3 transition-colors cursor-pointer"
                             >
                                 <MaterialIcon name="admin_panel_settings" className="text-base" />

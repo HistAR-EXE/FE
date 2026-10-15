@@ -5,6 +5,8 @@ import { AppLayout } from '../components/layout/AppLayout'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import type { AppMode } from '../shared/context/modeContext'
 import { useAppMode } from '../shared/context/useAppMode'
+import { useAuth } from '../shared/auth/useAuth'
+import { getAlreadyLoggedInRedirect, isAdmin } from '../shared/auth/types'
 import { CU_CHI_LOCATION_ID, HERITAGE_LOCATION_IDS, PILOT_SITES } from '../shared/config/constants'
 import { resolveMediaUrl } from '../shared/config/env'
 import { HERITAGE_SITE_GEO } from '../shared/config/heritageSites'
@@ -156,6 +158,7 @@ export function ModeSelectPage() {
     const navigate = useNavigate()
     const location = useLocation()
     const { showToast } = useToast()
+    const { user } = useAuth()
 
     const [step, setStep] = useState<1 | 2 | 3>(1)
     const [selectedMode, setSelectedMode] = useState<AppMode>('online')
@@ -168,6 +171,13 @@ export function ModeSelectPage() {
     const [apiLocations, setApiLocations] = useState<HeritageLocation[]>([])
 
     const pendingFrom = (location.state as { from?: string } | null)?.from
+
+    // Admin skips consumer mode-select and lands on HistAR Admin Core.
+    useEffect(() => {
+        if (user && isAdmin(user)) {
+            navigate(getAlreadyLoggedInRedirect(user), { replace: true })
+        }
+    }, [navigate, user])
 
     useEffect(() => {
         locationsApi.list({ size: 100 })
@@ -281,6 +291,10 @@ export function ModeSelectPage() {
             console.warn("[TimeLens Notice] Chưa đồng bộ session với Backend, dùng chế độ Local:", error)
         } finally {
             setIsLaunching(false)
+            if (user && isAdmin(user)) {
+                navigate(getAlreadyLoggedInRedirect(user), { replace: true })
+                return
+            }
             const target = pendingFrom?.startsWith('/') && pendingFrom !== '/mode-select' ? pendingFrom : '/home'
             navigate(target, { replace: true })
         }

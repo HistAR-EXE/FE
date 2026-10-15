@@ -2,6 +2,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './styles/globals.css'
+import './styles/admin-ops.css'
 import './shared/i18n'
 import App from './App.tsx'
 import { AuthProvider } from './shared/auth/AuthContext'

@@ -98,7 +98,7 @@ export function isPremium(user: AuthUser | null | undefined): boolean {
 
 export function getPostLoginRedirect(user: AuthUser, from?: string | null): string {
   if (needsEmailVerification(user)) return '/verify-email/pending'
-  if (user.role === 'ADMIN') return '/admin/content'
+  if (user.role === 'ADMIN') return '/admin'
   if (user.role === 'TEACHER') return '/teacher'
   if (from && from !== '/login' && from !== '/' && from !== '/mode-select' && from !== '/verify-email/pending' && isSafeRedirect(from)) {
     return from
@@ -108,7 +108,7 @@ export function getPostLoginRedirect(user: AuthUser, from?: string | null): stri
 
 export function getAlreadyLoggedInRedirect(user: AuthUser): string {
   if (needsEmailVerification(user)) return '/verify-email/pending'
-  if (user.role === 'ADMIN') return '/admin/content'
+  if (user.role === 'ADMIN') return '/admin'
   if (user.role === 'TEACHER') return '/teacher'
   return '/home'
 }

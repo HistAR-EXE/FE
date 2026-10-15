@@ -1,0 +1,343 @@
+/* Stitch ops console — scoped to .admin-console only (does not affect public app). */
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+.admin-console {
+  --ops-bg: #131315;
+  --ops-surface: #201f22;
+  --ops-surface-low: #1c1b1d;
+  --ops-surface-lowest: #0e0e10;
+  --ops-surface-high: #2a2a2c;
+  --ops-surface-highest: #353437;
+  --ops-on: #e5e1e4;
+  --ops-muted: #bbcabf;
+  --ops-outline: #86948a;
+  --ops-outline-variant: #3c4a42;
+  /* Stitch CTAs: saturated mint fill + near-black label (not pale-on-pale). */
+  --ops-primary: #4edea3;
+  --ops-primary-container: #4edea3;
+  --ops-on-primary: #062016;
+  --ops-on-primary-container: #062016;
+  --ops-secondary: #4cd7f6;
+  --ops-error: #ffb4ab;
+  --ops-error-container: #93000a;
+  --ops-tertiary: #ffb95f;
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 0.75rem;
+  --space-lg: 1.25rem;
+  --space-xl: 1.75rem;
+  --gutter-desktop: 1.25rem;
+
+  color: var(--ops-on);
+  background-color: var(--ops-bg);
+  font-family: Geist, 'Be Vietnam Pro', system-ui, sans-serif;
+  color-scheme: dark;
+}
+
+.admin-console .font-mono,
+.admin-console .font-code-sm,
+.admin-console .font-label-sm,
+.admin-console .font-label-md,
+.admin-console kbd {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+.admin-console .font-headline-xl,
+.admin-console .font-headline-lg,
+.admin-console .font-headline-md,
+.admin-console .font-headline-sm,
+.admin-console .font-body-md,
+.admin-console .font-body-sm,
+.admin-console .font-body-lg {
+  font-family: Geist, 'Be Vietnam Pro', system-ui, sans-serif;
+}
+
+.admin-console .text-headline-xl { font-size: 30px; line-height: 38px; letter-spacing: -0.03em; font-weight: 700; }
+.admin-console .text-headline-lg { font-size: 22px; line-height: 28px; letter-spacing: -0.02em; font-weight: 600; }
+.admin-console .text-headline-md { font-size: 18px; line-height: 24px; letter-spacing: -0.01em; font-weight: 600; }
+.admin-console .text-headline-sm { font-size: 15px; line-height: 20px; font-weight: 600; }
+.admin-console .text-body-lg { font-size: 15px; line-height: 22px; font-weight: 400; }
+.admin-console .text-body-md { font-size: 13px; line-height: 18px; font-weight: 400; }
+.admin-console .text-body-sm { font-size: 12px; line-height: 16px; font-weight: 400; }
+.admin-console .text-label-sm { font-size: 11px; line-height: 14px; letter-spacing: 0.04em; font-weight: 500; }
+.admin-console .text-label-md { font-size: 12px; line-height: 16px; letter-spacing: 0.02em; font-weight: 500; }
+.admin-console .text-code-sm { font-size: 11px; line-height: 14px; font-weight: 400; }
+
+.admin-console .p-space-xs { padding: var(--space-xs); }
+.admin-console .p-space-sm { padding: var(--space-sm); }
+.admin-console .p-space-md { padding: var(--space-md); }
+.admin-console .p-space-lg { padding: var(--space-lg); }
+.admin-console .px-space-sm { padding-left: var(--space-sm); padding-right: var(--space-sm); }
+.admin-console .px-space-md { padding-left: var(--space-md); padding-right: var(--space-md); }
+.admin-console .px-space-lg { padding-left: var(--space-lg); padding-right: var(--space-lg); }
+.admin-console .py-space-sm { padding-top: var(--space-sm); padding-bottom: var(--space-sm); }
+.admin-console .py-space-md { padding-top: var(--space-md); padding-bottom: var(--space-md); }
+.admin-console .py-space-lg { padding-top: var(--space-lg); padding-bottom: var(--space-lg); }
+.admin-console .gap-space-xs { gap: var(--space-xs) !important; }
+.admin-console .gap-space-sm { gap: var(--space-sm) !important; }
+.admin-console .gap-space-md { gap: var(--space-md) !important; }
+.admin-console .gap-space-lg { gap: var(--space-lg) !important; }
+.admin-console .gap-gutter-desktop { gap: var(--gutter-desktop) !important; }
+.admin-console .mb-space-xs { margin-bottom: var(--space-xs) !important; }
+.admin-console .mb-space-sm { margin-bottom: var(--space-sm) !important; }
+.admin-console .mb-space-md { margin-bottom: var(--space-md) !important; }
+.admin-console .mb-space-lg { margin-bottom: var(--space-lg) !important; }
+.admin-console .mt-space-xs { margin-top: var(--space-xs) !important; }
+.admin-console .mt-space-sm { margin-top: var(--space-sm) !important; }
+.admin-console .mt-space-md { margin-top: var(--space-md) !important; }
+.admin-console .mt-space-lg { margin-top: var(--space-lg) !important; }
+.admin-console .space-y-space-xs > :not([hidden]) ~ :not([hidden]) { margin-top: var(--space-xs) !important; }
+.admin-console .space-y-space-sm > :not([hidden]) ~ :not([hidden]) { margin-top: var(--space-sm) !important; }
+.admin-console .space-y-space-md > :not([hidden]) ~ :not([hidden]) { margin-top: var(--space-md) !important; }
+.admin-console .space-y-space-lg > :not([hidden]) ~ :not([hidden]) { margin-top: var(--space-lg) !important; }
+.admin-console .px-gutter-desktop { padding-left: var(--gutter-desktop); padding-right: var(--gutter-desktop); }
+
+/* Surfaces */
+.admin-console .bg-surface,
+.admin-console.bg-surface { background-color: var(--ops-bg) !important; }
+.admin-console .bg-surface-container-lowest { background-color: var(--ops-surface-lowest) !important; }
+.admin-console .bg-surface-container-low { background-color: var(--ops-surface-low) !important; }
+.admin-console .bg-surface-container { background-color: var(--ops-surface) !important; }
+.admin-console .bg-surface-container-high,
+.admin-console .bg-surface-container-highest,
+.admin-console .bg-surface-variant,
+.admin-console .bg-surface-bright { background-color: var(--ops-surface-high) !important; }
+.admin-console .bg-surface-dim { background-color: var(--ops-bg) !important; }
+.admin-console .hover\:bg-surface-container:hover { background-color: var(--ops-surface) !important; }
+.admin-console .hover\:bg-surface-container-high:hover { background-color: var(--ops-surface-high) !important; }
+.admin-console .hover\:bg-surface-variant:hover { background-color: var(--ops-surface-highest) !important; }
+
+.admin-console .bg-white,
+.admin-console .bg-slate-50,
+.admin-console .bg-slate-100,
+.admin-console .hover\:bg-slate-50:hover { background-color: var(--ops-surface-low) !important; }
+.admin-console .bg-amber-50,
+.admin-console .bg-amber-100 { background-color: rgba(16, 185, 129, 0.12) !important; }
+.admin-console .bg-red-50 { background-color: rgba(147, 0, 10, 0.45) !important; }
+.admin-console .bg-emerald-50 { background-color: rgba(16, 185, 129, 0.12) !important; }
+
+.admin-console .text-on-surface,
+.admin-console .text-on-background,
+.admin-console .text-slate-950,
+.admin-console .text-slate-900,
+.admin-console .text-slate-800 { color: var(--ops-on) !important; }
+.admin-console .text-on-surface-variant,
+.admin-console .text-slate-600,
+.admin-console .text-slate-500,
+.admin-console .text-slate-400,
+.admin-console .text-slate-300 { color: var(--ops-muted) !important; }
+.admin-console .text-outline { color: var(--ops-outline) !important; }
+.admin-console .text-amber-800,
+.admin-console .text-amber-900,
+.admin-console .text-amber-950,
+.admin-console .text-emerald-600,
+.admin-console .text-emerald-700,
+.admin-console .text-emerald-800 { color: var(--ops-primary) !important; }
+.admin-console .text-red-700,
+.admin-console .text-red-800,
+.admin-console .text-red-900 { color: var(--ops-error) !important; }
+.admin-console .text-secondary { color: var(--ops-secondary) !important; }
+.admin-console .text-tertiary { color: var(--ops-tertiary) !important; }
+.admin-console .text-error { color: var(--ops-error) !important; }
+
+.admin-console .border-outline,
+.admin-console .border-outline-variant,
+.admin-console .border-slate-200,
+.admin-console .border-slate-300,
+.admin-console .border-white\/10,
+.admin-console .border-white\/15,
+.admin-console .border-amber-200,
+.admin-console .border-amber-300,
+.admin-console .border-red-200,
+.admin-console .border-emerald-300 { border-color: var(--ops-outline-variant) !important; }
+
+.admin-console .bg-primary,
+.admin-console .bg-primary-container,
+.admin-console .bg-amber-400,
+.admin-console .bg-amber-500 {
+  background-color: var(--ops-primary-container) !important;
+  color: var(--ops-on-primary-container) !important;
+}
+.admin-console .text-primary { color: var(--ops-primary) !important; }
+.admin-console .text-on-primary,
+.admin-console .text-on-primary-container { color: var(--ops-on-primary-container) !important; }
+.admin-console .bg-secondary { background-color: var(--ops-secondary) !important; }
+.admin-console .bg-tertiary { background-color: var(--ops-tertiary) !important; }
+.admin-console .ring-amber-200,
+.admin-console .ring-amber-500,
+.admin-console .focus-visible\:ring-amber-500:focus-visible,
+.admin-console .focus\:ring-primary:focus { --tw-ring-color: rgba(16, 185, 129, 0.45) !important; }
+
+.admin-console input,
+.admin-console textarea,
+.admin-console select {
+  background-color: var(--ops-surface-low);
+  color: var(--ops-on);
+  border-color: var(--ops-outline-variant);
+}
+.admin-console input::placeholder,
+.admin-console textarea::placeholder { color: var(--ops-outline); }
+
+.admin-console button:focus-visible,
+.admin-console a:focus-visible,
+.admin-console input:focus-visible,
+.admin-console textarea:focus-visible,
+.admin-console select:focus-visible {
+  outline: 2px solid rgba(78, 222, 163, 0.55);
+  outline-offset: 2px;
+}
+
+.admin-console .ops-nav-active {
+  background-color: var(--ops-primary-container);
+  color: var(--ops-on-primary-container);
+  box-shadow: 0 0 18px -2px rgba(78, 222, 163, 0.45);
+}
+.admin-console .ops-card {
+  background-color: var(--ops-surface-low);
+  border: 1px solid var(--ops-outline-variant);
+  border-radius: 0.75rem;
+}
+.admin-console .ops-glow-primary {
+  box-shadow: 0 0 16px rgba(78, 222, 163, 0.35);
+}
+.admin-console .ops-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-weight: 700;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  background-color: var(--ops-primary-container) !important;
+  color: var(--ops-on-primary-container) !important;
+  box-shadow: 0 0 16px rgba(78, 222, 163, 0.35);
+  transition: filter 0.15s ease, box-shadow 0.15s ease;
+}
+.admin-console .ops-btn-primary:hover {
+  filter: brightness(1.06);
+  box-shadow: 0 0 20px rgba(78, 222, 163, 0.5);
+}
+.admin-console .ops-btn-primary .material-symbols-outlined {
+  color: inherit !important;
+}
+.admin-console .ops-table {
+  table-layout: fixed;
+  width: 100%;
+}
+.admin-console .ops-table thead {
+  background-color: var(--ops-surface-high);
+  color: var(--ops-muted);
+}
+.admin-console .ops-table th,
+.admin-console .ops-table td {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+}
+.admin-console .ops-table tbody tr {
+  border-top: 1px solid var(--ops-outline-variant);
+}
+.admin-console .ops-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border-radius: 9999px;
+  padding: 0.125rem 0.5rem;
+  font-size: 11px;
+  font-weight: 600;
+}
+.admin-console .ops-pill-success {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--ops-primary);
+}
+.admin-console .ops-pill-warn {
+  background: rgba(255, 185, 95, 0.15);
+  color: var(--ops-tertiary);
+}
+.admin-console .ops-pill-danger {
+  background: rgba(255, 180, 171, 0.15);
+  color: var(--ops-error);
+}
+.admin-console .ops-pill-neutral {
+  background: var(--ops-surface-high);
+  color: var(--ops-muted);
+}
+.admin-console .ops-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  flex-shrink: 0;
+  border-radius: 0.5rem;
+  border: 1px solid var(--ops-outline-variant);
+  color: var(--ops-on);
+  background: var(--ops-surface-high);
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+.admin-console .ops-icon-btn:hover {
+  color: var(--ops-on-primary-container);
+  border-color: rgba(78, 222, 163, 0.65);
+  background: rgba(78, 222, 163, 0.22);
+}
+.admin-console .ops-icon-btn-danger {
+  color: var(--ops-error);
+}
+.admin-console .ops-icon-btn-danger:hover {
+  color: #fff;
+  border-color: rgba(255, 180, 171, 0.7);
+  background: rgba(147, 0, 10, 0.55);
+}
+.admin-console .ops-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.admin-console .ops-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.9rem;
+  border-radius: 9999px;
+  background: var(--ops-surface-high);
+  color: var(--ops-muted);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  transition: color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+.admin-console .ops-tab:hover { color: var(--ops-on); }
+.admin-console .ops-tab-active {
+  background: var(--ops-primary-container);
+  color: var(--ops-on-primary-container);
+  box-shadow: 0 0 14px rgba(78, 222, 163, 0.35);
+}
+.admin-console .ops-tab-danger { color: var(--ops-error); }
+.admin-console .ops-tab-danger.ops-tab-active {
+  background: rgba(147, 0, 10, 0.65);
+  color: var(--ops-error);
+  box-shadow: none;
+}
+.admin-console .ops-tab-count {
+  min-width: 1.25rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 9999px;
+  background: rgba(0, 0, 0, 0.22);
+  font-size: 10px;
+  font-weight: 700;
+}
+.admin-console .ops-tab-active .ops-tab-count {
+  background: rgba(6, 32, 22, 0.18);
+  color: inherit;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-console *,
+  .admin-console *::before,
+  .admin-console *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
