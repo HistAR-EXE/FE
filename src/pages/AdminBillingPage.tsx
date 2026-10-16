@@ -3,14 +3,26 @@ import { Link } from 'react-router-dom'
 import { adminApi, type AdminBillingSettings, type AdminB2b2cInquiry, type AdminRecentPayment } from '../features/admin/api'
 import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
 import { useToast } from '../shared/ui/toast/useToast'
+import { AdminErrorState, AdminEmptyState, AdminLoading } from '../components/admin/AdminAsyncState'
+import { clearAdminDraft, readAdminDraft, shouldPreserveAdminDraft, writeAdminDraft } from '../features/admin/state'
+import { useAuth } from '../shared/auth/useAuth'
 
 function formatCurrency(value: number | null | undefined) {
   if (typeof value !== 'number' || !Number.isFinite(value)) return '—'
   return `${value.toLocaleString('vi-VN')}đ`
 }
 
-const INQUIRY_STATUSES = ['NEW', 'CONTACTED', 'QUALIFIED', 'CLOSED', 'SPAM'] as const
+const INQUIRY_STATUSES = ['NEW', 'CONTACTED', 'QUALIFIED', 'WON', 'LOST'] as const
 const SLA_HOURS = 48
+const BILLING_ROUTE = '/admin/billing'
+const BILLING_SETTINGS_FORM_ID = 'settings:runtime'
+
+type BillingSettingsDraft = {
+  priceInput: string
+  dailyLimitInput: string
+  volumeDiscountInput: string
+  volumeMinLicensesInput: string
+}
 
 function inquirySlaLabel(item: AdminB2b2cInquiry): { text: string; overdue: boolean } {
   if (item.status !== 'NEW') {
@@ -31,47 +43,86 @@ export function AdminBillingPage() {
   const [volumeDiscountInput, setVolumeDiscountInput] = useState('35')
   const [volumeMinLicensesInput, setVolumeMinLicensesInput] = useState('3')
   const [loading, setLoading] = useState(true)
+  const [settingsError, setSettingsError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [inquiries, setInquiries] = useState<AdminB2b2cInquiry[]>([])
+  const [inquiriesLoading, setInquiriesLoading] = useState(true)
+  const [inquiriesError, setInquiriesError] = useState<string | null>(null)
   const [inquiryStatusFilter, setInquiryStatusFilter] = useState<string>('')
   const [recentPayments, setRecentPayments] = useState<AdminRecentPayment[]>([])
+  const [paymentsLoading, setPaymentsLoading] = useState(true)
+  const [paymentsError, setPaymentsError] = useState<string | null>(null)
   const { showToast } = useToast()
+  const { user } = useAuth()
+  const userId = user?.id
+
+  const inquiryDraftFormId = (id: string) => `inquiry:${id}:status`
+  const inquiryStatus = (item: AdminB2b2cInquiry) => {
+    if (!userId || typeof sessionStorage === 'undefined') return item.status
+    return readAdminDraft<{ status?: string }>(
+      sessionStorage,
+      userId,
+      BILLING_ROUTE,
+      inquiryDraftFormId(item.id),
+    )?.status ?? item.status
+  }
 
   const load = () => {
     setLoading(true)
+    setSettingsError(null)
     adminApi
       .getBillingSettings()
       .then((data) => {
         setSettings(data)
-        setPriceInput(String(data.b2cPremiumPriceVnd))
-        setDailyLimitInput(String(data.chatFreeDailyLimit))
-        setVolumeDiscountInput(String(data.orgVolumeDiscountPercent ?? 35))
-        setVolumeMinLicensesInput(String(data.orgVolumeDiscountMinLicenses ?? 3))
+        const draft = userId && typeof sessionStorage !== 'undefined'
+          ? readAdminDraft<BillingSettingsDraft>(sessionStorage, userId, BILLING_ROUTE, BILLING_SETTINGS_FORM_ID)
+          : null
+        setPriceInput(draft?.priceInput ?? String(data.b2cPremiumPriceVnd))
+        setDailyLimitInput(draft?.dailyLimitInput ?? String(data.chatFreeDailyLimit))
+        setVolumeDiscountInput(draft?.volumeDiscountInput ?? String(data.orgVolumeDiscountPercent ?? 35))
+        setVolumeMinLicensesInput(draft?.volumeMinLicensesInput ?? String(data.orgVolumeDiscountMinLicenses ?? 3))
       })
-      .catch((e) => showToast({ message: getFriendlyErrorMessage(e, 'quest'), type: 'error' }))
+      .catch((cause) => setSettingsError(getFriendlyErrorMessage(cause, 'quest')))
       .finally(() => setLoading(false))
   }
 
   const loadInquiries = () => {
+    setInquiriesLoading(true)
+    setInquiriesError(null)
     adminApi
-      .listB2b2cInquiries(inquiryStatusFilter || undefined)
+      .listB2b2cInquiries()
       .then(setInquiries)
-      .catch(() => setInquiries([]))
+      .catch((cause) => setInquiriesError(getFriendlyErrorMessage(cause, 'quest')))
+      .finally(() => setInquiriesLoading(false))
+  }
+
+  const loadPayments = () => {
+    setPaymentsLoading(true)
+    setPaymentsError(null)
+    adminApi
+      .listRecentPayments()
+      .then(setRecentPayments)
+      .catch((cause) => setPaymentsError(getFriendlyErrorMessage(cause, 'quest')))
+      .finally(() => setPaymentsLoading(false))
   }
 
   useEffect(() => {
     load()
-    adminApi.listRecentPayments().then(setRecentPayments).catch(() => setRecentPayments([]))
+    loadPayments()
   }, [])
 
   useEffect(() => {
     loadInquiries()
-  }, [inquiryStatusFilter])
+  }, [])
 
   const parsedPrice = useMemo(() => Number(priceInput.replace(/[^\d]/g, '')), [priceInput])
   const parsedDailyLimit = useMemo(() => Number(dailyLimitInput), [dailyLimitInput])
   const parsedVolumeDiscount = useMemo(() => Number(volumeDiscountInput), [volumeDiscountInput])
   const parsedVolumeMinLicenses = useMemo(() => Number(volumeMinLicensesInput), [volumeMinLicensesInput])
+  const visibleInquiries = useMemo(
+    () => inquiries.filter((item) => !inquiryStatusFilter || item.status === inquiryStatusFilter),
+    [inquiries, inquiryStatusFilter],
+  )
   const isDirty = settings
     ? parsedPrice !== settings.b2cPremiumPriceVnd ||
       parsedDailyLimit !== settings.chatFreeDailyLimit ||
@@ -109,8 +160,19 @@ export function AdminBillingPage() {
       setDailyLimitInput(String(next.chatFreeDailyLimit))
       setVolumeDiscountInput(String(next.orgVolumeDiscountPercent))
       setVolumeMinLicensesInput(String(next.orgVolumeDiscountMinLicenses))
+      if (userId && typeof sessionStorage !== 'undefined') {
+        clearAdminDraft(sessionStorage, userId, BILLING_ROUTE, BILLING_SETTINGS_FORM_ID)
+      }
       showToast({ message: 'Đã cập nhật cài đặt billing runtime.', type: 'success' })
     } catch (e) {
+      if (userId && typeof sessionStorage !== 'undefined' && shouldPreserveAdminDraft(e)) {
+        writeAdminDraft<BillingSettingsDraft>(sessionStorage, userId, BILLING_ROUTE, BILLING_SETTINGS_FORM_ID, {
+          priceInput,
+          dailyLimitInput,
+          volumeDiscountInput,
+          volumeMinLicensesInput,
+        })
+      }
       showToast({ message: getFriendlyErrorMessage(e, 'quest'), type: 'error' })
     } finally {
       setSaving(false)
@@ -127,11 +189,18 @@ export function AdminBillingPage() {
   }
 
   const patchInquiryStatus = async (id: string, status: string) => {
+    const formId = inquiryDraftFormId(id)
     try {
       await adminApi.updateB2b2cInquiryStatus(id, status)
+      if (userId && typeof sessionStorage !== 'undefined') {
+        clearAdminDraft(sessionStorage, userId, BILLING_ROUTE, formId)
+      }
       showToast({ message: 'Đã cập nhật trạng thái', type: 'success' })
       loadInquiries()
     } catch (e) {
+      if (userId && typeof sessionStorage !== 'undefined' && shouldPreserveAdminDraft(e)) {
+        writeAdminDraft(sessionStorage, userId, BILLING_ROUTE, formId, { status })
+      }
       showToast({ message: getFriendlyErrorMessage(e, 'quest'), type: 'error' })
     }
   }
@@ -147,7 +216,8 @@ export function AdminBillingPage() {
           </div>
         </div>
 
-        {loading && <div className="h-48 rounded-xl bg-surface-container animate-pulse border border-outline-variant" />}
+        {loading && <AdminLoading label="Đang tải cấu hình billing" />}
+        {!loading && settingsError && <AdminErrorState message={settingsError} onRetry={load} />}
 
         {!loading && settings && (
           <>
@@ -293,8 +363,12 @@ export function AdminBillingPage() {
                 <h2 className="font-title-md">Thanh toán gần đây</h2>
                 <span className="text-xs text-on-surface-variant">GET /api/admin/billing/payments/recent</span>
               </div>
-              {recentPayments.length === 0 ? (
-                <p className="text-sm text-on-surface-variant">Chưa có dữ liệu hoặc API chưa bật.</p>
+              {paymentsLoading ? (
+                <AdminLoading label="Đang tải thanh toán gần đây" />
+              ) : paymentsError ? (
+                <AdminErrorState message={paymentsError} onRetry={loadPayments} />
+              ) : recentPayments.length === 0 ? (
+                <AdminEmptyState title="Chưa có thanh toán" detail="Không có giao dịch nào trong khoảng dữ liệu gần đây." />
               ) : (
                 <ul className="space-y-sm text-sm">
                   {recentPayments.map((p, index) => (
@@ -337,11 +411,15 @@ export function AdminBillingPage() {
                   </select>
                 </label>
               </div>
-              {inquiries.length === 0 ? (
-                <p className="text-sm text-on-surface-variant">Chưa có yêu cầu số hóa di tích.</p>
+              {inquiriesLoading ? (
+                <AdminLoading label="Đang tải yêu cầu B2B2C" />
+              ) : inquiriesError ? (
+                <AdminErrorState message={inquiriesError} onRetry={loadInquiries} />
+              ) : visibleInquiries.length === 0 ? (
+                <AdminEmptyState title="Chưa có yêu cầu phù hợp" detail="Không có yêu cầu số hóa di tích ở trạng thái đã chọn." />
               ) : (
                 <ul className="space-y-sm text-sm">
-                  {inquiries.map((item) => (
+                  {visibleInquiries.map((item) => (
                     <li key={item.id} className="border border-outline-variant/40 rounded-lg p-sm space-y-2">
                       <p className="font-medium text-on-surface">{item.siteName}</p>
                       <p className="text-on-surface-variant">
@@ -378,7 +456,7 @@ export function AdminBillingPage() {
                           </button>
                         )}
                         <select
-                          value={item.status}
+                          value={inquiryStatus(item)}
                           onChange={(e) => void patchInquiryStatus(item.id, e.target.value)}
                           className="ml-auto rounded border border-outline-variant bg-surface px-2 py-1 text-xs"
                         >

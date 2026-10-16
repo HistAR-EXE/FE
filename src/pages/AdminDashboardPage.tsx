@@ -1,53 +1,49 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { AdminErrorState, AdminLoading } from '../components/admin/AdminAsyncState'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
-import { adminApi, type NarrativePilotAdmin } from '../features/admin/api'
+import { adminApi, type AdminDashboardSummary } from '../features/admin/api'
 import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
-import { useToast } from '../shared/ui/toast/useToast'
 
 export function AdminDashboardPage() {
-  const { showToast } = useToast()
-  const [pilots, setPilots] = useState<NarrativePilotAdmin[]>([])
+  const [summary, setSummary] = useState<AdminDashboardSummary | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    adminApi.listNarrativePilots().then(setPilots).catch((error) => {
-      showToast({ message: getFriendlyErrorMessage(error, 'quest'), type: 'error' })
-    })
-  }, [showToast])
+  const load = useCallback(() => {
+    setLoading(true)
+    setError(null)
+    adminApi.dashboardSummary().then(setSummary).catch((cause) => {
+      setSummary(null)
+      setError(getFriendlyErrorMessage(cause, 'quest'))
+    }).finally(() => setLoading(false))
+  }, [])
 
-  const reviewCount = pilots.filter((pilot) => pilot.reviewStatus !== 'APPROVED').length
-  const activeCount = pilots.filter((pilot) => pilot.enabled).length
-  const cards = [
-    ['Narrative cần review', String(reviewCount), reviewCount ? 'Có nội dung cần xử lý' : 'Không có queue tồn đọng', 'rate_review', 'amber'],
-    ['Pilot đang active', String(activeCount), 'Đọc từ rollout state', 'rocket_launch', 'emerald'],
-    ['Campaign cần quyết định', '—', 'Chưa nối campaign queue', 'event_upcoming', 'sky'],
-    ['Báo sai liệu quá SLA', '—', 'Chưa nối content-report queue', 'report_problem', 'rose'],
-  ] as const
+  useEffect(() => load(), [load])
+
+  const cards = summary ? [
+    { label: 'Pilot đang active', value: summary.activePilots, icon: 'rocket_launch', to: '/admin/narrative-pilots?rolloutState=ACTIVE', detail: 'Mở danh sách rollout đang chạy' },
+    { label: 'Draft / review pending', value: summary.draftCount + summary.reviewPendingCount, icon: 'rate_review', to: '/admin/narrative-pilots?reviewStatus=DRAFT', detail: 'Xử lý hàng đợi nội dung' },
+    { label: 'Tổng bản ghi trong Trash', value: summary.trashCount, icon: 'restore_from_trash', to: '/admin/trash', detail: 'Kiểm tra hoặc khôi phục' },
+    { label: 'Báo sai sử liệu · 30 ngày', value: summary.contentReportsLast30Days, icon: 'report_problem', to: '/admin/content?tab=reports', detail: 'Mở queue báo cáo nội dung' },
+  ] : []
 
   return (
-    <>
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {cards.map(([label, value, hint, icon, tone]) => (
-            <article key={label} className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div className={`absolute right-0 top-0 h-20 w-20 translate-x-6 -translate-y-6 rounded-full blur-2xl ${tone === 'amber' ? 'bg-amber-200/60' : tone === 'emerald' ? 'bg-emerald-200/60' : tone === 'rose' ? 'bg-rose-200/60' : 'bg-sky-200/60'}`} />
-            <MaterialIcon name={icon} className="mb-5 text-2xl text-amber-600" />
-            <p className="text-sm font-bold text-slate-600">{label}</p>
-            <p className="mt-2 text-3xl font-black text-slate-950">{value}</p>
-            <p className="mt-2 text-xs text-slate-500">{hint}</p>
-          </article>
-        ))}
-      </section>
-      <section className="mt-8 grid gap-5 lg:grid-cols-2">
-        <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between gap-3"><h2 className="font-black text-slate-950">Hành động ưu tiên</h2><MaterialIcon name="priority_high" className="text-amber-600" /></div>
-          <p className="mt-3 text-sm leading-6 text-slate-600">Duyệt graph, xem checklist readiness và bật pilot khi đủ điều kiện.</p>
-          <Link to="/admin/narrative-pilots" className="mt-5 inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-black text-slate-950 hover:bg-amber-400"><MaterialIcon name="account_tree" /> Mở Narrative pilots</Link>
-        </article>
-        <article className="rounded-2xl border border-dashed border-amber-300 bg-amber-50 p-6">
-          <h2 className="font-black text-amber-900">Điều kiện bảo vệ</h2>
-          <ul className="mt-3 space-y-2 text-sm text-slate-700"><li>• Feature flag chỉ bật trong deployment config.</li><li>• Review và rollout phải qua gate readiness.</li><li>• Không hiển thị raw chat hoặc memory học sinh.</li></ul>
-        </article>
-      </section>
-    </>
+    <section className="w-full max-w-6xl" aria-busy={loading}>
+      {loading && <AdminLoading label="Đang tải KPI vận hành" />}
+      {!loading && error && <AdminErrorState message={error} onRetry={load} />}
+      {!loading && !error && summary && (
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {cards.map((card) => (
+            <Link key={card.label} to={card.to} className="group rounded-xl border border-slate-200 bg-white p-5 transition-colors hover:border-amber-400 hover:bg-amber-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500">
+              <div className="flex items-start justify-between gap-3"><MaterialIcon name={card.icon} className="text-2xl text-amber-700" /><MaterialIcon name="arrow_forward" className="text-lg text-slate-400 transition-transform group-hover:translate-x-1" /></div>
+              <p className="mt-5 text-sm font-bold text-slate-700">{card.label}</p>
+              <p className="mt-1 text-3xl font-black text-slate-950 tabular-nums">{card.value}</p>
+              <p className="mt-2 text-xs text-slate-600">{card.detail}</p>
+            </Link>
+          ))}
+        </div>
+      )}
+    </section>
   )
 }

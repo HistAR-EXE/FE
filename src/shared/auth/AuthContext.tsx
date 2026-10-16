@@ -16,6 +16,11 @@ import {
   SESSION_REFRESHED_EVENT,
 } from './session'
 import { clearReturnTo } from '../router/returnTo'
+import { clearAdminDraftsForUser } from '../../features/admin/state'
+
+function clearAdminDrafts(userId: string | undefined) {
+  if (userId && typeof sessionStorage !== 'undefined') clearAdminDraftsForUser(sessionStorage, userId)
+}
 
 function toUser(payload: AuthPayload): AuthUser {
   return {
@@ -89,7 +94,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const profile = await profileApi.me()
     hydrateJourneyPassFromProfile(profile.activeVisitSites)
     const next = profileToUser(profile)
-    setUser(next)
+    setUser((current) => {
+      if (current?.id && current.id !== next.id) clearAdminDrafts(current.id)
+      return next
+    })
     persistUserSession(next)
   }, [])
 
@@ -136,6 +144,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const prevId = user?.id
     if (prevId && prevId !== next.id) {
       clearReturnTo()
+      clearAdminDrafts(prevId)
     }
     saveSession({
       token: accessToken,
@@ -181,6 +190,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     authApi.logout(getRefreshToken()).catch(() => undefined)
+    clearAdminDrafts(user?.id)
     clearSession()
     setUser(null)
   }
@@ -189,6 +199,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser((current) => {
       if (!current) return current
       const next: AuthUser = { ...current, ...patch }
+      if (current.id !== next.id) clearAdminDrafts(current.id)
       persistUserSession(next)
       return next
     })

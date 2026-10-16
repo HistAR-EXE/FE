@@ -6,6 +6,7 @@ const env = import.meta.env
 const apiUrl = (env.VITE_API_URL ?? '').trim() || (env.DEV ? '' : '')
 const aiUrl = (env.VITE_AI_URL ?? '').trim() || (env.DEV ? '' : '')
 const isProdBuild = env.PROD === true
+const environmentLabel = (env.VITE_APP_ENV ?? (isProdBuild ? 'PROD' : 'DEV')).trim().toUpperCase()
 
 if (isProdBuild && !apiUrl) {
   console.warn(
@@ -72,6 +73,7 @@ export const appEnv = {
   aiUrl: aiUrl || '',
   mediaBaseUrl,
   isProdBuild,
+  environmentLabel,
   demoEnabled: env.VITE_DEMO_ENABLED === 'true',
   demoMode: env.VITE_DEMO_MODE === 'true',
   demoSecret: env.VITE_DEMO_SECRET ?? '',
