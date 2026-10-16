@@ -56,7 +56,7 @@ const REVIVAL_STARS = Array.from({ length: 15 }, (_, index) => ({
     delay: (index % 5) * 0.4,
 }))
 
-export function BattleDioramaViewer() {
+export function BattleDioramaViewer({ onStart }: { onStart?: () => void } = {}) {
     const [isIntro, setIsIntro] = useState(true);
     const [currentStep, setCurrentStep] = useState(0);
     const [isPlaying, setIsPlaying] = useState(false);
@@ -100,6 +100,7 @@ export function BattleDioramaViewer() {
     }, []);
 
     const handleFinishIntro = () => {
+        onStart?.();
         setIsIntro(false);
         voRef.current?.pause();
         introBgmRef.current?.pause();

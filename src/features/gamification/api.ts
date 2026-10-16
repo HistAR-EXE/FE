@@ -157,10 +157,12 @@ export const gamificationApi = {
         ),
     startQuest: (questId: string) =>
         getData<QuestProgress>(httpClient.post(`/api/quests/${questId}/start`)),
-    claimChapterBonus: (locationId: string, unlockKey: string) =>
+    claimChapterBonus: (locationId: string, unlockKey: string, answer: string) =>
         getData<{ awarded: number; alreadyClaimed: boolean }>(
-            httpClient.post('/api/quests/chapter-bonus', null, { params: { locationId, unlockKey } }),
+            httpClient.post('/api/quests/chapter-bonus', null, { params: { locationId, unlockKey, answer } }),
         ),
+    recordDialogue: (locationId: string, key: string, conversationId: string) =>
+        getData<RecordDiscoveryResponse>(httpClient.post('/api/me/discoveries/dialogue', { locationId, key, conversationId })),
     progress: (questId: string) =>
         getData<QuestProgress>(httpClient.get(`/api/quests/${questId}/progress`)),
     investigation: (questId: string) => getData<NarrativeInvestigation>(httpClient.get(`/api/quests/${questId}/investigation`)),

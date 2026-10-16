@@ -10,10 +10,21 @@ import type { UserRole } from '../../shared/auth/types'
 import { CU_CHI_LOCATION_ID } from '../../shared/config/constants'
 import { buildChatPath } from '../../features/chat/chatRoute'
 
-// THÊM ĐẦY ĐỦ CÁC TÍNH NĂNG TIÊU BIỂU VÀ ĐẶC SẮC RA THÀNH SLIDE NAV CHÍNH
-const navItems = [
-    { to: '/home', icon: 'home', label: 'Trang chủ', prefixes: ['/home'], modes: 'both' as const },
-    { to: '/explore', icon: 'explore', label: 'Khám phá', prefixes: ['/explore', '/characters'], modes: 'online' as const },
+type NavItem = {
+    modes: 'online' | 'offline' | 'both'
+    roles?: readonly UserRole[]
+    desktopOnly?: boolean
+}
+
+type NavigationItem = NavItem & {
+    readonly to: string
+    readonly icon: string
+    readonly label: string
+    readonly prefixes: readonly string[]
+}
+
+const navItems: readonly NavigationItem[] = [
+    { to: '/explore', icon: 'explore', label: 'Khám phá', prefixes: ['/explore', '/home', '/characters'], modes: 'both' as const },
 
     // --- 3 TÍNH NĂNG ĐỘT PHÁ CỦA TIMELENS ---
     { to: `/tour/360/${CU_CHI_LOCATION_ID}`, icon: '360', label: 'Tham quan 360°', prefixes: ['/tour/360'], modes: 'online' as const },
@@ -37,18 +48,16 @@ const navItems = [
     },
 ] as const
 
-const mobileNavItems = [
-    { to: '/home', icon: 'home', label: 'Trang chủ', modes: 'both' as const, prefixes: ['/home'] },
-    { to: '/explore', icon: 'explore', label: 'Khám phá', modes: 'online' as const, prefixes: ['/explore', '/tour/360', '/diorama'] },
+const mobileNavItems: readonly NavigationItem[] = [
+    { to: '/explore', icon: 'explore', label: 'Khám phá', modes: 'both' as const, prefixes: ['/explore', '/home', '/tour/360', '/diorama'] },
     { to: '/chat', icon: 'forum', label: 'Trợ lý AI', modes: 'both' as const, prefixes: ['/chat'] },
     { to: '/scan', icon: 'qr_code_scanner', label: 'Quét AR', modes: 'offline' as const, prefixes: ['/scan'] },
     { to: '/quests', icon: 'assignment', label: 'Nhiệm vụ', modes: 'both' as const, prefixes: ['/quests'] },
+    { to: '/artifacts', icon: 'history_edu', label: 'Cổ vật', modes: 'both' as const, prefixes: ['/artifacts'] },
 ] as const
 
-type NavItem = {
-    modes: 'online' | 'offline' | 'both'
-    roles?: readonly UserRole[]
-    desktopOnly?: boolean
+function withChatPath(items: readonly NavigationItem[], chatPath: string): NavigationItem[] {
+    return items.map((item) => (item.to === '/chat' ? { ...item, to: chatPath } : item))
 }
 
 function effectiveMode(mode: AppMode | null): AppMode {
@@ -106,11 +115,10 @@ type SideNavProps = {
     onCtaClick?: () => void
     isCollapsed: boolean
     onToggle: () => void
-    // Đã gỡ bỏ prop tone để ngăn chặn các component khác ghi đè màu tối
 }
 
 function activeClasses(isActive: boolean, border: 'left' | 'right') {
-    const t = TONES.light // Luôn luôn sử dụng Light Mode
+    const t = TONES.light
     if (!isActive) return t.idle
     return `${t.active} ${border === 'left' ? t.activeLeft : t.activeRight}`
 }
@@ -125,14 +133,11 @@ export function SideNav({
     const { pathname } = useLocation()
     const { mode } = useAppMode()
     const { user } = useAuth()
-    const t = TONES.light // Luôn luôn sử dụng Light Mode
+    const t = TONES.light
 
     const chatPath = useMemo(() => buildChatPath(), [])
 
-    const withChatPath = <T extends { to: string }>(items: readonly T[]) =>
-        items.map((item) => (item.to === '/chat' ? { ...item, to: chatPath } : item))
-
-    const items = withChatPath(filterNavItems(navItems, mode, user?.role))
+    const items = withChatPath(filterNavItems(navItems, mode, user?.role), chatPath)
 
     return (
         <aside
@@ -229,11 +234,9 @@ export function SideNavTablet({ activeBorder = 'right' }: { activeBorder?: 'left
     const { pathname } = useLocation()
     const { mode } = useAppMode()
     const { user } = useAuth()
-    const t = TONES.light // Luôn luôn sử dụng Light Mode
+    const t = TONES.light
     const chatPath = useMemo(() => buildChatPath(), [])
-    const withChatPath = <T extends { to: string }>(items: readonly T[]) =>
-        items.map((item) => (item.to === '/chat' ? { ...item, to: chatPath } : item))
-    const items = withChatPath(filterNavItems(navItems, mode, user?.role))
+    const items = withChatPath(filterNavItems(navItems, mode, user?.role), chatPath)
 
     return (
         <nav className={`hidden md:flex lg:hidden h-screen w-20 fixed left-0 top-0 border-r backdrop-blur-2xl flex-col py-6 px-2.5 z-40 items-center ${t.shellTablet}`}>
@@ -261,11 +264,9 @@ export function SideNavMobile() {
     const { pathname } = useLocation()
     const { mode } = useAppMode()
     const { user } = useAuth()
-    const t = TONES.light // Luôn luôn sử dụng Light Mode
+    const t = TONES.light
     const chatPath = useMemo(() => buildChatPath(), [])
-    const withChatPath = <T extends { to: string }>(items: readonly T[]) =>
-        items.map((item) => (item.to === '/chat' ? { ...item, to: chatPath } : item))
-    const items = withChatPath(filterNavItems(mobileNavItems, mode, user?.role, { excludeDesktopOnly: true }))
+    const items = withChatPath(filterNavItems(mobileNavItems, mode, user?.role, { excludeDesktopOnly: true }), chatPath)
 
     return (
         <nav className={`md:hidden fixed bottom-0 left-0 right-0 z-50 border-t backdrop-blur-2xl pb-safe ${t.shellMobile}`}>

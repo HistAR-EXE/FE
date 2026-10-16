@@ -36,10 +36,7 @@ function formatSessionLabel(date: Date): string {
 }
 
 export function buildChatTimeline(messages: ChatMessage[]): ChatTimelineItem[] {
-  const sorted = [...messages].sort(
-    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
-  )
-
+  const sorted = messages
   const items: ChatTimelineItem[] = []
   let lastDayKey: string | null = null
   let lastTimestamp: number | null = null

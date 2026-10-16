@@ -75,7 +75,7 @@ export function Tour360Page() {
                             <div className="absolute inset-0 border-4 border-[#0275FB]/20 rounded-full"></div>
                             <div className="absolute inset-0 border-4 border-[#0275FB] rounded-full border-t-transparent animate-spin"></div>
                         </div>
-                        <p className="text-sm font-black text-[#0275FB] uppercase tracking-widest animate-pulse">Đang kết nối không gian Yoolife...</p>
+                        <p className="text-sm font-black text-[#0275FB] uppercase tracking-widest animate-pulse">Đang kết nối cổng không gian...</p>
                     </div>
                 )}
 
