@@ -4,7 +4,6 @@ import { BrowserRouter, Navigate, Route, Routes, useLocation, useParams } from '
 import { CharacterExplorePage } from '../pages/CharacterExplorePage'
 import { CharacterDetailPage } from '../pages/CharacterDetailPage'
 import { TeacherRoute } from '../shared/router/TeacherRoute'
-import { HomePage } from '../pages/HomePage'
 import { LoginPage } from '../pages/LoginPage'
 import { NotFoundPage } from '../pages/NotFoundPage'
 import { OnboardingPage } from '../pages/OnboardingPage'
@@ -18,7 +17,6 @@ import { JoinPage } from '../pages/JoinPage'
 import { VerifyEmailPage } from '../pages/VerifyEmailPage'
 import { VerifyEmailPendingPage } from '../pages/VerifyEmailPendingPage'
 import { ForgotPasswordPage } from '../pages/ForgotPasswordPage'
-import { ModeSelectPage } from '../pages/ModeSelectPage'
 import { GroupHubPage } from '../pages/GroupHubPage'
 import { SquadLobbyPage } from '../pages/SquadLobbyPage'
 import { GroupProgressPage } from '../pages/GroupProgressPage'
@@ -33,7 +31,6 @@ import { TermsPage } from '../pages/TermsPage'
 import { AdminRoute } from '../shared/router/AdminRoute'
 import { AuthRoute } from '../shared/router/AuthRoute'
 import { EmailVerifiedRoute } from '../shared/router/EmailVerifiedRoute'
-import { ModeGuardRoute } from '../shared/router/ModeGuardRoute'
 import { ProtectedRoute } from '../shared/router/ProtectedRoute'
 import { VisitSessionProvider } from '../features/visit/VisitSessionProvider'
 import { AboutPage } from '../pages/AboutPage'
@@ -70,125 +67,122 @@ const AdminTrashPage = lazy(() => import('../pages/AdminTrashPage').then((module
 const AdminAuditPage = lazy(() => import('../pages/AdminAuditPage').then((module) => ({ default: module.AdminAuditPage })))
 
 function RouteLoadingFallback() {
-  return (
-    <main className="min-h-screen bg-slate-950 text-white grid place-items-center" data-testid="route-loading" role="status">
-      Đang tải trải nghiệm…
-    </main>
-  )
+    return (
+        <main className="min-h-screen bg-slate-950 text-white grid place-items-center" data-testid="route-loading" role="status">
+            Đang tải trải nghiệm…
+        </main>
+    )
 }
 
-/**
- * Preserve the previously published AR deep link while the current portal
- * keeps AR as a view of the canonical time-portal route.
- */
 function LegacyTimePortalArRedirect() {
-  const { locationId } = useParams<{ locationId: string }>()
-  const location = useLocation()
-  const params = new URLSearchParams(location.search)
-  params.set('view', 'ar')
-  return <Navigate replace to={`/time-portal/${locationId ?? ''}?${params.toString()}`} />
+    const { locationId } = useParams<{ locationId: string }>()
+    const location = useLocation()
+    const params = new URLSearchParams(location.search)
+    params.set('view', 'ar')
+    return <Navigate replace to={`/time-portal/${locationId ?? ''}?${params.toString()}`} />
 }
 
 export function AppRoutes() {
-  return (
-    <BrowserRouter>
-      <GoogleRedirectCompletion />
-      <VisitSessionProvider>
-      <Suspense fallback={<RouteLoadingFallback />}>
-      <Routes>
-          {/* Public — guest landing only */}
-          <Route path="/" element={<OnboardingPage />} />
-          <Route path="/about" element={<AboutPage />} />
-          <Route path="/pricing" element={<PricingPage />} />
+    return (
+        <BrowserRouter>
+            <GoogleRedirectCompletion />
+            <VisitSessionProvider>
+                <Suspense fallback={<RouteLoadingFallback />}>
+                    <Routes>
+                        {/* Public — guest landing only */}
+                        <Route path="/" element={<OnboardingPage />} />
+                        <Route path="/about" element={<AboutPage />} />
+                        <Route path="/pricing" element={<PricingPage />} />
 
-        {/* Auth — guest only */}
-        <Route element={<AuthRoute />}>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<LoginPage defaultMode="register" />} />
-        </Route>
+                        {/* Auth — guest only */}
+                        <Route element={<AuthRoute />}>
+                            <Route path="/login" element={<LoginPage />} />
+                            <Route path="/register" element={<LoginPage defaultMode="register" />} />
+                        </Route>
 
-        {/* Action exceptions — external links / unauthenticated recovery */}
-        <Route path="/verify-email" element={<VerifyEmailPage />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/join" element={<JoinPage />} />
-        <Route path="/privacy" element={<PrivacyPage />} />
-        <Route path="/terms" element={<TermsPage />} />
-        <Route path="/pack-prep" element={<PackPrepPage />} />
-        <Route path="/sites/:siteCode/stations/:code/media" element={<StationMediaDemoPage />} />
-        <Route path="/sites/:siteCode/stations/:code/game/:gameId" element={<StationGamePage />} />
-        <Route path="/stations/:code/media" element={<StationMediaDemoPage />} />
-        <Route path="/stations/:code/game/:gameId" element={<StationGamePage />} />
-        <Route path="/creator/:code" element={<CreatorLandingPage />} />
-        <Route path="/creator/:code/stats" element={<CreatorStatsPage />} />
+                        {/* Action exceptions — external links / unauthenticated recovery */}
+                        <Route path="/verify-email" element={<VerifyEmailPage />} />
+                        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                        <Route path="/join" element={<JoinPage />} />
+                        <Route path="/privacy" element={<PrivacyPage />} />
+                        <Route path="/terms" element={<TermsPage />} />
+                        <Route path="/pack-prep" element={<PackPrepPage />} />
+                        <Route path="/sites/:siteCode/stations/:code/media" element={<StationMediaDemoPage />} />
+                        <Route path="/sites/:siteCode/stations/:code/game/:gameId" element={<StationGamePage />} />
+                        <Route path="/stations/:code/media" element={<StationMediaDemoPage />} />
+                        <Route path="/stations/:code/game/:gameId" element={<StationGamePage />} />
+                        <Route path="/creator/:code" element={<CreatorLandingPage />} />
+                        <Route path="/creator/:code/stats" element={<CreatorStatsPage />} />
 
-        {/* Protected — login required */}
-        <Route element={<ProtectedRoute />}>
-          <Route path="/verify-email/pending" element={<VerifyEmailPendingPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/checkout/b2c" element={<CheckoutB2CPage />} />
-          <Route path="/checkout/b2b" element={<CheckoutB2BPage />} />
-          <Route path="/checkout/b2b2c" element={<CheckoutB2B2CPage />} />
+                        {/* Protected — login required */}
+                        <Route element={<ProtectedRoute />}>
+                            <Route path="/verify-email/pending" element={<VerifyEmailPendingPage />} />
+                            <Route path="/settings" element={<SettingsPage />} />
+                            <Route path="/checkout/b2c" element={<CheckoutB2CPage />} />
+                            <Route path="/checkout/b2b" element={<CheckoutB2BPage />} />
+                            <Route path="/checkout/b2b2c" element={<CheckoutB2B2CPage />} />
 
-          <Route element={<EmailVerifiedRoute />}>
-            <Route path="/mode-select" element={<ModeSelectPage />} />
-            <Route path="/pricing" element={<PricingPage />} />
-            <Route path="/explore" element={<ExplorePage />} />
-            <Route path="/explore/:locationId" element={<HeritageDetailPage />} />
-            <Route path="/diorama/:locationId?" element={<BattleDioramaPage />} />
-            <Route path="/time-portal/:locationId/ar" element={<LegacyTimePortalArRedirect />} />
-            <Route path="/time-portal/:locationId" element={<TimePortalPage />} />
-            <Route path="/tour/360/:locationId?" element={<Tour360Page />} />
-            <Route path="/quests" element={<QuestsPage />} />
-            <Route path="/quests/:questId/play/:minigameId" element={<MinigamePage />} />
-            <Route path="/quests/:questId" element={<QuestDetailPage />} />
-            <Route path="/leaderboard" element={<LeaderboardPage />} />
+                            <Route element={<EmailVerifiedRoute />}>
+                                {/* Chuyển hướng các route cũ đã gỡ bỏ về Explore */}
+                                <Route path="/mode-select" element={<Navigate replace to="/explore" />} />
+                                <Route path="/home" element={<Navigate replace to="/explore" />} />
 
-            <Route element={<AdminRoute />}>
-              <Route path="/admin" element={<AdminConsoleLayout />}>
-                <Route index element={<AdminDashboardPage />} />
-                <Route path="content" element={<AdminContentPage />} />
-                <Route path="narrative-pilots" element={<AdminNarrativePilotsPage />} />
-                <Route path="trash" element={<AdminTrashPage />} />
-                <Route path="users" element={<AdminUsersPage />} />
-                <Route path="organizations" element={<AdminOrganizationsPage />} />
-                <Route path="billing" element={<AdminBillingPage />} />
-                <Route path="analytics" element={<AdminAnalyticsPage />} />
-                <Route path="audit" element={<AdminAuditPage />} />
-              </Route>
-            </Route>
+                                <Route path="/pricing" element={<PricingPage />} />
+                                <Route path="/explore" element={<ExplorePage />} />
+                                <Route path="/explore/:locationId" element={<HeritageDetailPage />} />
+                                <Route path="/diorama/:locationId?" element={<BattleDioramaPage />} />
+                                <Route path="/time-portal/:locationId/ar" element={<LegacyTimePortalArRedirect />} />
+                                <Route path="/time-portal/:locationId" element={<TimePortalPage />} />
+                                <Route path="/tour/360/:locationId?" element={<Tour360Page />} />
+                                <Route path="/quests" element={<QuestsPage />} />
+                                <Route path="/quests/:questId/play/:minigameId" element={<MinigamePage />} />
+                                <Route path="/quests/:questId" element={<QuestDetailPage />} />
+                                <Route path="/leaderboard" element={<LeaderboardPage />} />
 
-            <Route element={<TeacherRoute />}>
-              <Route path="/teacher" element={<TeacherDashboardPage />} />
-              <Route path="/teacher/assignments" element={<TeacherAssignmentsPage />} />
-              <Route path="/teacher/live-board" element={<TeacherLiveBoardPage />} />
-            </Route>
+                                <Route element={<AdminRoute />}>
+                                    <Route path="/admin" element={<AdminConsoleLayout />}>
+                                        <Route index element={<AdminDashboardPage />} />
+                                        <Route path="content" element={<AdminContentPage />} />
+                                        <Route path="narrative-pilots" element={<AdminNarrativePilotsPage />} />
+                                        <Route path="trash" element={<AdminTrashPage />} />
+                                        <Route path="users" element={<AdminUsersPage />} />
+                                        <Route path="organizations" element={<AdminOrganizationsPage />} />
+                                        <Route path="billing" element={<AdminBillingPage />} />
+                                        <Route path="analytics" element={<AdminAnalyticsPage />} />
+                                        <Route path="audit" element={<AdminAuditPage />} />
+                                    </Route>
+                                </Route>
 
-            <Route element={<ModeGuardRoute />}>
-              <Route path="/home" element={<HomePage />} />
-              <Route path="/characters" element={<CharacterExplorePage />} />
-              <Route path="/characters/:characterId" element={<CharacterDetailPage />} />
-              <Route path="/artifacts" element={<ArtifactsPage />} />
-              <Route path="/artifacts/:id" element={<ArtifactDetailPage />} />
-              <Route path="/profile" element={<ProfilePage />} />
-              <Route path="/journey-wrapped" element={<JourneyWrappedPage />} />
-              <Route path="/groups" element={<GroupHubPage />} />
-              <Route path="/squad" element={<SquadLobbyPage />} />
-              <Route path="/groups/:groupId/progress" element={<GroupProgressPage />} />
-              <Route path="/share" element={<SharePage />} />
-              <Route path="/photo-frame" element={<PhotoFramePage />} />
-              <Route path="/scan" element={<ScanPage />} />
-              <Route path="/chat" element={<ChatPage />} />
-              <Route path="/chat/:characterId" element={<ChatPage />} />
-              <Route path="/secret/:locationId" element={<SecretStoryPage />} />
-            </Route>
-          </Route>
-        </Route>
+                                <Route element={<TeacherRoute />}>
+                                    <Route path="/teacher" element={<TeacherDashboardPage />} />
+                                    <Route path="/teacher/assignments" element={<TeacherAssignmentsPage />} />
+                                    <Route path="/teacher/live-board" element={<TeacherLiveBoardPage />} />
+                                </Route>
 
-        <Route path="/404" element={<NotFoundPage />} />
-        <Route path="*" element={<NotFoundPage />} />
-      </Routes>
-      </Suspense>
-      </VisitSessionProvider>
-    </BrowserRouter>
-  )
+                                {/* Đưa các route chính ra ngoài ModeGuardRoute để không bị đá về /mode-select -> /explore khi xóa localStorage */}
+                                <Route path="/characters" element={<CharacterExplorePage />} />
+                                <Route path="/characters/:characterId" element={<CharacterDetailPage />} />
+                                <Route path="/artifacts" element={<ArtifactsPage />} />
+                                <Route path="/artifacts/:id" element={<ArtifactDetailPage />} />
+                                <Route path="/profile" element={<ProfilePage />} />
+                                <Route path="/journey-wrapped" element={<JourneyWrappedPage />} />
+                                <Route path="/groups" element={<GroupHubPage />} />
+                                <Route path="/squad" element={<SquadLobbyPage />} />
+                                <Route path="/groups/:groupId/progress" element={<GroupProgressPage />} />
+                                <Route path="/share" element={<SharePage />} />
+                                <Route path="/photo-frame" element={<PhotoFramePage />} />
+                                <Route path="/scan" element={<ScanPage />} />
+                                <Route path="/chat" element={<ChatPage />} />
+                                <Route path="/chat/:characterId" element={<ChatPage />} />
+                                <Route path="/secret/:locationId" element={<SecretStoryPage />} />
+                            </Route>
+                        </Route>
+
+                        <Route path="/404" element={<NotFoundPage />} />
+                        <Route path="*" element={<NotFoundPage />} />
+                    </Routes>
+                </Suspense>
+            </VisitSessionProvider>
+        </BrowserRouter>
+    )
 }

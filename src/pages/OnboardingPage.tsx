@@ -7,6 +7,15 @@ import mascotImg from '../assets/mascot.png'
 import { PublicHeader } from '../components/layout/PublicHeader'
 import { PublicFooter } from '../components/layout/PublicFooter'
 import { emitEvent } from '../lib/pilotEvents'
+import { useMemo, useState } from 'react'
+import { useToast } from '../shared/ui/toast/useToast'
+import { useAppMode } from '../shared/context/useAppMode'
+import { ExploreMapPanel } from '../features/explore/ExploreMapPanel'
+import { locationsApi, type Location as HeritageLocation } from '../features/locations/api'
+import { mergeDestinations,mergedToMapLocations, findMergedByLocationId, type StaticDestination } from '../features/explore/destinationMerge'
+import { HERITAGE_SITE_GEO } from '../shared/config/heritageSites'
+import { CU_CHI_LOCATION_ID } from '../shared/config/constants'
+import { saveSelectedLocationId } from '../features/chat/chatRoute'
 
 // Dữ liệu Sáu Tầng Kiến Trúc Nền Tảng chuẩn 6-Layer Architecture
 const PLATFORM_6_LAYERS = [
@@ -66,9 +75,91 @@ const PLATFORM_6_LAYERS = [
     },
 ]
 
+// Danh sách 10 Điểm đến Quốc gia
+const DEST_UI: Record<string, { desc: string; image: string; fallback: string; isReady: boolean }> = {
+    [CU_CHI_LOCATION_ID]: {
+        desc: 'Hệ thống phòng thủ ngầm 3 tầng huyền thoại, tái hiện sống động không gian chiến đấu và sinh hoạt lịch sử.',
+        image: '/media/destinations/cu-chi.jpg',
+        fallback: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=800&q=80',
+        isReady: true,
+    },
+    'den-hung-vuong': {
+        desc: 'Nơi thờ cúng các Vua Hùng có công dựng nước, biểu tượng tâm linh và cội nguồn của muôn triệu người Việt Nam.',
+        image: 'https://images.unsplash.com/photo-1599708153386-62bf3f0b2bd6?auto=format&fit=crop&w=800&q=80',
+        fallback: 'https://images.unsplash.com/photo-1599708153386-62bf3f0b2bd6?auto=format&fit=crop&w=800&q=80',
+        isReady: false,
+    },
+    'van-mieu-quoc-tu-giam': {
+        desc: 'Trường đại học đầu tiên của Việt Nam, biểu tượng truyền thống hiếu học và tôn sư trọng đạo nghìn năm.',
+        image: 'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?auto=format&fit=crop&w=800&q=80',
+        fallback: 'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?auto=format&fit=crop&w=800&q=80',
+        isReady: false,
+    },
+    'hoang-thang-thang-long': {
+        desc: 'Quần thể di tích hoàng gia gắn liền với lịch sử kinh đô Thăng Long - Hà Nội bắt đầu từ thời kỳ trước Thăng Long.',
+        image: '/media/destinations/thang-long.jpg',
+        fallback: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=800&q=80',
+        isReady: true,
+    },
+    'co-do-hoa-lu': {
+        desc: 'Kinh đô đầu tiên của nhà nước phong kiến trung ương tập quyền Việt Nam dưới triều Đinh, Tiền Lê.',
+        image: 'https://images.unsplash.com/photo-1508804185872-d7badad00f7d?auto=format&fit=crop&w=800&q=80',
+        fallback: 'https://images.unsplash.com/photo-1508804185872-d7badad00f7d?auto=format&fit=crop&w=800&q=80',
+        isReady: false,
+    },
+    'thanh-nha-ho': {
+        desc: 'Kỳ quan kiến trúc đá độc nhất vô nhị tại Việt Nam thế kỷ 15, di sản văn hóa thế giới được UNESCO công nhận.',
+        image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80',
+        fallback: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80',
+        isReady: false,
+    },
+    'chua-thien-mu': {
+        desc: 'Ngôi cổ tự linh thiêng và cổ kính bậc nhất xứ Huế nằm hiền hòa bên dòng sông Hương thơ mộng.',
+        image: 'https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=800&q=80',
+        fallback: 'https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=800&q=80',
+        isReady: false,
+    },
+    'dai-noi-hue': {
+        desc: 'Trung tâm hành chính và chính trị của triều đình nhà Nguyễn, hội tụ đỉnh cao nghệ thuật kiến trúc cung đình.',
+        image: 'https://images.unsplash.com/photo-1518684079-3c830dcef090?auto=format&fit=crop&w=800&q=80',
+        fallback: 'https://images.unsplash.com/photo-1518684079-3c830dcef090?auto=format&fit=crop&w=800&q=80',
+        isReady: true,
+    },
+    'pho-co-hoi-an': {
+        desc: 'Thương cảng sầm uất thế kỷ 16-17, lưu giữ trọn vẹn nét kiến trúc giao thoa Đông Tây trầm mặc rực rỡ.',
+        image: 'https://images.unsplash.com/photo-1518998053901-5348d3961a04?auto=format&fit=crop&w=800&q=80',
+        fallback: 'https://images.unsplash.com/photo-1518998053901-5348d3961a04?auto=format&fit=crop&w=800&q=80',
+        isReady: false,
+    },
+    'ben-nha-rong': {
+        desc: 'Nơi Bác Hồ ra đi tìm đường cứu nước năm 1911, tích hợp kho tư liệu giáo dục số hóa chuyên sâu.',
+        image: '/media/destinations/ben-nha-rong.jpg',
+        fallback: 'https://images.unsplash.com/photo-1583417319070-4a69db38a482?auto=format&fit=crop&w=800&q=80',
+        isReady: false,
+    },
+}
+
+const DESTINATIONS: StaticDestination[] = HERITAGE_SITE_GEO.map((site) => {
+    const ui = DEST_UI[site.slug]
+    return {
+        id: site.slug,
+        name: site.name,
+        city: site.city,
+        region: site.region,
+        desc: ui.desc,
+        image: ui.image,
+        fallback: ui.fallback,
+        isReady: ui.isReady,
+        latitude: site.latitude,
+        longitude: site.longitude,
+        formattedAddress: site.formattedAddress,
+        googleMapsUrl: site.googleMapsUrl,
+    }
+})
+
 // Sub-component: Widget mô phỏng Radar quét tầng ngầm Địa đạo Củ Chi
 const CuChiRadarWidget: React.FC = () => (
-    <div className="relative w-full h-52 sm:h-60 rounded-3xl overflow-hidden bg-gradient-to-br from-[#0f1015] via-[#1E293B] to-[#0f1015] border-2 border-[#FDC908]/50 shadow-2xl flex items-center justify-center group select-none">
+    <div className="relative w-full h-52 sm:h-60 rounded-[2rem] overflow-hidden bg-gradient-to-br from-[#0f1015] via-[#1E293B] to-[#0f1015] border-2 border-[#FDC908]/50 shadow-2xl flex items-center justify-center group select-none">
         <img
             src={resolveMediaUrl('/media/cu-chi/scenes/bep-hoang-cam-2026.jpg')}
             alt="Mô phỏng hầm ngầm Củ Chi"
@@ -86,14 +177,122 @@ const CuChiRadarWidget: React.FC = () => (
                 <MaterialIcon name="radar" className="text-2xl animate-spin" />
             </div>
             <span className="px-3.5 py-1 rounded-full bg-[#0275FB]/20 border border-[#FDC908]/40 text-[11px] font-mono font-black text-[#FDC908] tracking-widest uppercase shadow-sm backdrop-blur-md">
-        GEO-LAT: 11.1425° N | 106.4622° E
-      </span>
+                GEO-LAT: 11.1425° N | 106.4622° E
+            </span>
             <p className="text-xs sm:text-sm font-extrabold text-white tracking-wide drop-shadow-md">
                 Hệ thống định vị ngầm WebAR 3D Địa đạo Củ Chi
             </p>
         </div>
     </div>
 )
+
+// Sub-component: Bản đồ 3D tương tác đưa ra ngoài Landing Page (LIGHT MODE) - Đứng độc lập
+const LandingMapSection: React.FC = () => {
+    const navigate = useNavigate()
+    const { showToast } = useToast()
+    const { setMode } = useAppMode()
+
+    const [apiLocations, setApiLocations] = useState<HeritageLocation[]>([])
+    const [selectedDestination] = useState<string>(CU_CHI_LOCATION_ID)
+
+    useEffect(() => {
+        locationsApi.list({ size: 100 })
+            .then(setApiLocations)
+            .catch(() => setApiLocations([]))
+    }, [])
+
+    const mergedDestinations = useMemo(
+        () => mergeDestinations(DESTINATIONS, apiLocations),
+        [apiLocations],
+    )
+
+    const mapLocations: HeritageLocation[] = useMemo(
+        () => mergedToMapLocations(mergedDestinations),
+        [mergedDestinations],
+    )
+
+    const notifyDigitizing = (name: string) => {
+        showToast({
+            message: `Địa điểm "${name}" đang được số hóa, vui lòng quay lại sau.`,
+            type: 'error', // Đổi về 'error' (màu đỏ) hoặc 'info' (xanh dương)
+        })
+    }
+
+    const handleMapPinClick = (loc: HeritageLocation) => {
+        const dest = findMergedByLocationId(mergedDestinations, loc.id)
+        if (!dest) return
+
+        if (!dest.isReady) {
+            notifyDigitizing(dest.name)
+            return
+        }
+
+        // Khi click vào Map, lưu cấu hình và tự động vào trang Khám phá
+        setMode('online')
+        localStorage.setItem('timelens_pref_goal', 'study')
+        localStorage.setItem('timelens_pref_duration', '30')
+        localStorage.setItem('timelens_pref_ai_tone', 'heritage')
+        saveSelectedLocationId(dest.locationId)
+
+        try {
+            const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token')
+            fetch('/api/me/visit-sessions/start', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                },
+                body: JSON.stringify({
+                    locationId: dest.locationId,
+                    mode: 'online',
+                    personaGoal: 'study',
+                    sessionDuration: '30',
+                    aiTone: 'heritage'
+                })
+            }).catch(console.warn)
+        } finally {
+            navigate('/explore', { replace: true })
+        }
+    }
+
+    return (
+        <section id="map" className="py-24 bg-[#F2F7FF] border-y border-[#0275FB]/15 scroll-mt-20 relative overflow-hidden">
+            <div className="absolute top-1/4 -left-32 w-[500px] h-[500px] bg-[#0275FB]/10 rounded-full blur-[120px] pointer-events-none" />
+            <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-[#FDC908]/10 rounded-full blur-[150px] pointer-events-none" />
+            <div className="absolute inset-0 bg-[radial-gradient(#0275FB_1px,transparent_1px)] [background-size:24px_24px] opacity-[0.05] pointer-events-none" />
+
+            <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 space-y-10 relative z-10">
+                <div className="text-center max-w-3xl mx-auto space-y-3">
+                    <span className="text-sm font-black text-[#0275FB] tracking-widest uppercase block bg-[#0275FB]/10 py-1.5 px-4 rounded-full w-max mx-auto border border-[#0275FB]/30">
+                        BẢN ĐỒ DI SẢN QUỐC GIA
+                    </span>
+                    <h2 className="text-3xl sm:text-5xl font-black text-[#1E293B] tracking-tight">Khám Phá Việt Nam Qua Lăng Kính Số</h2>
+                    <p className="text-[#475569] text-base font-medium">
+                        Tương tác với bản đồ 3D GIS để chọn điểm đến. Hệ thống RAG AI và không gian 360° đã sẵn sàng tại các khu vực được đánh dấu nổi bật.
+                    </p>
+                </div>
+
+                {/* BẢN ĐỒ CHIẾM TOÀN BỘ CHIỀU RỘNG, KHÔNG CÓ CARD BÊN PHẢI */}
+                <div className="relative rounded-[2rem] p-2 bg-white border-2 border-[#0275FB]/15 shadow-[0_20px_50px_rgba(2,117,251,0.08)]">
+                    <div className="h-[500px] lg:h-[650px] w-full rounded-[1.5rem] overflow-hidden relative bg-[#EAF3FF]">
+                        <ExploreMapPanel
+                            locations={mapLocations}
+                            selectedLocationId={selectedDestination}
+                            digitizationLock
+                            onLockedLocationClick={(loc) => notifyDigitizing(loc.name)}
+                            onPinClick={handleMapPinClick}
+                            className="h-full w-full border-0 rounded-none"
+                        />
+                        <div className="absolute top-4 right-4 z-[500] hidden sm:flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/90 backdrop-blur-md border border-[#0275FB]/20 shadow-sm pointer-events-none">
+                            <span className="text-[10px] font-black tracking-widest text-[#0275FB] uppercase">3D GIS MAPPING</span>
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    )
+}
 
 export const OnboardingPage: React.FC = () => {
     const navigate = useNavigate()
@@ -114,9 +313,9 @@ export const OnboardingPage: React.FC = () => {
     return (
         <div className="bg-[#FAF8F3] text-[#1E293B] min-h-screen flex flex-col font-sans select-none overflow-x-hidden selection:bg-[#0275FB] selection:text-white">
 
-            {/* SỬ DỤNG COMPONENT HEADER CHUẨN */}
             <PublicHeader />
 
+            {/* HERO SECTION & VỀ NỀN TẢNG HISTAR */}
             {/* HERO SECTION & VỀ NỀN TẢNG HISTAR */}
             <section id="about" className="relative pt-32 pb-24 md:pt-40 md:pb-32 overflow-hidden border-b border-[#0275FB]/15 scroll-mt-24 bg-gradient-to-b from-[#FFF2C3]/30 via-[#FAF8F3] to-[#FAF8F3]">
                 <div className="absolute top-0 right-0 w-[700px] h-[700px] bg-gradient-to-bl from-[#0275FB]/15 via-[#FDC908]/15 to-transparent rounded-full blur-3xl pointer-events-none" />
@@ -133,13 +332,14 @@ export const OnboardingPage: React.FC = () => {
                             <h1 className="text-4xl sm:text-6xl font-black text-[#1E293B] tracking-tight leading-[1.15]">
                                 Relive History, <br />
                                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#0275FB] via-[#1d4ed8] to-[#FDC908] drop-shadow-sm">
-                  Reshape Heritage
-                </span>
+                                    Reshape Heritage
+                                </span>
                             </h1>
 
                             <p className="text-base sm:text-lg text-[#475569] font-medium leading-relaxed max-w-2xl mx-auto lg:mx-0">
                                 Được sáng lập bởi tập thể kỹ sư trẻ <strong>HistAR Team</strong>, ứng dụng <strong>TimeLens</strong> ra đời với sứ mệnh xóa bỏ sự thụ động của các phương thức truyền đạt lịch sử cũ. Chúng tôi kiến tạo cầu nối công nghệ đưa di sản sống động vào từng phòng học và điểm tham quan.
                             </p>
+
                             <p className="text-sm text-[#64748B] max-w-2xl mx-auto lg:mx-0">
                                 Cổng Thời Gian và phòng nhóm dùng trên web; app mobile tập trung tour tại chỗ và check-in AR.
                             </p>
@@ -158,7 +358,7 @@ export const OnboardingPage: React.FC = () => {
                         <div className="lg:col-span-5 space-y-6">
                             <CuChiRadarWidget />
 
-                            <div className="relative rounded-3xl overflow-hidden shadow-2xl border-4 border-white bg-[#1E293B] group min-h-[250px] flex flex-col justify-end">
+                            <div className="relative rounded-[2rem] overflow-hidden shadow-2xl border-4 border-white bg-[#1E293B] group min-h-[250px] flex flex-col justify-end">
                                 <img
                                     src={resolveMediaUrl('/media/banner-main.jpg')}
                                     alt="Địa đạo Củ Chi"
@@ -174,7 +374,7 @@ export const OnboardingPage: React.FC = () => {
                                     </div>
                                     <button
                                         type="button"
-                                        onClick={() => navigate('/explore/cu-chi')}
+                                        onClick={() => navigate('/explore')}
                                         className="w-10 h-10 rounded-full bg-[#0275FB] text-white flex items-center justify-center hover:bg-[#1d4ed8] transition-colors cursor-pointer shrink-0 shadow-lg"
                                     >
                                         <MaterialIcon name="arrow_forward" className="text-base font-bold" />
@@ -183,41 +383,12 @@ export const OnboardingPage: React.FC = () => {
                             </div>
                         </div>
                     </div>
-
-                    <div className="space-y-8 pt-12 border-t border-[#0275FB]/20">
-                        <div className="text-center max-w-3xl mx-auto space-y-3">
-                            <span className="text-xs font-black text-[#0275FB] tracking-widest uppercase block bg-[#0275FB]/10 py-1.5 px-4 rounded-full w-max mx-auto border border-[#0275FB]/30">CÔNG NGHỆ TOÀN DIỆN</span>
-                            <h2 className="text-3xl sm:text-4xl font-black text-[#1E293B] tracking-tight">Sáu Tầng Kiến Trúc Độc Quyền TimeLens</h2>
-                            <p className="text-[#64748B] text-sm sm:text-base font-medium">Sự dung hòa hoàn hảo giữa đồ họa không gian, trí tuệ nhân tạo và kết nối thực địa O2O để chuyển hóa trọn vẹn chuyến tham quan lịch sử.</p>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {PLATFORM_6_LAYERS.map((item, idx) => (
-                                <div
-                                    key={idx}
-                                    className={`p-7 rounded-3xl bg-white border-2 border-[#0275FB]/15 transition-all duration-300 shadow-sm hover:shadow-xl hover:border-[#0275FB] flex flex-col justify-between space-y-4 group ${item.border}`}
-                                >
-                                    <div className="space-y-3">
-                                        <div className="flex items-center justify-between">
-                                            <span className="px-2.5 py-1 rounded bg-[#FFF2C3] text-[#92400e] text-[10px] font-mono font-black tracking-widest uppercase border border-[#FDC908]/50">{item.layer}</span>
-                                            <div className={`w-12 h-12 rounded-2xl bg-gradient-to-b ${item.bg} border border-[#0275FB]/30 flex items-center justify-center ${item.color} group-hover:scale-110 transition-transform shadow-sm`}>
-                                                <MaterialIcon name={item.icon} className="text-2xl" />
-                                            </div>
-                                        </div>
-                                        <h3 className="text-lg font-black text-[#1E293B]">{item.title}</h3>
-                                        <p className="text-xs text-[#475569] font-medium leading-relaxed">
-                                            {item.desc}
-                                        </p>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
                 </div>
             </section>
 
+            {/* COMPONENT BẢN ĐỒ (CHỈ CẦN THÊM VÀO ĐÂY SAU KHI ĐÃ ĐỊNH NGHĨA Ở TRÊN CÙNG FILE) */}
             {/* MASCOT ĐẠI SỨ THƯƠNG HIỆU */}
-            <section className="relative py-24 bg-gradient-to-b from-[#FAF8F3] via-[#FFF2C3]/20 to-[#FAF8F3] border-b border-[#0275FB]/15 overflow-hidden">
+            <section className="relative py-24 bg-gradient-to-b from-[#FAF8F3] via-[#FFF2C3]/20 to-[#FAF8F3] border-y border-[#0275FB]/15 overflow-hidden">
                 <div className="absolute top-10 left-10 w-96 h-96 bg-gradient-to-br from-[#FDC908]/15 to-transparent rounded-full blur-[80px] pointer-events-none"></div>
                 <div className="absolute bottom-10 right-10 w-96 h-96 bg-gradient-to-tr from-[#0275FB]/15 to-transparent rounded-full blur-[80px] pointer-events-none"></div>
 
@@ -230,7 +401,7 @@ export const OnboardingPage: React.FC = () => {
                     </div>
 
                     <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
-                        <div className="w-full lg:w-1/2 flex justify-center items-center min-h-[400px] relative group cursor-pointer">
+                        <div className="w-full lg:w-1/2 flex justify-center items-center min-h-[400px] relative group cursor-pointer" onClick={() => navigate('/chat')}>
                             <div className="absolute w-[350px] h-[350px] bg-gradient-to-r from-[#FDC908]/40 to-[#0275FB]/40 rounded-full blur-[70px] animate-pulse"></div>
                             <div className="absolute w-[320px] h-[320px] border-[3px] border-dashed border-[#FDC908]/50 rounded-full animate-[spin_20s_linear_infinite]"></div>
                             <div className="absolute w-[260px] h-[260px] border-[2px] border-dotted border-[#0275FB]/60 rounded-full animate-[spin_15s_linear_infinite_reverse]"></div>
@@ -273,7 +444,46 @@ export const OnboardingPage: React.FC = () => {
                 </div>
             </section>
 
-            {/* GIẢI PHÁP CÔNG NGHỆ CORE */}
+            {/* BẢN ĐỒ DI TÍCH (NẰM TRÊN 6 TẦNG KIẾN TRÚC) */}
+            <LandingMapSection />
+
+            {/* GIẢI PHÁP CÔNG NGHỆ CORE (ĐÃ KHÔI PHỤC LẠI BẢN UI 6 TẦNG CỦA BẠN) */}
+            {/* KIẾN TRÚC 6 TẦNG LIGHT MODE */}
+            <section className="py-24 bg-gradient-to-b from-[#FAF8F3] to-white border-b border-[#0275FB]/15">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
+                    <div className="text-center max-w-3xl mx-auto space-y-3">
+                        <span className="text-sm font-black text-[#0275FB] tracking-widest uppercase block bg-[#0275FB]/10 py-1.5 px-4 rounded-full w-max mx-auto border border-[#0275FB]/30">CÔNG NGHỆ TOÀN DIỆN</span>
+                        <h2 className="text-3xl sm:text-5xl font-black text-[#1E293B] tracking-tight">Sáu Tầng Kiến Trúc Độc Quyền TimeLens</h2>
+                        <p className="text-[#64748B] text-base font-medium">Sự dung hòa hoàn hảo giữa đồ họa không gian, trí tuệ nhân tạo và trải nghiệm thực tế ảo webAR để chuyển hóa trọn vẹn chuyến tham quan lịch sử.</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {PLATFORM_6_LAYERS.map((item, idx) => (
+                            <div
+                                key={idx}
+                                className="p-8 rounded-[2rem] bg-white border border-[#0275FB]/15 transition-all duration-300 shadow-sm hover:shadow-xl hover:border-[#0275FB] flex flex-col justify-between space-y-6 group cursor-pointer hover:-translate-y-1"
+                            >
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <span className="px-3 py-1 rounded-full bg-[#F2F7FF] text-[#0275FB] text-[10px] font-black tracking-widest uppercase shadow-sm border border-[#0275FB]/20">
+                                            {item.layer}
+                                        </span>
+                                        <div className="w-14 h-14 rounded-2xl bg-[#FFFBEB] border border-[#FDC908]/30 flex items-center justify-center text-[#FDC908] group-hover:bg-[#FDC908] group-hover:text-white transition-all shadow-sm">
+                                            <MaterialIcon name={item.icon} className="text-3xl" />
+                                        </div>
+                                    </div>
+                                    <h3 className="text-xl font-black text-[#1E293B] group-hover:text-[#0275FB] transition-colors leading-snug">{item.title}</h3>
+                                    <p className="text-sm text-[#475569] font-medium leading-relaxed">
+                                        {item.desc}
+                                    </p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* GIẢI PHÁP CÔNG NGHỆ CORE (ĐÃ KHÔI PHỤC THIẾT KẾ 4 TRỤ CỘT BẢN CŨ) */}
             <section id="solutions" className="py-24 bg-white border-b border-[#0275FB]/15 scroll-mt-20">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
                     <div className="text-center max-w-3xl mx-auto space-y-3">

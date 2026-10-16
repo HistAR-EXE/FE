@@ -1,3 +1,4 @@
+// src/features/chat/chatRoute.ts
 import { CU_CHI_LOCATION_ID } from '../../shared/config/constants'
 import { normalizeChatPersona } from './chatPersona'
 
@@ -12,6 +13,8 @@ export type BuildChatPathOptions = {
     questPrompt?: string
     questId?: string
     characterId?: string
+    autoSend?: boolean
+    from?: string
 }
 
 export function saveSelectedLocationId(locationId: string) {
@@ -33,10 +36,12 @@ export function resolveChatLocationId(urlLocationId?: string | null): string {
 export function buildChatPath(options: BuildChatPathOptions = {}): string {
     const locationId = resolveChatLocationId(options.locationId)
     const params = new URLSearchParams({ locationId })
-    if (options.persona) params.set('persona', normalizeChatPersona(options.persona))
+    params.set('persona', normalizeChatPersona(options.persona))
     if (options.prompt) params.set('prompt', options.prompt)
     if (options.questPrompt) params.set('questPrompt', options.questPrompt)
     if (options.questId) params.set('questId', options.questId)
+    if (options.autoSend) params.set('autoSend', '1')
+    if (options.from) params.set('from', options.from)
 
     if (options.characterId) {
         return `/chat/${options.characterId}?${params}`

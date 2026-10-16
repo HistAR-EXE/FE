@@ -1,6 +1,6 @@
 // src/components/layout/AppLayout.tsx
-import { useState, type ReactNode } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useState, type ReactNode } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { SideNav, SideNavMobile, SideNavTablet } from './SideNav'
 import { TopNavCompact } from './TopNav'
 import { useAppMode } from '../../shared/context/useAppMode'
@@ -32,9 +32,24 @@ export function AppLayout({
                               className = '',
                           }: AppLayoutProps) {
     const navigate = useNavigate()
+    const location = useLocation()
     const { mode } = useAppMode()
     const { ccuLimitOpen, dismissCcuLimit } = useCcuHeartbeat()
     const ctaPath = mode === 'offline' ? '/scan' : '/explore'
+
+    // Tự động ghi nhận trải nghiệm khi người dùng truy cập các tính năng trên menu trái
+    useEffect(() => {
+        const path = location.pathname
+        if (path.startsWith('/tour/360')) {
+            localStorage.setItem('timelens_exp_tour360', '1')
+        } else if (path.startsWith('/diorama')) {
+            localStorage.setItem('timelens_exp_diorama', '1')
+        } else if (path.startsWith('/chat')) {
+            localStorage.setItem('timelens_exp_chat', '1')
+        } else if (path.startsWith('/artifacts')) {
+            localStorage.setItem('timelens_exp_artifacts', '1')
+        }
+    }, [location.pathname])
 
     // Quản lý trạng thái thu gọn SideNav toàn cục (lưu vào localStorage)
     const [isCollapsed, setIsCollapsed] = useState(() => {

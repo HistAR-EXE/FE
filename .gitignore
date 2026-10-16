@@ -29,6 +29,7 @@ dist-ssr
 /tests/ui/*
 !/tests/ui/chat-stream-contract.spec.ts
 !/tests/ui/chat-failure-retry.spec.ts
+!/tests/ui/explore-integrity.spec.ts
 
 # Editor directories and files
 .vscode/*

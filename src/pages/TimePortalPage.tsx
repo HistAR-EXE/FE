@@ -13,9 +13,6 @@ import { useAuth } from '../shared/auth/useAuth'
 import { useUserProgress } from '../shared/context/UserProgressProvider'
 import { useToast } from '../shared/ui/toast/useToast'
 import { CU_CHI_LOCATION_ID } from '../shared/config/constants'
-import { TimePortalArEmbed } from '../features/ar/TimePortalArEmbed'
-import { isCuChiSceneSlug } from '../features/ar/cuChiArScenes'
-import type { ARMode, CuChiSceneSlug } from '../features/ar/types'
 
 function parseEra(raw: string | null): EraValue {
   const value = Number(raw)
@@ -33,9 +30,6 @@ export function TimePortalPage() {
   const { user, isAuthenticated } = useAuth()
   const premium = hasPremiumAccess(user)
   const requestedEra = parseEra(params.get('era'))
-  const arView = params.get('view') === 'ar' && locationId === CU_CHI_LOCATION_ID
-  const requestedArMode: ARMode = params.get('mode') === 'sim' ? 'sim' : 'webcam'
-  const requestedScene = params.get('scene')
   const questRecord = params.get('questRecord')
   const [scenes, setScenes] = useState<PhotoScene[]>([])
   const [scenesLoading, setScenesLoading] = useState(true)
@@ -43,9 +37,6 @@ export function TimePortalPage() {
   const [era, setEra] = useState<EraValue>(premium || !isPremiumEra(requestedEra) ? requestedEra : 2026)
   const [paywallOpen, setPaywallOpen] = useState(!premium && isPremiumEra(requestedEra))
   const [paywallEra, setPaywallEra] = useState<EraValue>(isPremiumEra(requestedEra) ? requestedEra : 1948)
-  const [arScene, setArScene] = useState<CuChiSceneSlug>(
-    isCuChiSceneSlug(requestedScene) ? requestedScene : 'cua-ham',
-  )
   const { showToast } = useToast()
   const { applyEngagement } = useUserProgress()
   const recordedEra = useRef<string | null>(null)
@@ -112,26 +103,9 @@ export function TimePortalPage() {
       mobileTitle="Cổng thời gian"
     >
       <main className="mt-14 flex h-[calc(100dvh-3.5rem)] flex-col md:mt-0 md:h-screen">
-        {scenesLoading && !arView ? (
+        {scenesLoading ? (
           <div className="flex flex-1 items-center justify-center bg-surface text-sm text-on-surface-variant" role="status" aria-live="polite">
             Đang tải ảnh lịch sử...
-          </div>
-        ) : arView ? (
-          <div className="relative flex-1 bg-black" data-testid="time-portal-ar">
-            <TimePortalArEmbed
-              locationId={locationId}
-              sceneSlug={arScene}
-              era={era}
-              initialMode={requestedArMode}
-              onSceneSlugChange={setArScene}
-              onEraChange={(next) => {
-                if (!premium && isPremiumEra(next)) {
-                  requirePremium(next)
-                  return
-                }
-                setEra(next)
-              }}
-            />
           </div>
         ) : (
           <TimePortalViewer
