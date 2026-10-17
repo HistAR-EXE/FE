@@ -19,7 +19,7 @@ import { imagesForReply } from '../features/chat/callVisuals'
 import { browserVoiceCapabilities, listenForUtterance, speakReply, startDictation, stopActiveSpeech, waitForSpeechToSettle, type VoicePhase } from '../features/chat/voice'
 import { locationsApi, type Character } from '../features/locations/api'
 import { gamificationApi } from '../features/gamification/api'
-import { questRecordFromSearch, recordQuestStepEngagement } from '../features/gamification/questEngagement'
+import { questRecordFromSearch } from '../features/gamification/questEngagement'
 import { SA_BAN_FRAGMENT_CODE, SA_BAN_QUEST_KEY, SA_BAN_QUIZ, messageHasSaBanCode } from '../features/gamification/saBanFragment'
 import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
 import { ApiError } from '../shared/api/contracts'
@@ -71,15 +71,19 @@ const MASCOT_PROFILE: AmbassadorPersona = {
     badgeBg: 'bg-[#FFF2C3] text-[#0275FB] border-[#FDC908]/40',
 }
 
-function sortChronological(items: ChatMessage[]): ChatMessage[] {
-    return [...items].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
-}
 
-function mergeMessages(existing: ChatMessage[], incoming: ChatMessage[]): ChatMessage[] {
+function mergeMessages( existing: ChatMessage[], incoming: ChatMessage[]): ChatMessage[] {
     const map = new Map<string, ChatMessage>()
-    for (const msg of existing) map.set(msg.id, msg)
-    for (const msg of incoming) map.set(msg.id, msg)
-    return sortChronological([...map.values()])
+
+    for (const msg of existing) {
+        map.set(msg.id, msg)
+    }
+
+    for (const msg of incoming) {
+        map.set(msg.id, msg)
+    }
+
+    return Array.from(map.values())
 }
 
 function resolveChatCharacterId(
@@ -116,7 +120,6 @@ export function ChatPage() {
 
     const { isAuthenticated, user } = useAuth()
     const questDialogueRecorded = useRef(false)
-    const prefilledQuestPrompt = useRef(false)
     const autoSentSaBan = useRef(false)
     const autoSentQuestPrompt = useRef(false)
     const claimedQuizIds = useRef(new Set<string>())
@@ -284,25 +287,39 @@ export function ChatPage() {
         if (el) el.scrollTo({ top: el.scrollHeight, behavior })
     }, [])
 
+
     const loadLatestMessages = useCallback(
         async (convId: string) => {
             setLoadingMessages(true)
             try {
-                const page = await chatApi.getMessagesPage(convId, 0, MESSAGE_PAGE_SIZE, 'createdAt,desc')
-                const chronological = sortChronological(page.items)
+                const page = await chatApi.getMessagesPage(
+                    convId,
+                    0,
+                    MESSAGE_PAGE_SIZE,
+                    'createdAt,desc'
+                )
+                // Backend trả mới nhất trước.
+                // Đảo ngược để hiển thị cũ nhất trước.
+                const chronological = [...page.items].reverse()
                 setMessages(chronological)
                 setHistoryPage(page.page)
                 setHasOlder(page.page + 1 < page.totalPages)
                 shouldStickToBottomRef.current = true
-                requestAnimationFrame(() => scrollToBottom('auto'))
+                requestAnimationFrame(() => {
+                    scrollToBottom('auto')
+                })
             } catch {
-                showToast({ message: 'Không tải được lịch sử hội thoại.', type: 'error' })
+                showToast({
+                    message: 'Không tải được lịch sử hội thoại.',
+                    type: 'error'
+                })
             } finally {
                 setLoadingMessages(false)
             }
         },
-        [scrollToBottom, showToast],
+        [scrollToBottom, showToast]
     )
+
 
     const loadOlderMessages = useCallback(async () => {
         if (!conversationId || loadingOlder || !hasOlder) return
@@ -311,11 +328,23 @@ export function ChatPage() {
         const prevHeight = scrollEl?.scrollHeight ?? 0
 
         setLoadingOlder(true)
+
         try {
             const nextPage = historyPage + 1
-            const page = await chatApi.getMessagesPage(conversationId, nextPage, MESSAGE_PAGE_SIZE, 'createdAt,desc')
-            const older = sortChronological(page.items)
-            setMessages((prev) => mergeMessages(prev, older))
+
+            const page = await chatApi.getMessagesPage(
+                conversationId,
+                nextPage,
+                MESSAGE_PAGE_SIZE,
+                'createdAt,desc'
+            )
+
+            // Đảo ngược thứ tự trong trang
+            const older = [...page.items].reverse()
+
+            // Tin nhắn cũ phải đứng trước tin nhắn hiện tại
+            setMessages((prev) => mergeMessages(older, prev))
+
             setHistoryPage(nextPage)
             setHasOlder(nextPage + 1 < page.totalPages)
 
@@ -324,11 +353,21 @@ export function ChatPage() {
                 scrollEl.scrollTop += scrollEl.scrollHeight - prevHeight
             })
         } catch {
-            showToast({ message: 'Không tải được tin nhắn cũ hơn.', type: 'error' })
+            showToast({
+                message: 'Không tải được tin nhắn cũ hơn.',
+                type: 'error'
+            })
         } finally {
             setLoadingOlder(false)
         }
-    }, [conversationId, hasOlder, historyPage, loadingOlder, showToast])
+    }, [
+        conversationId,
+        hasOlder,
+        historyPage,
+        loadingOlder,
+        showToast
+    ])
+
 
     useEffect(() => {
         const fromUrl = params.get('locationId')?.trim()
@@ -401,8 +440,7 @@ export function ChatPage() {
 
     useEffect(() => {
         if (params.get('autoSend') === '1') return
-        if (questPrompt && !prefilledQuestPrompt.current) {
-            prefilledQuestPrompt.current = true
+        if (questPrompt) {
             setInput(questPrompt)
         }
     }, [params, questPrompt])
@@ -430,25 +468,12 @@ export function ChatPage() {
     }, [])
 
     const answerSaBanQuiz = useCallback(async (messageId: string, optionId: string) => {
-        const correct = optionId === SA_BAN_QUIZ.correctId
-        if (correct && claimedQuizIds.current.has(messageId)) return
-        if (correct) claimedQuizIds.current.add(messageId)
-        setMessages((prev) => prev.map((item) => {
-            if (item.id !== messageId || !item.quiz || item.quiz.state === 'correct') return item
-            return { ...item, quiz: { ...item.quiz, state: correct ? 'correct' : 'wrong' } }
-        }))
-        if (!correct) {
-            setMessages((prev) => [...prev, {
-                id: `quiz-retry-${Date.now()}`,
-                role: 'assistant',
-                content: 'Chưa đúng. Xem lại tầng sâu nhất rồi chọn lại.',
-                createdAt: new Date().toISOString(),
-            }])
-            return
-        }
-        if (!locationId) return
+        if (!locationId || claimedQuizIds.current.has(messageId)) return
+        claimedQuizIds.current.add(messageId)
         try {
-            const result = await gamificationApi.claimChapterBonus(locationId, SA_BAN_QUEST_KEY)
+            const result = await gamificationApi.claimChapterBonus(locationId, SA_BAN_QUEST_KEY, optionId)
+            setMessages(prev => prev.map(item => item.id === messageId && item.quiz
+                ? { ...item, quiz: { ...item.quiz, state: 'correct' } } : item))
             showToast({
                 message: result.alreadyClaimed
                     ? 'Bạn đã nhận điểm chương này rồi.'
@@ -457,6 +482,10 @@ export function ChatPage() {
             })
         } catch (error) {
             claimedQuizIds.current.delete(messageId)
+            if (error instanceof ApiError && error.code === 'BUSINESS_RULE') {
+                setMessages(prev => prev.map(item => item.id === messageId && item.quiz
+                    ? { ...item, quiz: { ...item.quiz, state: 'wrong' } } : item))
+            }
             showToast({ message: getFriendlyErrorMessage(error, 'quest'), type: 'error' })
         }
     }, [locationId, showToast])
@@ -484,16 +513,22 @@ export function ChatPage() {
         scrollToBottom('auto')
     }, [messages, scrollToBottom])
 
-    const recordDialogueQuest = () => {
+    const recordDialogueQuest = (verifiedConversationId: string) => {
         if (
             locationId &&
             questRecordKey &&
+            questRecordKey.startsWith('dialogue:') &&
             questRecordKey !== SA_BAN_QUEST_KEY &&
             isAuthenticated &&
+            verifiedConversationId &&
             !questDialogueRecorded.current
         ) {
             questDialogueRecorded.current = true
-            void recordQuestStepEngagement(questRecordKey, locationId, 'map')
+            void gamificationApi.recordDialogue(locationId, questRecordKey, verifiedConversationId)
+                .catch(() => {
+                    questDialogueRecorded.current = false
+                    showToast({ message: 'Hội thoại vẫn được lưu. Để ghi nhận nhiệm vụ, hãy gửi đầy đủ câu hỏi gợi ý của nhiệm vụ và chờ câu trả lời từ hệ thống.', type: 'info' })
+                })
         }
     }
 
@@ -517,7 +552,7 @@ export function ChatPage() {
                 },
             ]),
         )
-        recordDialogueQuest()
+        recordDialogueQuest(convId)
     }
 
     const handleMessagesScroll = () => {
@@ -625,7 +660,7 @@ export function ChatPage() {
                     source: 'chat',
                 })
             }
-            recordDialogueQuest()
+            recordDialogueQuest(reply.conversationId)
             setMessages((prev) => {
                 const withPersistedUser = prev.map((m) =>
                     m.id === optimistic.id ? { ...m, id: userMessageId } : m,
@@ -1287,6 +1322,25 @@ export function ChatPage() {
                             </div>
                         )}
 
+                        {/* Thanh quay lại nhanh trang Khám Phá sau khi hỏi Chrono */}
+                        {params.get('from') === 'explore' && (
+                            <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border-2 border-[#0275FB]/30 bg-[#EAF3FF] px-4 py-2.5 text-xs text-[#0F1B33]">
+                             <span>
+                                 💡 <strong className="text-[#0275FB]">Gợi ý Thử thách Củ Chi:</strong> Bạn có thể chỉnh sửa câu hỏi bên dưới rồi nhấn Gửi
+                             </span>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        sessionStorage.setItem('timelens_return_to_quiz', '1')
+                                        navigate('/explore')
+                                    }}
+                                    className="px-3 py-1 rounded-lg bg-[#0275FB] text-white font-black hover:bg-[#015CC8] cursor-pointer transition-colors"
+                                >
+                                    ← Quay lại trả lời Quiz
+                                </button>
+                            </div>
+                        )}
+
                         {/* Nút gửi lại của bạn (Retry) */}
                         {retryMessage && (
                             <button
@@ -1300,6 +1354,10 @@ export function ChatPage() {
                             </button>
                         )}
 
+                        {questRecordKey?.startsWith('dialogue:') && <p className="mb-2 text-xs text-slate-600">
+                            Để xác nhận nhiệm vụ, hãy gửi đầy đủ câu hỏi gợi ý và chờ phản hồi của hệ thống.
+                            {questPrompt && <button type="button" onClick={() => setInput(questPrompt)} className="ml-2 font-bold text-blue-700 underline">Dùng câu gợi ý</button>}
+                        </p>}
                         <div className="relative flex items-center bg-[#F2F7FF] rounded-full border-2 border-[#0275FB]/25 focus-within:border-[#0275FB] focus-within:bg-white focus-within:ring-4 focus-within:ring-[#0275FB]/15 transition-all p-1.5 pl-5 shadow-sm">
                             <input
                                 value={input}
@@ -1312,7 +1370,7 @@ export function ChatPage() {
                                 }}
                                 disabled={busy}
                                 className="flex-1 bg-transparent border-none focus:ring-0 text-sm md:text-base font-medium text-[#0F1B33] placeholder:text-slate-400 px-2 disabled:opacity-60 outline-none"
-                                placeholder={dictating ? 'Đang nghe, chữ hiện ở đây…' : `Nhắn tin cho ${displayProfile.name}...`}
+                                placeholder={dictating ? 'Đang nghe, chữ hiện ở đây…' : questRecordKey?.startsWith('dialogue:') ? 'Gửi đầy đủ câu hỏi gợi ý để ghi nhận nhiệm vụ…' : `Nhắn tin cho ${displayProfile.name}...`}
                             />
                             <div className="flex items-center gap-1.5 pr-1">
                                 {/* Nút Giọng nói (Micro) */}

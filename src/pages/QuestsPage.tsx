@@ -11,7 +11,6 @@ import { ApiError } from '../shared/api/contracts'
 import { useAuth } from '../shared/auth/useAuth'
 import { useToast } from '../shared/ui/toast/useToast'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
-import { GridTextureOverlay } from '../components/ui/GridTextureOverlay'
 import { isLocationLocked } from '../features/explore/locationUnlock'
 import { pickQuestCover } from '../shared/media/resolveMedia'
 import { SmartImage } from '../shared/ui/SmartImage'
@@ -19,6 +18,15 @@ import { analyticsApi } from '../features/analytics/api'
 import { isDevMinigameQuestVisible } from '../features/minigame/api'
 import { CU_CHI_LOCATION_ID } from '../shared/config/constants'
 import { HERITAGE_QUEST_META } from '../features/gamification/heritageQuestSteps'
+
+type StatusFilter = 'all' | 'not_started' | 'in_progress' | 'completed'
+
+const FILTERS: { id: StatusFilter; label: string; icon: string }[] = [
+    { id: 'all', label: 'Tất cả mật lệnh', icon: 'apps' },
+    { id: 'not_started', label: 'Mật lệnh mới', icon: 'folder' },
+    { id: 'in_progress', label: 'Đang giải mã', icon: 'data_usage' },
+    { id: 'completed', label: 'Đã phá đảo', icon: 'verified' },
+]
 
 export function QuestsPage() {
     const { isAuthenticated, user } = useAuth()
@@ -32,7 +40,7 @@ export function QuestsPage() {
     const [progresses, setProgresses] = useState<QuestProgress[]>([])
     const [discoveredKeys, setDiscoveredKeys] = useState<string[]>([])
     const [loading, setLoading] = useState(true)
-    const [statusFilter, setStatusFilter] = useState<'all' | 'not_started' | 'in_progress' | 'completed'>('all')
+    const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
     const { showToast } = useToast()
 
     useEffect(() => {
@@ -95,6 +103,13 @@ export function QuestsPage() {
 
     const filteredQuests = quests.filter((q) => statusFilter === 'all' ? true : getStatus(q.id) === statusFilter)
 
+    // Tổng quan chiến dịch (chỉ để hiển thị, không ảnh hưởng logic)
+    const totalXp = quests.reduce((sum, q) => sum + (q.pointsReward ?? 0), 0)
+    const earnedXp = quests
+        .filter((q) => getStatus(q.id) === 'completed')
+        .reduce((sum, q) => sum + (q.pointsReward ?? 0), 0)
+    const overallPct = quests.length > 0 ? Math.round((statusCounts.completed / quests.length) * 100) : 0
+
     const progressPct = (status: string, currentStep?: number, stepsTotal?: number) => {
         if (typeof currentStep === 'number' && typeof stepsTotal === 'number' && stepsTotal > 0) {
             return Math.max(0, Math.min(100, Math.round((currentStep / stepsTotal) * 100)))
@@ -134,277 +149,318 @@ export function QuestsPage() {
             mobileBackTo={`/explore/${lockedLocationId}`}
             mobileTitle="Chiến Dịch"
             topNav={<SimpleTopNav title="Chiến Dịch" backTo={`/explore/${lockedLocationId}`} backLabel="Quay lại Di tích" />}
-            className="bg-[#0a0b10] min-h-screen text-white"
+            className="min-h-screen !bg-[#DCEBFF] text-[#0F1B33]"
         >
-            {/* HERO BANNER - CHRONOS CORE (LÕI NĂNG LƯỢNG THỜI GIAN) */}
-            <div className="relative w-full h-[320px] md:h-[400px] overflow-hidden border-b border-white/5 shadow-[0_20px_50px_rgba(0,0,0,0.8)]">
-                {/* Nền ảnh */}
-                <SmartImage
-                    src={locationInfo?.coverImage || '/media/banner-main.jpg'}
-                    fallback="/media/banner-main.jpg"
-                    alt="Campaign Hub"
-                    fill
-                    className="filter contrast-125 brightness-50 object-cover"
-                />
-
-                {/* Lớp phủ Gradient Tối */}
-                <div className="absolute inset-0 bg-gradient-to-t from-[#0a0b10] via-[#0a0b10]/80 to-transparent" />
-                <div className="absolute inset-0 bg-gradient-to-r from-[#0a0b10] via-[#0a0b10]/60 to-transparent" />
-                <GridTextureOverlay />
-
-                {/* ======================================================= */}
-                {/* LÕI NĂNG LƯỢNG ĐỒ HỌA 3D BÊN PHẢI (CHRONOS CORE) */}
-                {/* ======================================================= */}
-                <div className="absolute top-1/2 right-4 md:right-20 -translate-y-1/2 hidden lg:flex items-center justify-center w-80 h-80 pointer-events-none perspective-1000">
-                    <div className="absolute inset-0 bg-gradient-to-tr from-[#fe951c]/30 to-[#388cf1]/20 blur-[100px] rounded-full animate-pulse" />
-                    <div className="absolute inset-0 rounded-full border border-white/5 border-t-[#388cf1]/60 border-l-[#388cf1]/20 animate-[spin_15s_linear_infinite]" />
-                    <div className="absolute inset-6 rounded-full border border-white/5 border-b-[#fe951c]/60 border-r-[#fe951c]/20 animate-[spin_10s_linear_infinite_reverse] scale-y-75 rotate-45" />
-                    <div className="absolute inset-16 rounded-full border-2 border-dashed border-[#fdb438]/40 animate-[spin_20s_linear_infinite]" />
-                    <div className="relative z-10 w-24 h-24 bg-gradient-to-br from-[#fe951c] via-[#e07d0b] to-[#b45309] rounded-full flex items-center justify-center shadow-[0_0_60px_rgba(254,149,28,0.8)] animate-[pulse_2s_ease-in-out_infinite]">
-                        <div className="absolute inset-1 bg-black/20 rounded-full blur-sm" />
-                        <MaterialIcon name="api" className="text-5xl text-[#fff2a1] drop-shadow-[0_0_10px_#fff]" />
-                    </div>
-                    <div className="absolute top-10 right-20 w-2 h-2 bg-cyan-400 rounded-full shadow-[0_0_10px_#22d3ee] animate-ping" />
-                    <div className="absolute bottom-20 left-10 w-1.5 h-1.5 bg-[#fdb438] rounded-full shadow-[0_0_10px_#fdb438] animate-ping" style={{ animationDelay: '1s' }} />
-                </div>
-                {/* ======================================================= */}
-
-                {/* Nội dung Text Bên Trái */}
-                <div className="absolute inset-0 flex flex-col justify-center md:justify-end p-6 md:p-12 max-w-7xl mx-auto w-full z-10">
-                    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#388cf1]/40 bg-[#388cf1]/10 backdrop-blur-md text-cyan-300 text-[10px] md:text-xs font-black uppercase tracking-widest w-max mb-4 shadow-lg">
-                        <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_#22d3ee]" />
-                        TỌA ĐỘ HIỆN TẠI: <span className="text-white">{locationInfo?.name?.toUpperCase() || 'ĐANG TRUY XUẤT...'}</span>
-                    </div>
-                    <h1 className="font-black text-5xl md:text-7xl text-white drop-shadow-2xl mb-4 tracking-tighter">
-                        Hồ Sơ Mật Lệnh
-                    </h1>
-                    <p className="text-sm md:text-base text-gray-400 max-w-2xl font-medium leading-relaxed">
-                        Hóa thân thành Đặc vụ Không gian. Giải mã các đoạn ghi âm, thâm nhập không gian 360°, quét AR hiện trường để khôi phục toàn bộ dòng thời gian bị mất tại <strong className="text-cyan-400">{locationInfo?.name}</strong>.
-                    </p>
-                </div>
+            {/* ───────── NỀN SÁNG THƯƠNG HIỆU (cố định khi cuộn) ───────── */}
+            <div aria-hidden className="pointer-events-none fixed inset-0 z-0 overflow-hidden bg-[#DCEBFF]">
+                <div className="absolute inset-0 bg-[linear-gradient(135deg,#C7DDFF_0%,#DCEBFF_40%,#EEF5FF_66%,#FFF2C3_100%)]" />
+                <div className="absolute -top-32 -left-24 h-[460px] w-[460px] rounded-full bg-[#0275FB]/20 blur-[120px]" />
+                <div className="absolute -bottom-32 -right-24 h-[480px] w-[480px] rounded-full bg-[#FDC908]/35 blur-[120px]" />
+                <div className="absolute inset-0 bg-[radial-gradient(#0275FB_1px,transparent_1px)] [background-size:22px_22px] opacity-[0.08]" />
             </div>
 
-            <main className="p-4 md:p-8 max-w-7xl mx-auto w-full relative z-20">
+            <div className="relative z-10 pt-14 md:pt-16">
+                {/* ───────── HERO ───────── */}
+                <section className="relative h-[300px] w-full overflow-hidden rounded-b-[2.5rem] shadow-[0_24px_60px_-18px_rgba(2,117,251,0.55)] md:h-[360px]">
+                    <SmartImage
+                        src={locationInfo?.coverImage || '/media/banner-main.jpg'}
+                        fallback="/media/banner-main.jpg"
+                        alt="Campaign Hub"
+                        fill
+                        className="object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-r from-[#0275FB] via-[#0275FB]/85 to-[#0275FB]/30" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#015CC8]/70 via-transparent to-transparent" />
+                    <div className="absolute inset-0 bg-[radial-gradient(#FFFFFF_1px,transparent_1px)] [background-size:22px_22px] opacity-[0.12]" />
+                    <div className="absolute inset-x-0 bottom-0 h-1.5 bg-gradient-to-r from-[#FDC908] via-[#FFF2C3] to-[#FDC908]" />
 
-                {/* THANH LỌC TRẠNG THÁI */}
-                <div className="flex gap-6 md:gap-10 border-b border-white/10 pb-2 mb-10 overflow-x-auto custom-scrollbar">
-                    {[
-                        { id: 'all', label: 'Tất Cả Mật Lệnh', count: statusCounts.all },
-                        { id: 'not_started', label: 'Mật Lệnh Mới', count: statusCounts.not_started },
-                        { id: 'in_progress', label: 'Đang Giải Mã', count: statusCounts.in_progress },
-                        { id: 'completed', label: 'Đã Phá Đảo', count: statusCounts.completed },
-                    ].map((item) => (
-                        <button
-                            key={item.id}
-                            type="button"
-                            onClick={() => setStatusFilter(item.id as typeof statusFilter)}
-                            className={`pb-4 px-2 font-black transition-all border-b-[3px] flex items-center gap-2.5 cursor-pointer whitespace-nowrap ${
-                                statusFilter === item.id
-                                    ? 'text-[#fdb438] border-[#fdb438] text-sm md:text-base'
-                                    : 'text-gray-500 border-transparent hover:text-gray-300 text-sm md:text-base'
-                            }`}
-                        >
-                            {item.label}
-                            <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-black ${
-                                statusFilter === item.id ? 'bg-[#fe951c]/20 text-[#fdb438]' : 'bg-white/5 text-gray-500'
-                            }`}>
-                                {item.count}
-                            </span>
-                        </button>
-                    ))}
-                </div>
-
-                {loading && (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-6">
-                        {[1, 2].map((i) => (
-                            <div key={i} className="h-[280px] rounded-3xl bg-[#161824] animate-pulse border border-white/5" />
-                        ))}
+                    {/* Lõi năng lượng thời gian */}
+                    <div className="pointer-events-none absolute right-6 top-1/2 hidden h-72 w-72 -translate-y-1/2 items-center justify-center md:right-20 lg:flex">
+                        <div className="absolute inset-0 animate-pulse rounded-full bg-[#FDC908]/30 blur-[70px]" />
+                        <div className="absolute inset-0 rounded-full border-2 border-dashed border-white/50 animate-[spin_20s_linear_infinite]" />
+                        <div className="absolute inset-8 rounded-full border-2 border-[#FDC908]/80 border-t-transparent animate-[spin_9s_linear_infinite_reverse]" />
+                        <div className="absolute inset-16 rounded-full border border-white/40 animate-[spin_14s_linear_infinite]" />
+                        <div className="relative z-10 flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-[#FFE58A] via-[#FDC908] to-[#F5A800] shadow-[0_0_50px_rgba(253,201,8,0.9)] animate-[pulse_2.4s_ease-in-out_infinite]">
+                            <MaterialIcon name="api" className="text-5xl text-[#0F1B33]" />
+                        </div>
+                        <div className="absolute right-12 top-10 h-2.5 w-2.5 animate-ping rounded-full bg-white" />
+                        <div className="absolute bottom-16 left-8 h-2 w-2 animate-ping rounded-full bg-[#FFF2C3]" style={{ animationDelay: '1s' }} />
                     </div>
-                )}
 
-                {/* LƯỚI THẺ CHIẾN DỊCH CHUẨN UX/UI MỚI NHẤT */}
-                {!loading && (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
-                        {filteredQuests.map((q, index) => {
-                            const progress = getProgress(q.id)
-                            const status = getStatus(q.id)
-                            const meta = HERITAGE_QUEST_META[q.id]
-                            const isLocked = locationInfo ? isLocationLocked(locationInfo, user) : false
-                            const coverImg = pickQuestCover(q.coverImage, locationInfo?.coverImage, q.title, index)
-
-                            // BỌC THÉP CHỐNG CRASH TẠI ĐÂY (An toàn tuyệt đối với optional chaining)
-                            const totalNodes = progress?.stepsTotal ?? q.stepsTotal ?? q.steps?.length ?? meta?.steps?.length ?? 3;
-                            const pct = progressPct(status, progress?.currentStep, totalNodes);
-                            const completedIds = new Set(quests.filter((other) => getStatus(other.id) === 'completed').map((other) => other.id))
-                            const waitingEarlier = questBlockedByEarlier(q, quests, completedIds) || questMissingTourKeys(q, discoveredKeys)
-                            const waitingLabel = questMissingTourKeys(q, discoveredKeys)
-                                ? 'Mở sau hai cảnh tour'
-                                : 'Mở sau mật lệnh trước'
-                            const finale = q.steps?.[q.steps.length - 1]
-                            const premiumClimax = finale?.actionType === 'portal' && (finale.portalEra === 1948 || finale.portalEra === 1968)
-                            const storyLine = (q.story || q.description || '').trim()
-
-                            // Trạng thái bị khóa
-                            if (isLocked) {
-                                return (
-                                    <div key={q.id} className="relative rounded-3xl overflow-hidden border border-white/5 bg-[#12141f] opacity-60 flex flex-col lg:flex-row h-auto lg:h-[260px]">
-                                        <div className="w-full lg:w-2/5 h-48 lg:h-full relative shrink-0 grayscale blur-[4px]">
-                                            <SmartImage src={coverImg} fallback={coverImg} alt={q.title} fill className="object-cover" />
-                                            <div className="absolute inset-0 bg-black/80" />
-                                        </div>
-                                        <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center z-10">
-                                            <div className="w-16 h-16 rounded-full bg-black/60 border border-white/10 flex items-center justify-center backdrop-blur-md mb-4 shadow-2xl">
-                                                <MaterialIcon name="lock" className="text-3xl text-gray-500" />
-                                            </div>
-                                            <h2 className="text-xl font-black text-white">{q.title}</h2>
-                                            <p className="text-xs text-gray-400 mt-2 font-medium bg-black/40 px-4 py-1.5 rounded-full">Yêu cầu hoàn thành nhiệm vụ trước</p>
-                                        </div>
-                                    </div>
-                                )
-                            }
-
-                            // Trạng thái mở
-                            return (
-                                <Link
-                                    key={q.id}
-                                    to={`/quests/${q.id}`}
-                                    className="group relative rounded-3xl overflow-hidden border border-white/10 bg-[#161824] hover:bg-[#1a1d2c] hover:border-[#388cf1]/50 transition-all duration-500 hover:-translate-y-2 shadow-[0_15px_40px_rgba(0,0,0,0.5)] flex flex-col lg:flex-row h-auto lg:min-h-[280px]"
-                                >
-                                    {/* CỘT TRÁI: ẢNH COVER */}
-                                    <div className="w-full lg:w-[35%] h-52 lg:h-full relative shrink-0 overflow-hidden">
-                                        <SmartImage src={coverImg} fallback={coverImg} alt={q.title} fill className="transition-transform duration-700 group-hover:scale-110 object-cover" />
-                                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#161824]/20 to-[#161824] hidden lg:block" />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-[#161824] via-[#161824]/40 to-transparent lg:hidden" />
-
-                                        {/* Overlay Tags Trái */}
-                                        <div className="absolute top-4 left-4 flex flex-col gap-2">
-                                            <span className="w-max px-2.5 py-1 rounded-lg bg-black/70 backdrop-blur-md border border-white/10 text-[10px] font-black text-[#fe951c] flex items-center gap-1.5 shadow-lg">
-                                                <MaterialIcon name="stars" className="text-sm" /> Phá đảo +{q.pointsReward} XP
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    {/* CỘT PHẢI: THÔNG TIN CHIẾN DỊCH (LORE & LỘT) */}
-                                    <div className="flex-1 p-6 flex flex-col justify-between relative z-10 min-w-0">
-
-                                        <div>
-                                            {/* Tag Nguồn Gốc & Onsite */}
-                                            <div className="flex items-center gap-2 mb-3 flex-wrap">
-                                                <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-1 bg-white/5 px-2 py-0.5 rounded border border-white/5">
-                                                    <MaterialIcon name="flag" className="text-[12px] text-gray-500" /> MISSION
-                                                </span>
-                                                {q.requireOnsiteCheckin ? (
-                                                    <span className="text-[9px] font-black text-emerald-300 uppercase tracking-widest flex items-center gap-1 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/30">
-                                                        <MaterialIcon name="radar" className="text-[12px] animate-pulse" /> OFFLINE ONSITE
-                                                    </span>
-                                                ) : (
-                                                    <span className="text-[9px] font-black text-[#388cf1] uppercase tracking-widest flex items-center gap-1 bg-[#388cf1]/10 px-2 py-0.5 rounded border border-[#388cf1]/30">
-                                                        <MaterialIcon name="public" className="text-[12px]" /> ONLINE REMOTE
-                                                    </span>
-                                                )}
-                                            </div>
-
-                                            <h2 className="text-xl sm:text-2xl font-black text-white leading-tight mb-2 group-hover:text-[#388cf1] transition-colors line-clamp-2">{q.title}</h2>
-
-                                            {meta && (
-                                                <p className="text-[11px] font-bold text-[#fdb438] mb-2">
-                                                    {meta.difficulty === 'dễ' ? 'Dễ' : meta.difficulty === 'trung bình' ? 'Trung bình' : 'Thử thách'}
-                                                    {' · '}
-                                                    {meta.estimatedMinutes} phút
-                                                </p>
-                                            )}
-
-                                            {storyLine && (
-                                                <p className="text-sm text-gray-300 line-clamp-2 leading-relaxed">
-                                                    {storyLine}
-                                                </p>
-                                            )}
-                                            <p className="mt-2 text-xs font-bold text-gray-300">Khám phá +10 điểm mỗi khóa</p>
-                                            {q.steps?.some((step) => step.unlockKey === 'tour:sa-ban') && (
-                                                <p className="mt-1 text-xs font-bold text-gray-300">Đố sa bàn đúng +50 một lần</p>
-                                            )}
-                                            <p className="mt-1 text-xs font-black text-[#fe951c]">Phá đảo +{q.pointsReward} một lần</p>
-                                            {premiumClimax && (
-                                                <p className="mt-1 text-[11px] font-bold text-amber-200/90">Cao trào mở bằng Premium</p>
-                                            )}
-                                        </div>
-
-                                        {/* KHU VỰC TRẠNG THÁI VÀ NÚT BẤM DƯỚI CÙNG */}
-                                        <div className="mt-5 pt-4 border-t border-white/5 flex-shrink-0">
-                                            {status === 'not_started' && (
-                                                <div className="flex items-center justify-between gap-3">
-                                                    <div className="flex items-center gap-1.5 text-xs font-bold text-gray-400">
-                                                        <MaterialIcon name="folder" className="text-sm" /> <span>Chưa mở</span>
-                                                    </div>
-                                                    {waitingEarlier ? (
-                                                        <button
-                                                            type="button"
-                                                            disabled
-                                                            className="px-4 py-2.5 rounded-xl bg-white/5 text-gray-400 font-black text-[11px] uppercase tracking-wider border border-white/10 cursor-not-allowed"
-                                                        >
-                                                            {waitingLabel}
-                                                        </button>
-                                                    ) : (
-                                                        <button
-                                                            type="button"
-                                                            onClick={(e) => handleStartQuest(q.id, e)}
-                                                            className="px-5 py-2.5 rounded-xl bg-white/5 hover:bg-[#388cf1] text-white font-black text-xs uppercase tracking-wider transition-all hover:scale-105 border border-white/10 hover:border-[#388cf1] flex items-center gap-2 cursor-pointer shadow-md"
-                                                        >
-                                                            Mở Hồ Sơ <MaterialIcon name="folder_open" className="text-sm" />
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            )}
-
-                                            {status === 'in_progress' && (
-                                                <div>
-                                                    <div className="flex justify-between items-end mb-2">
-                                                        <span className="text-[10px] font-black text-cyan-400 uppercase tracking-widest flex items-center gap-1">
-                                                            <MaterialIcon name="data_usage" className="text-sm animate-spin-slow" /> Đang giải mã...
-                                                        </span>
-                                                        {/* Áp dụng biến totalNodes bọc thép để không bị crash length */}
-                                                        <span className="text-[11px] font-bold text-white bg-white/10 px-2 py-0.5 rounded border border-white/10">
-                                                            {progress?.currentStep ?? 0} / {totalNodes} Node
-                                                        </span>
-                                                    </div>
-                                                    <div className="h-1.5 bg-black rounded-full overflow-hidden border border-white/5 relative">
-                                                        <div className="absolute inset-y-0 left-0 bg-gradient-to-r from-[#388cf1] to-cyan-300 shadow-[0_0_10px_#388cf1] rounded-full transition-all duration-1000" style={{ width: `${pct}%` }} />
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            {status === 'completed' && (
-                                                <div className="flex items-center justify-between">
-                                                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 w-max">
-                                                        <MaterialIcon name="verified" className="text-emerald-400 text-base" />
-                                                        <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">ĐÃ PHÁ ĐẢO</span>
-                                                    </div>
-                                                    <span className="text-[10px] text-gray-500 font-bold uppercase flex items-center gap-1 hover:text-white transition-colors">
-                                                        Xem Lịch sử <MaterialIcon name="chevron_right" className="text-sm" />
-                                                    </span>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                </Link>
-                            )
-                        })}
+                    <div className="absolute inset-0 z-10 mx-auto flex w-full max-w-7xl flex-col justify-center p-6 md:justify-end md:p-12 md:pb-14">
+                        <div className="mb-4 inline-flex w-max items-center gap-2 rounded-full border border-[#FDC908]/70 bg-[#FFF2C3] px-4 py-1.5 text-[10px] font-black uppercase tracking-widest text-[#0F1B33] shadow-lg md:text-xs">
+                            <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-[#0275FB]" />
+                            Tọa độ hiện tại: <span className="text-[#0275FB]">{locationInfo?.name?.toUpperCase() || 'ĐANG TRUY XUẤT...'}</span>
+                        </div>
+                        <h1 className="mb-3 text-4xl font-black tracking-tighter text-white drop-shadow-lg md:text-6xl">
+                            Hồ Sơ Mật Lệnh
+                        </h1>
+                        <p className="max-w-2xl text-sm font-medium leading-relaxed text-white/90 md:text-base">
+                            Hóa thân thành Đặc vụ Không gian. Giải mã các đoạn ghi âm, thâm nhập không gian 360°, quét AR hiện trường để khôi phục toàn bộ dòng thời gian bị mất tại <strong className="text-[#FDC908]">{locationInfo?.name}</strong>.
+                        </p>
                     </div>
-                )}
+                </section>
 
-                {!loading && filteredQuests.length === 0 && (
-                    <div className="mt-12 text-center py-24 border border-dashed border-white/10 rounded-3xl bg-[#161824]/40 backdrop-blur-xl shadow-2xl">
-                        <div className="relative w-24 h-24 mx-auto mb-6">
-                            <div className="absolute inset-0 rounded-full border border-white/10 animate-ping" />
-                            <div className="w-24 h-24 rounded-full bg-white/5 border border-white/5 flex items-center justify-center shadow-inner relative z-10">
-                                <MaterialIcon name="radar" className="text-5xl text-gray-600 animate-pulse" />
+                <main className="relative z-20 mx-auto w-full max-w-7xl px-4 pb-16 md:px-8">
+
+                    {/* ───────── BẢNG TIẾN ĐỘ + BỘ LỌC (nổi lên trên hero) ───────── */}
+                    <section className="-mt-10 mb-10 rounded-3xl border-2 border-[#0275FB]/20 bg-white p-4 shadow-[0_24px_60px_-18px_rgba(2,117,251,0.4)] md:p-6">
+                        <div className="mb-5 flex flex-col gap-4 md:flex-row md:items-center md:gap-8">
+                            <div className="min-w-0 flex-1">
+                                <div className="mb-2 flex items-end justify-between gap-3">
+                                    <p className="text-[11px] font-black uppercase tracking-widest text-[#0275FB]">Tiến độ chiến dịch</p>
+                                    <p className="text-2xl font-black text-[#0F1B33]">{overallPct}%</p>
+                                </div>
+                                <div className="h-3 overflow-hidden rounded-full border border-[#0275FB]/15 bg-[#DCEBFF]">
+                                    <div
+                                        className="h-full rounded-full bg-gradient-to-r from-[#0275FB] via-[#4DA3FF] to-[#FDC908] transition-all duration-1000"
+                                        style={{ width: `${overallPct}%` }}
+                                    />
+                                </div>
+                                <p className="mt-2 text-xs font-bold text-slate-500">
+                                    {statusCounts.completed}/{statusCounts.all} mật lệnh đã phá đảo
+                                </p>
+                            </div>
+
+                            <div className="flex shrink-0 items-center gap-3 rounded-2xl border-2 border-[#FDC908]/60 bg-gradient-to-br from-[#FFF2C3] to-white px-5 py-3">
+                                <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#FDC908] text-[#0F1B33] shadow-md">
+                                    <MaterialIcon name="stars" className="text-2xl" />
+                                </span>
+                                <div>
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-amber-700">Điểm phá đảo</p>
+                                    <p className="text-xl font-black text-[#0F1B33]">
+                                        {earnedXp} <span className="text-sm font-bold text-slate-500">/ {totalXp} XP</span>
+                                    </p>
+                                </div>
                             </div>
                         </div>
-                        <h3 className="text-2xl font-black text-white mb-2">Chưa có Mật lệnh nào</h3>
-                        <p className="text-sm text-gray-500 font-medium">Khu vực di tích này hiện tại chưa có chiến dịch nào được kích hoạt.</p>
-                    </div>
-                )}
-            </main>
+
+                        {/* Bộ lọc trạng thái */}
+                        <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
+                            {FILTERS.map((item) => {
+                                const active = statusFilter === item.id
+                                return (
+                                    <button
+                                        key={item.id}
+                                        type="button"
+                                        onClick={() => setStatusFilter(item.id)}
+                                        className={`flex cursor-pointer items-center justify-between gap-2 rounded-2xl border-2 px-4 py-3 text-left transition-all ${
+                                            active
+                                                ? 'border-transparent bg-gradient-to-br from-[#0275FB] to-[#015CC8] text-white shadow-[0_10px_24px_-8px_rgba(2,117,251,0.7)]'
+                                                : 'border-[#0275FB]/15 bg-[#F2F7FF] text-slate-600 hover:border-[#0275FB]/50 hover:bg-white'
+                                        }`}
+                                    >
+                                        <span className="flex min-w-0 items-center gap-2">
+                                            <MaterialIcon name={item.icon} className={`shrink-0 text-lg ${active ? 'text-[#FDC908]' : 'text-[#0275FB]'}`} />
+                                            <span className="truncate text-xs font-black md:text-[13px]">{item.label}</span>
+                                        </span>
+                                        <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-black ${active ? 'bg-[#FDC908] text-[#0F1B33]' : 'bg-white text-[#0275FB] border border-[#0275FB]/20'}`}>
+                                            {statusCounts[item.id]}
+                                        </span>
+                                    </button>
+                                )
+                            })}
+                        </div>
+                    </section>
+
+                    {loading && (
+                        <div className="mb-6 grid grid-cols-1 gap-8 lg:grid-cols-2">
+                            {[1, 2].map((i) => (
+                                <div key={i} className="h-[280px] animate-pulse rounded-3xl border-2 border-[#0275FB]/10 bg-white/80" />
+                            ))}
+                        </div>
+                    )}
+
+                    {/* ───────── LƯỚI THẺ MẬT LỆNH ───────── */}
+                    {!loading && (
+                        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-8">
+                            {filteredQuests.map((q, index) => {
+                                const progress = getProgress(q.id)
+                                const status = getStatus(q.id)
+                                const meta = HERITAGE_QUEST_META[q.id]
+                                const isLocked = locationInfo ? isLocationLocked(locationInfo, user) : false
+                                const coverImg = pickQuestCover(q.coverImage, locationInfo?.coverImage, q.title, index)
+
+                                // BỌC THÉP CHỐNG CRASH TẠI ĐÂY (An toàn tuyệt đối với optional chaining)
+                                const totalNodes = progress?.stepsTotal ?? q.stepsTotal ?? q.steps?.length ?? meta?.steps?.length ?? 3;
+                                const pct = progressPct(status, progress?.currentStep, totalNodes);
+                                const completedIds = new Set(quests.filter((other) => getStatus(other.id) === 'completed').map((other) => other.id))
+                                const waitingEarlier = questBlockedByEarlier(q, quests, completedIds) || questMissingTourKeys(q, discoveredKeys)
+                                const waitingLabel = questMissingTourKeys(q, discoveredKeys)
+                                    ? 'Mở sau hai cảnh tour'
+                                    : 'Mở sau mật lệnh trước'
+                                const finale = q.steps?.[q.steps.length - 1]
+                                const premiumClimax = finale?.actionType === 'portal' && (finale.portalEra === 1948 || finale.portalEra === 1968)
+                                const storyLine = (q.story || q.description || '').trim()
+                                const orderLabel = String(index + 1).padStart(2, '0')
+
+                                // Trạng thái bị khóa
+                                if (isLocked) {
+                                    return (
+                                        <div key={q.id} className="relative flex h-auto flex-col overflow-hidden rounded-3xl border-2 border-slate-200 bg-white/70 lg:h-[260px] lg:flex-row">
+                                            <div className="relative h-48 w-full shrink-0 grayscale blur-[3px] lg:h-full lg:w-2/5">
+                                                <SmartImage src={coverImg} fallback={coverImg} alt={q.title} fill className="object-cover" />
+                                                <div className="absolute inset-0 bg-white/60" />
+                                            </div>
+                                            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/55 p-6 text-center backdrop-blur-[2px]">
+                                                <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full border-2 border-[#0275FB]/20 bg-white shadow-xl">
+                                                    <MaterialIcon name="lock" className="text-3xl text-[#0275FB]" />
+                                                </div>
+                                                <h2 className="text-xl font-black text-[#0F1B33]">{q.title}</h2>
+                                                <p className="mt-2 rounded-full border border-[#FDC908]/60 bg-[#FFF2C3] px-4 py-1.5 text-xs font-bold text-[#7A5B00]">Yêu cầu hoàn thành nhiệm vụ trước</p>
+                                            </div>
+                                        </div>
+                                    )
+                                }
+
+                                // Trạng thái mở
+                                return (
+                                    <Link
+                                        key={q.id}
+                                        to={`/quests/${q.id}`}
+                                        className={`group relative flex h-auto flex-col overflow-hidden rounded-3xl border-2 bg-white shadow-[0_18px_44px_-16px_rgba(2,117,251,0.35)] transition-all duration-500 hover:-translate-y-1.5 hover:border-[#0275FB]/60 hover:shadow-[0_28px_60px_-16px_rgba(2,117,251,0.5)] lg:min-h-[280px] lg:flex-row ${
+                                            status === 'completed' ? 'border-emerald-300' : 'border-[#0275FB]/15'
+                                        }`}
+                                    >
+                                        {/* CỘT TRÁI: ẢNH COVER */}
+                                        <div className="relative h-52 w-full shrink-0 overflow-hidden lg:h-auto lg:w-[35%]">
+                                            <SmartImage src={coverImg} fallback={coverImg} alt={q.title} fill className="object-cover transition-transform duration-700 group-hover:scale-110" />
+                                            <div className="absolute inset-0 bg-gradient-to-t from-[#0F1B33]/55 via-transparent to-transparent" />
+                                            <div className="absolute inset-0 hidden bg-gradient-to-r from-transparent to-white/25 lg:block" />
+
+                                            <span className="absolute left-4 top-4 flex h-10 min-w-10 items-center justify-center rounded-xl bg-[#0275FB] px-2 text-sm font-black text-white shadow-lg ring-2 ring-white/70">
+                                                #{orderLabel}
+                                            </span>
+                                            <span className="absolute bottom-4 left-4 flex w-max items-center gap-1.5 rounded-full bg-[#FDC908] px-3 py-1.5 text-[11px] font-black text-[#0F1B33] shadow-lg">
+                                                <MaterialIcon name="stars" className="text-sm" /> +{q.pointsReward} XP
+                                            </span>
+                                        </div>
+
+                                        {/* CỘT PHẢI: THÔNG TIN */}
+                                        <div className="relative z-10 flex min-w-0 flex-1 flex-col justify-between p-6">
+                                            <div>
+                                                <div className="mb-3 flex flex-wrap items-center gap-2">
+                                                    <span className="flex items-center gap-1 rounded-lg border border-[#FDC908]/60 bg-[#FFF2C3] px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-[#7A5B00]">
+                                                        <MaterialIcon name="flag" className="text-[12px]" /> Mission
+                                                    </span>
+                                                    {q.requireOnsiteCheckin ? (
+                                                        <span className="flex items-center gap-1 rounded-lg border border-emerald-300 bg-emerald-50 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-emerald-700">
+                                                            <MaterialIcon name="radar" className="animate-pulse text-[12px]" /> Offline onsite
+                                                        </span>
+                                                    ) : (
+                                                        <span className="flex items-center gap-1 rounded-lg border border-[#0275FB]/30 bg-[#0275FB]/10 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-[#0275FB]">
+                                                            <MaterialIcon name="public" className="text-[12px]" /> Online remote
+                                                        </span>
+                                                    )}
+                                                </div>
+
+                                                <h2 className="mb-2 line-clamp-2 text-xl font-black leading-tight text-[#0F1B33] transition-colors group-hover:text-[#0275FB] sm:text-2xl">{q.title}</h2>
+
+                                                {meta && (
+                                                    <p className="mb-2 text-[11px] font-bold text-[#0275FB]">
+                                                        {meta.difficulty === 'dễ' ? 'Dễ' : meta.difficulty === 'trung bình' ? 'Trung bình' : 'Thử thách'}
+                                                        {' · '}
+                                                        {meta.estimatedMinutes} phút
+                                                    </p>
+                                                )}
+
+                                                {storyLine && (
+                                                    <p className="line-clamp-2 text-sm leading-relaxed text-slate-600">
+                                                        {storyLine}
+                                                    </p>
+                                                )}
+
+                                                <div className="mt-3 flex flex-wrap gap-1.5">
+                                                    <span className="rounded-full border border-[#0275FB]/20 bg-[#0275FB]/10 px-2.5 py-1 text-[11px] font-bold text-[#0275FB]">Khám phá +10 điểm mỗi khóa</span>
+                                                    {q.steps?.some((step) => step.unlockKey === 'tour:sa-ban') && (
+                                                        <span className="rounded-full border border-[#0275FB]/20 bg-[#0275FB]/10 px-2.5 py-1 text-[11px] font-bold text-[#0275FB]">Đố sa bàn đúng +50 một lần</span>
+                                                    )}
+                                                    <span className="rounded-full border border-[#FDC908]/70 bg-[#FFF2C3] px-2.5 py-1 text-[11px] font-black text-[#7A5B00]">Phá đảo +{q.pointsReward} một lần</span>
+                                                    {premiumClimax && (
+                                                        <span className="flex items-center gap-1 rounded-full bg-[#0F1B33] px-2.5 py-1 text-[11px] font-bold text-[#FDC908]">
+                                                            <MaterialIcon name="workspace_premium" className="text-[13px]" /> Cao trào mở bằng Premium
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {/* KHU VỰC TRẠNG THÁI VÀ NÚT BẤM */}
+                                            <div className="mt-5 shrink-0 border-t-2 border-dashed border-[#0275FB]/15 pt-4">
+                                                {status === 'not_started' && (
+                                                    <div className="flex items-center justify-between gap-3">
+                                                        <div className="flex items-center gap-1.5 text-xs font-bold text-slate-500">
+                                                            <MaterialIcon name="folder" className="text-sm" /> <span>Chưa mở</span>
+                                                        </div>
+                                                        {waitingEarlier ? (
+                                                            <button
+                                                                type="button"
+                                                                disabled
+                                                                className="cursor-not-allowed rounded-xl border border-slate-200 bg-slate-100 px-4 py-2.5 text-[11px] font-black uppercase tracking-wider text-slate-400"
+                                                            >
+                                                                {waitingLabel}
+                                                            </button>
+                                                        ) : (
+                                                            <button
+                                                                type="button"
+                                                                onClick={(e) => handleStartQuest(q.id, e)}
+                                                                className="flex cursor-pointer items-center gap-2 rounded-xl bg-gradient-to-r from-[#FDC908] to-[#FFB800] px-5 py-2.5 text-xs font-black uppercase tracking-wider text-[#0F1B33] shadow-[0_8px_20px_-6px_rgba(253,201,8,0.8)] transition-all hover:scale-105"
+                                                            >
+                                                                Mở Hồ Sơ <MaterialIcon name="folder_open" className="text-sm" />
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                )}
+
+                                                {status === 'in_progress' && (
+                                                    <div>
+                                                        <div className="mb-2 flex items-end justify-between">
+                                                            <span className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-[#0275FB]">
+                                                                <MaterialIcon name="data_usage" className="animate-spin-slow text-sm" /> Đang giải mã...
+                                                            </span>
+                                                            {/* Áp dụng biến totalNodes bọc thép để không bị crash length */}
+                                                            <span className="rounded-lg border border-[#0275FB]/20 bg-[#0275FB]/10 px-2 py-0.5 text-[11px] font-black text-[#0275FB]">
+                                                                {progress?.currentStep ?? 0} / {totalNodes} Node
+                                                            </span>
+                                                        </div>
+                                                        <div className="relative h-2.5 overflow-hidden rounded-full border border-[#0275FB]/15 bg-[#DCEBFF]">
+                                                            <div className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-[#0275FB] to-[#FDC908] transition-all duration-1000" style={{ width: `${pct}%` }} />
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {status === 'completed' && (
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex w-max items-center gap-2 rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5">
+                                                            <MaterialIcon name="verified" className="text-base text-emerald-600" />
+                                                            <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700">Đã phá đảo</span>
+                                                        </div>
+                                                        <span className="flex items-center gap-1 text-[10px] font-black uppercase text-[#0275FB] transition-colors group-hover:text-[#015CC8]">
+                                                            Xem Lịch sử <MaterialIcon name="chevron_right" className="text-sm" />
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </Link>
+                                )
+                            })}
+                        </div>
+                    )}
+
+                    {!loading && filteredQuests.length === 0 && (
+                        <div className="mt-12 rounded-3xl border-2 border-dashed border-[#0275FB]/30 bg-white/80 py-24 text-center shadow-[0_24px_60px_-18px_rgba(2,117,251,0.3)] backdrop-blur-xl">
+                            <div className="relative mx-auto mb-6 h-24 w-24">
+                                <div className="absolute inset-0 animate-ping rounded-full border-2 border-[#FDC908]/60" />
+                                <div className="relative z-10 flex h-24 w-24 items-center justify-center rounded-full border-2 border-[#FDC908]/60 bg-[#FFF2C3] shadow-inner">
+                                    <MaterialIcon name="radar" className="animate-pulse text-5xl text-[#0275FB]" />
+                                </div>
+                            </div>
+                            <h3 className="mb-2 text-2xl font-black text-[#0F1B33]">Chưa có Mật lệnh nào</h3>
+                            <p className="text-sm font-medium text-slate-500">Khu vực di tích này hiện tại chưa có chiến dịch nào được kích hoạt.</p>
+                        </div>
+                    )}
+                </main>
+            </div>
         </AppLayout>
     )
 }
