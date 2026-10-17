@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import {
   Area,
   AreaChart,
@@ -28,7 +28,15 @@ import {
   type AdminRecentPayment,
   type PageResponse,
 } from '../features/admin/api'
-import { clearAdminDraft, readAdminDraft, shouldPreserveAdminDraft, writeAdminDraft } from '../features/admin/state'
+import {
+  clearAdminDraft,
+  getPaymentActionsForStatus,
+  readAdminDraft,
+  shouldPreserveAdminDraft,
+  type PaymentAction,
+  validatePaymentActionReason,
+  writeAdminDraft,
+} from '../features/admin/state'
 import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
 import { useAuth } from '../shared/auth/useAuth'
 import { useToast } from '../shared/ui/toast/useToast'
@@ -58,6 +66,8 @@ const PAYMENT_CHIPS = [
   { id: 'PENDING', label: 'Đang xử lý', status: 'PENDING' },
   { id: 'UNDERPAID', label: 'Chờ khớp lệnh', status: 'UNDERPAID' },
   { id: 'FAILED', label: 'Thất bại', status: 'FAILED' },
+  { id: 'REFUNDED', label: 'Hoàn tiền', status: 'REFUNDED' },
+  { id: 'VOIDED', label: 'Đã hủy', status: 'VOIDED' },
 ] as const
 
 const PLAN_COLORS = ['#4edea3', '#4cd7f6', '#ffb95f', '#c4a7ff', '#f87171']
@@ -111,7 +121,15 @@ const btnSecondary =
 
 type ChartPeriod = 'week' | 'month' | 'quarter'
 type PipelineView = 'kanban' | 'matrix'
-type PaymentFacetCounts = { all: number; PAID: number; PENDING: number; UNDERPAID: number; FAILED: number }
+type PaymentFacetCounts = {
+  all: number
+  PAID: number
+  PENDING: number
+  UNDERPAID: number
+  FAILED: number
+  REFUNDED: number
+  VOIDED: number
+}
 
 function paymentStatusMeta(status: string) {
   const key = status.trim().toUpperCase()
@@ -126,6 +144,12 @@ function paymentStatusMeta(status: string) {
   }
   if (key === 'FAILED') {
     return { label: 'Thất bại', className: 'bg-error/15 text-error border-error/25' }
+  }
+  if (key === 'REFUNDED') {
+    return { label: 'Đã hoàn tiền', className: 'bg-secondary/15 text-secondary border-secondary/25' }
+  }
+  if (key === 'VOIDED') {
+    return { label: 'Đã hủy', className: 'bg-surface-container-high text-on-surface-variant border-outline-variant' }
   }
   return { label: status || '—', className: 'bg-surface-container-high text-on-surface-variant border-outline-variant' }
 }
@@ -156,27 +180,19 @@ function nextPipelineStatus(current: string): string | null {
   return PIPELINE_STAGES[idx + 1].id
 }
 
-function exportPaymentsCsv(items: AdminRecentPayment[]) {
-  const header = ['orderCode', 'payerEmail', 'amountVnd', 'status', 'channel', 'createdAt']
-  const rows = items.map((item) =>
-    [
-      item.orderCode,
-      item.payerEmail ?? item.userEmail ?? '',
-      String(item.amountVnd ?? item.amount ?? ''),
-      item.status,
-      item.channel ?? '',
-      item.createdAt,
-    ]
-      .map((cell) => `"${String(cell).replaceAll('"', '""')}"`)
-      .join(','),
-  )
-  const blob = new Blob([[header.join(','), ...rows].join('\n')], { type: 'text/csv;charset=utf-8' })
+function downloadPaymentsCsv(blob: Blob) {
   const url = URL.createObjectURL(blob)
   const anchor = document.createElement('a')
   anchor.href = url
   anchor.download = `histar-doi-soat-${new Date().toISOString().slice(0, 10)}.csv`
   anchor.click()
   URL.revokeObjectURL(url)
+}
+
+function paymentActionMeta(action: PaymentAction) {
+  if (action === 'MARK_PAID') return { label: 'Đánh dấu đã thanh toán', title: 'Xác nhận đã thanh toán' }
+  if (action === 'REFUND') return { label: 'Hoàn tiền', title: 'Xác nhận hoàn tiền' }
+  return { label: 'Hủy giao dịch', title: 'Xác nhận hủy giao dịch' }
 }
 
 function sparkPath(values: number[]) {
@@ -238,9 +254,19 @@ export function AdminBillingPage() {
     PENDING: 0,
     UNDERPAID: 0,
     FAILED: 0,
+    REFUNDED: 0,
+    VOIDED: 0,
   })
   const [invoiceOpen, setInvoiceOpen] = useState(false)
   const [leadOpen, setLeadOpen] = useState(false)
+  const [paymentActionOpen, setPaymentActionOpen] = useState<{
+    item: AdminRecentPayment
+    action: PaymentAction
+  } | null>(null)
+  const [paymentActionReason, setPaymentActionReason] = useState('')
+  const [paymentActionError, setPaymentActionError] = useState<string | null>(null)
+  const [paymentActionSaving, setPaymentActionSaving] = useState(false)
+  const [exportingPayments, setExportingPayments] = useState(false)
   const [invoiceForm, setInvoiceForm] = useState(emptyInvoiceForm)
   const [leadForm, setLeadForm] = useState(emptyLeadForm)
   const [orgOptions, setOrgOptions] = useState<AdminOrganizationSummary[]>([])
@@ -347,12 +373,14 @@ export function AdminBillingPage() {
   const loadPaymentFacets = useCallback(async () => {
     const channelFilter = channel || undefined
     try {
-      const [all, paid, pending, underpaid, failed] = await Promise.all([
+      const [all, paid, pending, underpaid, failed, refunded, voided] = await Promise.all([
         adminApi.listPayments({ page: 0, size: 1, channel: channelFilter }),
         adminApi.listPayments({ page: 0, size: 1, status: 'PAID', channel: channelFilter }),
         adminApi.listPayments({ page: 0, size: 1, status: 'PENDING', channel: channelFilter }),
         adminApi.listPayments({ page: 0, size: 1, status: 'UNDERPAID', channel: channelFilter }),
         adminApi.listPayments({ page: 0, size: 1, status: 'FAILED', channel: channelFilter }),
+        adminApi.listPayments({ page: 0, size: 1, status: 'REFUNDED', channel: channelFilter }),
+        adminApi.listPayments({ page: 0, size: 1, status: 'VOIDED', channel: channelFilter }),
       ])
       setPaymentFacets({
         all: all.totalItems,
@@ -360,6 +388,8 @@ export function AdminBillingPage() {
         PENDING: pending.totalItems,
         UNDERPAID: underpaid.totalItems,
         FAILED: failed.totalItems,
+        REFUNDED: refunded.totalItems,
+        VOIDED: voided.totalItems,
       })
     } catch {
       /* facet counts are best-effort */
@@ -526,6 +556,51 @@ export function AdminBillingPage() {
     }
   }
 
+  const exportFilteredPayments = async () => {
+    setExportingPayments(true)
+    try {
+      const blob = await adminApi.exportPaymentsCsv({
+        status: paymentStatus || undefined,
+        channel: channel || undefined,
+      })
+      downloadPaymentsCsv(blob)
+      showToast({ message: 'Đã xuất CSV theo bộ lọc hiện tại.', type: 'success' })
+    } catch (cause) {
+      showToast({ message: getFriendlyErrorMessage(cause, 'quest'), type: 'error' })
+    } finally {
+      setExportingPayments(false)
+    }
+  }
+
+  const openPaymentAction = (item: AdminRecentPayment, action: PaymentAction) => {
+    setPaymentActionReason('')
+    setPaymentActionError(null)
+    setPaymentActionOpen({ item, action })
+  }
+
+  const submitPaymentAction = async () => {
+    if (!paymentActionOpen) return
+    const reasonError = validatePaymentActionReason(paymentActionReason)
+    if (reasonError) {
+      setPaymentActionError(reasonError)
+      return
+    }
+    setPaymentActionSaving(true)
+    try {
+      const { item, action } = paymentActionOpen
+      if (action === 'MARK_PAID') await adminApi.markPaymentPaid(item.channel ?? '', item.id, paymentActionReason.trim())
+      else if (action === 'REFUND') await adminApi.refundPayment(item.channel ?? '', item.id, paymentActionReason.trim())
+      else await adminApi.voidPayment(item.channel ?? '', item.id, paymentActionReason.trim())
+      setPaymentActionOpen(null)
+      showToast({ message: `Đã cập nhật giao dịch ${item.orderCode}.`, type: 'success' })
+      await Promise.all([loadPayments(), loadPaymentFacets(), loadShell()])
+    } catch (cause) {
+      showToast({ message: getFriendlyErrorMessage(cause, 'quest'), type: 'error' })
+    } finally {
+      setPaymentActionSaving(false)
+    }
+  }
+
   const chartMonths = useMemo(() => {
     const rows = overview?.monthlyRevenue ?? []
     if (chartPeriod === 'week') return rows.slice(-3)
@@ -627,15 +702,11 @@ export function AdminBillingPage() {
           <button
             type="button"
             className={btnGhost}
-            disabled={!payments?.items.length}
-            onClick={() => {
-              if (!payments?.items.length) return
-              exportPaymentsCsv(payments.items)
-              showToast({ message: 'Đã xuất CSV từ giao dịch đang xem.', type: 'success' })
-            }}
+            disabled={exportingPayments}
+            onClick={() => void exportFilteredPayments()}
           >
             <MaterialIcon name="file_download" className="text-[16px]" />
-            Xuất đối soát CSV
+            {exportingPayments ? 'Đang xuất…' : 'Xuất đối soát CSV'}
           </button>
           <button type="button" className={btnPrimary} onClick={openInvoiceModal}>
             <MaterialIcon name="add_circle" className="text-[18px]" />
@@ -1078,7 +1149,8 @@ export function AdminBillingPage() {
                           <th className="px-3 py-2.5 text-right">Số tiền</th>
                           <th className="px-3 py-2.5">Cổng/Kênh</th>
                           <th className="px-3 py-2.5 text-center">Trạng thái</th>
-                          <th className="rounded-r-lg px-3 py-2.5 text-right">Thời gian</th>
+                          <th className="px-3 py-2.5 text-right">Thời gian</th>
+                          <th className="rounded-r-lg px-3 py-2.5 text-right">Thao tác</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-surface-container-high/40">
@@ -1125,6 +1197,21 @@ export function AdminBillingPage() {
                               <td className="px-3 py-2 text-right font-code-sm text-code-sm text-outline">
                                 {new Date(item.createdAt).toLocaleString('vi-VN')}
                               </td>
+                              <td className="px-3 py-2">
+                                <div className="flex min-w-max justify-end gap-1.5">
+                                  {getPaymentActionsForStatus(item.status).map((action) => (
+                                    <button
+                                      key={action}
+                                      type="button"
+                                      className={btnGhost}
+                                      onClick={() => openPaymentAction(item, action)}
+                                      aria-label={`${paymentActionMeta(action).label} cho giao dịch ${item.orderCode}`}
+                                    >
+                                      {paymentActionMeta(action).label}
+                                    </button>
+                                  ))}
+                                </div>
+                              </td>
                             </tr>
                           )
                         })}
@@ -1165,7 +1252,7 @@ export function AdminBillingPage() {
                   <MaterialIcon name="tune" className="text-[20px] text-outline" />
                 </div>
                 <h2 id="billing-settings-crm" className="font-headline-md text-headline-md text-on-surface">
-                  Cài đặt &amp; CRM
+                  Billing settings
                 </h2>
                 <p className="pt-1 font-body-sm text-body-sm text-on-surface-variant">
                   Điều chỉnh giá Premium B2C và hạn mức thuyết minh AI free.
@@ -1207,6 +1294,16 @@ export function AdminBillingPage() {
                           VND
                         </span>
                       </div>
+                      {Number.isFinite(Number(price)) && Number(price) > 0 && (
+                        <span className="mt-1 block font-code-sm text-code-sm text-primary">
+                          {Number(price).toLocaleString('vi-VN')}đ/tháng
+                        </span>
+                      )}
+                      {settings && (
+                        <span className="mt-0.5 block font-code-sm text-code-sm text-outline">
+                          Giá hiện tại từ backend: {settings.b2cPremiumPriceVnd.toLocaleString('vi-VN')}đ
+                        </span>
+                      )}
                     </div>
                     <div>
                       <span className="mb-1 block font-label-sm text-label-sm text-outline">
@@ -1252,7 +1349,7 @@ export function AdminBillingPage() {
 
                   <button type="submit" disabled={saving} className={`${btnPrimary} h-10 w-full justify-center`}>
                     <MaterialIcon name="check_circle" className="text-[18px]" />
-                    {saving ? 'Đang lưu…' : 'Lưu thay đổi biểu phí'}
+                    {saving ? 'Đang lưu…' : 'Lưu giá mới'}
                   </button>
                 </form>
               ) : null}
@@ -1390,6 +1487,15 @@ export function AdminBillingPage() {
                                   <p className="font-body-sm text-body-sm text-outline">
                                     {item.interestSiteCode || 'Yêu cầu thương mại'}
                                   </p>
+                                  {item.organizationId && (
+                                    <Link
+                                      to={`/admin/organizations?orgId=${encodeURIComponent(item.organizationId)}`}
+                                      className="mt-1 inline-flex items-center gap-1 rounded-full bg-secondary/15 px-2 py-0.5 font-label-sm text-label-sm text-secondary hover:bg-secondary/25"
+                                    >
+                                      <MaterialIcon name="corporate_fare" className="text-[14px]" />
+                                      Tổ chức đã liên kết
+                                    </Link>
+                                  )}
                                 </div>
                                 <div className="space-y-1 rounded bg-surface-container-lowest p-2 font-code-sm text-code-sm">
                                   <div className="flex items-center gap-1.5 text-on-surface">
@@ -1476,6 +1582,15 @@ export function AdminBillingPage() {
                               <p className="text-sm text-on-surface-variant">
                                 {item.contactName} · {item.contactEmail}
                               </p>
+                              {item.organizationId && (
+                                <Link
+                                  to={`/admin/organizations?orgId=${encodeURIComponent(item.organizationId)}`}
+                                  className="mt-1 inline-flex items-center gap-1 rounded-full bg-secondary/15 px-2 py-0.5 text-xs font-semibold text-secondary hover:bg-secondary/25"
+                                >
+                                  <MaterialIcon name="corporate_fare" className="text-[14px]" />
+                                  Tổ chức đã liên kết
+                                </Link>
+                              )}
                             </div>
                             <select
                               aria-label={`Trạng thái ${item.siteName}`}
@@ -1519,6 +1634,59 @@ export function AdminBillingPage() {
             )}
           </section>
         </>
+      )}
+
+      {paymentActionOpen && (
+        <AdminModal
+          title={paymentActionMeta(paymentActionOpen.action).title}
+          subtitle={`Giao dịch ${paymentActionOpen.item.orderCode}`}
+          icon="payments"
+          onClose={() => !paymentActionSaving && setPaymentActionOpen(null)}
+        >
+          <div className="flex flex-col gap-4">
+            <p id="payment-action-reason-help" className="font-body-sm text-body-sm text-on-surface-variant">
+              Nhập lý do nghiệp vụ để lưu cùng lịch sử kiểm toán. Lý do phải có ít nhất 10 ký tự.
+            </p>
+            <label className="flex flex-col gap-1.5 font-label-sm text-label-sm text-outline">
+              Lý do
+              <textarea
+                autoFocus
+                rows={4}
+                value={paymentActionReason}
+                onChange={(event) => {
+                  setPaymentActionReason(event.target.value)
+                  setPaymentActionError(null)
+                }}
+                aria-describedby={`payment-action-reason-help${paymentActionError ? ' payment-action-reason-error' : ''}`}
+                aria-invalid={Boolean(paymentActionError)}
+                className={inputClass}
+              />
+            </label>
+            {paymentActionError && (
+              <p id="payment-action-reason-error" role="alert" className="font-body-sm text-body-sm text-error">
+                {paymentActionError}
+              </p>
+            )}
+            <div className="flex flex-wrap justify-end gap-2 border-t border-outline-variant/50 pt-4">
+              <button
+                type="button"
+                className={btnGhost}
+                disabled={paymentActionSaving}
+                onClick={() => setPaymentActionOpen(null)}
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                className={btnPrimary}
+                disabled={paymentActionSaving || Boolean(validatePaymentActionReason(paymentActionReason))}
+                onClick={() => void submitPaymentAction()}
+              >
+                {paymentActionSaving ? 'Đang xử lý…' : paymentActionMeta(paymentActionOpen.action).label}
+              </button>
+            </div>
+          </div>
+        </AdminModal>
       )}
 
       {invoiceOpen && (

@@ -43,7 +43,7 @@ const groups = [
   {
     label: 'Giám sát',
     links: [
-      ['Phân tích', '/admin/analytics', 'query_stats'],
+      ['Analytics', '/admin/analytics', 'query_stats'],
       ['Nhật ký kiểm toán', '/admin/audit', 'security_update_good'],
     ] as const,
   },
@@ -177,7 +177,7 @@ export function AdminConsoleLayout() {
   }
 
   const navigation = (
-    <nav aria-label="Điều hướng quản trị" className="space-y-space-md">
+    <nav aria-label="Điều hướng Admin Console" className="space-y-space-md">
       {groups.map((group) => {
         const accent = 'accent' in group && group.accent && isCustomerRevenue
         return (
@@ -228,7 +228,7 @@ export function AdminConsoleLayout() {
     >
       <aside className="fixed left-0 top-0 z-50 hidden h-full w-64 flex-col bg-surface-container-lowest shadow-[0_1px_8px_rgba(0,0,0,0.4)] md:flex">
         <div className="flex h-14 items-center justify-between bg-surface-container-low px-space-lg">
-          <Link to="/admin" className="flex items-center gap-space-sm">
+          <Link to="/admin" aria-label="Admin Console" className="flex items-center gap-space-sm">
             <div className="grid h-7 w-7 place-items-center rounded-lg bg-primary-container text-on-primary-container shadow-[0_0_12px_rgba(16,185,129,0.35)]">
               <MaterialIcon name="bolt" className="text-[18px]" />
             </div>

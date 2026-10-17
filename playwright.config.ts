@@ -16,10 +16,11 @@ import { defineConfig, devices } from '@playwright/test'
 
 const BE_URL = process.env.HISTAR_BE_URL ?? 'http://localhost:8080'
 const FE_URL = process.env.HISTAR_FE_URL ?? 'http://127.0.0.1:5174'
-const E2E_STORAGE = 'test-results/e2e-consent.json'
+const E2E_STORAGE = '/tmp/e2e-consent.json'
 
 export default defineConfig({
   globalSetup: './tests/e2e-consent.setup.ts',
+  outputDir: '/tmp/pw-test-results',
   testDir: './tests',
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
@@ -61,10 +62,27 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'], baseURL: FE_URL },
     },
 
+    // FE-only admin gate: deterministic route fixtures, no BE dependency.
+    {
+      name: 'admin-ui',
+      testDir: './tests/ui',
+      testMatch: /admin-console\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'], baseURL: FE_URL },
+    },
+
+    // FE-only admin E2E gate: disposable route fixtures, no BE dependency.
+    {
+      name: 'admin-e2e',
+      testDir: './tests/e2e',
+      testMatch: /admin-(narrative-pilot|content-lifecycle)\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'], baseURL: FE_URL },
+    },
+
     // Tầng 3 — FE + BE E2E (luồng đầu-cuối thật)
     {
       name: '3-fullstack-e2e',
       testDir: './tests/e2e',
+      testIgnore: /admin-(narrative-pilot|content-lifecycle)\.spec\.ts/,
       dependencies: ['setup'],
       use: { ...devices['Desktop Chrome'], baseURL: FE_URL },
     },
