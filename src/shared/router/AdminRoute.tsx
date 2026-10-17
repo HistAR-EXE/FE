@@ -20,6 +20,16 @@ export function AdminRoute() {
     return <Navigate to={buildLoginRedirect(location.pathname, location.search)} replace />
   }
 
+  // React 18 batching race: saveSession() runs synchronously (localStorage updated → isAuthenticated=true)
+  // but setUser() is batched (user=null until next render flush). Wait for user to load.
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-on-surface-variant">
+        Đang xác thực...
+      </div>
+    )
+  }
+
   if (!isAdmin(user)) {
     return <Navigate to={isTeacher(user) ? '/teacher' : '/home'} replace />
   }
