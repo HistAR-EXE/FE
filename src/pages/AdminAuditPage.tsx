@@ -119,20 +119,18 @@ function snapshotFromEvent(event: AdminAuditEvent, side: 'before' | 'after') {
   return null
 }
 
-function exportAuditJson(items: AdminAuditEvent[], totalItems: number) {
-  const payload = {
-    exportedAt: new Date().toISOString(),
-    totalItems,
-    pageItemCount: items.length,
-    items,
-  }
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
+function downloadBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob)
   const anchor = document.createElement('a')
   anchor.href = url
-  anchor.download = `histar-audit-${new Date().toISOString().slice(0, 10)}.json`
+  anchor.download = filename
   anchor.click()
   URL.revokeObjectURL(url)
+}
+
+function shortHash(hash?: string | null) {
+  if (!hash) return '—'
+  return hash.length > 16 ? `${hash.slice(0, 10)}…${hash.slice(-6)}` : hash
 }
 
 export function AdminAuditPage() {
@@ -141,6 +139,8 @@ export function AdminAuditPage() {
   const state = parseAdminListState(searchParams)
   const action = searchParams.get('action')?.trim() ?? ''
   const actor = searchParams.get('actor')?.trim() ?? ''
+  const actorId = searchParams.get('actorId')?.trim() ?? ''
+  const entityIdParam = searchParams.get('entityId')?.trim() ?? ''
   const entityType = searchParams.get('entityType')?.trim() ?? state.type
   const from = searchParams.get('from')?.trim() ?? ''
   const to = searchParams.get('to')?.trim() ?? ''
@@ -151,23 +151,35 @@ export function AdminAuditPage() {
   const [actorSearch, setActorSearch] = useState(actor)
   const [selected, setSelected] = useState<AdminAuditEvent | null>(null)
   const [verifying, setVerifying] = useState(false)
+  const [exporting, setExporting] = useState(false)
   const [verifiedBanner, setVerifiedBanner] = useState(false)
+  const [integritySummary, setIntegritySummary] = useState<string | null>(null)
+  const [integrityValid, setIntegrityValid] = useState<boolean | null>(null)
   const requestGuard = useRef(createLatestRequestGuard())
+
+  const auditFilterQuery = useCallback(
+    () => ({
+      page: state.page,
+      size: AUDIT_PAGE_SIZE,
+      q: state.q || undefined,
+      sort: state.sort || undefined,
+      entityType: entityType || undefined,
+      entityId: entityIdParam || undefined,
+      actor: actor || undefined,
+      actorId: actorId || undefined,
+      action: action || undefined,
+      from: from ? new Date(`${from}T00:00:00`).toISOString() : undefined,
+      to: to ? new Date(`${to}T23:59:59.999`).toISOString() : undefined,
+    }),
+    [action, actor, actorId, entityIdParam, entityType, from, state.page, state.q, state.sort, to],
+  )
 
   const load = useCallback(() => {
     const request = requestGuard.current.begin()
     setLoading(true)
     setError(null)
     adminApi
-      .listAudit({
-        ...state,
-        size: AUDIT_PAGE_SIZE,
-        entityType: entityType || undefined,
-        actor: actor || undefined,
-        action: action || undefined,
-        from: from ? new Date(`${from}T00:00:00`).toISOString() : undefined,
-        to: to ? new Date(`${to}T23:59:59.999`).toISOString() : undefined,
-      })
+      .listAudit(auditFilterQuery())
       .then((next) => {
         if (request.isLatest()) setResult(next)
       })
@@ -179,7 +191,7 @@ export function AdminAuditPage() {
       .finally(() => {
         if (request.isLatest()) setLoading(false)
       })
-  }, [action, actor, entityType, from, state.page, state.q, state.sort, state.type, to])
+  }, [auditFilterQuery])
 
   useEffect(() => {
     load()
@@ -212,10 +224,20 @@ export function AdminAuditPage() {
   const applySearch = () => {
     setSearchParams((current) => {
       const next = new URLSearchParams(current)
-      const entityId = search.trim()
+      const entityToken = search.trim()
       const nextActor = actorSearch.trim()
-      if (entityId) next.set('q', entityId)
-      else next.delete('q')
+      const uuidLike =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(entityToken)
+      if (uuidLike) {
+        next.set('entityId', entityToken)
+        next.delete('q')
+      } else if (entityToken) {
+        next.set('q', entityToken)
+        next.delete('entityId')
+      } else {
+        next.delete('q')
+        next.delete('entityId')
+      }
       if (nextActor) next.set('actor', nextActor)
       else next.delete('actor')
       next.delete('page')
@@ -228,7 +250,9 @@ export function AdminAuditPage() {
     setActorSearch('')
     setSearchParams((current) => {
       const next = new URLSearchParams(current)
-      ;['q', 'actor', 'entityType', 'action', 'from', 'to', 'sort', 'page', 'type'].forEach((key) => next.delete(key))
+      ;['q', 'actor', 'actorId', 'entityId', 'entityType', 'action', 'from', 'to', 'sort', 'page', 'type'].forEach(
+        (key) => next.delete(key),
+      )
       return next
     })
   }
@@ -251,17 +275,52 @@ export function AdminAuditPage() {
     return 'Mọi thời điểm'
   }, [from, to])
 
-  const runIntegrityCheck = () => {
+  const runIntegrityCheck = async () => {
     setVerifying(true)
-    load()
-    window.setTimeout(() => {
-      setVerifying(false)
+    try {
+      const report = await adminApi.verifyAuditIntegrity(auditFilterQuery())
+      setIntegrityValid(report.valid)
       setVerifiedBanner(true)
-      showToast({
-        message: `Đã làm mới ${kpis.totalItems.toLocaleString('vi-VN')} bản ghi từ API. Chuỗi chữ ký Merkle chưa có trên máy chủ.`,
-        type: 'success',
-      })
-    }, 500)
+      if (report.valid) {
+        const tip = report.chainTip ? shortHash(report.chainTip) : '—'
+        setIntegritySummary(
+          `Chuỗi SHA-256 hợp lệ · ${report.checkedCount.toLocaleString('vi-VN')} bản ghi · tip ${tip}`,
+        )
+        showToast({
+          message: `Integrity OK: ${report.checkedCount.toLocaleString('vi-VN')} bản ghi.`,
+          type: 'success',
+        })
+      } else {
+        setIntegritySummary(
+          `Phát hiện can thiệp · broken ${report.brokenEventId ?? '—'} · đã kiểm ${report.checkedCount}`,
+        )
+        showToast({
+          message: `Integrity lỗi tại sự kiện ${report.brokenEventId ?? 'không xác định'}.`,
+          type: 'error',
+        })
+      }
+      load()
+    } catch (cause) {
+      setIntegrityValid(false)
+      setVerifiedBanner(true)
+      setIntegritySummary(getFriendlyErrorMessage(cause, 'quest'))
+      showToast({ message: getFriendlyErrorMessage(cause, 'quest'), type: 'error' })
+    } finally {
+      setVerifying(false)
+    }
+  }
+
+  const exportAudit = async () => {
+    setExporting(true)
+    try {
+      const blob = await adminApi.exportAuditJson(auditFilterQuery())
+      downloadBlob(blob, `histar-audit-${new Date().toISOString().slice(0, 10)}.json`)
+      showToast({ message: 'Đã xuất JSON theo bộ lọc hiện tại từ máy chủ.', type: 'success' })
+    } catch (cause) {
+      showToast({ message: getFriendlyErrorMessage(cause, 'quest'), type: 'error' })
+    } finally {
+      setExporting(false)
+    }
   }
 
   const pageFrom = result ? result.page * result.size + (result.items.length ? 1 : 0) : 0
@@ -270,23 +329,30 @@ export function AdminAuditPage() {
   return (
     <section className="flex w-full max-w-7xl flex-col pb-16" aria-busy={loading}>
       {verifiedBanner && (
-        <div className="relative mb-space-md overflow-hidden rounded-xl bg-primary-container px-space-md py-2 text-on-primary-container shadow-lg">
+        <div
+          className={`relative mb-space-md overflow-hidden rounded-xl px-space-md py-2 shadow-lg ${
+            integrityValid === false
+              ? 'bg-error-container text-on-error-container'
+              : 'bg-primary-container text-on-primary-container'
+          }`}
+        >
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <MaterialIcon name="verified_user" className="animate-pulse text-[18px]" />
+              <MaterialIcon
+                name={integrityValid === false ? 'gpp_bad' : 'verified_user'}
+                className="animate-pulse text-[18px]"
+              />
               <div>
                 <p className="text-xs font-bold">
-                  Đồng bộ nhật ký từ API: {kpis.totalItems.toLocaleString('vi-VN')} bản ghi khớp bộ lọc
+                  {integrityValid === false ? 'Integrity thất bại' : 'Integrity SHA-256'}
                 </p>
-                <p className="text-[11px] opacity-90">
-                  Không có endpoint cảnh báo can thiệp (tamper) trên máy chủ • Hiển thị dữ liệu audit thực tế
-                </p>
+                <p className="text-[11px] opacity-90">{integritySummary ?? 'Đã kiểm tra chuỗi hash trên máy chủ.'}</p>
               </div>
             </div>
             <button
               type="button"
               onClick={() => setVerifiedBanner(false)}
-              className="rounded-lg p-1 text-on-primary-container hover:bg-black/20"
+              className="rounded-lg p-1 hover:bg-black/20"
               aria-label="Đóng thông báo"
             >
               <MaterialIcon name="close" className="text-[16px]" />
@@ -320,7 +386,12 @@ export function AdminAuditPage() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <button type="button" className={btnGhost} disabled={verifying || loading} onClick={runIntegrityCheck}>
+            <button
+              type="button"
+              className={btnGhost}
+              disabled={verifying || loading}
+              onClick={() => void runIntegrityCheck()}
+            >
               <MaterialIcon
                 name="shield_lock"
                 className={`text-[16px] text-primary ${verifying ? 'animate-spin' : ''}`}
@@ -330,18 +401,39 @@ export function AdminAuditPage() {
             <button
               type="button"
               className={btnPrimary}
-              disabled={!result?.items.length}
-              onClick={() => {
-                if (!result?.items.length) return
-                exportAuditJson(result.items, result.totalItems)
-                showToast({ message: 'Đã xuất JSON từ trang audit đang xem.', type: 'success' })
-              }}
+              disabled={exporting || loading}
+              onClick={() => void exportAudit()}
             >
               <MaterialIcon name="download_for_offline" className="text-[16px]" />
-              Xuất dữ liệu (JSON)
+              {exporting ? 'Đang xuất…' : 'Xuất dữ liệu (JSON)'}
             </button>
           </div>
         </div>
+
+        {(actorId || entityIdParam) && (
+          <div className="flex flex-wrap items-center gap-2">
+            {entityIdParam && (
+              <button
+                type="button"
+                className="inline-flex items-center gap-1 rounded-full bg-surface-container-high px-2.5 py-1 font-code-sm text-[11px] text-primary"
+                onClick={() => updateParam('entityId', '')}
+              >
+                entityId: {shortHash(entityIdParam)}
+                <MaterialIcon name="close" className="text-[14px]" />
+              </button>
+            )}
+            {actorId && (
+              <button
+                type="button"
+                className="inline-flex items-center gap-1 rounded-full bg-surface-container-high px-2.5 py-1 font-code-sm text-[11px] text-primary"
+                onClick={() => updateParam('actorId', '')}
+              >
+                actorId: {shortHash(actorId)}
+                <MaterialIcon name="close" className="text-[14px]" />
+              </button>
+            )}
+          </div>
+        )}
 
         <div className="grid grid-cols-1 gap-space-sm sm:grid-cols-2 lg:grid-cols-4">
           <div className="relative flex flex-col justify-between overflow-hidden rounded-xl bg-surface-container-low p-3 shadow-sm">
@@ -659,6 +751,17 @@ export function AdminAuditPage() {
               <div>
                 <dt className="text-on-surface-variant">Lý do</dt>
                 <dd className="text-on-surface">{selected.reason ?? '—'}</dd>
+              </div>
+              <div className="sm:col-span-2">
+                <dt className="text-on-surface-variant">Hash SHA-256</dt>
+                <dd className="break-all font-mono text-[12px] text-on-surface" title={selected.eventHash ?? undefined}>
+                  {selected.eventHash ?? '—'}
+                </dd>
+                {selected.prevEventHash && (
+                  <p className="mt-1 break-all font-mono text-[11px] text-outline" title={selected.prevEventHash}>
+                    prev: {shortHash(selected.prevEventHash)}
+                  </p>
+                )}
               </div>
             </dl>
             <div>

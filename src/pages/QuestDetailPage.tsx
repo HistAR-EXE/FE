@@ -40,6 +40,7 @@ export function QuestDetailPage() {
     const [waitingEarlier, setWaitingEarlier] = useState(false)
     const [waitingLabel, setWaitingLabel] = useState('Mở sau mật lệnh trước')
     const [callOffer, setCallOffer] = useState(false)
+    const [storyOpen, setStoryOpen] = useState(false)
     const { getSessionId } = useVisitSession()
     const { showToast } = useToast()
 
@@ -182,7 +183,7 @@ export function QuestDetailPage() {
                 {/* ========================================= */}
                 {/* HERO COVER - RADAR CORE 3D VÀNG CAM */}
                 {/* ========================================= */}
-                <div className="h-80 md:h-[450px] relative overflow-hidden md:rounded-b-[3rem] border-b border-white/5 shadow-[0_30px_60px_rgba(0,0,0,0.8)] bg-[#0f1015]">
+                <div className="h-56 md:h-[420px] relative overflow-hidden md:rounded-b-[3rem] border-b border-white/5 shadow-[0_30px_60px_rgba(0,0,0,0.8)] bg-[#0f1015]">
                     {/* Hình Nền */}
                     <div className="absolute inset-0 opacity-40">
                         <SmartImage src={coverImg} fallback={coverImg} alt={title} fill className="filter contrast-125 saturate-50 object-cover" />
@@ -234,6 +235,29 @@ export function QuestDetailPage() {
                         </p>
                     </div>
                 </div>
+
+                {/* ═══ QUICK CTA — visible on mobile without scrolling ═══ */}
+                {status === 'not_started' && (
+                    <div className="px-4 pt-4 pb-2">
+                        {waitingEarlier ? (
+                            <button type="button" disabled
+                                className="w-full px-6 py-4 rounded-2xl bg-white/5 border border-white/10 text-gray-400 font-black text-sm uppercase tracking-widest cursor-not-allowed flex items-center justify-center gap-2">
+                                <MaterialIcon name="lock" className="text-base" /> {waitingLabel}
+                            </button>
+                        ) : isAuthenticated ? (
+                            <button onClick={startQuest} aria-label="Nhận nhiệm vụ" disabled={loading}
+                                className="w-full px-6 py-4 rounded-2xl bg-gradient-to-r from-[#fe951c] to-[#e07d0b] text-black font-black text-sm uppercase tracking-widest shadow-[0_5px_20px_rgba(254,149,28,0.4)] hover:scale-105 transition-all cursor-pointer flex items-center justify-center gap-2">
+                                {loading ? <MaterialIcon name="refresh" className="animate-spin" /> : <MaterialIcon name="power_settings_new" />}
+                                {loading ? 'ĐANG KẾT NỐI...' : 'BẮT ĐẦU HÀNH TRÌNH'}
+                            </button>
+                        ) : (
+                            <Link to="/login" className="w-full inline-flex items-center justify-center gap-2 px-6 py-4 rounded-2xl bg-white/10 border border-white/20 text-white font-bold text-sm uppercase hover:bg-white/20 transition-colors">
+                                <MaterialIcon name="login" className="text-base" /> Đăng Nhập
+                            </Link>
+                        )}
+                    </div>
+                )}
+
 
                 <div className="p-4 md:p-8 space-y-10">
 
@@ -440,8 +464,25 @@ export function QuestDetailPage() {
                         stepImages={stepImages}
                     />}
 
-                    {/* B4: chương truyện theo site của quest (1–2 miễn phí, 3+ Premium / Journey Pass) */}
-                    <StoryJourneyPanel siteCode={siteCodeFromLocationId(locationId)} />
+                    {/* B4: chương truyện — collapsible để không chôn quest steps */}
+                    <div className="rounded-3xl border border-white/5 bg-[#161824] overflow-hidden">
+                        <button
+                            type="button"
+                            onClick={() => setStoryOpen((o) => !o)}
+                            className="w-full flex items-center justify-between px-6 py-4 text-left"
+                        >
+                            <span className="flex items-center gap-3 font-black text-base text-white">
+                                <MaterialIcon name="auto_stories" className="text-[#fe951c] text-xl" />
+                                HÀNH TRÌNH 6 TRẠM
+                            </span>
+                            <MaterialIcon name={storyOpen ? 'expand_less' : 'expand_more'} className="text-gray-400 text-xl" />
+                        </button>
+                        {storyOpen && (
+                            <div className="px-4 pb-4">
+                                <StoryJourneyPanel siteCode={siteCodeFromLocationId(locationId)} />
+                            </div>
+                        )}
+                    </div>
 
                 </div>
             </main>

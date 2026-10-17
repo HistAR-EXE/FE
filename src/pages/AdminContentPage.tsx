@@ -196,7 +196,7 @@ export function AdminContentPage() {
 
   const createAction = (() => {
     if (tab === 'discovery') return { label: 'Tạo điểm khám phá', onClick: () => setModal({ kind: 'discovery', mode: 'create' }) }
-    if (tab === 'artifacts') return { label: 'Tạo hiện vật', onClick: () => setModal({ kind: 'artifact', mode: 'create' }) }
+    if (tab === 'artifacts') return { label: 'Thêm hiện vật', onClick: () => setModal({ kind: 'artifact', mode: 'create' }) }
     if (tab === 'quests') return { label: 'Tạo nhiệm vụ', onClick: () => setModal({ kind: 'quest', mode: 'create' }) }
     if (tab === 'panoramas') return { label: 'Tải panorama mới', onClick: () => setModal({ kind: 'panorama-upload', mode: 'create' }) }
     return null
@@ -278,11 +278,14 @@ export function AdminContentPage() {
       if (id) {
         const item = artifacts.find((entry) => entry.id === id)
         if (!item) throw new Error('Không tìm thấy rowVersion của hiện vật.')
-        await adminApi.updateArtifact(id, body, item.rowVersion)
+        await adminApi.updateArtifact(id, body, body.rowVersion ?? item.rowVersion)
         showToast({ message: 'Đã cập nhật hiện vật.', type: 'success' })
       } else {
         await adminApi.createArtifact(body)
         showToast({ message: 'Đã tạo hiện vật mới.', type: 'success' })
+        // The list is paginated and sorted by name, so a newly-created row may
+        // not be on the current page. Keep the admin on the created record.
+        updateListUrl({ q: body.name, page: '' })
       }
       clearDraft(formId)
       setModal(null)
@@ -1104,8 +1107,17 @@ function ArtifactForm({
   const [unlockKey, setUnlockKey] = useState(draft?.unlockKey ?? initial?.unlockKey ?? '')
   const [imageUrl, setImageUrl] = useState(draft?.imageUrl ?? initial?.imageUrl ?? '')
   const [description, setDescription] = useState(draft?.description ?? initial?.description ?? '')
+  const [story, setStory] = useState(draft?.story ?? initial?.story ?? '')
   const [reliability, setReliability] = useState(draft?.reliability ?? initial?.reliability ?? '')
   const [sortOrder, setSortOrder] = useState((draft?.sortOrder ?? initial?.sortOrder)?.toString() ?? '0')
+  const [collectionName, setCollectionName] = useState(draft?.collectionName ?? initial?.collectionName ?? '')
+  const [rarity, setRarity] = useState(draft?.rarity ?? initial?.rarity ?? '')
+  const [sourceUrl, setSourceUrl] = useState(draft?.sourceUrl ?? initial?.sourceUrl ?? '')
+  const [imageSource, setImageSource] = useState(draft?.imageSource ?? initial?.imageSource ?? '')
+  const [imageLicense, setImageLicense] = useState(draft?.imageLicense ?? initial?.imageLicense ?? '')
+  const [factVerified, setFactVerified] = useState(draft?.factVerified ?? initial?.factVerified ?? false)
+  const [unlockMinigameId, setUnlockMinigameId] = useState(draft?.unlockMinigameId ?? initial?.unlockMinigameId ?? '')
+  const rowVersion = draft?.rowVersion ?? initial?.rowVersion ?? null
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -1115,8 +1127,17 @@ function ArtifactForm({
       unlockKey: unlockKey.trim(),
       imageUrl: imageUrl.trim() || null,
       description: description.trim() || null,
+      story: story.trim() || null,
       reliability: reliability.trim() || null,
       sortOrder: sortOrder ? Number(sortOrder) : 0,
+      collectionName: collectionName.trim() || null,
+      rarity: rarity.trim() || null,
+      sourceUrl: sourceUrl.trim() || null,
+      imageSource: imageSource.trim() || null,
+      imageLicense: imageLicense.trim() || null,
+      factVerified,
+      unlockMinigameId: unlockMinigameId.trim() || null,
+      rowVersion,
     })
   }
 
@@ -1134,6 +1155,33 @@ function ArtifactForm({
       <FormField label="Mô tả">
         <TextArea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} />
       </FormField>
+      <FormField label="Nội dung chi tiết / câu chuyện">
+        <TextArea value={story} onChange={(e) => setStory(e.target.value)} rows={4} />
+      </FormField>
+      <div className="grid grid-cols-2 gap-sm">
+        <FormField label="Bộ sưu tập">
+          <TextInput value={collectionName} onChange={(e) => setCollectionName(e.target.value)} />
+        </FormField>
+        <FormField label="Độ hiếm">
+          <TextInput value={rarity} onChange={(e) => setRarity(e.target.value)} placeholder="common / rare / epic" />
+        </FormField>
+      </div>
+      <div className="grid grid-cols-2 gap-sm">
+        <FormField label="Nguồn ảnh">
+          <TextInput value={imageSource} onChange={(e) => setImageSource(e.target.value)} />
+        </FormField>
+        <FormField label="Giấy phép ảnh">
+          <TextInput value={imageLicense} onChange={(e) => setImageLicense(e.target.value)} />
+        </FormField>
+      </div>
+      <FormField label="URL nguồn tư liệu">
+        <TextInput value={sourceUrl} onChange={(e) => setSourceUrl(e.target.value)} />
+      </FormField>
+      <FormField label="unlock_minigame_id">
+        <TextInput value={unlockMinigameId} onChange={(e) => setUnlockMinigameId(e.target.value)} placeholder="UUID (nếu có)" />
+      </FormField>
+      <CheckboxInput label="Đã xác minh dữ kiện" checked={factVerified} onChange={setFactVerified} />
+      {rowVersion !== null && <input type="hidden" name="rowVersion" value={rowVersion} />}
       <FormField label="Độ tin cậy">
         <TextInput value={reliability} onChange={(e) => setReliability(e.target.value)} placeholder="cao / trung bình" />
       </FormField>

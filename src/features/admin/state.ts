@@ -128,6 +128,24 @@ export function validateDeleteReason(reasonPreset: string, reasonDetail: string)
   return null
 }
 
+export type PaymentAction = 'MARK_PAID' | 'REFUND' | 'VOID'
+
+export function getPaymentActionsForStatus(status: string): PaymentAction[] {
+  switch (status.trim().toUpperCase()) {
+    case 'PENDING':
+    case 'UNDERPAID':
+      return ['MARK_PAID', 'VOID']
+    case 'PAID':
+      return ['REFUND']
+    default:
+      return []
+  }
+}
+
+export function validatePaymentActionReason(reason: string): string | null {
+  return reason.trim().length < 10 ? 'Lý do cần ít nhất 10 ký tự.' : null
+}
+
 export function formatSuppressedMetric(value: number | null | undefined, suppressed?: boolean): string {
   if (suppressed) return 'Ẩn (<10 mẫu)'
   if (typeof value !== 'number' || !Number.isFinite(value)) return '—'
@@ -220,14 +238,18 @@ type NarrativeRolloutActionInput = {
   publishedVersion: number | null
   draftVersion: number | null
   draftReviewStatus: string | null
+  rollbackTargetVersion?: number | null
 }
 
 export function getNarrativeRolloutActions(input: NarrativeRolloutActionInput) {
-  const actions: Array<{ action: 'enable' | 'pause' | 'resume' | 'publish-draft'; label: string; version: number }> = []
+  const actions: Array<{ action: 'enable' | 'pause' | 'resume' | 'publish-draft' | 'rollback'; label: string; version: number }> = []
   if (input.rolloutState === 'PAUSED' && input.publishedVersion !== null) {
     actions.push({ action: 'resume', label: `Tiếp tục v${input.publishedVersion}`, version: input.publishedVersion })
   } else if (input.rolloutState === 'ACTIVE' && input.publishedVersion !== null) {
-    actions.push({ action: 'pause', label: `Tạm dừng v${input.publishedVersion}`, version: input.publishedVersion })
+    actions.push({ action: 'pause', label: 'Tạm dừng', version: input.publishedVersion })
+    if (input.rollbackTargetVersion !== null && input.rollbackTargetVersion !== undefined) {
+      actions.push({ action: 'rollback', label: `Khôi phục v${input.rollbackTargetVersion}`, version: input.rollbackTargetVersion })
+    }
   } else if (input.rolloutState === 'NOT_RELEASED' && input.draftVersion !== null && input.draftReviewStatus === 'APPROVED') {
     actions.push({ action: 'enable', label: `Bật v${input.draftVersion}`, version: input.draftVersion })
   }

@@ -6,8 +6,10 @@ import * as adminState from '../src/features/admin/state.ts'
 import {
   buildAdminListSearchParams,
   formatSuppressedMetric,
+  getPaymentActionsForStatus,
   parseAdminListState,
   validateDeleteReason,
+  validatePaymentActionReason,
 } from '../src/features/admin/state.ts'
 
 class MemoryStorage {
@@ -51,6 +53,20 @@ test('custom delete reason requires at least ten non-whitespace characters', () 
   assert.equal(validateDeleteReason('Sai nguồn', ''), null)
   assert.match(validateDeleteReason('Khác', 'quá ngắn') ?? '', /10 ký tự/)
   assert.equal(validateDeleteReason('Khác', 'Nguồn trích dẫn sai'), null)
+})
+
+test('payment actions follow the payment lifecycle', () => {
+  assert.deepEqual(getPaymentActionsForStatus('PENDING'), ['MARK_PAID', 'VOID'])
+  assert.deepEqual(getPaymentActionsForStatus('UNDERPAID'), ['MARK_PAID', 'VOID'])
+  assert.deepEqual(getPaymentActionsForStatus('PAID'), ['REFUND'])
+  assert.deepEqual(getPaymentActionsForStatus('REFUNDED'), [])
+  assert.deepEqual(getPaymentActionsForStatus('VOIDED'), [])
+  assert.deepEqual(getPaymentActionsForStatus('FAILED'), [])
+})
+
+test('payment action reason requires ten non-whitespace characters', () => {
+  assert.match(validatePaymentActionReason('  quá ngắn ') ?? '', /10 ký tự/)
+  assert.equal(validatePaymentActionReason('Đã xác minh đối soát'), null)
 })
 
 test('suppressed analytics never exposes the underlying small count', () => {
@@ -213,7 +229,7 @@ test('narrative admin client and page use the Phase 2 contract and structured ta
     readFile(new URL('../src/pages/AdminNarrativePilotsPage.tsx', import.meta.url), 'utf8'),
   ])
 
-  for (const endpoint of ['/drafts', '/pause', '/resume', '/publish-draft', '/audit']) {
+  for (const endpoint of ['/drafts', '/pause', '/resume', '/publish-draft', '/rollback', '/audit']) {
     assert.match(api, new RegExp(endpoint.replace('/', '\\/')))
   }
   assert.match(api, /Idempotency-Key/)

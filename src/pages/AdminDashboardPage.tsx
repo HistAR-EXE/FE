@@ -91,10 +91,10 @@ export function AdminDashboardPage() {
 
   const queue = operations ? [
     {
-      label: 'Bản nháp',
+      label: 'Bản nháp đang mở',
       detail: 'nội dung',
       value: operations.draftCount,
-      to: '/admin/narrative-pilots?reviewStatus=DRAFT',
+      to: '/admin/narrative-pilots',
       icon: 'edit_note',
       badge: 'Chờ biên soạn',
       tone: 'neutral' as const,
@@ -111,8 +111,8 @@ export function AdminDashboardPage() {
     {
       label: 'Báo cáo đang mở',
       detail: 'báo cáo',
-      value: operations.contentReportsLast30Days,
-      to: '/admin/content?tab=reports&status=NEW',
+      value: operations.openContentReports,
+      to: '/admin/content?tab=reports',
       icon: 'gavel',
       badge: 'Khẩn cấp',
       tone: 'danger' as const,
@@ -209,12 +209,12 @@ export function AdminDashboardPage() {
               </span>
               <span className="font-body-sm text-body-sm text-outline">MoM</span>
             </div>
-            <div className="mt-4 flex items-center justify-between pt-3">
-              <span className="font-code-sm text-code-sm text-outline">Tăng trưởng lũy kế</span>
-              <div className="h-1.5 w-16 overflow-hidden rounded-full bg-surface-container-highest">
-                <div className="h-full rounded-full bg-secondary" style={{ width: `${Math.min(100, Math.max(8, Math.abs(mom ?? 0)))}%` }} />
+            {mom != null && (
+              <div className="mt-4 flex items-center justify-between pt-3">
+                <span className="font-code-sm text-code-sm text-outline">Tăng trưởng lũy kế</span>
+                <span className="font-code-sm text-code-sm text-secondary">So với tháng trước</span>
               </div>
-            </div>
+            )}
           </div>
 
           <div className="relative flex flex-col justify-between overflow-hidden rounded-xl bg-surface-container-low p-space-lg shadow-sm">

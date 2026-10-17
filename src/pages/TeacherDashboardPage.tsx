@@ -29,8 +29,11 @@ export function TeacherDashboardPage() {
     orgApi
       .mine()
       .then((items) => {
-        setMemberships(items)
-        if (items[0]) setOrgId((prev) => prev || items[0].organizationId)
+        // Management APIs are teacher-only. Do not render teacher controls for
+        // a student membership that happens to be returned by the API.
+        const teacherMemberships = items.filter((item) => item.orgRole.toLowerCase() === 'teacher')
+        setMemberships(teacherMemberships)
+        if (teacherMemberships[0]) setOrgId((prev) => prev || teacherMemberships[0].organizationId)
       })
       .catch(() => showToast({ message: 'Không tải được tổ chức.', type: 'error' }))
       .finally(() => setMembershipsLoaded(true))

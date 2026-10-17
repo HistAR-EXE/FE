@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { AdminErrorState, AdminEmptyState, AdminLoading } from '../components/admin/AdminAsyncState'
 import { AdminModal } from '../components/admin/AdminModal'
 import { AdminPagination } from '../components/admin/AdminPagination'
@@ -8,6 +8,12 @@ import { MaterialIcon } from '../components/ui/MaterialIcon'
 import {
   adminApi,
   type AdminOrganizationSummary,
+  type OrgActivityLog,
+  type OrgArCard,
+  type OrgArReport,
+  type OrgCertificate,
+  type OrgContract,
+  type OrgContractInput,
   type OrganizationAnalytics,
   type PageResponse,
 } from '../features/admin/api'
@@ -146,6 +152,26 @@ export function AdminOrganizationsPage() {
   const [memberEmail, setMemberEmail] = useState('')
   const [memberDisplayName, setMemberDisplayName] = useState('')
   const [memberSendEmail, setMemberSendEmail] = useState(true)
+  const [contracts, setContracts] = useState<OrgContract[]>([])
+  const [arReport, setArReport] = useState<OrgArReport | null>(null)
+  const [activityLogs, setActivityLogs] = useState<PageResponse<OrgActivityLog> | null>(null)
+  const [logPage, setLogPage] = useState(0)
+  const [, setArCards] = useState<OrgArCard[]>([])
+  const [, setCertificates] = useState<OrgCertificate[]>([])
+  const [contractModal, setContractModal] = useState<'create' | OrgContract | null>(null)
+  const [contractForm, setContractForm] = useState<OrgContractInput>({
+    title: '',
+    contractCode: '',
+    licenseSeats: 30,
+    planType: 'STANDARD',
+    status: 'ACTIVE',
+    startsOn: '',
+    endsOn: '',
+    documentUrl: '',
+    notes: '',
+  })
+  const [certModalOpen, setCertModalOpen] = useState(false)
+  const [certTitle, setCertTitle] = useState('Chứng nhận trải nghiệm AR HistAR')
   const importInputRef = useRef<HTMLInputElement>(null)
   const listGuard = useRef(createLatestRequestGuard())
   const detailGuard = useRef(createLatestRequestGuard())
@@ -351,11 +377,136 @@ export function AdminOrganizationsPage() {
     }
   }, [plan, setParams])
 
-  const unavailable = (label: string) =>
-    showToast({
-      message: `${label}: chưa có trên máy chủ — chỉ hiển thị dữ liệu API thật.`,
-      type: 'info',
+  const loadTabData = useCallback(
+    async (tab: DetailTab, id: string) => {
+      if (!id) return
+      try {
+        if (tab === 'contract') {
+          setContracts(await adminApi.listOrgContracts(id))
+        } else if (tab === 'report') {
+          setArReport(await adminApi.getOrgArReport(id))
+        } else if (tab === 'logs') {
+          setActivityLogs(await adminApi.listOrgActivityLogs(id, { page: logPage, size: 10 }))
+        }
+      } catch (cause) {
+        showToast({ message: getFriendlyErrorMessage(cause, 'quest'), type: 'error' })
+      }
+    },
+    [logPage, showToast],
+  )
+
+  useEffect(() => {
+    if (!orgId || activeTab === 'roster') return
+    void loadTabData(activeTab, orgId)
+  }, [activeTab, loadTabData, orgId])
+
+  useEffect(() => {
+    if (activeTab === 'logs' && orgId) void loadTabData('logs', orgId)
+  }, [activeTab, loadTabData, logPage, orgId])
+
+  const syncCrm = async () => {
+    if (!orgId) return
+    setSaving(true)
+    try {
+      const resultSync = await adminApi.syncOrgCrm(orgId)
+      showToast({
+        message: `Đồng bộ CRM: liên kết ${resultSync.linkedCount} inquiry.`,
+        type: 'success',
+      })
+      const analytics = await adminApi.organizationAnalytics(orgId)
+      setData(analytics)
+    } catch (cause) {
+      showToast({ message: getFriendlyErrorMessage(cause, 'quest'), type: 'error' })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const issueArCards = async () => {
+    if (!orgId) return
+    const targetLabel =
+      selectedIds.length > 0 ? `${selectedIds.length} thành viên đã chọn` : 'toàn bộ roster ACTIVE'
+    if (!window.confirm(`Cấp thẻ AR cho ${targetLabel}?`)) return
+    setSaving(true)
+    try {
+      const body = selectedIds.length > 0 ? { userIds: selectedIds } : undefined
+      const resultCards = await adminApi.issueOrgArCards(orgId, body)
+      setArCards(resultCards.cards?.length ? resultCards.cards : await adminApi.listOrgArCards(orgId))
+      showToast({
+        message: `Cấp thẻ AR: ${resultCards.issued} mới, bỏ qua ${resultCards.skipped}.`,
+        type: 'success',
+      })
+    } catch (cause) {
+      showToast({ message: getFriendlyErrorMessage(cause, 'quest'), type: 'error' })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const issueCertificates = async () => {
+    if (!orgId) return
+    setSaving(true)
+    try {
+      const resultCerts = await adminApi.issueOrgCertificates(orgId, {
+        userIds: selectedIds.length > 0 ? selectedIds : undefined,
+        title: certTitle.trim() || undefined,
+      })
+      setCertificates(await adminApi.listOrgCertificates(orgId))
+      setCertModalOpen(false)
+      showToast({ message: `Đã cấp ${resultCerts.issued} chứng nhận.`, type: 'success' })
+    } catch (cause) {
+      showToast({ message: getFriendlyErrorMessage(cause, 'quest'), type: 'error' })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const openContractCreate = () => {
+    setContractForm({
+      title: 'Hợp đồng trải nghiệm AR HistAR',
+      contractCode: `CTR-${Date.now().toString(36).toUpperCase()}`,
+      licenseSeats: 30,
+      planType: 'STANDARD',
+      status: 'ACTIVE',
+      startsOn: new Date().toISOString().slice(0, 10),
+      endsOn: '',
+      documentUrl: '',
+      notes: '',
     })
+    setContractModal('create')
+  }
+
+  const saveContract = async () => {
+    if (!orgId || !contractModal) return
+    if (contractForm.title.trim().length < 2 || !contractForm.contractCode.trim()) {
+      showToast({ message: 'Nhập tiêu đề và mã hợp đồng.', type: 'error' })
+      return
+    }
+    setSaving(true)
+    try {
+      const body: OrgContractInput = {
+        ...contractForm,
+        title: contractForm.title.trim(),
+        contractCode: contractForm.contractCode.trim(),
+        startsOn: contractForm.startsOn || null,
+        endsOn: contractForm.endsOn || null,
+        documentUrl: contractForm.documentUrl || null,
+        notes: contractForm.notes || null,
+      }
+      if (contractModal === 'create') {
+        await adminApi.createOrgContract(orgId, body)
+      } else {
+        await adminApi.updateOrgContract(orgId, contractModal.id, body)
+      }
+      setContractModal(null)
+      setContracts(await adminApi.listOrgContracts(orgId))
+      showToast({ message: 'Đã lưu hợp đồng.', type: 'success' })
+    } catch (cause) {
+      showToast({ message: getFriendlyErrorMessage(cause, 'quest'), type: 'error' })
+    } finally {
+      setSaving(false)
+    }
+  }
 
   const isTechnicalAnalyticsNote = (note?: string | null) => {
     const value = (note ?? '').trim().toLowerCase()
@@ -570,7 +721,12 @@ export function AdminOrganizationsPage() {
               <MaterialIcon name="download" className="text-[18px] text-outline" />
               Xuất dữ liệu CSV
             </button>
-            <button type="button" className={btnGhost} onClick={() => unavailable('Đồng bộ CRM')}>
+            <button
+              type="button"
+              className={btnGhost}
+              disabled={!orgId || saving}
+              onClick={() => void syncCrm()}
+            >
               <MaterialIcon name="sync" className="text-[18px] text-outline" />
               Đồng bộ CRM
             </button>
@@ -826,7 +982,13 @@ export function AdminOrganizationsPage() {
                         {data.name}
                       </h2>
                       <p className="mt-1.5 font-body-sm text-body-sm text-on-surface-variant">
-                        Cohort thật từ organization_members + user_quest_progress.
+                        {data.lastCrmSyncedAt
+                          ? `CRM: lần đồng bộ ${new Date(data.lastCrmSyncedAt).toLocaleString('vi-VN')}${
+                              typeof data.crmLinkedInquiryCount === 'number'
+                                ? ` · ${data.crmLinkedInquiryCount} inquiry`
+                                : ''
+                            }`
+                          : 'CRM: chưa đồng bộ'}
                       </p>
                     </div>
                   </div>
@@ -864,7 +1026,8 @@ export function AdminOrganizationsPage() {
                     <button
                       type="button"
                       className={btnGhost}
-                      onClick={() => unavailable('Cấp thẻ AR')}
+                      disabled={saving || !orgId}
+                      onClick={() => void issueArCards()}
                     >
                       <MaterialIcon name="badge" className="text-[18px]" />
                       Cấp thẻ AR
@@ -1038,11 +1201,187 @@ export function AdminOrganizationsPage() {
                 </button>
               </div>
 
-              {activeTab !== 'roster' && (
-                <AdminEmptyState
-                  title="Chưa có dữ liệu máy chủ"
-                  detail="Tab này chưa có endpoint admin — chỉ roster và analytics tổ chức đang được hỗ trợ."
-                />
+              {activeTab === 'contract' && (
+                <div className="rounded-2xl bg-surface-container-low p-4 shadow-sm sm:p-5">
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                    <h3 className="font-headline-sm text-headline-sm text-on-surface">Hợp đồng & giấy phép</h3>
+                    <button type="button" className={btnPrimary} disabled={saving} onClick={openContractCreate}>
+                      <MaterialIcon name="add" className="text-[16px]" />
+                      Thêm hợp đồng
+                    </button>
+                  </div>
+                  {contracts.length === 0 ? (
+                    <AdminEmptyState title="Chưa có hợp đồng" detail="Tạo hợp đồng đầu tiên cho tổ chức này." />
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full min-w-[40rem] text-left">
+                        <thead className="font-label-sm text-label-sm uppercase text-outline">
+                          <tr>
+                            <th className="py-2">Mã</th>
+                            <th className="py-2">Tiêu đề</th>
+                            <th className="py-2">Trạng thái</th>
+                            <th className="py-2">Ghế</th>
+                            <th className="py-2 text-right">Thao tác</th>
+                          </tr>
+                        </thead>
+                        <tbody className="font-body-sm text-body-sm">
+                          {contracts.map((c) => (
+                            <tr key={c.id} className="border-t border-surface-container-high/50">
+                              <td className="py-2 font-code-sm">{c.contractCode}</td>
+                              <td className="py-2">{c.title}</td>
+                              <td className="py-2">{c.status}</td>
+                              <td className="py-2">{c.licenseSeats ?? '—'}</td>
+                              <td className="py-2 text-right">
+                                <button
+                                  type="button"
+                                  className="text-primary hover:underline"
+                                  onClick={() => {
+                                    setContractForm({
+                                      title: c.title,
+                                      contractCode: c.contractCode,
+                                      licenseSeats: c.licenseSeats ?? null,
+                                      planType: c.planType ?? 'STANDARD',
+                                      status: c.status,
+                                      startsOn: c.startsOn ?? '',
+                                      endsOn: c.endsOn ?? '',
+                                      documentUrl: c.documentUrl ?? '',
+                                      notes: c.notes ?? '',
+                                    })
+                                    setContractModal(c)
+                                  }}
+                                >
+                                  Sửa
+                                </button>
+                                {c.status !== 'CANCELLED' && (
+                                  <button
+                                    type="button"
+                                    className="ml-3 text-error hover:underline"
+                                    disabled={saving}
+                                    onClick={() =>
+                                      void (async () => {
+                                        if (!orgId) return
+                                        setSaving(true)
+                                        try {
+                                          await adminApi.cancelOrgContract(orgId, c.id)
+                                          setContracts(await adminApi.listOrgContracts(orgId))
+                                          showToast({ message: 'Đã hủy hợp đồng.', type: 'success' })
+                                        } catch (cause) {
+                                          showToast({
+                                            message: getFriendlyErrorMessage(cause, 'quest'),
+                                            type: 'error',
+                                          })
+                                        } finally {
+                                          setSaving(false)
+                                        }
+                                      })()
+                                    }
+                                  >
+                                    Hủy
+                                  </button>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {activeTab === 'report' && (
+                <div className="rounded-2xl bg-surface-container-low p-4 shadow-sm sm:p-5">
+                  <h3 className="mb-3 font-headline-sm text-headline-sm text-on-surface">
+                    Báo cáo ngoại khóa AR (30 ngày)
+                  </h3>
+                  {!arReport ? (
+                    <AdminLoading label="Đang tải báo cáo AR" />
+                  ) : (
+                    <>
+                      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+                        {[
+                          ['Thành viên', arReport.memberCount],
+                          ['Check-in', arReport.checkins],
+                          ['Phiên visit', arReport.visitSessions],
+                          ['Onsite', arReport.onsiteSessions],
+                          ['Discoveries', arReport.discoveries],
+                          ['Quest xong', arReport.questCompletions],
+                        ].map(([label, value]) => (
+                          <div key={String(label)} className="rounded-xl bg-surface-container/70 p-3">
+                            <p className="font-body-sm text-body-sm text-outline">{label}</p>
+                            <p className="mt-1 font-headline-lg text-headline-lg font-bold text-on-surface">
+                              {formatCount(Number(value))}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                      {arReport.dailyCheckins.length > 0 && (
+                        <div className="mt-4">
+                          <p className="mb-2 font-label-sm text-label-sm text-outline">Check-in theo ngày</p>
+                          <ul className="max-h-48 space-y-1 overflow-y-auto font-code-sm text-code-sm text-on-surface">
+                            {arReport.dailyCheckins.map((d) => (
+                              <li key={d.day} className="flex justify-between gap-4 border-b border-surface-container-high/40 py-1">
+                                <span>{d.day}</span>
+                                <span>{d.count}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+
+              {activeTab === 'logs' && (
+                <div className="rounded-2xl bg-surface-container-low p-4 shadow-sm sm:p-5">
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                    <h3 className="font-headline-sm text-headline-sm text-on-surface">Nhật ký tổ chức</h3>
+                    {orgId && (
+                      <Link
+                        to={`/admin/audit?entityType=ORGANIZATION&entityId=${encodeURIComponent(orgId)}`}
+                        className={`${btnGhost} text-primary`}
+                      >
+                        <MaterialIcon name="open_in_new" className="text-[16px]" />
+                        Mở Audit
+                      </Link>
+                    )}
+                  </div>
+                  {!activityLogs || activityLogs.items.length === 0 ? (
+                    <AdminEmptyState title="Chưa có nhật ký" detail="Chưa có sự kiện audit cho tổ chức này." />
+                  ) : (
+                    <>
+                      <ul className="space-y-2">
+                        {activityLogs.items.map((log) => (
+                          <li
+                            key={log.id}
+                            className="rounded-lg bg-surface-container/60 px-3 py-2 font-body-sm text-body-sm"
+                          >
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <span className="font-semibold text-primary">{log.action}</span>
+                              <span className="font-code-sm text-code-sm text-outline">
+                                {new Date(log.occurredAt).toLocaleString('vi-VN')}
+                              </span>
+                            </div>
+                            <p className="text-on-surface-variant">
+                              {log.actorDisplayName || log.actorName || log.actorEmail || 'Hệ thống'}
+                              {log.reason ? ` · ${log.reason}` : ''}
+                            </p>
+                          </li>
+                        ))}
+                      </ul>
+                      <div className="mt-3">
+                        <AdminPagination
+                          variant="stitch"
+                          page={activityLogs.page}
+                          totalPages={activityLogs.totalPages}
+                          totalItems={activityLogs.totalItems}
+                          onPageChange={(page) => setLogPage(page)}
+                        />
+                      </div>
+                    </>
+                  )}
+                </div>
               )}
 
               {activeTab === 'roster' && (
@@ -1222,8 +1561,11 @@ export function AdminOrganizationsPage() {
                           <button
                             type="button"
                             className={btnPrimary}
-                            disabled={selectedIds.length === 0}
-                            onClick={() => unavailable('Cấp chứng nhận hàng loạt')}
+                            disabled={saving || roster.length === 0}
+                            onClick={() => {
+                              setCertTitle('Chứng nhận trải nghiệm AR HistAR')
+                              setCertModalOpen(true)
+                            }}
                           >
                             <MaterialIcon name="verified" className="text-[16px]" />
                             Cấp chứng nhận hàng loạt
@@ -1400,6 +1742,172 @@ export function AdminOrganizationsPage() {
               </button>
               <button type="button" className={btnPrimary} disabled={saving} onClick={() => void saveMember()}>
                 {saving ? 'Đang lưu…' : 'Thêm thành viên'}
+              </button>
+            </div>
+          </div>
+        </AdminModal>
+      )}
+
+      {contractModal && (
+        <AdminModal
+          title={contractModal === 'create' ? 'Thêm hợp đồng' : 'Sửa hợp đồng'}
+          subtitle="Organization contract"
+          icon="description"
+          onClose={() => !saving && setContractModal(null)}
+          wide
+        >
+          <div className="flex flex-col gap-4">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="flex flex-col gap-1.5 font-label-sm text-label-sm text-outline">
+                Tiêu đề
+                <input
+                  value={contractForm.title}
+                  onChange={(event) => setContractForm((c) => ({ ...c, title: event.target.value }))}
+                  className={inputClass}
+                />
+              </label>
+              <label className="flex flex-col gap-1.5 font-label-sm text-label-sm text-outline">
+                Mã hợp đồng
+                <input
+                  value={contractForm.contractCode}
+                  onChange={(event) => setContractForm((c) => ({ ...c, contractCode: event.target.value }))}
+                  className={inputClass}
+                />
+              </label>
+              <label className="flex flex-col gap-1.5 font-label-sm text-label-sm text-outline">
+                Số ghế / seats
+                <input
+                  type="number"
+                  min={0}
+                  value={contractForm.licenseSeats ?? ''}
+                  onChange={(event) =>
+                    setContractForm((c) => ({
+                      ...c,
+                      licenseSeats: event.target.value ? Number(event.target.value) : null,
+                    }))
+                  }
+                  className={inputClass}
+                />
+              </label>
+              <label className="flex flex-col gap-1.5 font-label-sm text-label-sm text-outline">
+                Gói
+                <select
+                  value={contractForm.planType ?? 'STANDARD'}
+                  onChange={(event) => setContractForm((c) => ({ ...c, planType: event.target.value }))}
+                  className={inputClass}
+                >
+                  <option value="STANDARD">STANDARD</option>
+                  <option value="ORG_BASIC">ORG_BASIC</option>
+                  <option value="PREMIUM">PREMIUM</option>
+                </select>
+              </label>
+              <label className="flex flex-col gap-1.5 font-label-sm text-label-sm text-outline">
+                Trạng thái
+                <select
+                  value={contractForm.status ?? 'ACTIVE'}
+                  onChange={(event) => setContractForm((c) => ({ ...c, status: event.target.value }))}
+                  className={inputClass}
+                >
+                  <option value="DRAFT">DRAFT</option>
+                  <option value="ACTIVE">ACTIVE</option>
+                  <option value="EXPIRED">EXPIRED</option>
+                  <option value="CANCELLED">CANCELLED</option>
+                </select>
+              </label>
+              <label className="flex flex-col gap-1.5 font-label-sm text-label-sm text-outline">
+                URL tài liệu
+                <input
+                  value={contractForm.documentUrl ?? ''}
+                  onChange={(event) => setContractForm((c) => ({ ...c, documentUrl: event.target.value }))}
+                  className={inputClass}
+                  placeholder="https://…"
+                />
+              </label>
+              <label className="flex flex-col gap-1.5 font-label-sm text-label-sm text-outline">
+                Bắt đầu
+                <input
+                  type="date"
+                  value={contractForm.startsOn ?? ''}
+                  onChange={(event) => setContractForm((c) => ({ ...c, startsOn: event.target.value }))}
+                  className={inputClass}
+                />
+              </label>
+              <label className="flex flex-col gap-1.5 font-label-sm text-label-sm text-outline">
+                Kết thúc
+                <input
+                  type="date"
+                  value={contractForm.endsOn ?? ''}
+                  onChange={(event) => setContractForm((c) => ({ ...c, endsOn: event.target.value }))}
+                  className={inputClass}
+                />
+              </label>
+            </div>
+            <label className="flex flex-col gap-1.5 font-label-sm text-label-sm text-outline">
+              Ghi chú
+              <textarea
+                value={contractForm.notes ?? ''}
+                onChange={(event) => setContractForm((c) => ({ ...c, notes: event.target.value }))}
+                rows={3}
+                className={`${inputClass} resize-none`}
+              />
+            </label>
+            <div className="flex flex-wrap justify-end gap-2 border-t border-outline-variant/50 pt-4">
+              <button type="button" className={btnGhost} disabled={saving} onClick={() => setContractModal(null)}>
+                Hủy
+              </button>
+              <button type="button" className={btnPrimary} disabled={saving} onClick={() => void saveContract()}>
+                {saving ? 'Đang lưu…' : 'Lưu hợp đồng'}
+              </button>
+            </div>
+          </div>
+        </AdminModal>
+      )}
+
+      {certModalOpen && (
+        <AdminModal
+          title="Cấp chứng nhận hàng loạt"
+          subtitle={
+            selectedIds.length > 0
+              ? `${selectedIds.length} thành viên đã chọn`
+              : 'Toàn bộ roster ACTIVE'
+          }
+          icon="verified"
+          onClose={() => !saving && setCertModalOpen(false)}
+        >
+          <div className="flex flex-col gap-4">
+            <label className="flex flex-col gap-1.5 font-label-sm text-label-sm text-outline">
+              Tiêu đề chứng nhận
+              <input
+                value={certTitle}
+                onChange={(event) => setCertTitle(event.target.value)}
+                className={inputClass}
+              />
+            </label>
+            <div className="flex flex-wrap justify-end gap-2 border-t border-outline-variant/50 pt-4">
+              <button
+                type="button"
+                className={btnGhost}
+                disabled={saving || !orgId}
+                onClick={() =>
+                  void (async () => {
+                    if (!orgId) return
+                    try {
+                      const blob = await adminApi.exportOrgCertificatesCsv(orgId)
+                      downloadBlob(blob, `org-${orgId}-certificates.csv`)
+                      showToast({ message: 'Đã xuất CSV chứng nhận.', type: 'success' })
+                    } catch (cause) {
+                      showToast({ message: getFriendlyErrorMessage(cause, 'quest'), type: 'error' })
+                    }
+                  })()
+                }
+              >
+                Xuất CSV
+              </button>
+              <button type="button" className={btnGhost} disabled={saving} onClick={() => setCertModalOpen(false)}>
+                Hủy
+              </button>
+              <button type="button" className={btnPrimary} disabled={saving} onClick={() => void issueCertificates()}>
+                {saving ? 'Đang cấp…' : 'Cấp chứng nhận'}
               </button>
             </div>
           </div>

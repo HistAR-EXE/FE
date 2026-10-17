@@ -43,7 +43,7 @@ const groups = [
   {
     label: 'Giám sát',
     links: [
-      ['Analytics', '/admin/analytics', 'query_stats'],
+      ['Phân tích', '/admin/analytics', 'query_stats'],
       ['Nhật ký kiểm toán', '/admin/audit', 'security_update_good'],
     ] as const,
   },

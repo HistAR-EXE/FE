@@ -57,7 +57,9 @@ export const viralApi = {
     formData.append('variant', input.variant)
     return getData<UserCreation>(
       httpClient.post('/api/user-creations', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+        // Remove the JSON default so the browser/Axios can add the multipart
+        // boundary automatically.
+        headers: { 'Content-Type': undefined },
       }),
     )
   },

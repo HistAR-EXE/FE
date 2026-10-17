@@ -22,6 +22,7 @@ import {
   type NarrativePilotAdmin,
   type NarrativePilotDetail,
   type NarrativeReadiness,
+  type NarrativeDestinationReadiness,
   type PageResponse,
 } from "../features/admin/api";
 import {
@@ -38,14 +39,14 @@ import {
   validateNarrativeReviewNote,
   writeAdminDraft,
 } from "../features/admin/state";
-import { ApiError } from "../shared/api/contracts";
+import { ApiError, type StructuredGateError } from "../shared/api/contracts";
 import { getFriendlyErrorMessage } from "../shared/api/errorMessages";
 import { useAuth } from "../shared/auth/useAuth";
 import { useToast } from "../shared/ui/toast/useToast";
 import { locationsApi, type Location } from "../features/locations/api";
 
 type Tab = "readiness" | "graph" | "sources" | "reward" | "history";
-type RolloutAction = "enable" | "pause" | "resume" | "publish-draft";
+type RolloutAction = "enable" | "pause" | "resume" | "publish-draft" | "rollback";
 type SavedForm = { graph: NarrativeGraphAdmin; note: string };
 
 const ROUTE = "/admin/narrative-pilots";
@@ -196,7 +197,8 @@ export function AdminNarrativePilotsPage() {
   const [detailError, setDetailError] = useState<string | null>(null);
   const [working, setWorking] = useState<string | null>(null);
   const [permissionError, setPermissionError] = useState<string | null>(null);
-  const [pauseDialog, setPauseDialog] = useState(false);
+  const [rollbackAction, setRollbackAction] = useState<"pause" | "rollback" | null>(null);
+  const [gateErrors, setGateErrors] = useState<StructuredGateError[]>([]);
   const listGuard = useRef(createLatestRequestGuard());
   const detailGuard = useRef(createLatestRequestGuard());
   const rolloutKeys = useRef(new Map<string, string>());
@@ -366,6 +368,8 @@ export function AdminNarrativePilotsPage() {
       );
     if (error instanceof ApiError && error.fieldErrors)
       setErrors(error.fieldErrors);
+    if (error instanceof ApiError)
+      setGateErrors(error.gateErrors ?? []);
     showToast({
       message: getFriendlyErrorMessage(error, "quest"),
       type: "error",
@@ -480,10 +484,16 @@ export function AdminNarrativePilotsPage() {
     reason?: { reasonPreset: DeleteReasonPreset; reasonDetail: string },
   ) => {
     if (!detail || working) return;
+    const rollbackTarget = detail.versions
+      ?.filter((item) => item.version < (detail.publishedVersion ?? Number.MAX_SAFE_INTEGER))
+      .filter((item) => item.reviewStatus === "APPROVED")
+      .sort((left, right) => right.version - left.version)[0]?.version ?? null;
     const version =
       action === "publish-draft" || action === "enable"
         ? detail.draftVersion
-        : detail.publishedVersion;
+        : action === "rollback"
+          ? rollbackTarget
+          : detail.publishedVersion;
     if (version == null) return;
     setWorking(action);
     const body = {
@@ -505,6 +515,8 @@ export function AdminNarrativePilotsPage() {
         await adminApi.enableNarrative(detail.questId, body, idempotencyKey);
       if (action === "pause")
         await adminApi.pauseNarrative(detail.questId, body, idempotencyKey);
+      if (action === "rollback")
+        await adminApi.rollbackNarrative(detail.questId, body, idempotencyKey);
       if (action === "resume")
         await adminApi.resumeNarrative(detail.questId, body, idempotencyKey);
       if (action === "publish-draft")
@@ -514,8 +526,9 @@ export function AdminNarrativePilotsPage() {
           idempotencyKey,
         );
       rolloutKeys.current.delete(requestIdentity);
-      setPauseDialog(false);
+      setRollbackAction(null);
       showToast({ message: "Đã cập nhật trạng thái phát hành cốt truyện.", type: "success" });
+      setGateErrors([]);
       await refresh();
     } catch (error) {
       handleMutationError(error);
@@ -556,6 +569,11 @@ export function AdminNarrativePilotsPage() {
         draftVersion: detail.draftVersion,
         draftReviewStatus:
           detail.draft?.reviewStatus ?? detail.draftReviewStatus ?? null,
+        rollbackTargetVersion:
+          detail.versions
+            ?.filter((item) => item.version < (detail.publishedVersion ?? Number.MAX_SAFE_INTEGER))
+            .filter((item) => item.reviewStatus === "APPROVED")
+            .sort((left, right) => right.version - left.version)[0]?.version ?? null,
       })
     : [];
   const blockingItems = readiness?.items.filter((item) => !item.passed) ?? [];
@@ -925,12 +943,12 @@ export function AdminNarrativePilotsPage() {
                             disabled={disabled}
                             title={disabled ? disabledReason : undefined}
                             onClick={() =>
-                              action.action === "pause"
-                                ? setPauseDialog(true)
+                              action.action === "pause" || action.action === "rollback"
+                                ? setRollbackAction(action.action)
                                 : void runRollout(action.action)
                             }
                             className={
-                              action.action === "pause"
+                              action.action === "pause" || action.action === "rollback"
                                 ? btnDanger
                                 : "ops-btn-primary disabled:opacity-50"
                             }
@@ -1076,6 +1094,17 @@ export function AdminNarrativePilotsPage() {
                         }));
                       }}
                       onReview={submitReview}
+                      gateErrors={gateErrors}
+                      locationData={locations.find((l) => l.id === detail.locationId)}
+                      onToggleAr={async (isArAvailable) => {
+                        if (!detail.locationId) return;
+                        const reason = isArAvailable
+                          ? `Admin phát hành ${detail.questTitle ?? detail.questId} ra map`
+                          : `Admin ẩn ${detail.questTitle ?? detail.questId} khỏi map`;
+                        await adminApi.toggleArAvailability(detail.locationId, { isArAvailable, reason });
+                        // Refresh locations list so badge updates immediately
+                        locationsApi.list({ size: 100 }).then(setLocations).catch(() => undefined);
+                      }}
                     />
                   )}
                   {activeTab === "graph" && graph && (
@@ -1164,11 +1193,12 @@ export function AdminNarrativePilotsPage() {
           </main>
         </div>
       )}
-      {pauseDialog && (
-        <PauseDialog
-          busy={working === "pause"}
-          onClose={() => setPauseDialog(false)}
-          onConfirm={(reason) => void runRollout("pause", reason)}
+      {rollbackAction && (
+        <RollbackDialog
+          action={rollbackAction}
+          busy={working === rollbackAction}
+          onClose={() => setRollbackAction(null)}
+          onConfirm={(reason) => void runRollout(rollbackAction, reason)}
         />
       )}
     </section>
@@ -1433,6 +1463,27 @@ function ReadinessGroupCard({
   );
 }
 
+function destinationChecklist(readiness: NarrativeReadiness | null, graph: NarrativeGraphAdmin | null): NarrativeDestinationReadiness[] {
+  if (readiness?.destinations?.length) return readiness.destinations;
+  const destinations = [
+    { type: "TOUR_360_OBSERVATION", label: "Tour 360°", icon: "360" },
+    { type: "AI_INTERVIEW", label: "Phỏng vấn AI", icon: "forum" },
+    { type: "SOURCE_COMPARISON", label: "Đối chiếu nguồn", icon: "compare" },
+    { type: "EVIDENCE", label: "Chứng cứ / AR", icon: "view_in_ar" },
+    { type: "OUTCOME", label: "Kết thúc", icon: "military_tech" },
+  ] as const;
+  return destinations.map((destination) => ({
+    destinationId: null,
+    destinationName: destination.label,
+    required: true,
+    isReady: (graph?.nodes.filter((node) => node.type === destination.type) ?? []).length > 0,
+    checks: [],
+    ...destination,
+  })).map(({ destinationId, destinationName, required, isReady, checks }) => ({
+    destinationId, destinationName, required, isReady, checks,
+  }));
+}
+
 function ReadinessTab({
   detail,
   readiness,
@@ -1442,6 +1493,9 @@ function ReadinessTab({
   working,
   onNoteChange,
   onReview,
+  gateErrors,
+  locationData,
+  onToggleAr,
 }: {
   detail: NarrativePilotDetail;
   readiness: NarrativeReadiness | null;
@@ -1451,6 +1505,9 @@ function ReadinessTab({
   working: string | null;
   onNoteChange: (value: string) => void;
   onReview: (decision: "APPROVED" | "REJECTED") => Promise<void>;
+  gateErrors: StructuredGateError[];
+  locationData: Location | undefined;
+  onToggleAr: (isArAvailable: boolean) => Promise<void>;
 }) {
   const status = detail.draft?.reviewStatus ?? detail.reviewStatus;
   const passedCount = readiness?.items.filter((item) => item.passed).length ?? 0;
@@ -1458,6 +1515,7 @@ function ReadinessTab({
   const groupedCodes = new Set(READINESS_GROUPS.flatMap((group) => group.codes));
   const leftover =
     readiness?.items.filter((item) => !groupedCodes.has(item.code)) ?? [];
+  const destinations = destinationChecklist(readiness, graph);
   return (
     <div className="space-y-space-md">
       {readiness && !readiness.globalFlagEnabled && (
@@ -1522,6 +1580,105 @@ function ReadinessTab({
             />
           )}
         </div>
+      )}
+
+      <section className="rounded-xl bg-surface-container-low p-space-md shadow-sm" aria-labelledby="narrative-destinations-title">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h3 id="narrative-destinations-title" className="font-headline-md text-headline-md text-on-surface">
+              Checklist điểm đến narrative
+            </h3>
+            <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant">
+              Xác nhận mỗi điểm đến runtime có node tương ứng trước khi phát hành.
+            </p>
+          </div>
+          <span className="ops-pill ops-pill-neutral">{destinations.filter((item) => item.isReady).length}/{destinations.length} điểm đến</span>
+        </div>
+        <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          {destinations.map((destination) => (
+            <a
+              key={destination.destinationId ?? destination.destinationName}
+              href="#narrative-destinations-title"
+              className={`flex items-start gap-2 rounded-lg border p-3 ${destination.isReady ? "border-primary/30 bg-primary/5" : "border-outline-variant bg-surface-container"}`}
+            >
+              <MaterialIcon name={destination.isReady ? "check_circle" : "error"} className={destination.isReady ? "text-primary" : "text-error"} />
+              <span className="min-w-0">
+                <span className="block font-label-sm text-label-sm font-bold text-on-surface">{destination.destinationName}</span>
+                <span className="block font-body-sm text-body-sm text-on-surface-variant">
+                  {destination.isReady ? "Sẵn sàng phát hành" : "Chưa sẵn sàng phát hành"}
+                </span>
+                {destination.checks.length > 0 && (
+                  <span className="mt-1 block font-body-sm text-body-sm text-on-surface-variant">
+                    {destination.checks.filter((check) => check.passed).length}/{destination.checks.length} điều kiện đạt
+                  </span>
+                )}
+              </span>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      {/* AR Availability — BE source of truth, bridging NarrativeReadiness + is_ar_available */}
+      {locationData && (
+        <section className="rounded-xl bg-surface-container-low p-space-md shadow-sm" aria-labelledby="ar-availability-title">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 id="ar-availability-title" className="font-headline-md text-headline-md text-on-surface">
+                Phát hành ra map
+              </h3>
+              <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant">
+                Bật để điểm đến hiện trên bản đồ với badge AR. Tắt không xoá dữ liệu.
+              </p>
+            </div>
+            <span className={locationData.isArAvailable ? "ops-pill ops-pill-success" : "ops-pill ops-pill-neutral"}>
+              <MaterialIcon name={locationData.isArAvailable ? "public" : "public_off"} className="text-[13px]" />
+              {locationData.isArAvailable ? "Đang hiển thị" : "Đang ẩn"}
+            </span>
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {locationData.isArAvailable ? (
+              <button
+                type="button"
+                className="ops-btn ops-btn-danger"
+                disabled={working !== null}
+                onClick={() => onToggleAr(false)}
+              >
+                <MaterialIcon name="public_off" />
+                Ẩn khỏi map
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="ops-btn ops-btn-primary"
+                disabled={working !== null || !readiness?.ready}
+                title={!readiness?.ready ? "Cần hoàn thành readiness checklist trước" : undefined}
+                onClick={() => onToggleAr(true)}
+              >
+                <MaterialIcon name="public" />
+                Phát hành ra map
+              </button>
+            )}
+          </div>
+          {!readiness?.ready && !locationData.isArAvailable && (
+            <p className="mt-2 font-body-sm text-body-sm text-on-surface-variant">
+              Hoàn thành readiness checklist để mở khoá nút Phát hành.
+            </p>
+          )}
+        </section>
+      )}
+
+      {gateErrors.length > 0 && (
+        <section role="alert" className="rounded-xl border border-error/30 bg-error-container/20 p-space-md">
+          <h3 className="font-headline-sm text-headline-sm text-error">Gate phát hành bị chặn</h3>
+          <ul className="mt-2 space-y-2">
+            {gateErrors.map((error) => (
+              <li key={`${error.code}-${error.field ?? ""}-${error.destination ?? ""}`} className="font-body-sm text-body-sm text-on-surface">
+                <span className="font-code-sm text-code-sm font-bold">{error.code}</span>: {error.message}
+                {error.destination ? ` · ${error.destination}` : ""}
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
 
       {graph && <QuestNodeFlow graph={graph} />}
@@ -1614,11 +1771,13 @@ function HistoryTab({ events }: { events: AdminAuditEvent[] }) {
     </div>
   );
 }
-function PauseDialog({
+function RollbackDialog({
+  action,
   busy,
   onClose,
   onConfirm,
 }: {
+  action: "pause" | "rollback";
   busy: boolean;
   onClose: () => void;
   onConfirm: (reason: {
@@ -1631,7 +1790,7 @@ function PauseDialog({
   const [reasonDetail, setReasonDetail] = useState("");
   const error = validateDeleteReason(reasonPreset, reasonDetail);
   return (
-    <AdminModal title="Tạm dừng pilot cốt truyện" onClose={onClose}>
+    <AdminModal title={action === "rollback" ? "Khôi phục pilot cốt truyện" : "Tạm dừng pilot cốt truyện"} onClose={onClose}>
       <form
         onSubmit={(event) => {
           event.preventDefault();
@@ -1639,7 +1798,9 @@ function PauseDialog({
         }}
       >
         <p className="font-body-sm text-body-sm text-on-surface-variant">
-          Bản đã phát hành vẫn được giữ để có thể tiếp tục đúng version sau này.
+          {action === "rollback"
+            ? "Khôi phục về bản narrative đã được duyệt trước đó. Tiến độ người học không bị reset."
+            : "Tạm dừng rollout hiện tại. Bản đã phát hành và phê duyệt vẫn được giữ nguyên để có thể tiếp tục sau này."}
         </p>
         <label className="mt-4 block font-label-sm text-label-sm text-outline">
           Lý do
@@ -1684,7 +1845,7 @@ function PauseDialog({
             disabled={busy || Boolean(error)}
             className={btnDanger}
           >
-            {busy ? "Đang tạm dừng…" : "Xác nhận tạm dừng"}
+            {busy ? "Đang xử lý…" : action === "rollback" ? "Xác nhận khôi phục" : "Xác nhận tạm dừng"}
           </button>
         </div>
       </form>

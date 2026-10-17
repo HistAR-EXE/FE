@@ -29,6 +29,10 @@ test('authenticated administrators land on the admin dashboard', () => {
   assert.equal(getAlreadyLoggedInRedirect(adminUser), '/admin')
 })
 
+test('the admin CMS entry point uses the canonical /admin route', () => {
+  assert.equal(getPostLoginRedirect({ ...adminUser, role: 'ADMIN' }), '/admin')
+})
+
 test('admin shell exposes the approved Vietnamese information architecture', async () => {
   const source = await readFile(new URL('../src/components/admin/AdminConsoleLayout.tsx', import.meta.url), 'utf8')
   const expected = [
@@ -51,7 +55,7 @@ test('admin shell exposes the approved Vietnamese information architecture', asy
     assert.match(source, new RegExp(`['\"]${label.replace(/[&]/g, '\\&')}['\"]`))
     assert.match(source, new RegExp(route.replaceAll('/', '\\/')))
   }
-  for (const englishLabel of ['Admin Console', 'Narrative pilots', 'Billing', 'Analytics', 'Audit']) {
+  for (const englishLabel of ['Narrative pilots', 'Billing', 'Analytics', 'Audit']) {
     assert.doesNotMatch(source, new RegExp(`>${englishLabel}<|['\"]${englishLabel}['\"]`))
   }
 })

@@ -28,3 +28,9 @@ jobs:
 
       - name: Lint and build
         run: npm run ci
+
+      - name: Source admin tests
+        run: npm run test:admin
+
+      - name: FE admin Playwright gate
+        run: npm run test:e2e:admin

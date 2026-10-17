@@ -293,10 +293,10 @@ export function ModeSelectPage() {
             setIsLaunching(false)
             if (user && isAdmin(user)) {
                 navigate(getAlreadyLoggedInRedirect(user), { replace: true })
-                return
+            } else {
+                const target = pendingFrom?.startsWith('/') && pendingFrom !== '/mode-select' ? pendingFrom : '/home'
+                navigate(target, { replace: true })
             }
-            const target = pendingFrom?.startsWith('/') && pendingFrom !== '/mode-select' ? pendingFrom : '/home'
-            navigate(target, { replace: true })
         }
     }
 

@@ -16,7 +16,7 @@ import type { MascotMode } from '../features/chat/MascotAvatar'
 import { MascotCallOverlay } from '../features/chat/MascotCallOverlay'
 import { answerCardLines } from '../features/chat/callCopy'
 import { imagesForReply } from '../features/chat/callVisuals'
-import { listenForUtterance, speakReply, startDictation, stopActiveSpeech, waitForSpeechToSettle, type VoicePhase } from '../features/chat/voice'
+import { browserVoiceCapabilities, listenForUtterance, speakReply, startDictation, stopActiveSpeech, waitForSpeechToSettle, type VoicePhase } from '../features/chat/voice'
 import { locationsApi, type Character } from '../features/locations/api'
 import { gamificationApi } from '../features/gamification/api'
 import { questRecordFromSearch, recordQuestStepEngagement } from '../features/gamification/questEngagement'
@@ -172,6 +172,7 @@ export function ChatPage() {
     const shouldStickToBottomRef = useRef(true)
     const chatStartedRef = useRef<string | null>(null)
     const { showToast } = useToast()
+    const canDictate = browserVoiceCapabilities().recognition
 
     useEffect(() => {
         conversationIdRef.current = conversationId
@@ -836,6 +837,7 @@ export function ChatPage() {
                             if (!stillThisAnswer() || end === 'stopped') return
                             setHearing(false)
                             setHeardAudio(end === 'played')
+                            if (end === 'silent') showToast({ message: 'Không thể phát giọng nói. Kiểm tra loa thiết bị.', type: 'error' })
                             setVoicePhase('answered')
                         })
                     }
@@ -851,6 +853,7 @@ export function ChatPage() {
                     if (stillThisAnswer() && result !== 'stopped') {
                         setHearing(false)
                         setHeardAudio(result === 'played')
+                        if (result === 'silent') showToast({ message: 'Không thể phát giọng nói. Kiểm tra loa thiết bị.', type: 'error' })
                         setVoicePhase('answered')
                     }
                     if (!skipAnswerRef.current) {
@@ -1313,6 +1316,7 @@ export function ChatPage() {
                             />
                             <div className="flex items-center gap-1.5 pr-1">
                                 {/* Nút Giọng nói (Micro) */}
+                                {canDictate && (
                                 <button
                                     type="button"
                                     onClick={toggleDictate}
@@ -1324,6 +1328,7 @@ export function ChatPage() {
                                 >
                                     <MaterialIcon name={dictating ? 'stop_circle' : 'mic'} className="text-xl" />
                                 </button>
+                                )}
                                 {/* Nút Gửi */}
                                 <button
                                     onClick={() => send()}

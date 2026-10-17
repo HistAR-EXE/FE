@@ -12,7 +12,30 @@ import { useAuth } from '../shared/auth/useAuth'
 import { useToast } from '../shared/ui/toast/useToast'
 
 type AdminRole = 'USER' | 'ORG_MEMBER' | 'TEACHER' | 'ADMIN'
+type AccountStatus = 'ACTIVE' | 'SUSPENDED'
+type UserTier = 'FREE' | 'PREMIUM'
 type RoleTarget = { user: AdminUserSummary; role: AdminRole }
+type StatusTarget = { user: AdminUserSummary; status: AccountStatus }
+type TierTarget = { user: AdminUserSummary; tier: UserTier }
+type VerifyTarget = { user: AdminUserSummary }
+type BulkKind = 'SUSPEND' | 'UNSUSPEND' | 'SET_ROLE' | 'SET_TIER'
+
+function accountStatusOf(user: AdminUserSummary): AccountStatus {
+  return user.accountStatus === 'SUSPENDED' ? 'SUSPENDED' : 'ACTIVE'
+}
+
+function tierOf(user: AdminUserSummary): UserTier {
+  return user.tier === 'PREMIUM' ? 'PREMIUM' : 'FREE'
+}
+
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob)
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.download = filename
+  anchor.click()
+  URL.revokeObjectURL(url)
+}
 
 /** Stitch users table: 5 rows per page (same as audit / billing ledger) */
 const USERS_PAGE_SIZE = 5
@@ -96,6 +119,7 @@ export function AdminUsersPage() {
   const role = params.get('role') ?? ''
   const tier = params.get('tier') ?? ''
   const verified = params.get('verified') ?? ''
+  const statusFilter = params.get('status') ?? ''
   const [search, setSearch] = useState(state.q)
   const [result, setResult] = useState<PageResponse<AdminUserSummary> | null>(null)
   const [stats, setStats] = useState({
@@ -106,6 +130,12 @@ export function AdminUsersPage() {
   })
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [target, setTarget] = useState<RoleTarget | null>(null)
+  const [statusTarget, setStatusTarget] = useState<StatusTarget | null>(null)
+  const [tierTarget, setTierTarget] = useState<TierTarget | null>(null)
+  const [verifyTarget, setVerifyTarget] = useState<VerifyTarget | null>(null)
+  const [bulkKind, setBulkKind] = useState<BulkKind | null>(null)
+  const [bulkRole, setBulkRole] = useState<AdminRole>('TEACHER')
+  const [bulkTier, setBulkTier] = useState<UserTier>('PREMIUM')
   const [reason, setReason] = useState('')
   const [inviteOpen, setInviteOpen] = useState(false)
   const [inviteEmail, setInviteEmail] = useState('')
@@ -159,6 +189,7 @@ export function AdminUsersPage() {
         role: role || undefined,
         tier: tier || undefined,
         verified: verified || undefined,
+        status: statusFilter || undefined,
       })
       .then((next) => {
         setResult(next)
@@ -171,7 +202,7 @@ export function AdminUsersPage() {
         setError(getFriendlyErrorMessage(cause, 'quest'))
       })
       .finally(() => setLoading(false))
-  }, [role, state.page, state.q, tier, verified])
+  }, [role, state.page, state.q, statusFilter, tier, verified])
 
   useEffect(() => {
     load()
@@ -252,9 +283,172 @@ export function AdminUsersPage() {
     setSearch('')
     setParams((current) => {
       const next = new URLSearchParams(current)
-      ;['q', 'role', 'tier', 'verified', 'page'].forEach((key) => next.delete(key))
+      ;['q', 'role', 'tier', 'verified', 'status', 'page'].forEach((key) => next.delete(key))
       return next
     })
+  }
+
+  const exportCsv = async (ids?: string[]) => {
+    setSaving(true)
+    try {
+      const blob = await adminApi.exportUsersCsv(
+        ids?.length
+          ? { ids: ids.join(',') }
+          : {
+              q: state.q || undefined,
+              role: role || undefined,
+              tier: tier || undefined,
+              verified: verified || undefined,
+              status: statusFilter || undefined,
+            },
+      )
+      downloadBlob(blob, 'admin-users.csv')
+      showToast({ message: 'Đã xuất CSV người dùng.', type: 'success' })
+    } catch (cause) {
+      showToast({ message: getFriendlyErrorMessage(cause, 'quest'), type: 'error' })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const saveStatus = async () => {
+    if (!statusTarget || reason.trim().length < 10) return
+    setSaving(true)
+    try {
+      await adminApi.updateUserStatus(
+        statusTarget.user.id,
+        statusTarget.status,
+        reason.trim(),
+        accountStatusOf(statusTarget.user),
+      )
+      showToast({
+        message:
+          statusTarget.status === 'SUSPENDED'
+            ? `Đã khóa tạm ${statusTarget.user.email}.`
+            : `Đã mở khóa ${statusTarget.user.email}.`,
+        type: 'success',
+      })
+      setStatusTarget(null)
+      setReason('')
+      load()
+      loadStats()
+    } catch (cause) {
+      showToast({ message: getFriendlyErrorMessage(cause, 'quest'), type: 'error' })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const saveTier = async () => {
+    if (!tierTarget || reason.trim().length < 10) return
+    setSaving(true)
+    try {
+      await adminApi.updateUserTier(
+        tierTarget.user.id,
+        tierTarget.tier,
+        reason.trim(),
+        tierOf(tierTarget.user),
+      )
+      showToast({
+        message: `Đã đổi gói ${tierTarget.user.email} → ${tierTarget.tier}.`,
+        type: 'success',
+      })
+      setTierTarget(null)
+      setReason('')
+      load()
+      loadStats()
+    } catch (cause) {
+      showToast({ message: getFriendlyErrorMessage(cause, 'quest'), type: 'error' })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const saveForceVerify = async () => {
+    if (!verifyTarget || reason.trim().length < 10) return
+    setSaving(true)
+    try {
+      await adminApi.forceVerifyUser(verifyTarget.user.id, reason.trim())
+      showToast({ message: `Đã xác minh email cho ${verifyTarget.user.email}.`, type: 'success' })
+      setVerifyTarget(null)
+      setReason('')
+      load()
+      loadStats()
+    } catch (cause) {
+      showToast({ message: getFriendlyErrorMessage(cause, 'quest'), type: 'error' })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const resendVerification = async (user: AdminUserSummary) => {
+    setSaving(true)
+    try {
+      const resultResend = await adminApi.resendUserVerification(user.id)
+      const debug = resultResend.debugVerificationToken
+        ? ` Token debug: ${resultResend.debugVerificationToken}`
+        : ''
+      showToast({
+        message: resultResend.emailed
+          ? `Đã gửi lại email xác thực tới ${user.email}.`
+          : `Đã tạo lại liên kết xác thực.${debug}`,
+        type: 'success',
+      })
+    } catch (cause) {
+      showToast({ message: getFriendlyErrorMessage(cause, 'quest'), type: 'error' })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const runBulk = async () => {
+    if (!bulkKind || selectedIds.length === 0 || reason.trim().length < 10) return
+    setSaving(true)
+    try {
+      const resultBulk = await adminApi.bulkUsers({
+        userIds: selectedIds,
+        action: bulkKind,
+        reason: reason.trim(),
+        role: bulkKind === 'SET_ROLE' ? bulkRole : undefined,
+        tier: bulkKind === 'SET_TIER' ? bulkTier : undefined,
+      })
+      const failHint =
+        resultBulk.failed.length > 0
+          ? ` · lỗi ${resultBulk.failed.length}: ${resultBulk.failed[0]?.message ?? ''}`
+          : ''
+      showToast({
+        message: `Bulk xong: ${resultBulk.succeeded} thành công${failHint}`,
+        type: resultBulk.failed.length ? 'error' : 'success',
+      })
+      setBulkKind(null)
+      setReason('')
+      setSelectedIds([])
+      load()
+      loadStats()
+    } catch (cause) {
+      showToast({ message: getFriendlyErrorMessage(cause, 'quest'), type: 'error' })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const openStatusFor = (user: AdminUserSummary, status: AccountStatus) => {
+    if (user.id === currentUserId && status === 'SUSPENDED') {
+      showToast({ message: 'Không thể khóa tạm chính mình.', type: 'error' })
+      return
+    }
+    setStatusTarget({ user, status })
+    setReason('')
+  }
+
+  const openTierFor = (user: AdminUserSummary) => {
+    setTierTarget({ user, tier: tierOf(user) === 'PREMIUM' ? 'FREE' : 'PREMIUM' })
+    setReason('')
+  }
+
+  const openVerifyFor = (user: AdminUserSummary) => {
+    setVerifyTarget({ user })
+    setReason('')
   }
 
   const toggleSelect = (id: string) => {
@@ -295,17 +489,20 @@ export function AdminUsersPage() {
             <button
               type="button"
               className={btnGhost}
-              onClick={() =>
-                showToast({
-                  message: 'Xuất CSV chưa có endpoint admin. Dùng bộ lọc + danh sách trang hiện tại.',
-                  type: 'error',
-                })
-              }
+              disabled={saving}
+              onClick={() => void exportCsv()}
             >
               <MaterialIcon name="file_download" className="text-[18px]" />
               Xuất CSV
             </button>
-            <Link to="/admin/audit" className={btnGhost}>
+            <Link
+              to={
+                selectedUser
+                  ? `/admin/audit?entityType=USER&entityId=${encodeURIComponent(selectedUser.id)}`
+                  : '/admin/audit'
+              }
+              className={btnGhost}
+            >
               <MaterialIcon name="security" className="text-[18px]" />
               Audit Log
             </Link>
@@ -455,6 +652,16 @@ export function AdminUsersPage() {
             <option value="true">Đã xác minh</option>
             <option value="false">Chưa xác minh</option>
           </select>
+          <select
+            aria-label="Lọc trạng thái tài khoản"
+            value={statusFilter}
+            onChange={(event) => updateParam('status', event.target.value)}
+            className={`min-w-0 flex-1 basis-[8rem] lg:max-w-[11rem] ${inputClass}`}
+          >
+            <option value="">Trạng thái (Tất cả)</option>
+            <option value="ACTIVE">ACTIVE</option>
+            <option value="SUSPENDED">SUSPENDED</option>
+          </select>
           <div className="flex shrink-0 gap-3">
             <button type="submit" className="ops-btn-primary justify-center px-4 py-2">
               Tìm
@@ -466,7 +673,7 @@ export function AdminUsersPage() {
           </div>
         </div>
 
-        {(role || tier || verified || state.q) && (
+        {(role || tier || verified || statusFilter || state.q) && (
           <div className="flex flex-wrap items-center gap-2 pt-1">
             <span className="font-code-sm text-code-sm text-outline">Đang áp dụng:</span>
             {state.q && (
@@ -490,6 +697,11 @@ export function AdminUsersPage() {
             {verified && (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-surface-container-high px-2 py-0.5 font-label-sm text-label-sm text-primary">
                 Xác minh: {verified === 'true' ? 'Đã xác minh' : 'Chưa xác minh'}
+              </span>
+            )}
+            {statusFilter && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-surface-container-high px-2 py-0.5 font-label-sm text-label-sm text-error">
+                Trạng thái: {statusFilter}
               </span>
             )}
             <button
@@ -531,20 +743,64 @@ export function AdminUsersPage() {
                     className="flex items-center gap-1 font-label-sm text-label-sm text-on-surface-variant hover:text-primary disabled:opacity-40"
                   >
                     <MaterialIcon name="badge" className="text-[15px]" />
-                    Thay đổi vai trò
+                    Vai trò (1)
                   </button>
                   <button
                     type="button"
-                    onClick={() =>
-                      showToast({
-                        message: 'Khóa tạm thời chưa có trên API admin.',
-                        type: 'error',
-                      })
-                    }
-                    className="flex items-center gap-1 font-label-sm text-label-sm text-on-surface-variant hover:text-error"
+                    disabled={saving}
+                    onClick={() => {
+                      setBulkKind('SET_ROLE')
+                      setReason('')
+                    }}
+                    className="flex items-center gap-1 font-label-sm text-label-sm text-on-surface-variant hover:text-primary disabled:opacity-40"
+                  >
+                    <MaterialIcon name="groups" className="text-[15px]" />
+                    Bulk vai trò
+                  </button>
+                  <button
+                    type="button"
+                    disabled={saving}
+                    onClick={() => {
+                      setBulkKind('SET_TIER')
+                      setReason('')
+                    }}
+                    className="flex items-center gap-1 font-label-sm text-label-sm text-on-surface-variant hover:text-secondary disabled:opacity-40"
+                  >
+                    <MaterialIcon name="workspace_premium" className="text-[15px]" />
+                    Bulk gói
+                  </button>
+                  <button
+                    type="button"
+                    disabled={saving}
+                    onClick={() => {
+                      setBulkKind('SUSPEND')
+                      setReason('')
+                    }}
+                    className="flex items-center gap-1 font-label-sm text-label-sm text-on-surface-variant hover:text-error disabled:opacity-40"
                   >
                     <MaterialIcon name="lock" className="text-[15px]" />
-                    Khóa tạm thời
+                    Khóa tạm
+                  </button>
+                  <button
+                    type="button"
+                    disabled={saving}
+                    onClick={() => {
+                      setBulkKind('UNSUSPEND')
+                      setReason('')
+                    }}
+                    className="flex items-center gap-1 font-label-sm text-label-sm text-on-surface-variant hover:text-primary disabled:opacity-40"
+                  >
+                    <MaterialIcon name="lock_open" className="text-[15px]" />
+                    Mở khóa
+                  </button>
+                  <button
+                    type="button"
+                    disabled={saving}
+                    onClick={() => void exportCsv(selectedIds)}
+                    className="flex items-center gap-1 font-label-sm text-label-sm text-on-surface-variant hover:text-primary disabled:opacity-40"
+                  >
+                    <MaterialIcon name="file_download" className="text-[15px]" />
+                    Xuất chọn
                   </button>
                 </div>
                 <span className="font-code-sm text-code-sm text-outline">
@@ -569,6 +825,7 @@ export function AdminUsersPage() {
                     <th className="min-w-[11rem] px-3 py-3 sm:px-space-md">Người dùng</th>
                     <th className="min-w-[10rem] px-3 py-3 sm:px-space-md">Email &amp; Liên hệ</th>
                     <th className="min-w-[8rem] px-3 py-3 sm:px-space-md">Trạng thái xác minh</th>
+                    <th className="min-w-[6.5rem] px-3 py-3 sm:px-space-md">Tài khoản</th>
                     <th className="min-w-[7rem] px-3 py-3 sm:px-space-md">Gói dịch vụ</th>
                     <th className="min-w-[8.5rem] px-3 py-3 sm:px-space-md">Vai trò hiện hành</th>
                     <th className="min-w-[5.5rem] px-3 py-3 sm:px-space-md">Tham gia</th>
@@ -653,6 +910,17 @@ export function AdminUsersPage() {
                           )}
                         </td>
                         <td className="px-3 py-3 sm:px-space-md">
+                          {accountStatusOf(user) === 'SUSPENDED' ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-error/15 px-2 py-1 font-label-sm text-label-sm font-semibold text-error">
+                              SUSPENDED
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-1 font-label-sm text-label-sm font-semibold text-primary">
+                              ACTIVE
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-3 py-3 sm:px-space-md">
                           <span
                             className={`inline-flex items-center gap-1 rounded-full px-2 py-1 font-label-sm text-label-sm font-semibold ${
                               user.tier === 'PREMIUM'
@@ -733,13 +1001,54 @@ export function AdminUsersPage() {
                             </button>
                             <button
                               type="button"
-                              title={isSelf ? 'Không thể tự đổi vai trò' : 'Tùy chọn khác'}
-                              disabled={user.id === currentUserId || saving}
-                              onClick={() => openRoleFor(user)}
-                              className="rounded-lg p-1.5 text-outline transition-all hover:bg-surface-container-highest hover:text-on-surface disabled:opacity-40"
+                              title="Đổi gói FREE/PREMIUM"
+                              disabled={saving}
+                              onClick={() => openTierFor(user)}
+                              className="rounded-lg p-1.5 text-outline transition-all hover:bg-surface-container-highest hover:text-secondary disabled:opacity-40"
                             >
-                              <MaterialIcon name="more_vert" className="text-[18px]" />
+                              <MaterialIcon name="workspace_premium" className="text-[18px]" />
                             </button>
+                            <button
+                              type="button"
+                              title={
+                                accountStatusOf(user) === 'SUSPENDED' ? 'Mở khóa tài khoản' : 'Khóa tạm thời'
+                              }
+                              disabled={saving || (isSelf && accountStatusOf(user) === 'ACTIVE')}
+                              onClick={() =>
+                                openStatusFor(
+                                  user,
+                                  accountStatusOf(user) === 'SUSPENDED' ? 'ACTIVE' : 'SUSPENDED',
+                                )
+                              }
+                              className="rounded-lg p-1.5 text-outline transition-all hover:bg-surface-container-highest hover:text-error disabled:opacity-40"
+                            >
+                              <MaterialIcon
+                                name={accountStatusOf(user) === 'SUSPENDED' ? 'lock_open' : 'lock'}
+                                className="text-[18px]"
+                              />
+                            </button>
+                            {!user.emailVerified && (
+                              <>
+                                <button
+                                  type="button"
+                                  title="Xác minh email ngay"
+                                  disabled={saving}
+                                  onClick={() => openVerifyFor(user)}
+                                  className="rounded-lg p-1.5 text-outline transition-all hover:bg-surface-container-highest hover:text-primary disabled:opacity-40"
+                                >
+                                  <MaterialIcon name="verified_user" className="text-[18px]" />
+                                </button>
+                                <button
+                                  type="button"
+                                  title="Gửi lại email xác thực"
+                                  disabled={saving}
+                                  onClick={() => void resendVerification(user)}
+                                  className="rounded-lg p-1.5 text-outline transition-all hover:bg-surface-container-highest hover:text-primary disabled:opacity-40"
+                                >
+                                  <MaterialIcon name="forward_to_inbox" className="text-[18px]" />
+                                </button>
+                              </>
+                            )}
                           </div>
                           {isSelf && (
                             <p className="mt-1 hidden max-w-[7rem] truncate font-code-sm text-code-sm text-outline xl:block" title="Không thể tự đổi vai trò.">
@@ -1041,6 +1350,202 @@ export function AdminUsersPage() {
               >
                 <MaterialIcon name="verified" className="text-[18px]" />
                 {saving ? 'Đang lưu…' : 'Xác nhận thay đổi vai trò'}
+              </button>
+            </div>
+          </div>
+        </AdminModal>
+      )}
+
+      {statusTarget && (
+        <AdminModal
+          title={statusTarget.status === 'SUSPENDED' ? 'Khóa tạm thời tài khoản' : 'Mở khóa tài khoản'}
+          subtitle={statusTarget.user.email}
+          icon={statusTarget.status === 'SUSPENDED' ? 'lock' : 'lock_open'}
+          onClose={() => {
+            setStatusTarget(null)
+            setReason('')
+          }}
+        >
+          <div className="flex flex-col gap-4">
+            <p className="font-body-sm text-body-sm text-on-surface-variant">
+              Trạng thái mới: <strong>{statusTarget.status}</strong>
+            </p>
+            <label className="flex flex-col gap-1.5 font-label-sm text-label-sm text-outline">
+              Lý do (tối thiểu 10 ký tự)
+              <textarea
+                value={reason}
+                onChange={(event) => setReason(event.target.value)}
+                rows={3}
+                className={inputClass}
+              />
+            </label>
+            <div className="flex justify-end gap-2">
+              <button type="button" className={btnGhost} disabled={saving} onClick={() => setStatusTarget(null)}>
+                Hủy
+              </button>
+              <button
+                type="button"
+                className="ops-btn-primary disabled:opacity-50"
+                disabled={saving || reason.trim().length < 10}
+                onClick={() => void saveStatus()}
+              >
+                {saving ? 'Đang lưu…' : 'Xác nhận'}
+              </button>
+            </div>
+          </div>
+        </AdminModal>
+      )}
+
+      {tierTarget && (
+        <AdminModal
+          title="Đổi gói dịch vụ"
+          subtitle={tierTarget.user.email}
+          icon="workspace_premium"
+          onClose={() => {
+            setTierTarget(null)
+            setReason('')
+          }}
+        >
+          <div className="flex flex-col gap-4">
+            <label className="flex flex-col gap-1.5 font-label-sm text-label-sm text-outline">
+              Gói mới
+              <select
+                value={tierTarget.tier}
+                onChange={(event) =>
+                  setTierTarget({ ...tierTarget, tier: event.target.value as UserTier })
+                }
+                className={inputClass}
+              >
+                <option value="FREE">FREE</option>
+                <option value="PREMIUM">PREMIUM</option>
+              </select>
+            </label>
+            <label className="flex flex-col gap-1.5 font-label-sm text-label-sm text-outline">
+              Lý do (tối thiểu 10 ký tự)
+              <textarea
+                value={reason}
+                onChange={(event) => setReason(event.target.value)}
+                rows={3}
+                className={inputClass}
+              />
+            </label>
+            <div className="flex justify-end gap-2">
+              <button type="button" className={btnGhost} disabled={saving} onClick={() => setTierTarget(null)}>
+                Hủy
+              </button>
+              <button
+                type="button"
+                className="ops-btn-primary disabled:opacity-50"
+                disabled={saving || reason.trim().length < 10 || tierTarget.tier === tierOf(tierTarget.user)}
+                onClick={() => void saveTier()}
+              >
+                {saving ? 'Đang lưu…' : 'Xác nhận'}
+              </button>
+            </div>
+          </div>
+        </AdminModal>
+      )}
+
+      {verifyTarget && (
+        <AdminModal
+          title="Xác minh email ngay"
+          subtitle={verifyTarget.user.email}
+          icon="verified_user"
+          onClose={() => {
+            setVerifyTarget(null)
+            setReason('')
+          }}
+        >
+          <div className="flex flex-col gap-4">
+            <p className="font-body-sm text-body-sm text-on-surface-variant">
+              Đánh dấu email đã xác minh mà không cần người dùng bấm link.
+            </p>
+            <label className="flex flex-col gap-1.5 font-label-sm text-label-sm text-outline">
+              Lý do (tối thiểu 10 ký tự)
+              <textarea
+                value={reason}
+                onChange={(event) => setReason(event.target.value)}
+                rows={3}
+                className={inputClass}
+              />
+            </label>
+            <div className="flex justify-end gap-2">
+              <button type="button" className={btnGhost} disabled={saving} onClick={() => setVerifyTarget(null)}>
+                Hủy
+              </button>
+              <button
+                type="button"
+                className="ops-btn-primary disabled:opacity-50"
+                disabled={saving || reason.trim().length < 10}
+                onClick={() => void saveForceVerify()}
+              >
+                {saving ? 'Đang lưu…' : 'Xác minh'}
+              </button>
+            </div>
+          </div>
+        </AdminModal>
+      )}
+
+      {bulkKind && (
+        <AdminModal
+          title={`Bulk: ${bulkKind}`}
+          subtitle={`${selectedIds.length} người dùng đã chọn`}
+          icon="groups"
+          onClose={() => {
+            setBulkKind(null)
+            setReason('')
+          }}
+        >
+          <div className="flex flex-col gap-4">
+            {bulkKind === 'SET_ROLE' && (
+              <label className="flex flex-col gap-1.5 font-label-sm text-label-sm text-outline">
+                Vai trò áp dụng
+                <select
+                  value={bulkRole}
+                  onChange={(event) => setBulkRole(event.target.value as AdminRole)}
+                  className={inputClass}
+                >
+                  {ROLES.map((item) => (
+                    <option key={item} value={item}>
+                      {ROLE_META[item].shortLabel}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+            {bulkKind === 'SET_TIER' && (
+              <label className="flex flex-col gap-1.5 font-label-sm text-label-sm text-outline">
+                Gói áp dụng
+                <select
+                  value={bulkTier}
+                  onChange={(event) => setBulkTier(event.target.value as UserTier)}
+                  className={inputClass}
+                >
+                  <option value="FREE">FREE</option>
+                  <option value="PREMIUM">PREMIUM</option>
+                </select>
+              </label>
+            )}
+            <label className="flex flex-col gap-1.5 font-label-sm text-label-sm text-outline">
+              Lý do (tối thiểu 10 ký tự)
+              <textarea
+                value={reason}
+                onChange={(event) => setReason(event.target.value)}
+                rows={3}
+                className={inputClass}
+              />
+            </label>
+            <div className="flex justify-end gap-2">
+              <button type="button" className={btnGhost} disabled={saving} onClick={() => setBulkKind(null)}>
+                Hủy
+              </button>
+              <button
+                type="button"
+                className="ops-btn-primary disabled:opacity-50"
+                disabled={saving || reason.trim().length < 10}
+                onClick={() => void runBulk()}
+              >
+                {saving ? 'Đang chạy…' : 'Chạy bulk'}
               </button>
             </div>
           </div>

@@ -6,6 +6,8 @@ export type GroupSummary = {
   code: string
   expiresAt: string
   memberCount: number
+  orgId?: string | null
+  questId?: string | null
 }
 
 export type GroupMember = {
@@ -44,6 +46,8 @@ export const groupApi = {
   mine: () => getData<GroupSummary[]>(httpClient.get('/api/groups/mine')),
   create: (name: string) => getData<GroupSummary>(httpClient.post('/api/groups', { name })),
   join: (code: string) => getData<GroupSummary>(httpClient.post('/api/groups/join', { code })),
+  assignQuest: (groupId: string, questId: string) =>
+    getData<GroupSummary>(httpClient.post(`/api/groups/${groupId}/assign-quest`, { questId })),
   detail: (groupId: string) => getData<GroupDetail>(httpClient.get(`/api/groups/${groupId}`)),
   progress: (groupId: string) => getData<GroupProgress>(httpClient.get(`/api/groups/${groupId}/progress`)),
 }

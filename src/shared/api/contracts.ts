@@ -24,6 +24,15 @@ export type ApiErrorPayload = {
   upgradePackage?: string
   retryable?: boolean
   requestId?: string
+  details?: Record<string, unknown>
+  gateErrors?: StructuredGateError[]
+}
+
+export type StructuredGateError = {
+  code: string
+  message: string
+  field?: string | null
+  destination?: string | null
 }
 
 export class ApiError extends Error {
@@ -35,6 +44,8 @@ export class ApiError extends Error {
   upgradePackage?: string
   retryable?: boolean
   requestId?: string
+  details?: Record<string, unknown>
+  gateErrors?: StructuredGateError[]
 
   constructor(payload: {
     message: string
@@ -46,6 +57,8 @@ export class ApiError extends Error {
     upgradePackage?: string
     retryable?: boolean
     requestId?: string
+    details?: Record<string, unknown>
+    gateErrors?: StructuredGateError[]
   }) {
     super(payload.message)
     this.name = 'ApiError'
@@ -57,6 +70,8 @@ export class ApiError extends Error {
     this.upgradePackage = payload.upgradePackage
     this.retryable = payload.retryable
     this.requestId = payload.requestId
+    this.details = payload.details
+    this.gateErrors = payload.gateErrors
   }
 }
 
