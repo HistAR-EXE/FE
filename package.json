@@ -16,9 +16,11 @@
     "test:e2e": "playwright test",
     "test:e2e:api": "playwright test --project=setup --project=1-backend-api",
     "test:e2e:ui": "playwright test --project=setup --project=2-frontend-ui",
+    "test:e2e:admin-ui": "playwright test --project=admin-ui",
+    "test:e2e:admin": "playwright test --project=admin-ui --project=admin-e2e",
     "test:e2e:full": "playwright test --project=setup --project=3-fullstack-e2e",
     "test:e2e:report": "playwright show-report",
-    "test:admin": "node --experimental-strip-types --test scripts/admin-state.test.mjs",
+    "test:admin": "node --experimental-strip-types --test scripts/admin-state.test.mjs scripts/admin-foundation.test.mjs scripts/admin-pages.test.mjs",
     "test:all": "powershell -ExecutionPolicy Bypass -File ../scripts/run-all-tests.ps1"
   },
   "dependencies": {
@@ -38,6 +40,7 @@
     "react-dom": "^19.2.6",
     "react-i18next": "^17.0.8",
     "react-router-dom": "^7.16.0",
+    "recharts": "^3.10.1",
     "tailwindcss": "^4.3.0",
     "three": "^0.184.0",
     "workbox-window": "^7.4.1"

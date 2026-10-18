@@ -1,6 +1,8 @@
 // src/routes/AppRoutes.tsx
 import { lazy, Suspense } from 'react'
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom'
+import { AppErrorBoundary, SectionErrorBoundary } from '../components/ui/ErrorBoundary'
+import { LoadingOverlay } from '../components/ui/Spinner'
 import { CharacterExplorePage } from '../pages/CharacterExplorePage'
 import { CharacterDetailPage } from '../pages/CharacterDetailPage'
 import { TeacherRoute } from '../shared/router/TeacherRoute'
@@ -34,6 +36,8 @@ import { EmailVerifiedRoute } from '../shared/router/EmailVerifiedRoute'
 import { ProtectedRoute } from '../shared/router/ProtectedRoute'
 import { VisitSessionProvider } from '../features/visit/VisitSessionProvider'
 import { AboutPage } from '../pages/AboutPage'
+import { HeritagePortfolioPage } from '../pages/HeritagePortfolioPage'
+import { ProductTourWrapper } from '../features/explore/ProductTour'
 import { GoogleRedirectCompletion } from '../shared/auth/GoogleRedirectCompletion'
 import { AdminConsoleLayout } from '../components/admin/AdminConsoleLayout'
 
@@ -68,8 +72,8 @@ const AdminAuditPage = lazy(() => import('../pages/AdminAuditPage').then((module
 
 function RouteLoadingFallback() {
     return (
-        <main className="min-h-screen bg-slate-950 text-white grid place-items-center" data-testid="route-loading" role="status">
-            Đang tải trải nghiệm…
+        <main className="min-h-screen bg-neutral-50 dark:bg-neutral-900 grid place-items-center" data-testid="route-loading">
+            <LoadingOverlay message="Đang tải trải nghiệm…" />
         </main>
     )
 }
@@ -85,6 +89,7 @@ function LegacyTimePortalArRedirect() {
 export function AppRoutes() {
     return (
         <BrowserRouter>
+            <AppErrorBoundary>
             <GoogleRedirectCompletion />
             <VisitSessionProvider>
                 <Suspense fallback={<RouteLoadingFallback />}>
@@ -92,6 +97,7 @@ export function AppRoutes() {
                         {/* Public — guest landing only */}
                         <Route path="/" element={<OnboardingPage />} />
                         <Route path="/about" element={<AboutPage />} />
+                        <Route path="/heritage-portfolio" element={<HeritagePortfolioPage />} />
                         <Route path="/pricing" element={<PricingPage />} />
 
                         {/* Auth — guest only */}
@@ -128,12 +134,12 @@ export function AppRoutes() {
                                 <Route path="/home" element={<Navigate replace to="/explore" />} />
 
                                 <Route path="/pricing" element={<PricingPage />} />
-                                <Route path="/explore" element={<ExplorePage />} />
+                                <Route path="/explore" element={<SectionErrorBoundary label="Khám phá"><ProductTourWrapper><ExplorePage /></ProductTourWrapper></SectionErrorBoundary>} />
                                 <Route path="/explore/:locationId" element={<HeritageDetailPage />} />
-                                <Route path="/diorama/:locationId?" element={<BattleDioramaPage />} />
+                                <Route path="/diorama/:locationId?" element={<SectionErrorBoundary label="Diorama"><BattleDioramaPage /></SectionErrorBoundary>} />
                                 <Route path="/time-portal/:locationId/ar" element={<LegacyTimePortalArRedirect />} />
-                                <Route path="/time-portal/:locationId" element={<TimePortalPage />} />
-                                <Route path="/tour/360/:locationId?" element={<Tour360Page />} />
+                                <Route path="/time-portal/:locationId" element={<SectionErrorBoundary label="Cổng thời gian"><TimePortalPage /></SectionErrorBoundary>} />
+                                <Route path="/tour/360/:locationId?" element={<SectionErrorBoundary label="Tour 360"><Tour360Page /></SectionErrorBoundary>} />
                                 <Route path="/quests" element={<QuestsPage />} />
                                 <Route path="/quests/:questId/play/:minigameId" element={<MinigamePage />} />
                                 <Route path="/quests/:questId" element={<QuestDetailPage />} />
@@ -172,8 +178,8 @@ export function AppRoutes() {
                                 <Route path="/share" element={<SharePage />} />
                                 <Route path="/photo-frame" element={<PhotoFramePage />} />
                                 <Route path="/scan" element={<ScanPage />} />
-                                <Route path="/chat" element={<ChatPage />} />
-                                <Route path="/chat/:characterId" element={<ChatPage />} />
+                                <Route path="/chat" element={<SectionErrorBoundary label="Chat AI"><ChatPage /></SectionErrorBoundary>} />
+                                <Route path="/chat/:characterId" element={<SectionErrorBoundary label="Chat AI"><ChatPage /></SectionErrorBoundary>} />
                                 <Route path="/secret/:locationId" element={<SecretStoryPage />} />
                             </Route>
                         </Route>
@@ -183,6 +189,7 @@ export function AppRoutes() {
                     </Routes>
                 </Suspense>
             </VisitSessionProvider>
+            </AppErrorBoundary>
         </BrowserRouter>
     )
 }

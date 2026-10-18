@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { SimpleTopNav } from '../components/layout/TopNav'
 import { orgApi, type OrgBillingStatus, type OrgInviteCode, type OrgMembership, type OrgRosterMember } from '../features/org/api'
 import type { OrganizationAnalytics } from '../features/admin/api'
 import { useToast } from '../shared/ui/toast/useToast'
+import { TeacherOnboardingWizard, useTeacherOnboardingStatus } from '../features/org/TeacherOnboardingWizard'
+import { OrgUpsellBanner } from '../features/org/OrgUpsellBanner'
 
 export function TeacherDashboardPage() {
   const [memberships, setMemberships] = useState<OrgMembership[]>([])
@@ -23,14 +25,20 @@ export function TeacherDashboardPage() {
   const [provisioning, setProvisioning] = useState(false)
   const [provisionResult, setProvisionResult] = useState<string | null>(null)
   const [removingUserId, setRemovingUserId] = useState<string | null>(null)
+  const navigate = useNavigate()
   const { showToast } = useToast()
+  const { showOnboarding } = useTeacherOnboardingStatus()
+  const [onboardingDismissed, setOnboardingDismissed] = useState(false)
 
   const reloadMemberships = () => {
     orgApi
       .mine()
       .then((items) => {
-        setMemberships(items)
-        if (items[0]) setOrgId((prev) => prev || items[0].organizationId)
+        // Management APIs are teacher-only. Do not render teacher controls for
+        // a student membership that happens to be returned by the API.
+        const teacherMemberships = items.filter((item) => item.orgRole.toLowerCase() === 'teacher')
+        setMemberships(teacherMemberships)
+        if (teacherMemberships[0]) setOrgId((prev) => prev || teacherMemberships[0].organizationId)
       })
       .catch(() => showToast({ message: 'Không tải được tổ chức.', type: 'error' }))
       .finally(() => setMembershipsLoaded(true))
@@ -185,7 +193,20 @@ export function TeacherDashboardPage() {
           </Link>
         </div>
 
-        {membershipsLoaded && memberships.length === 0 && (
+        {/* Teacher Onboarding Wizard */}
+        {showOnboarding && !onboardingDismissed && membershipsLoaded && memberships.length > 0 && (
+          <TeacherOnboardingWizard
+            orgId={orgId}
+            onComplete={() => setOnboardingDismissed(true)}
+            onAction={(action) => {
+              if (action === 'invite') regenerateInvite()
+              else if (action === 'live-board') navigate('/teacher/live-board')
+              else if (action === 'assignments') navigate('/teacher/assignments')
+            }}
+          />
+        )}
+
+                {membershipsLoaded && memberships.length === 0 && (
           <section className="bg-surface-container border border-outline-variant rounded-xl p-lg text-center space-y-md">
             <h2 className="font-title-md text-on-surface">Cần org Premium B2B</h2>
             <p className="text-sm text-on-surface-variant max-w-md mx-auto">
@@ -345,6 +366,7 @@ export function TeacherDashboardPage() {
 
         {dashboardStats && (
           <>
+            {dashboardStats.planType !== "PREMIUM" && <OrgUpsellBanner billing={dashboardStats} />}
             {dashboardStats.aiQueriesLimit != null &&
               dashboardStats.aiQueriesUsed >= dashboardStats.aiQueriesLimit && (
                 <div className="rounded-xl border border-error/50 bg-error/10 p-md text-sm text-error">
@@ -352,7 +374,7 @@ export function TeacherDashboardPage() {
                   nâng gói để học sinh tiếp tục chat AI.
                 </div>
               )}
-          <section className="grid md:grid-cols-4 gap-sm">
+          <section className="grid grid-cols-2 md:grid-cols-4 gap-sm">
             <div className={`bg-surface-container border rounded-xl p-md ${dashboardStats.accountLimitReached ? 'border-error/50' : 'border-outline-variant'}`}>
               <p className="text-xs text-on-surface-variant uppercase">Tài khoản đã cấp</p>
               <p className="text-2xl font-bold">
@@ -396,7 +418,7 @@ export function TeacherDashboardPage() {
         )}
 
         {analytics && (
-          <section className="grid md:grid-cols-3 gap-sm">
+          <section className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-sm">
             <div className="bg-surface-container border border-outline-variant rounded-xl p-md">
               <p className="text-xs text-on-surface-variant uppercase">Thành viên</p>
               <p className="text-2xl font-bold">{analytics.memberCount}</p>
@@ -423,10 +445,10 @@ export function TeacherDashboardPage() {
               <thead className="bg-surface-container-high text-on-surface-variant">
                 <tr>
                   <th className="text-left p-sm">Học sinh</th>
-                  <th className="text-left p-sm">Level</th>
-                  <th className="text-left p-sm">XP</th>
+                  <th className="hidden sm:table-cell text-left p-sm">Level</th>
+                  <th className="hidden sm:table-cell text-left p-sm">XP</th>
                   <th className="text-left p-sm">Quest hoàn thành</th>
-                  <th className="text-left p-sm">Tiến độ quest</th>
+                  <th className="hidden md:table-cell text-left p-sm">Tiến độ quest</th>
                   <th className="text-left p-sm">Thao tác</th>
                 </tr>
               </thead>
@@ -437,10 +459,10 @@ export function TeacherDashboardPage() {
                       <p className="font-medium">{s.displayName}</p>
                       <p className="text-xs text-on-surface-variant">{s.email}</p>
                     </td>
-                    <td className="p-sm">{s.level}</td>
-                    <td className="p-sm">{s.totalPoints}</td>
+                    <td className="hidden sm:table-cell p-sm">{s.level}</td>
+                    <td className="hidden sm:table-cell p-sm">{s.totalPoints}</td>
                     <td className="p-sm">{s.questsCompleted}</td>
-                    <td className="p-sm min-w-[140px]">
+                    <td className="hidden md:table-cell p-sm min-w-[140px]">
                       {(s.questProgress ?? []).length === 0 ? (
                         <span className="text-on-surface-variant">—</span>
                       ) : (

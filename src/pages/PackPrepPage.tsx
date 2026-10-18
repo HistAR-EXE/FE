@@ -7,6 +7,7 @@ import { getData, httpClient } from '../shared/api/httpClient'
 import { appEnv } from '../shared/config/env'
 import { emitEvent } from '../lib/pilotEvents'
 import { isPilotSiteCode } from '../shared/config/constants'
+import { useOnlineStatus } from '../shared/hooks'
 /** Same cache name as the Workbox runtime rule for /media/ in vite.config.ts. */
 const MEDIA_CACHE = 'histar-media'
 const MANIFEST_KEY = 'histar_pack_manifest_v1'
@@ -68,20 +69,9 @@ export function PackPrepPage() {
   const [error, setError] = useState<string | null>(null)
   const [states, setStates] = useState<Record<string, AssetState>>({})
   const [running, setRunning] = useState(false)
-  const [online, setOnline] = useState(() => (typeof navigator === 'undefined' ? true : navigator.onLine))
+  const online = useOnlineStatus()
 
   const cacheSupported = typeof caches !== 'undefined'
-
-  useEffect(() => {
-    const on = () => setOnline(true)
-    const off = () => setOnline(false)
-    window.addEventListener('online', on)
-    window.addEventListener('offline', off)
-    return () => {
-      window.removeEventListener('online', on)
-      window.removeEventListener('offline', off)
-    }
-  }, [])
 
   useEffect(() => {
     let cancelled = false

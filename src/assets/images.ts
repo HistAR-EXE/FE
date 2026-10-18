@@ -51,6 +51,17 @@ export const images = {
   portalPresent:
     'https://lh3.googleusercontent.com/aida-public/AB6AXuC9KNnxBrhUYhnrlnxNXnUrI_KQbzfbBuZU-QN_U2v2YmHbV2wQ7Rxwz7q43tshmWSoW9ZtMKYRIPJYIS3Al6WVPGC7vjmR-osIjuybFTjVs3vC93uAPCHAxWUqpaTamH1TBzQ8loRGJSd6pLa4eBkQBSm52JBfPxpEJ_fvikQaNT8lFm7ZpsUlJjPNo27z4F49b45brRFppU6WfGzNYm2JQtTi2fZqqzUzZPV2eD_NGyc-LKwEt8-aL4RsNCzOQD750BH1ZHFlgoi1',
 
+  // Time Portal — ảnh lịch sử Địa đạo Củ Chi (local assets)
+  portalEra1948: '/images/time-portal/era-1948-main.png',
+  portalEra1968: '/images/time-portal/era-1968-main.png',
+  portalEra1975: '/images/time-portal/era-1968-aerial.png',
+  portalEra2026: '/images/time-portal/era-2026-main.png',
+  // Parallax mid-layer — ảnh phụ tạo chiều sâu
+  portalMid1948: '/images/time-portal/era-1948-mid.png',
+  portalMid1968: '/images/time-portal/era-1968-mid.png',
+  portalMid1975: '/images/time-portal/era-1975-main.png',
+  portalMid2026: '/images/time-portal/era-2026-main.png',
+
   // Experience
   tour360Panorama:
     'https://lh3.googleusercontent.com/aida-public/AB6AXuCxmsmbuunizHe6lU8m1mXmeFvcyuNBzRyY3jQS8bI7svC6-T4UNtiPz1h8sZBcrd64NmK4o2yTGT3dYu6huZmonCPxU_FYZt1oXCdPybRcd9lvfFAj6ZVG-vz0d9qizs_kitbK-GNrT8bBaATKHPSSJrSuJTHY5piiEnP5MkG7ArIpqjW_mM6LKqAV7yPS-iAlQxpr6tzgQSljpmyrHWT5zRHeALye2RlUs7LyFRY7XhnDyLPxyf2glETEce8c0L30T--ubGLyK21w',

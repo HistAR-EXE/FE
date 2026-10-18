@@ -5,6 +5,7 @@ import { AppLayout } from '../components/layout/AppLayout'
 import { SimpleTopNav } from '../components/layout/TopNav'
 import { getData, httpClient } from '../shared/api/httpClient'
 import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
+import { ReferralShareWidget } from '../features/referral/ReferralShareWidget'
 
 type Stats = {
   code: string
@@ -46,6 +47,9 @@ export function CreatorStatsPage() {
                 <p className="text-2xl font-black text-white">{data.uniqueUsers30d}</p>
               </div>
             </div>
+            {/* Share widget */}
+            <ReferralShareWidget code={code} />
+
             <p className="text-xs text-gray-500">
               Hashtag gợi ý (CMO): #TimeLensCuChi #MotNgayDuoiLongDat — xác nhận với BQL trước khi dùng ngày lễ.
             </p>

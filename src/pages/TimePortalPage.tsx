@@ -1,10 +1,14 @@
-import { useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { EraLockedModal } from '../components/monetization/EraLockedModal'
-import { TimePortalViewer } from '../features/time-portal/TimePortalViewer'
+import { TimelineExplorerView } from '../features/time-portal/TimelineExplorerView'
+import { XuaNayView } from '../features/time-portal/xuaNay/XuaNayView'
+import { isXuaNaySpot, type XuaNaySpotId } from '../features/time-portal/xuaNay/xuaNayData'
 import { ERA_VALUES, type EraValue } from '../features/time-portal/eraLabels'
-import { photoScenesApi, type PhotoScene } from '../features/photo-scenes/api'
+const TunnelScene3D = lazy(() =>
+  import('../features/time-portal/TunnelScene3D').then((m) => ({ default: m.TunnelScene3D }))
+)
 import { recordDiscoveryEngagement } from '../features/gamification/discoveryRouting'
 import { notifyEngagementOutcome } from '../features/gamification/handleEngagement'
 import { analyticsApi } from '../features/analytics/api'
@@ -20,8 +24,11 @@ function parseEra(raw: string | null): EraValue {
 }
 
 function isPremiumEra(era: EraValue): boolean {
-  return era === 1948 || era === 1968
+  return era === 1948 || era === 1968 || era === 1975
 }
+
+/** 'xua-nay' = chế độ "Xưa & Nay" (trước đây là "So sánh"; ?view=compare vẫn mở được). */
+type PortalMode = 'timeline' | 'xua-nay' | '3d'
 
 export function TimePortalPage() {
   const { locationId: locationParam } = useParams<{ locationId?: string }>()
@@ -31,34 +38,19 @@ export function TimePortalPage() {
   const premium = hasPremiumAccess(user)
   const requestedEra = parseEra(params.get('era'))
   const questRecord = params.get('questRecord')
-  const [scenes, setScenes] = useState<PhotoScene[]>([])
-  const [scenesLoading, setScenesLoading] = useState(true)
-  const [sceneIndex, setSceneIndex] = useState(0)
+  const initialView = params.get('view')
+  const initialSpot = params.get('spot')
+
+  const [mode, setMode] = useState<PortalMode>(initialView === 'compare' || initialView === 'xua-nay' ? 'xua-nay' : 'timeline')
+  const [spot, setSpot] = useState<XuaNaySpotId>(isXuaNaySpot(initialSpot) ? initialSpot : 'bep-hoang-cam')
+  /** Khoảnh khắc đang xem khi rời Dòng thời gian — để quay lại đúng chỗ. */
+  const [returnMoment, setReturnMoment] = useState<string | undefined>(undefined)
   const [era, setEra] = useState<EraValue>(premium || !isPremiumEra(requestedEra) ? requestedEra : 2026)
   const [paywallOpen, setPaywallOpen] = useState(!premium && isPremiumEra(requestedEra))
   const [paywallEra, setPaywallEra] = useState<EraValue>(isPremiumEra(requestedEra) ? requestedEra : 1948)
   const { showToast } = useToast()
   const { applyEngagement } = useUserProgress()
   const recordedEra = useRef<string | null>(null)
-
-  useEffect(() => {
-    let cancelled = false
-    setScenesLoading(true)
-    photoScenesApi
-      .byLocation(locationId)
-      .then((list) => {
-        if (!cancelled) setScenes(list)
-      })
-      .catch(() => {
-        if (!cancelled) setScenes([])
-      })
-      .finally(() => {
-        if (!cancelled) setScenesLoading(false)
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [locationId])
 
   useEffect(() => {
     if (!isAuthenticated || !premium || !isPremiumEra(era)) return
@@ -103,26 +95,80 @@ export function TimePortalPage() {
       mobileTitle="Cổng thời gian"
     >
       <main className="mt-14 flex h-[calc(100dvh-3.5rem)] flex-col md:mt-0 md:h-screen">
-        {scenesLoading ? (
-          <div className="flex flex-1 items-center justify-center bg-surface text-sm text-on-surface-variant" role="status" aria-live="polite">
-            Đang tải ảnh lịch sử...
+        {mode === 'timeline' ? (
+          <TimelineExplorerView
+            initialEra={era}
+            initialMomentId={returnMoment}
+            isPremium={premium}
+            onPremiumRequired={requirePremium}
+            onSwitchTo3D={() => {
+              setReturnMoment(undefined)
+              setMode('3d')
+            }}
+            onOpenXuaNay={(next, momentId) => {
+              setSpot(next)
+              setReturnMoment(momentId)
+              setMode('xua-nay')
+            }}
+            onEraChange={setEra}
+          />
+        ) : mode === '3d' ? (
+          <div className="relative flex-1 min-h-0 bg-gradient-to-b from-sky-900 via-sky-800 to-amber-900">
+            <Suspense
+              fallback={
+                <div className="flex h-full items-center justify-center text-sm text-white/60">
+                  Đang tải mô hình 3D...
+                </div>
+              }
+            >
+              <TunnelScene3D era={era} className="h-full" />
+            </Suspense>
+
+            {/* Era selector for 3D mode */}
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 rounded-full bg-black/60 backdrop-blur-sm px-4 py-2 border border-white/20">
+              {ERA_VALUES.map((e) => (
+                <button
+                  key={e}
+                  type="button"
+                  onClick={() => {
+                    if (!premium && isPremiumEra(e)) {
+                      requirePremium(e)
+                      return
+                    }
+                    setEra(e)
+                  }}
+                  className={`px-3 py-1.5 min-h-[36px] rounded-full text-xs font-medium transition-all ${
+                    era === e
+                      ? 'bg-white text-black'
+                      : 'text-white/70 hover:text-white hover:bg-white/10'
+                  }`}
+                >
+                  {e === 2026 ? 'Hiện nay' : e}
+                </button>
+              ))}
+            </div>
+
+            {/* Back to timeline */}
+            <button
+              type="button"
+              onClick={() => setMode('timeline')}
+              className="absolute top-4 left-4 z-30 flex items-center gap-1.5 px-3 py-2.5 min-h-[44px] rounded-full bg-black/50 border border-white/20 text-xs text-white/80 backdrop-blur-sm hover:bg-black/70 transition-colors"
+            >
+              <span className="material-symbols-outlined text-base">arrow_back</span>
+              Dòng thời gian
+            </button>
+
+            {/* 3D controls hint */}
+            <div className="absolute top-4 right-4 z-20 rounded-lg bg-black/50 backdrop-blur-sm px-3 py-2 border border-white/10">
+              <p className="text-[10px] text-white/50 leading-relaxed">
+                Kéo để xoay · Cuộn để zoom · Chuột phải để di chuyển
+              </p>
+            </div>
           </div>
         ) : (
-          <TimePortalViewer
-            scenes={scenes}
-            sceneIndex={sceneIndex}
-            onSceneIndexChange={setSceneIndex}
-            initialEra={era}
-            isPremium={premium}
-            onPremiumRequired={(next) => requirePremium(next)}
-            onEraChange={(next) => {
-              if (!premium && isPremiumEra(next)) {
-                requirePremium(next)
-                return
-              }
-              setEra(next)
-            }}
-          />
+          <div className="relative flex-1 min-h-0">
+            <XuaNayView spot={spot} onSpotChange={setSpot} onBack={() => setMode('timeline')} />
+          </div>
         )}
       </main>
       <EraLockedModal

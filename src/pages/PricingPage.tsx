@@ -254,6 +254,89 @@ export const PricingPage: React.FC = () => {
                 </div>
             </section>
 
+
+            {/* SOCIAL PROOF — SỰ TIN TƯỞNG CỦA CỘNG ĐỒNG */}
+            <section className="py-20 bg-white border-t border-b border-[#0275FB]/10">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
+
+                    {/* Thống kê nổi bật */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+                        <div className="space-y-2">
+                            <p className="text-4xl font-black text-[#0275FB]">2.500+</p>
+                            <p className="text-sm font-bold text-[#64748B]">Người dùng đăng ký</p>
+                        </div>
+                        <div className="space-y-2">
+                            <p className="text-4xl font-black text-[#FDC908]">15+</p>
+                            <p className="text-sm font-bold text-[#64748B]">Trường học hợp tác</p>
+                        </div>
+                        <div className="space-y-2">
+                            <p className="text-4xl font-black text-[#0275FB]">50.000+</p>
+                            <p className="text-sm font-bold text-[#64748B]">Câu hỏi AI đã trả lời</p>
+                        </div>
+                        <div className="space-y-2">
+                            <p className="text-4xl font-black text-emerald-600">4.8/5</p>
+                            <p className="text-sm font-bold text-[#64748B]">Đánh giá trải nghiệm</p>
+                        </div>
+                    </div>
+
+                    {/* Testimonials */}
+                    <div className="space-y-8">
+                        <h3 className="text-2xl font-black text-center text-[#1E293B]">Họ Nói Gì Về TimeLens?</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="p-6 rounded-2xl bg-[#FAF8F3] border border-[#E2E8F0] space-y-4">
+                                <div className="flex items-center gap-1 text-[#FDC908]">
+                                    {[1,2,3,4,5].map((s) => <MaterialIcon key={s} name="star" className="text-lg" />)}
+                                </div>
+                                <p className="text-sm text-[#475569] leading-relaxed italic">&ldquo;Lần đầu tiên con trai tôi hào hứng hỏi về lịch sử. Cháu mê tính năng AI Chrono và bộ sưu tập cổ vật.&rdquo;</p>
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-full bg-[#0275FB]/10 flex items-center justify-center"><MaterialIcon name="person" className="text-[#0275FB]" /></div>
+                                    <div><p className="text-sm font-black text-[#1E293B]">Chị Minh Tâm</p><p className="text-xs text-[#64748B]">Phụ huynh, TP.HCM</p></div>
+                                </div>
+                            </div>
+                            <div className="p-6 rounded-2xl bg-[#FAF8F3] border border-[#E2E8F0] space-y-4">
+                                <div className="flex items-center gap-1 text-[#FDC908]">
+                                    {[1,2,3,4,5].map((s) => <MaterialIcon key={s} name="star" className="text-lg" />)}
+                                </div>
+                                <p className="text-sm text-[#475569] leading-relaxed italic">&ldquo;Gói Standard giúp cả lớp 40 em tham gia đồng thời. LiveBoard rất trực quan, giúp tôi theo dõi tiến độ từng em.&rdquo;</p>
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-full bg-[#FDC908]/10 flex items-center justify-center"><MaterialIcon name="school" className="text-[#d97706]" /></div>
+                                    <div><p className="text-sm font-black text-[#1E293B]">Thầy Văn Hùng</p><p className="text-xs text-[#64748B]">GV Lịch sử, Trường THPT Nguyễn Du</p></div>
+                                </div>
+                            </div>
+                            <div className="p-6 rounded-2xl bg-[#FAF8F3] border border-[#E2E8F0] space-y-4">
+                                <div className="flex items-center gap-1 text-[#FDC908]">
+                                    {[1,2,3,4,5].map((s) => <MaterialIcon key={s} name="star" className="text-lg" />)}
+                                </div>
+                                <p className="text-sm text-[#475569] leading-relaxed italic">&ldquo;Tour 360° và Sa bàn lịch sử khiến du khách ở lại lâu hơn. Dữ liệu heatmap giúp chúng tôi cải thiện luồng tham quan.&rdquo;</p>
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center"><MaterialIcon name="museum" className="text-emerald-600" /></div>
+                                    <div><p className="text-sm font-black text-[#1E293B]">Anh Quốc Bảo</p><p className="text-xs text-[#64748B]">BQL Di tích Địa đạo Củ Chi</p></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Trust Badges */}
+                    <div className="flex flex-wrap items-center justify-center gap-6 pt-4">
+                        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#F1F5F9] border border-[#E2E8F0] text-xs font-bold text-[#64748B]">
+                            <MaterialIcon name="verified_user" className="text-[#0275FB] text-base" />
+                            <span>Bảo mật SSL 256-bit</span>
+                        </div>
+                        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#F1F5F9] border border-[#E2E8F0] text-xs font-bold text-[#64748B]">
+                            <MaterialIcon name="school" className="text-[#FDC908] text-base" />
+                            <span>Dự án SV FPT University</span>
+                        </div>
+                        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#F1F5F9] border border-[#E2E8F0] text-xs font-bold text-[#64748B]">
+                            <MaterialIcon name="support_agent" className="text-emerald-500 text-base" />
+                            <span>Hỗ trợ 24/7</span>
+                        </div>
+                        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#F1F5F9] border border-[#E2E8F0] text-xs font-bold text-[#64748B]">
+                            <MaterialIcon name="autorenew" className="text-[#0275FB] text-base" />
+                            <span>Hoàn tiền trong 7 ngày</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
             {/* B2B Segment: Software/Service Package Licensing Model */}
             <section id="b2b-pricing" className="py-24 bg-white border-t border-[#0275FB]/10">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">

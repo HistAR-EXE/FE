@@ -1,9 +1,10 @@
 // src/pages/AdminContentPage.tsx
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { AdminErrorState } from '../components/admin/AdminAsyncState'
+import { AdminEmptyState, AdminErrorState, AdminLoading } from '../components/admin/AdminAsyncState'
 import { AdminModal } from '../components/admin/AdminModal'
 import { AdminPagination } from '../components/admin/AdminPagination'
+import { AdminPageHeader } from '../components/admin/AdminPageHeader'
 import { ImageFilePicker } from '../components/admin/ImageFilePicker'
 import {
   CheckboxInput,
@@ -24,6 +25,7 @@ import {
   type AdminQuestInput,
   type DeleteReasonPreset,
 } from '../features/admin/api'
+import { dispatchAdminTrashChanged } from '../features/admin/events'
 import {
   clearAdminDraft,
   createLatestRequestGuard,
@@ -46,6 +48,8 @@ import type { PageResponse } from '../shared/api/contracts'
 
 type Tab = 'discovery' | 'artifacts' | 'quests' | 'panoramas' | 'stations' | 'reports'
 const CONTENT_ROUTE = '/admin/content'
+/** Stitch content lists: 5 rows per page (same as audit / users / billing) */
+const CONTENT_PAGE_SIZE = 5
 
 type ModalState =
   | { kind: 'discovery'; mode: 'create' | 'edit'; item?: AdminDiscoveryPoint }
@@ -98,9 +102,9 @@ export function AdminContentPage() {
     setLoading(true)
     setLoadError(null)
     Promise.all([
-      adminApi.listDiscoveryPointsPage(locationId, { page, size: 20, q: query || undefined, sort }),
-      adminApi.listArtifactsPage(locationId, { page, size: 20, q: query || undefined, sort }),
-      adminApi.listQuestsPage(locationId, { page, size: 20, q: query || undefined, sort }),
+      adminApi.listDiscoveryPointsPage(locationId, { page, size: CONTENT_PAGE_SIZE, q: query || undefined, sort }),
+      adminApi.listArtifactsPage(locationId, { page, size: CONTENT_PAGE_SIZE, q: query || undefined, sort }),
+      adminApi.listQuestsPage(locationId, { page, size: CONTENT_PAGE_SIZE, q: query || undefined, sort }),
       panoramaApi.byLocation(locationId),
     ])
       .then(([d, a, q, p]) => {
@@ -167,14 +171,17 @@ export function AdminContentPage() {
     }
   }
 
-  const tabs: { id: Tab; label: string; count: number }[] = [
-    { id: 'discovery', label: 'Điểm khám phá', count: discoveryPage?.totalItems ?? 0 },
-    { id: 'artifacts', label: 'Hiện vật', count: artifactPage?.totalItems ?? 0 },
-    { id: 'quests', label: 'Nhiệm vụ', count: questPage?.totalItems ?? 0 },
-    { id: 'panoramas', label: 'Panorama 360°', count: panoramas.length },
-    { id: 'stations', label: 'Trạm pilot', count: 6 },
-    { id: 'reports', label: 'Báo sai liệu', count: 0 },
+  const tabs: { id: Tab; label: string; icon: string; count?: number; danger?: boolean }[] = [
+    { id: 'discovery', label: 'Điểm khám phá', icon: 'location_on', count: discoveryPage?.totalItems },
+    { id: 'artifacts', label: 'Hiện vật', icon: 'museum', count: artifactPage?.totalItems },
+    { id: 'quests', label: 'Nhiệm vụ', icon: 'flag', count: questPage?.totalItems },
+    { id: 'panoramas', label: 'Panorama 360°', icon: '360', count: panoramas.length },
+    { id: 'stations', label: 'Trạm pilot', icon: 'qr_code_2' },
+    { id: 'reports', label: 'Báo sai dữ liệu', icon: 'report', danger: true },
   ]
+
+  const inputClass = 'rounded-lg border border-outline-variant bg-surface-container-low px-3 py-2 font-body-md text-body-md text-on-surface'
+  const btnGhost = 'inline-flex items-center gap-1.5 rounded-lg border border-outline-variant px-3 py-2 font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface'
 
   const updateListUrl = (changes: Record<string, string>) => {
     setSearchParams((current) => {
@@ -187,6 +194,22 @@ export function AdminContentPage() {
     })
   }
 
+  const createAction = (() => {
+    if (tab === 'discovery') return { label: 'Tạo điểm khám phá', onClick: () => setModal({ kind: 'discovery', mode: 'create' }) }
+    if (tab === 'artifacts') return { label: 'Thêm hiện vật', onClick: () => setModal({ kind: 'artifact', mode: 'create' }) }
+    if (tab === 'quests') return { label: 'Tạo nhiệm vụ', onClick: () => setModal({ kind: 'quest', mode: 'create' }) }
+    if (tab === 'panoramas') return { label: 'Tải panorama mới', onClick: () => setModal({ kind: 'panorama-upload', mode: 'create' }) }
+    return null
+  })()
+
+  const listTitle =
+    tab === 'discovery' ? 'Danh sách POI hiển thị'
+      : tab === 'artifacts' ? 'Danh sách hiện vật'
+        : tab === 'quests' ? 'Danh sách nhiệm vụ'
+          : tab === 'panoramas' ? 'Danh sách panorama 360°'
+            : null
+
+  const clearListFilters = () => updateListUrl({ q: '', sort: '', page: '' })
   const activePage = tab === 'discovery' ? discoveryPage : tab === 'artifacts' ? artifactPage : tab === 'quests' ? questPage : null
 
   const openDelete = (target: { type: AdminContentType; id: string; name: string; rowVersion: number }) => {
@@ -212,6 +235,7 @@ export function AdminContentPage() {
         rowVersion: deleteTarget.rowVersion,
         idempotencyKey: crypto.randomUUID(),
       })
+      dispatchAdminTrashChanged()
       showToast({ message: 'Đã chuyển nội dung vào Thùng rác.', type: 'success' })
       setDeleteTarget(null)
       loadContent()
@@ -254,11 +278,14 @@ export function AdminContentPage() {
       if (id) {
         const item = artifacts.find((entry) => entry.id === id)
         if (!item) throw new Error('Không tìm thấy rowVersion của hiện vật.')
-        await adminApi.updateArtifact(id, body, item.rowVersion)
+        await adminApi.updateArtifact(id, body, body.rowVersion ?? item.rowVersion)
         showToast({ message: 'Đã cập nhật hiện vật.', type: 'success' })
       } else {
         await adminApi.createArtifact(body)
         showToast({ message: 'Đã tạo hiện vật mới.', type: 'success' })
+        // The list is paginated and sorted by name, so a newly-created row may
+        // not be on the current page. Keep the admin on the created record.
+        updateListUrl({ q: body.name, page: '' })
       }
       clearDraft(formId)
       setModal(null)
@@ -335,284 +362,411 @@ export function AdminContentPage() {
     }
   }
 
-  return (
-      <section className="max-w-5xl w-full pb-20">
-        <div className="flex flex-wrap items-center justify-between gap-2 mb-md">
-          <div>
-            <h1 className="font-display-lg text-on-surface">
-              {selectedLocation ? `Nội dung: ${selectedLocation.name}` : 'Quản lý nội dung'}
-            </h1>
-            <p className="text-xs text-on-surface-variant mt-0.5">CMS nội bộ — tạo và chỉnh sửa theo địa điểm (chọn tab Hiện vật / Nhiệm vụ để thêm mới)</p>
-          </div>
-        </div>
+  const showListChrome = tab !== 'stations' && tab !== 'reports'
+  const siteLabel = selectedLocation
+    ? `${selectedLocation.name}${selectedLocation.city ? ` (${selectedLocation.city})` : ''}`
+    : '—'
 
-        <div className="mb-md flex flex-wrap items-end gap-sm">
-          <FormField label="Địa điểm">
-            <SelectInput value={locationId} onChange={(e) => updateListUrl({ locationId: e.target.value, page: '' })}>
-              {locations.map((loc) => (
-                <option key={loc.id} value={loc.id}>
-                  {loc.name} {loc.city ? `(${loc.city})` : ''}
-                </option>
-              ))}
-            </SelectInput>
-          </FormField>
-          {eraCount && (
+  return (
+    <section className="flex w-full flex-col space-y-space-lg pb-20" aria-busy={loading && showListChrome}>
+      <AdminPageHeader
+        eyebrow="Vận hành / Di sản & nội dung"
+        title="Quản lý Nội dung khám phá"
+        description={
+          selectedLocation
+            ? `Đồng bộ POI, hiện vật, nhiệm vụ và panorama cho ${selectedLocation.name}.`
+            : 'Tạo và chỉnh sửa nội dung khám phá theo địa điểm di sản.'
+        }
+        actions={
+          createAction ? (
+            <button type="button" onClick={createAction.onClick} className="ops-btn-primary">
+              <MaterialIcon name="add" className="text-[18px]" />
+              {createAction.label}
+            </button>
+          ) : undefined
+        }
+      />
+
+      <div className="grid gap-3 rounded-xl bg-surface-container-low p-space-lg sm:grid-cols-2 lg:grid-cols-12">
+        <label className="flex flex-col gap-1 lg:col-span-4">
+          <span className="font-label-sm text-label-sm uppercase tracking-wider text-outline">Chọn địa điểm di sản</span>
+          <select
+            aria-label="Địa điểm"
+            value={locationId}
+            onChange={(e) => updateListUrl({ locationId: e.target.value, page: '' })}
+            className={inputClass}
+          >
+            {locations.map((loc) => (
+              <option key={loc.id} value={loc.id}>
+                {loc.name}{loc.city ? ` (${loc.city})` : ''}
+              </option>
+            ))}
+          </select>
+        </label>
+        {(['discovery', 'artifacts', 'quests'] as Tab[]).includes(tab) && (
+          <>
+            <label className="flex flex-col gap-1 lg:col-span-4">
+              <span className="font-label-sm text-label-sm uppercase tracking-wider text-outline">Tìm kiếm</span>
+              <input
+                aria-label="Tìm nội dung"
+                value={searchParams.get('q') ?? ''}
+                onChange={(event) => updateListUrl({ q: event.target.value, page: '' })}
+                placeholder="Tên hoặc mã mở khóa…"
+                className={inputClass}
+              />
+            </label>
+            <label className="flex flex-col gap-1 lg:col-span-2">
+              <span className="font-label-sm text-label-sm uppercase tracking-wider text-outline">Sắp xếp</span>
+              <select
+                aria-label="Sắp xếp nội dung"
+                value={sort}
+                onChange={(event) => updateListUrl({ sort: event.target.value === 'name,asc' ? '' : event.target.value, page: '' })}
+                className={inputClass}
+              >
+                <option value="name,asc">Tên A–Z</option>
+                <option value="name,desc">Tên Z–A</option>
+              </select>
+            </label>
+            <div className="flex items-end lg:col-span-2">
+              <button type="button" onClick={clearListFilters} className={`w-full justify-center ${btnGhost}`}>
+                <MaterialIcon name="restart_alt" className="text-[16px]" />
+                Đặt lại
+              </button>
+            </div>
+          </>
+        )}
+        {eraCount && (
+          <div className="flex items-end lg:col-span-12">
             <span
-              className={`text-xs px-2 py-1 rounded-full border mb-1 ${
-                eraCount.sufficient
-                  ? 'border-secondary/50 text-secondary bg-secondary/10'
-                  : 'border-error/50 text-error bg-error/10'
-              }`}
-              title="Value Proposition: three periods — mỗi di tích cần ≥3 era"
+              className={eraCount.sufficient ? 'ops-pill ops-pill-success' : 'ops-pill ops-pill-danger'}
+              title="Mỗi di tích cần ≥3 thời kỳ (era)"
             >
+              <MaterialIcon name="timeline" className="text-[12px]" />
               {eraCount.eraCount}/3 thời kỳ (era)
               {!eraCount.sufficient && ' — cần bổ sung'}
             </span>
-          )}
-        </div>
-
-        {(['discovery', 'artifacts', 'quests'] as Tab[]).includes(tab) && (
-          <div className="mb-md flex flex-wrap gap-3">
-            <input
-              aria-label="Tìm nội dung"
-              value={searchParams.get('q') ?? ''}
-              onChange={(event) => updateListUrl({ q: event.target.value, page: '' })}
-              placeholder="Tìm theo tên hoặc mã mở khóa…"
-              className="w-full max-w-md rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
-            />
-            <SelectInput
-              aria-label="Sắp xếp nội dung"
-              value={sort}
-              onChange={(event) => updateListUrl({ sort: event.target.value === 'name,asc' ? '' : event.target.value, page: '' })}
-            >
-              <option value="name,asc">Tên A–Z</option>
-              <option value="name,desc">Tên Z–A</option>
-            </SelectInput>
           </div>
         )}
+      </div>
 
-        <div className="flex flex-wrap gap-2 mb-md border-b border-outline-variant">
-          {tabs.map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              onClick={() => updateListUrl({ tab: t.id === 'discovery' ? '' : t.id, page: '' })}
-              className={`px-md py-sm text-sm border-b-2 -mb-px ${
-                tab === t.id ? 'border-primary text-primary' : 'border-transparent text-on-surface-variant'
-              }`}
-            >
-              {t.label} ({t.count})
-            </button>
-          ))}
+      <nav className="ops-tabs" aria-label="Loại nội dung">
+        {tabs.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            onClick={() => updateListUrl({ tab: t.id === 'discovery' ? '' : t.id, page: '' })}
+            className={`ops-tab ${tab === t.id ? 'ops-tab-active' : ''} ${t.danger ? 'ops-tab-danger' : ''}`}
+          >
+            <MaterialIcon name={t.icon} className="text-[16px]" />
+            {t.label}
+            {typeof t.count === 'number' && <span className="ops-tab-count">{t.count}</span>}
+          </button>
+        ))}
+      </nav>
+
+      <div className={showListChrome ? 'grid min-w-0 gap-space-lg lg:grid-cols-[minmax(0,1fr)_18rem] xl:grid-cols-[minmax(0,1fr)_20rem]' : undefined}>
+        <div className={showListChrome ? 'min-w-0 space-y-space-md' : undefined}>
+          {listTitle && (
+            <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-2">
+                <span className="inline-flex h-2 w-2 shrink-0 rounded-full bg-primary" />
+                <h2 className="truncate font-headline-md text-headline-md text-on-surface">{listTitle}</h2>
+                <span className="hidden truncate font-body-sm text-body-sm text-outline sm:inline">| {siteLabel}</span>
+              </div>
+              {activePage && (
+                <span className="shrink-0 font-label-sm text-label-sm text-primary">{activePage.totalItems} kết quả</span>
+              )}
+              {tab === 'panoramas' && !loading && !loadError && (
+                <span className="shrink-0 font-label-sm text-label-sm text-primary">{panoramas.length} kết quả</span>
+              )}
+            </div>
+          )}
+
+          {loading && showListChrome && <AdminLoading label="Đang tải nội dung" />}
+          {!loading && loadError && showListChrome && <AdminErrorState message={loadError} onRetry={loadContent} />}
+
+          {!loading && !loadError && tab === 'discovery' && (
+            <ContentTable
+              colWidths={['34%', '14%', '36%', '16%']}
+              headers={['Tên điểm', 'Loại', 'Trạng thái gắn', '']}
+              emptyTitle="Chưa có điểm khám phá"
+              emptyDetail="Thêm POI cho địa điểm này hoặc đổi bộ lọc tìm kiếm."
+              rows={discovery.map((p) => {
+                const unlock = parseUnlockKey(p.unlockKey)
+                return {
+                  key: p.id,
+                  cells: [
+                    <NameCell
+                      key="name"
+                      title={p.name}
+                      subtitle={unlock.subtitle}
+                      icon={unlock.icon}
+                      compact
+                    />,
+                    <ContentTypePill key="type" unlock={unlock} />,
+                    <PlacementStatus
+                      key="place"
+                      mapped={p.mapXPct != null && p.mapYPct != null}
+                      tourLinked={p.yaw != null && p.pitch != null}
+                    />,
+                  ],
+                  onEdit: () => setModal({ kind: 'discovery', mode: 'edit', item: p }),
+                  onDelete: () => openDelete({ type: 'DISCOVERY_POINT', id: p.id, name: p.name, rowVersion: p.rowVersion }),
+                }
+              })}
+            />
+          )}
+
+          {!loading && !loadError && tab === 'artifacts' && (
+            <ContentTable
+              colWidths={['40%', '22%', '20%', '18%']}
+              headers={['Tên hiện vật', 'Độ tin cậy', 'Ảnh', '']}
+              emptyTitle="Chưa có hiện vật"
+              emptyDetail="Thêm hiện vật hoặc nới bộ lọc để xem danh sách."
+              rows={artifacts.map((a) => ({
+                key: a.id,
+                cells: [
+                  <NameCell
+                    key="name"
+                    title={a.name}
+                    subtitle={a.description?.trim() || parseUnlockKey(a.unlockKey).subtitle}
+                    thumbUrl={a.imageUrl}
+                    icon="museum"
+                  />,
+                  <span key="rel" className={a.reliability ? 'ops-pill ops-pill-warn' : 'ops-pill ops-pill-neutral'}>
+                    {a.reliability ? reliabilityLabel(a.reliability) : 'Chưa gắn'}
+                  </span>,
+                  <span key="img" className={a.imageUrl ? 'ops-pill ops-pill-success' : 'ops-pill ops-pill-neutral'}>
+                    {a.imageUrl ? 'Có ảnh' : 'Thiếu ảnh'}
+                  </span>,
+                ],
+                onEdit: () => setModal({ kind: 'artifact', mode: 'edit', item: a }),
+                onDelete: () => openDelete({ type: 'ARTIFACT', id: a.id, name: a.name, rowVersion: a.rowVersion }),
+              }))}
+            />
+          )}
+
+          {!loading && !loadError && tab === 'quests' && (
+            <ContentTable
+              colWidths={['36%', '16%', '32%', '16%']}
+              headers={['Tên nhiệm vụ', 'Thưởng', 'Cách hoàn thành', '']}
+              emptyTitle="Chưa có nhiệm vụ"
+              emptyDetail="Tạo nhiệm vụ gắn với địa điểm này."
+              rows={quests.map((q) => ({
+                key: q.id,
+                cells: [
+                  <NameCell
+                    key="name"
+                    title={q.title}
+                    subtitle={q.description?.trim() || undefined}
+                    icon="flag"
+                    compact
+                  />,
+                  <span key="xp" className="inline-flex items-center gap-1 whitespace-nowrap font-label-sm text-label-sm font-bold text-primary">
+                    <MaterialIcon name="bolt" className="text-[16px]" />
+                    +{q.pointsReward} XP
+                  </span>,
+                  <QuestCompletionMeta
+                    key="done"
+                    trigger={q.completionTrigger}
+                    requireOnsite={!!q.requireOnsiteCheckin}
+                  />,
+                ],
+                onEdit: () => setModal({ kind: 'quest', mode: 'edit', item: q }),
+                onDelete: () => openDelete({ type: 'QUEST', id: q.id, name: q.title, rowVersion: q.rowVersion }),
+              }))}
+            />
+          )}
+
+          {!loading && !loadError && tab === 'panoramas' && (
+            <ContentTable
+              colWidths={['48%', '28%', '24%']}
+              headers={['Tiêu đề panorama', 'Xem trước', '']}
+              emptyTitle="Chưa có panorama"
+              emptyDetail="Tải ảnh equirectangular 360° cho địa điểm này."
+              rows={panoramas.map((p) => ({
+                key: p.id,
+                cells: [
+                  <NameCell key="name" title={p.title} subtitle="Ảnh equirectangular 360°" icon="360" />,
+                  p.imageUrl ? (
+                    <img key="img" src={p.imageUrl} alt="" className="h-10 w-20 rounded-md object-cover ring-1 ring-outline-variant" />
+                  ) : (
+                    <span key="img" className="ops-pill ops-pill-warn">Thiếu ảnh</span>
+                  ),
+                ],
+                onEdit: () => setModal({ kind: 'panorama-replace', mode: 'edit', item: p }),
+                editIcon: 'image',
+                editLabel: 'Thay ảnh',
+              }))}
+            />
+          )}
+
+          {!loading && !loadError && activePage && (
+            <div className="mt-space-md flex flex-col items-center justify-between gap-2 sm:flex-row">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="font-mono text-[11px] text-outline">
+                  Hiển thị {activePage.page * activePage.size + (activePage.items.length ? 1 : 0)} -{' '}
+                  {activePage.page * activePage.size + activePage.items.length} trong{' '}
+                  {activePage.totalItems.toLocaleString('vi-VN')} bản ghi
+                </span>
+                <span className="hidden h-1 w-1 rounded-full bg-outline md:inline-block" />
+                <span className="hidden font-mono text-[11px] text-primary md:inline-block">
+                  {CONTENT_PAGE_SIZE} bản ghi / trang
+                </span>
+              </div>
+              <AdminPagination
+                variant="stitch"
+                page={activePage.page}
+                totalPages={activePage.totalPages}
+                totalItems={activePage.totalItems}
+                onPageChange={(nextPage) => updateListUrl({ page: nextPage > 0 ? String(nextPage + 1) : '' })}
+              />
+            </div>
+          )}
         </div>
 
-        <div className="flex justify-end mb-sm">
-          {tab === 'discovery' && (
-            <button
-              type="button"
-              onClick={() => setModal({ kind: 'discovery', mode: 'create' })}
-              className="inline-flex items-center gap-1 px-md py-xs rounded-lg bg-primary text-on-primary text-sm"
-            >
-              <MaterialIcon name="add" className="text-sm" /> Thêm điểm khám phá
-            </button>
-          )}
-          {tab === 'artifacts' && (
-            <button
-              type="button"
-              onClick={() => setModal({ kind: 'artifact', mode: 'create' })}
-              className="inline-flex items-center gap-1 px-md py-xs rounded-lg bg-primary text-on-primary text-sm"
-            >
-              <MaterialIcon name="add" className="text-sm" /> Thêm hiện vật
-            </button>
-          )}
-          {tab === 'quests' && (
-            <button
-              type="button"
-              onClick={() => setModal({ kind: 'quest', mode: 'create' })}
-              className="inline-flex items-center gap-1 px-md py-xs rounded-lg bg-primary text-on-primary text-sm"
-            >
-              <MaterialIcon name="add" className="text-sm" /> Thêm nhiệm vụ
-            </button>
-          )}
-          {tab === 'panoramas' && (
-            <button
-              type="button"
-              onClick={() => setModal({ kind: 'panorama-upload', mode: 'create' })}
-              className="inline-flex items-center gap-1 px-md py-xs rounded-lg bg-primary text-on-primary text-sm"
-            >
-              <MaterialIcon name="upload" className="text-sm" /> Tải panorama mới
-            </button>
-          )}
-        </div>
+        {showListChrome && (
+          <aside className="w-full shrink-0 space-y-space-md lg:sticky lg:top-20 lg:self-start">
+            <div className="ops-card space-y-3 p-4">
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="min-w-0 truncate font-headline-sm text-headline-sm text-on-surface">Tổng quan địa điểm</h3>
+                <span className="ops-pill ops-pill-success shrink-0">LIVE</span>
+              </div>
+              <p className="truncate font-body-sm text-body-sm text-on-surface-variant" title={siteLabel}>{siteLabel}</p>
+              <dl className="grid grid-cols-2 gap-2">
+                {[
+                  ['POI', discoveryPage?.totalItems ?? '—'],
+                  ['Hiện vật', artifactPage?.totalItems ?? '—'],
+                  ['Nhiệm vụ', questPage?.totalItems ?? '—'],
+                  ['Panorama', panoramas.length],
+                ].map(([label, value]) => (
+                  <div key={label} className="min-w-0 rounded-lg bg-surface-container p-2.5">
+                    <dt className="truncate font-label-sm text-label-sm uppercase tracking-wider text-outline">{label}</dt>
+                    <dd className="mt-0.5 font-headline-md text-headline-md text-primary">{value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
 
-        {loading && tab !== 'stations' && <p className="text-on-surface-variant text-sm">Đang tải...</p>}
-        {!loading && loadError && tab !== 'stations' && tab !== 'reports' && <AdminErrorState message={loadError} onRetry={loadContent} />}
-
-        {!loading && !loadError && tab === 'discovery' && (
-          <ContentTable
-            headers={['Tên', 'unlock_key', 'Vị trí map', 'Thứ tự', '']}
-            rows={discovery.map((p) => ({
-              key: p.id,
-              cells: [
-                p.name,
-                p.unlockKey,
-                `${p.mapXPct ?? '—'} / ${p.mapYPct ?? '—'}`,
-                String(p.sortOrder),
-              ],
-              onEdit: () => setModal({ kind: 'discovery', mode: 'edit', item: p }),
-              onDelete: () => openDelete({ type: 'DISCOVERY_POINT', id: p.id, name: p.name, rowVersion: p.rowVersion }),
-            }))}
-          />
-        )}
-
-        {!loading && !loadError && tab === 'artifacts' && (
-          <ContentTable
-            headers={['Tên', 'unlock_key', 'Độ tin cậy', 'Thứ tự', '']}
-            rows={artifacts.map((a) => ({
-              key: a.id,
-              cells: [a.name, a.unlockKey, a.reliability ?? '—', String(a.sortOrder)],
-              onEdit: () => setModal({ kind: 'artifact', mode: 'edit', item: a }),
-              onDelete: () => openDelete({ type: 'ARTIFACT', id: a.id, name: a.name, rowVersion: a.rowVersion }),
-            }))}
-          />
-        )}
-
-        {!loading && !loadError && tab === 'quests' && (
-          <ContentTable
-            headers={['Tiêu đề', 'Điểm', 'Trigger', 'Onsite', '']}
-            rows={quests.map((q) => ({
-              key: q.id,
-              cells: [
-                q.title,
-                String(q.pointsReward),
-                q.completionTrigger ?? 'discovery',
-                q.requireOnsiteCheckin ? 'Có' : 'Không',
-              ],
-              onEdit: () => setModal({ kind: 'quest', mode: 'edit', item: q }),
-              onDelete: () => openDelete({ type: 'QUEST', id: q.id, name: q.title, rowVersion: q.rowVersion }),
-            }))}
-          />
-        )}
-
-        {!loading && !loadError && tab === 'panoramas' && (
-          <ContentTable
-            headers={['Tiêu đề', 'Ảnh', '']}
-            rows={panoramas.map((p) => ({
-              key: p.id,
-              cells: [
-                p.title,
-                p.imageUrl ? (
-                  <img src={p.imageUrl} alt="" className="h-10 w-20 object-cover rounded" />
+            <div className="ops-card space-y-3 p-4">
+              <h3 className="font-headline-sm text-headline-sm text-on-surface">Kiểm tra toàn vẹn</h3>
+              {eraCount ? (
+                eraCount.sufficient ? (
+                  <p className="rounded-lg bg-primary/10 p-3 font-body-sm text-body-sm text-primary">
+                    Đủ {eraCount.eraCount} thời kỳ (era) — đạt ngưỡng tối thiểu 3.
+                  </p>
                 ) : (
-                  '—'
-                ),
-              ],
-              onEdit: () => setModal({ kind: 'panorama-replace', mode: 'edit', item: p }),
-              editLabel: 'Thay ảnh',
-            }))}
+                  <p className="rounded-lg bg-error-container/40 p-3 font-body-sm text-body-sm text-error">
+                    Chỉ có {eraCount.eraCount}/3 thời kỳ. Cần bổ sung điểm khám phá theo era.
+                  </p>
+                )
+              ) : (
+                <p className="font-body-sm text-body-sm text-outline">Chưa có dữ liệu era cho địa điểm này.</p>
+              )}
+              <button
+                type="button"
+                onClick={() => updateListUrl({ tab: 'reports', page: '' })}
+                className={`${btnGhost} w-full justify-center text-error`}
+              >
+                <MaterialIcon name="report" className="text-[16px]" />
+                Xem báo sai dữ liệu
+              </button>
+            </div>
+          </aside>
+        )}
+      </div>
+
+      {tab === 'stations' && <AdminStationsPanel />}
+      {tab === 'reports' && <AdminContentReportsPanel />}
+
+      {modal?.kind === 'discovery' && (
+        <AdminModal
+          title={modal.mode === 'create' ? 'Thêm điểm khám phá (POI)' : 'Cập nhật điểm khám phá (POI)'}
+          onClose={() => setModal(null)}
+        >
+          <DiscoveryPointForm
+            key={draftFormId('discovery', modal.item?.id)}
+            locationId={locationId}
+            initial={modal.item}
+            draft={getDraft<AdminDiscoveryPointInput>(draftFormId('discovery', modal.item?.id))}
+            saving={saving}
+            onSubmit={(body) => handleSaveDiscovery(body, modal.item?.id)}
+            onCancel={() => setModal(null)}
           />
-        )}
+        </AdminModal>
+      )}
 
-        {!loading && !loadError && activePage && (
-          <AdminPagination
-            page={activePage.page}
-            totalPages={activePage.totalPages}
-            totalItems={activePage.totalItems}
-            onPageChange={(nextPage) => updateListUrl({ page: nextPage > 0 ? String(nextPage + 1) : '' })}
+      {modal?.kind === 'artifact' && (
+        <AdminModal
+          title={modal.mode === 'create' ? 'Thêm hiện vật' : 'Cập nhật hiện vật'}
+          onClose={() => setModal(null)}
+          wide
+        >
+          <ArtifactForm
+            key={draftFormId('artifact', modal.item?.id)}
+            locationId={locationId}
+            initial={modal.item}
+            draft={getDraft<AdminArtifactInput>(draftFormId('artifact', modal.item?.id))}
+            saving={saving}
+            onSubmit={(body) => handleSaveArtifact(body, modal.item?.id)}
+            onCancel={() => setModal(null)}
           />
-        )}
+        </AdminModal>
+      )}
 
-        {tab === 'stations' && <AdminStationsPanel />}
-        {tab === 'reports' && <AdminContentReportsPanel />}
+      {modal?.kind === 'quest' && (
+        <AdminModal
+          title={modal.mode === 'create' ? 'Thêm nhiệm vụ' : 'Cập nhật nhiệm vụ'}
+          onClose={() => setModal(null)}
+          wide
+        >
+          <QuestForm
+            key={draftFormId('quest', modal.item?.id)}
+            locationId={locationId}
+            initial={modal.item}
+            draft={getDraft<AdminQuestInput>(draftFormId('quest', modal.item?.id))}
+            saving={saving}
+            onSubmit={(body) => handleSaveQuest(body, modal.item?.id)}
+            onCancel={() => setModal(null)}
+          />
+        </AdminModal>
+      )}
 
-        {modal?.kind === 'discovery' && (
-          <AdminModal
-            title={modal.mode === 'create' ? 'Thêm điểm khám phá' : 'Sửa điểm khám phá'}
-            onClose={() => setModal(null)}
-          >
-            <DiscoveryPointForm
-              key={draftFormId('discovery', modal.item?.id)}
-              locationId={locationId}
-              initial={modal.item}
-              draft={getDraft<AdminDiscoveryPointInput>(draftFormId('discovery', modal.item?.id))}
-              saving={saving}
-              onSubmit={(body) => handleSaveDiscovery(body, modal.item?.id)}
-              onCancel={() => setModal(null)}
-            />
-          </AdminModal>
-        )}
+      {modal?.kind === 'panorama-upload' && (
+        <AdminModal title="Tải panorama 360° mới" onClose={() => setModal(null)}>
+          <PanoramaUploadForm
+            saving={saving}
+            onSubmit={handleUploadPanorama}
+            onCancel={() => setModal(null)}
+          />
+        </AdminModal>
+      )}
 
-        {modal?.kind === 'artifact' && (
-          <AdminModal
-            title={modal.mode === 'create' ? 'Thêm hiện vật' : 'Sửa hiện vật'}
-            onClose={() => setModal(null)}
-            wide
-          >
-            <ArtifactForm
-              key={draftFormId('artifact', modal.item?.id)}
-              locationId={locationId}
-              initial={modal.item}
-              draft={getDraft<AdminArtifactInput>(draftFormId('artifact', modal.item?.id))}
-              saving={saving}
-              onSubmit={(body) => handleSaveArtifact(body, modal.item?.id)}
-              onCancel={() => setModal(null)}
-            />
-          </AdminModal>
-        )}
+      {modal?.kind === 'panorama-replace' && (
+        <AdminModal title={`Thay ảnh: ${modal.item.title}`} onClose={() => setModal(null)}>
+          <PanoramaReplaceForm
+            currentImageUrl={modal.item.imageUrl}
+            saving={saving}
+            onSubmit={(file) => handleReplacePanorama(modal.item.id, file)}
+            onCancel={() => setModal(null)}
+          />
+        </AdminModal>
+      )}
 
-        {modal?.kind === 'quest' && (
-          <AdminModal
-            title={modal.mode === 'create' ? 'Thêm nhiệm vụ' : 'Sửa nhiệm vụ'}
-            onClose={() => setModal(null)}
-            wide
-          >
-            <QuestForm
-              key={draftFormId('quest', modal.item?.id)}
-              locationId={locationId}
-              initial={modal.item}
-              draft={getDraft<AdminQuestInput>(draftFormId('quest', modal.item?.id))}
-              saving={saving}
-              onSubmit={(body) => handleSaveQuest(body, modal.item?.id)}
-              onCancel={() => setModal(null)}
-            />
-          </AdminModal>
-        )}
-
-        {modal?.kind === 'panorama-upload' && (
-          <AdminModal title="Tải panorama 360° mới" onClose={() => setModal(null)}>
-            <PanoramaUploadForm
-              saving={saving}
-              onSubmit={handleUploadPanorama}
-              onCancel={() => setModal(null)}
-            />
-          </AdminModal>
-        )}
-
-        {modal?.kind === 'panorama-replace' && (
-          <AdminModal title={`Thay ảnh: ${modal.item.title}`} onClose={() => setModal(null)}>
-            <PanoramaReplaceForm
-              currentImageUrl={modal.item.imageUrl}
-              saving={saving}
-              onSubmit={(file) => handleReplacePanorama(modal.item.id, file)}
-              onCancel={() => setModal(null)}
-            />
-          </AdminModal>
-        )}
-
-        {deleteTarget && (
-          <AdminModal title={`Xóa mềm: ${deleteTarget.name}`} onClose={() => !saving && setDeleteTarget(null)} wide>
-            <DeleteContentForm
-              impact={deleteImpact}
-              loading={deleteImpactLoading}
-              saving={saving}
-              error={deleteError}
-              onRetry={() => openDelete(deleteTarget)}
-              onSubmit={confirmDelete}
-              onCancel={() => setDeleteTarget(null)}
-            />
-          </AdminModal>
-        )}
-      </section>
+      {deleteTarget && (
+        <AdminModal title={`Xóa mềm: ${deleteTarget.name}`} onClose={() => !saving && setDeleteTarget(null)} wide>
+          <DeleteContentForm
+            impact={deleteImpact}
+            loading={deleteImpactLoading}
+            saving={saving}
+            error={deleteError}
+            onRetry={() => openDelete(deleteTarget)}
+            onSubmit={confirmDelete}
+            onCancel={() => setDeleteTarget(null)}
+          />
+        </AdminModal>
+      )}
+    </section>
   )
 }
 
@@ -622,19 +776,149 @@ type TableRow = {
   onEdit?: () => void
   onDelete?: () => void
   editLabel?: string
+  editIcon?: string
 }
 
-function ContentTable({ headers, rows }: { headers: string[]; rows: TableRow[] }) {
+type ParsedUnlock = {
+  kind: string
+  kindLabel: string
+  subtitle: string
+  icon: string
+  tone: 'success' | 'warn' | 'neutral'
+}
+
+function parseUnlockKey(unlockKey: string): ParsedUnlock {
+  const raw = unlockKey.trim()
+  const colon = raw.indexOf(':')
+  const kind = (colon >= 0 ? raw.slice(0, colon) : raw).toLowerCase()
+  const value = colon >= 0 ? raw.slice(colon + 1) : ''
+  const humanValue = value
+    ? value.replace(/[_-]+/g, ' ').replace(/\b([a-f0-9]{8}-){1,}[a-f0-9-]{10,}\b/gi, 'mã cảnh').trim()
+    : ''
+
+  switch (kind) {
+    case 'era':
+      return { kind, kindLabel: 'Thời kỳ', subtitle: humanValue ? `Mốc lịch sử ${humanValue}` : 'Mốc thời kỳ', icon: 'timeline', tone: 'success' }
+    case 'artifact':
+      return { kind, kindLabel: 'Hiện vật', subtitle: humanValue ? `Gắn hiện vật: ${humanValue}` : 'Gắn hiện vật', icon: 'museum', tone: 'warn' }
+    case 'scene':
+      return { kind, kindLabel: 'Cảnh 360°', subtitle: 'Mở cảnh panorama', icon: '360', tone: 'neutral' }
+    case 'photo':
+      return { kind, kindLabel: 'Ảnh', subtitle: humanValue ? `Ảnh: ${humanValue}` : 'Điểm ảnh', icon: 'photo_camera', tone: 'neutral' }
+    case 'dialogue':
+      return { kind, kindLabel: 'Hội thoại', subtitle: humanValue ? `Thoại: ${humanValue}` : 'Đối thoại', icon: 'chat', tone: 'neutral' }
+    case 'hotspot':
+      return { kind, kindLabel: 'Hotspot', subtitle: humanValue ? `Hotspot: ${humanValue}` : 'Điểm nhấn', icon: 'my_location', tone: 'neutral' }
+    default:
+      return { kind: kind || 'other', kindLabel: 'Khác', subtitle: raw || 'Chưa có khóa mở', icon: 'place', tone: 'neutral' }
+  }
+}
+
+function reliabilityLabel(value: string) {
+  const normalized = value.trim().toLowerCase()
+  if (normalized === 'cao' || normalized === 'high' || normalized === 'primary') return 'Nguồn chính'
+  if (normalized === 'trung bình' || normalized === 'medium') return 'Tham khảo'
+  if (normalized === 'thấp' || normalized === 'low') return 'Cần kiểm chứng'
+  return value
+}
+
+function NameCell({
+  title,
+  subtitle,
+  thumbUrl,
+  icon = 'place',
+  compact = false,
+}: {
+  title: string
+  subtitle?: string
+  thumbUrl?: string | null
+  icon?: string
+  compact?: boolean
+}) {
+  const box = compact ? 'h-8 w-8' : 'h-9 w-9'
+  return (
+    <div className="flex min-w-0 max-w-full items-center gap-2">
+      {thumbUrl ? (
+        <img src={thumbUrl} alt="" className={`${box} shrink-0 rounded-md object-cover ring-1 ring-outline-variant`} />
+      ) : (
+        <div className={`grid ${box} shrink-0 place-items-center rounded-md bg-primary/15 text-primary`}>
+          <MaterialIcon name={icon} className="text-[15px]" />
+        </div>
+      )}
+      <div className="min-w-0 flex-1 overflow-hidden">
+        <p className="truncate font-headline-sm text-body-md text-on-surface" title={title}>{title}</p>
+        {subtitle && <p className="truncate font-body-sm text-body-sm text-outline" title={subtitle}>{subtitle}</p>}
+      </div>
+    </div>
+  )
+}
+
+function ContentTypePill({ unlock }: { unlock: ParsedUnlock }) {
+  const toneClass =
+    unlock.tone === 'success' ? 'ops-pill ops-pill-success'
+      : unlock.tone === 'warn' ? 'ops-pill ops-pill-warn'
+        : 'ops-pill ops-pill-neutral'
+  return <span className={toneClass}>{unlock.kindLabel}</span>
+}
+
+function PlacementStatus({ mapped, tourLinked }: { mapped: boolean; tourLinked: boolean }) {
+  return (
+    <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+      <span className={mapped ? 'ops-pill ops-pill-success' : 'ops-pill ops-pill-warn'}>
+        {mapped ? 'Đã gắn map' : 'Chưa gắn map'}
+      </span>
+      <span className={tourLinked ? 'ops-pill ops-pill-success' : 'ops-pill ops-pill-neutral'}>
+        {tourLinked ? 'Tour 360°' : 'Chưa tour'}
+      </span>
+    </div>
+  )
+}
+
+function QuestCompletionMeta({ trigger, requireOnsite }: { trigger?: string | null; requireOnsite: boolean }) {
+  const triggerLabel =
+    trigger === 'checkin' ? 'Check-in tại chỗ'
+      : trigger === 'discovery' ? 'Khám phá từ xa'
+        : (trigger || 'Khám phá từ xa')
+  return (
+    <div className="min-w-0 space-y-1">
+      <span className={requireOnsite ? 'ops-pill ops-pill-warn' : 'ops-pill ops-pill-success'}>
+        {requireOnsite ? 'Bắt buộc onsite' : 'Làm từ xa được'}
+      </span>
+      <p className="truncate font-body-sm text-body-sm text-outline">{triggerLabel}</p>
+    </div>
+  )
+}
+
+function ContentTable({
+  headers,
+  rows,
+  emptyTitle,
+  emptyDetail,
+  colWidths,
+}: {
+  headers: string[]
+  rows: TableRow[]
+  emptyTitle?: string
+  emptyDetail?: string
+  colWidths?: string[]
+}) {
   if (rows.length === 0) {
-    return <p className="text-on-surface-variant text-sm">Chưa có dữ liệu cho địa điểm này.</p>
+    return <AdminEmptyState title={emptyTitle ?? 'Chưa có dữ liệu'} detail={emptyDetail ?? 'Chưa có bản ghi cho địa điểm này.'} />
   }
   return (
-    <div className="overflow-x-auto border border-outline-variant rounded-xl">
-      <table className="w-full text-xs">
-        <thead className="bg-surface-container-high text-on-surface-variant">
+    <div className="min-w-0 overflow-hidden rounded-xl bg-surface-container-low shadow-sm">
+      <table className="ops-table w-full text-left font-body-md text-body-md">
+        {colWidths && (
+          <colgroup>
+            {colWidths.map((width, index) => (
+              <col key={index} style={{ width }} />
+            ))}
+          </colgroup>
+        )}
+        <thead>
           <tr>
-            {headers.map((h) => (
-              <th key={h || 'actions'} className="text-left px-2 py-1.5 font-medium">
+            {headers.map((h, index) => (
+              <th key={`${h}-${index}`} className="px-2 py-2.5 font-label-sm text-label-sm uppercase tracking-wider sm:px-3">
                 {h}
               </th>
             ))}
@@ -642,26 +926,36 @@ function ContentTable({ headers, rows }: { headers: string[]; rows: TableRow[] }
         </thead>
         <tbody>
           {rows.map((row) => (
-            <tr key={row.key} className="border-t border-outline-variant/50">
+            <tr key={row.key} className="hover:bg-surface-container/60">
               {row.cells.map((cell, j) => (
-                <td key={j} className="px-2 py-1.5 align-top">
+                <td key={j} className="px-2 py-2.5 align-middle sm:px-3">
                   {cell}
                 </td>
               ))}
-              <td className="px-2 py-1.5 align-top">
-                <div className="flex items-center gap-3 whitespace-nowrap">
-                {row.onEdit && (
-                  <button
-                    type="button"
-                    onClick={row.onEdit}
-                    className="text-secondary text-xs hover:underline"
-                  >
-                    {row.editLabel ?? 'Sửa'}
-                  </button>
-                )}
-                {row.onDelete && (
-                  <button type="button" onClick={row.onDelete} className="text-red-700 text-xs font-semibold hover:underline">Xóa</button>
-                )}
+              <td className="px-2 py-2.5 align-middle sm:px-3">
+                <div className="flex items-center justify-end gap-1">
+                  {row.onEdit && (
+                    <button
+                      type="button"
+                      onClick={row.onEdit}
+                      aria-label={row.editLabel ?? 'Sửa'}
+                      title={row.editLabel ?? 'Sửa'}
+                      className="ops-icon-btn"
+                    >
+                      <MaterialIcon name={row.editIcon ?? 'edit'} className="text-[15px]" />
+                    </button>
+                  )}
+                  {row.onDelete && (
+                    <button
+                      type="button"
+                      onClick={row.onDelete}
+                      aria-label="Xóa"
+                      title="Xóa"
+                      className="ops-icon-btn ops-icon-btn-danger"
+                    >
+                      <MaterialIcon name="delete" className="text-[15px]" />
+                    </button>
+                  )}
                 </div>
               </td>
             </tr>
@@ -695,31 +989,31 @@ function DeleteContentForm({
   const [reasonDetail, setReasonDetail] = useState('')
   const validation = validateDeleteReason(reasonPreset, reasonDetail)
 
-  if (loading) return <p role="status" className="text-sm text-slate-600">Đang kiểm tra ảnh hưởng…</p>
+  if (loading) return <p role="status" className="font-body-sm text-body-sm text-on-surface-variant">Đang kiểm tra ảnh hưởng…</p>
   if (error && !impact) return <AdminErrorState message={error} onRetry={onRetry} />
 
   return (
     <form onSubmit={(event) => { event.preventDefault(); if (!validation && impact?.deletable) void onSubmit(reasonPreset, reasonDetail) }} className="space-y-5">
       {impact && (
-        <section className={`rounded-xl border p-4 ${!impact.deletable ? 'border-red-300 bg-red-50' : 'border-amber-200 bg-amber-50'}`}>
-          <h3 className="font-bold text-slate-950">Ảnh hưởng trước khi xóa</h3>
-          {impact.blockers.length === 0 && impact.warnings.length === 0 && <p className="mt-2 text-sm text-slate-700">Không phát hiện tham chiếu hoặc tiến độ bị ảnh hưởng.</p>}
-          {impact.blockers.length > 0 && <div className="mt-3"><p className="text-sm font-bold text-red-800">Điều kiện đang chặn</p><ul className="mt-1 list-disc space-y-1 pl-5 text-sm">{impact.blockers.map((item) => <li key={item.code}>{item.message} ({item.count})</li>)}</ul></div>}
-          {impact.warnings.length > 0 && <div className="mt-3"><p className="text-sm font-bold text-amber-900">Cảnh báo</p><ul className="mt-1 list-disc space-y-1 pl-5 text-sm">{impact.warnings.map((item) => <li key={item.code}>{item.message} ({item.count})</li>)}</ul></div>}
-          {!impact.deletable && <p className="mt-3 font-bold text-red-800">Chưa thể xóa cho đến khi xử lý hết các điều kiện đang chặn.</p>}
+        <section className={`rounded-xl border p-4 ${!impact.deletable ? 'border-error/40 bg-error-container/30' : 'border-outline-variant bg-surface-container'}`}>
+          <h3 className="font-headline-sm text-on-surface">Ảnh hưởng trước khi xóa</h3>
+          {impact.blockers.length === 0 && impact.warnings.length === 0 && <p className="mt-2 font-body-sm text-body-sm text-on-surface-variant">Không phát hiện tham chiếu hoặc tiến độ bị ảnh hưởng.</p>}
+          {impact.blockers.length > 0 && <div className="mt-3"><p className="font-label-sm text-label-sm font-bold text-error">Điều kiện đang chặn</p><ul className="mt-1 list-disc space-y-1 pl-5 font-body-sm text-body-sm">{impact.blockers.map((item) => <li key={item.code}>{item.message} ({item.count})</li>)}</ul></div>}
+          {impact.warnings.length > 0 && <div className="mt-3"><p className="font-label-sm text-label-sm font-bold text-tertiary">Cảnh báo</p><ul className="mt-1 list-disc space-y-1 pl-5 font-body-sm text-body-sm">{impact.warnings.map((item) => <li key={item.code}>{item.message} ({item.count})</li>)}</ul></div>}
+          {!impact.deletable && <p className="mt-3 font-headline-sm text-error">Chưa thể xóa cho đến khi xử lý hết các điều kiện đang chặn.</p>}
         </section>
       )}
-      {error && impact && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900">{error}</p>}
+      {error && impact && <p role="alert" className="rounded-lg border border-error/40 bg-error-container/30 p-3 font-body-sm text-body-sm text-error">{error}</p>}
       <FormField label="Lý do xóa">
         <SelectInput value={reasonPreset} onChange={(event) => setReasonPreset(event.target.value as DeleteReasonPreset)}>{DELETE_REASONS.map((reason) => <option key={reason}>{reason}</option>)}</SelectInput>
       </FormField>
       <FormField label={reasonPreset === 'Khác' ? 'Mô tả lý do *' : 'Ghi chú thêm'} hint={reasonPreset === 'Khác' ? 'Tối thiểu 10 ký tự' : undefined}>
         <TextArea value={reasonDetail} onChange={(event) => setReasonDetail(event.target.value)} rows={3} />
       </FormField>
-      {validation && reasonPreset === 'Khác' && <p className="text-sm text-red-700">{validation}</p>}
-      <div className="flex justify-end gap-3 border-t border-slate-200 pt-4">
-        <button type="button" onClick={onCancel} disabled={saving} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold">Huỷ</button>
-        <button type="submit" disabled={saving || !!validation || !impact?.deletable} className="rounded-lg bg-red-700 px-4 py-2 text-sm font-bold text-white hover:bg-red-600 disabled:opacity-50">{saving ? 'Đang xóa…' : 'Xác nhận xóa mềm'}</button>
+      {validation && reasonPreset === 'Khác' && <p className="font-body-sm text-body-sm text-error">{validation}</p>}
+      <div className="flex justify-end gap-3 border-t border-outline-variant pt-4">
+        <button type="button" onClick={onCancel} disabled={saving} className="rounded-lg border border-outline-variant px-4 py-2 font-label-sm text-label-sm text-on-surface">Huỷ</button>
+        <button type="submit" disabled={saving || !!validation || !impact?.deletable} className="rounded-lg bg-error-container px-4 py-2 font-headline-sm text-headline-sm text-error disabled:opacity-50">{saving ? 'Đang xóa…' : 'Xác nhận xóa mềm'}</button>
       </div>
     </form>
   )
@@ -813,8 +1107,17 @@ function ArtifactForm({
   const [unlockKey, setUnlockKey] = useState(draft?.unlockKey ?? initial?.unlockKey ?? '')
   const [imageUrl, setImageUrl] = useState(draft?.imageUrl ?? initial?.imageUrl ?? '')
   const [description, setDescription] = useState(draft?.description ?? initial?.description ?? '')
+  const [story, setStory] = useState(draft?.story ?? initial?.story ?? '')
   const [reliability, setReliability] = useState(draft?.reliability ?? initial?.reliability ?? '')
   const [sortOrder, setSortOrder] = useState((draft?.sortOrder ?? initial?.sortOrder)?.toString() ?? '0')
+  const [collectionName, setCollectionName] = useState(draft?.collectionName ?? initial?.collectionName ?? '')
+  const [rarity, setRarity] = useState(draft?.rarity ?? initial?.rarity ?? '')
+  const [sourceUrl, setSourceUrl] = useState(draft?.sourceUrl ?? initial?.sourceUrl ?? '')
+  const [imageSource, setImageSource] = useState(draft?.imageSource ?? initial?.imageSource ?? '')
+  const [imageLicense, setImageLicense] = useState(draft?.imageLicense ?? initial?.imageLicense ?? '')
+  const [factVerified, setFactVerified] = useState(draft?.factVerified ?? initial?.factVerified ?? false)
+  const [unlockMinigameId, setUnlockMinigameId] = useState(draft?.unlockMinigameId ?? initial?.unlockMinigameId ?? '')
+  const rowVersion = draft?.rowVersion ?? initial?.rowVersion ?? null
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -824,8 +1127,17 @@ function ArtifactForm({
       unlockKey: unlockKey.trim(),
       imageUrl: imageUrl.trim() || null,
       description: description.trim() || null,
+      story: story.trim() || null,
       reliability: reliability.trim() || null,
       sortOrder: sortOrder ? Number(sortOrder) : 0,
+      collectionName: collectionName.trim() || null,
+      rarity: rarity.trim() || null,
+      sourceUrl: sourceUrl.trim() || null,
+      imageSource: imageSource.trim() || null,
+      imageLicense: imageLicense.trim() || null,
+      factVerified,
+      unlockMinigameId: unlockMinigameId.trim() || null,
+      rowVersion,
     })
   }
 
@@ -843,6 +1155,33 @@ function ArtifactForm({
       <FormField label="Mô tả">
         <TextArea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} />
       </FormField>
+      <FormField label="Nội dung chi tiết / câu chuyện">
+        <TextArea value={story} onChange={(e) => setStory(e.target.value)} rows={4} />
+      </FormField>
+      <div className="grid grid-cols-2 gap-sm">
+        <FormField label="Bộ sưu tập">
+          <TextInput value={collectionName} onChange={(e) => setCollectionName(e.target.value)} />
+        </FormField>
+        <FormField label="Độ hiếm">
+          <TextInput value={rarity} onChange={(e) => setRarity(e.target.value)} placeholder="common / rare / epic" />
+        </FormField>
+      </div>
+      <div className="grid grid-cols-2 gap-sm">
+        <FormField label="Nguồn ảnh">
+          <TextInput value={imageSource} onChange={(e) => setImageSource(e.target.value)} />
+        </FormField>
+        <FormField label="Giấy phép ảnh">
+          <TextInput value={imageLicense} onChange={(e) => setImageLicense(e.target.value)} />
+        </FormField>
+      </div>
+      <FormField label="URL nguồn tư liệu">
+        <TextInput value={sourceUrl} onChange={(e) => setSourceUrl(e.target.value)} />
+      </FormField>
+      <FormField label="unlock_minigame_id">
+        <TextInput value={unlockMinigameId} onChange={(e) => setUnlockMinigameId(e.target.value)} placeholder="UUID (nếu có)" />
+      </FormField>
+      <CheckboxInput label="Đã xác minh dữ kiện" checked={factVerified} onChange={setFactVerified} />
+      {rowVersion !== null && <input type="hidden" name="rowVersion" value={rowVersion} />}
       <FormField label="Độ tin cậy">
         <TextInput value={reliability} onChange={(e) => setReliability(e.target.value)} placeholder="cao / trung bình" />
       </FormField>
@@ -1018,28 +1357,28 @@ function PanoramaReplaceForm({
 function FormActions({
   saving,
   onCancel,
-  submitLabel = 'Lưu',
+  submitLabel = 'Lưu & cập nhật',
 }: {
   saving: boolean
   onCancel: () => void
   submitLabel?: string
 }) {
   return (
-    <div className="flex gap-sm justify-end pt-md mt-sm border-t border-outline-variant/50">
+    <div className="mt-sm flex justify-end gap-sm border-t border-outline-variant pt-md">
       <button
         type="button"
         onClick={onCancel}
         disabled={saving}
-        className="px-md py-xs rounded-lg border border-outline-variant text-sm"
+        className="rounded-lg border border-outline-variant px-4 py-2 font-label-sm text-label-sm text-on-surface-variant"
       >
-        Huỷ
+        Huỷ bỏ
       </button>
       <button
         type="submit"
         disabled={saving}
-        className="px-md py-xs rounded-lg bg-primary text-on-primary text-sm disabled:opacity-60"
+        className="ops-btn-primary disabled:opacity-60"
       >
-        {saving ? 'Đang lưu...' : submitLabel}
+        {saving ? 'Đang lưu…' : submitLabel}
       </button>
     </div>
   )

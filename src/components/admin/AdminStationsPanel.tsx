@@ -22,6 +22,7 @@ export function AdminStationsPanel() {
   const [savingCode, setSavingCode] = useState<string | null>(null)
   const [drafts, setDrafts] = useState<Record<string, { name: string; body: string; active: boolean }>>({})
   const [qrPayload, setQrPayload] = useState<string | null>(null)
+  const [feedback, setFeedback] = useState<string | null>(null)
   const { showToast } = useToast()
 
   const load = useCallback(() => {
@@ -86,9 +87,11 @@ export function AdminStationsPanel() {
         },
       ]
       await adminApi.importStations(siteCode, body)
+      setFeedback(`Đã lưu và ghi nhận thay đổi cho trạm ${station.code}.`)
       showToast({ message: `Đã lưu ${station.code}`, type: 'success' })
       load()
     } catch (e) {
+      setFeedback(`Không thể lưu trạm ${station.code}.`)
       showToast({ message: getFriendlyErrorMessage(e, 'quest'), type: 'error' })
     } finally {
       setSavingCode(null)
@@ -119,7 +122,7 @@ export function AdminStationsPanel() {
     <div data-testid="admin-stations-panel" className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
         <label className="text-sm font-bold text-on-surface">
-          Site{' '}
+          Khu di tích{' '}
           <select
             className="ml-2 rounded-lg border border-outline-variant bg-surface-container px-2 py-1"
             value={siteCode}
@@ -134,12 +137,13 @@ export function AdminStationsPanel() {
           </select>
         </label>
       </div>
+      {feedback && <p role="status" className="rounded-lg border border-outline-variant p-2 text-sm">{feedback}</p>}
       <p className="text-sm text-on-surface-variant">
         CMS ST01–ST06 theo site: sửa tên, TEXT, publish (`active`), xuất QR tĩnh in chống ẩm (`site:STxx:0:sig`).
       </p>
       {qrPayload && (
         <p className="text-xs font-mono break-all text-secondary bg-surface-container-high p-2 rounded-lg border border-outline-variant">
-          Last QR: {qrPayload}
+          Mã QR gần nhất: {qrPayload}
         </p>
       )}
       {stations.map((s) => {
@@ -201,7 +205,7 @@ export function AdminStationsPanel() {
                   setDrafts((prev) => ({ ...prev, [s.code]: { ...draft, active: e.target.checked } }))
                 }
               />
-              Published (active)
+              Đã phát hành (đang hoạt động)
             </label>
           </article>
         )

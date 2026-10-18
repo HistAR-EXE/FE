@@ -99,6 +99,8 @@ httpClient.interceptors.response.use(
       upgradeUrl: payload?.upgradeUrl,
       quotaType: payload?.type,
       upgradePackage: payload?.upgradePackage,
+      details: payload?.details,
+      gateErrors: payload?.gateErrors,
     })
   },
 )

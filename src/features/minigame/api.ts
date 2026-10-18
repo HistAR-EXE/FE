@@ -52,9 +52,9 @@ export const minigameApi = {
         getData<MinigameAttemptResult>(httpClient.post(`/api/quests/minigames/${id}/attempts`, body)),
 }
 
-export const DEV_MINIGAME_QUEST_ID = '33333333-3333-3333-3333-333333333336'
+// DEV gate removed — quest visible on prod (V43 seeded properly)
 export const INTERVIEW_MINIGAME_ID = 'a1000001-0000-4000-8000-000000000015'
 
-export function isDevMinigameQuestVisible(questId: string) {
-    return questId !== DEV_MINIGAME_QUEST_ID || import.meta.env.DEV
+export function isDevMinigameQuestVisible(_questId: string) {
+    return true // all quest minigames are visible
 }

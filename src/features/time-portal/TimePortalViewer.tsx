@@ -42,17 +42,8 @@ const GYRO_RANGE_DEG = 25
 const GYRO_NEUTRAL_BETA_DEG = 50
 const GYRO_LOW_PASS_ALPHA = 0.12
 
-type DeviceOrientationWithPermission = {
-  requestPermission?: () => Promise<'granted' | 'denied'>
-}
-
 function hasDeviceOrientation(): boolean {
   return typeof window !== 'undefined' && typeof DeviceOrientationEvent !== 'undefined'
-}
-
-function gyroNeedsPermissionApi(): boolean {
-  if (!hasDeviceOrientation()) return false
-  return typeof (DeviceOrientationEvent as unknown as DeviceOrientationWithPermission).requestPermission === 'function'
 }
 
 type LayerData = { imageUrl: string; caption: string; era: EraValue }
@@ -205,13 +196,9 @@ export function TimePortalViewer({
     runParallax()
   }, [runParallax])
 
-  // Gyro parallax (mobile): DeviceOrientation + low-pass filter. iOS 13+ needs a user-gesture permission request.
+  // Gyro parallax (mobile): DeviceOrientation + low-pass filter.
   // Pointer parallax above stays as the fallback (desktop / permission denied / no sensor).
-  // iOS exposes requestPermission (must be called from a tap -> button); other browsers just start listening.
-  const [gyroEnabled, setGyroEnabled] = useState(() => hasDeviceOrientation() && !gyroNeedsPermissionApi())
-  const [gyroNeedsPermission, setGyroNeedsPermission] = useState(
-    () => hasDeviceOrientation() && gyroNeedsPermissionApi(),
-  )
+  const [gyroEnabled] = useState(() => hasDeviceOrientation())
   const gyroSmoothed = useRef({ x: 0, y: 0 })
 
   const onDeviceOrientation = useCallback(
@@ -234,23 +221,6 @@ export function TimePortalViewer({
     window.addEventListener('deviceorientation', onDeviceOrientation)
     return () => window.removeEventListener('deviceorientation', onDeviceOrientation)
   }, [parallax, gyroEnabled, onDeviceOrientation])
-
-  const requestGyroPermission = useCallback(async () => {
-    const requestPermission = (DeviceOrientationEvent as unknown as DeviceOrientationWithPermission)
-      .requestPermission
-    if (typeof requestPermission !== 'function') return
-    try {
-      const result = await requestPermission.call(DeviceOrientationEvent)
-      if (result === 'granted') {
-        setGyroEnabled(true)
-        setGyroNeedsPermission(false)
-      } else {
-        setGyroNeedsPermission(false) // denied: keep the pointer fallback
-      }
-    } catch {
-      setGyroNeedsPermission(false)
-    }
-  }, [])
 
   useEffect(() => {
     if (initialEra) setEra(initialEra)
@@ -415,18 +385,6 @@ export function TimePortalViewer({
             </div>
           </div>
         </>
-      )}
-
-      {gyroNeedsPermission && (
-        <button
-          type="button"
-          data-testid="gyro-permission-btn"
-          onClick={() => void requestGyroPermission()}
-          className="absolute top-24 right-xl z-30 inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-black/60 border border-secondary/50 text-xs text-secondary backdrop-blur-sm"
-        >
-          <MaterialIcon name="screen_rotation" className="text-sm" />
-          Bật cảm biến nghiêng
-        </button>
       )}
 
       <div className="absolute bottom-xl left-1/2 -translate-x-1/2 z-30 flex flex-col items-center gap-sm">

@@ -12,6 +12,19 @@ export type AdminPageQuery = {
   sort?: string
 }
 
+export type AdminUserQuery = AdminPageQuery & {
+  role?: string
+  tier?: string
+  verified?: string
+  status?: string
+  ids?: string
+}
+
+export type AdminOrganizationQuery = AdminPageQuery & {
+  plan?: string
+  status?: string
+}
+
 export type AdminUserSummary = {
   id: string
   email: string
@@ -19,9 +32,17 @@ export type AdminUserSummary = {
   role: 'USER' | 'ORG_MEMBER' | 'TEACHER' | 'ADMIN'
   tier?: 'FREE' | 'PREMIUM' | string
   emailVerified?: boolean
+  accountStatus?: 'ACTIVE' | 'SUSPENDED' | string
   level: number
   totalPoints: number
   createdAt: string
+}
+
+export type AdminUserBulkAction = 'SUSPEND' | 'UNSUSPEND' | 'SET_ROLE' | 'SET_TIER'
+
+export type AdminUserBulkResult = {
+  succeeded: number
+  failed: Array<{ userId: string; message: string }>
 }
 
 export type AdminOrganizationSummary = {
@@ -31,6 +52,7 @@ export type AdminOrganizationSummary = {
   planType?: string
   plan?: string
   memberCount?: number
+  status?: string | null
 }
 
 export type AdminB2b2cInquiry = {
@@ -46,6 +68,7 @@ export type AdminB2b2cInquiry = {
   interestSiteCode?: string | null
   contactedAt?: string | null
   adminNotes?: string | null
+  organizationId?: string | null
 }
 
 export type AdminRecentPayment = {
@@ -62,6 +85,22 @@ export type AdminRecentPayment = {
   transferContent?: string | null
   /** UNDERPAID: total received so far */
   receivedAmount?: number
+}
+
+export type AdminPaymentOperationResponse = {
+  id: string
+  channel: string
+  orderCode: string
+  status: string
+  paidAt: string | null
+  updatedAt: string
+}
+
+export type AdminPaymentQuery = AdminPageQuery & {
+  status?: string
+  channel?: string
+  from?: string
+  to?: string
 }
 
 export type ReferralStatsItem = {
@@ -112,10 +151,21 @@ export type AdminArtifact = {
   name: string
   imageUrl: string | null
   description: string | null
+  story: string | null
   unlockKey: string
   reliability: string | null
   sortOrder: number
+  collectionName: string | null
+  rarity: string | null
+  sourceUrl: string | null
+  imageSource: string | null
+  imageLicense: string | null
+  factVerified: boolean
+  unlockMinigameId: string | null
   rowVersion: number
+  deletedAt?: string | null
+  deletedBy?: string | null
+  deleteReason?: string | null
 }
 
 export type AdminQuest = {
@@ -151,8 +201,17 @@ export type AdminArtifactInput = {
   unlockKey: string
   imageUrl?: string | null
   description?: string | null
+  story?: string | null
   reliability?: string | null
   sortOrder?: number | null
+  collectionName?: string | null
+  rarity?: string | null
+  sourceUrl?: string | null
+  imageSource?: string | null
+  imageLicense?: string | null
+  factVerified?: boolean | null
+  unlockMinigameId?: string | null
+  rowVersion?: number | null
 }
 
 export type AdminQuestInput = {
@@ -248,12 +307,28 @@ export type NarrativeReadinessItem = {
   field?: string | null
 }
 
+export type NarrativeGateError = {
+  code: string
+  message: string
+  field?: string | null
+  destination?: string | null
+}
+
 export type NarrativeReadiness = {
   questId: string
   draftVersion: number | null
   ready: boolean
   globalFlagEnabled: boolean
   items: NarrativeReadinessItem[]
+  destinations?: NarrativeDestinationReadiness[]
+}
+
+export type NarrativeDestinationReadiness = {
+  destinationId?: string | null
+  destinationName: string
+  required: boolean
+  isReady: boolean
+  checks: NarrativeReadinessItem[]
 }
 
 export type NarrativeReview = {
@@ -283,6 +358,54 @@ export type NarrativeRolloutRequest = {
   rowVersion: number
   reasonPreset?: DeleteReasonPreset
   reasonDetail?: string | null
+}
+
+export type AdminQuestCampaign = {
+  id: string
+  questId: string
+  type: string
+  title: string
+  startsAt: string
+  endsAt: string
+  enabled: boolean
+  pilotStatus: 'PENDING' | 'IN_PROGRESS' | 'PASSED' | 'FAILED' | string
+  releaseDecision: 'PENDING' | 'APPROVED' | 'REJECTED' | 'ROLLED_BACK' | string
+  releaseNote?: string | null
+  releaseDecidedBy?: string | null
+  releaseDecidedAt?: string | null
+}
+
+export type AdminCampaignGateRequest = {
+  pilotStatus: 'PENDING' | 'IN_PROGRESS' | 'PASSED' | 'FAILED'
+  releaseDecision: 'PENDING' | 'APPROVED' | 'REJECTED' | 'ROLLED_BACK'
+  note?: string | null
+}
+
+export type AdminCampaignRollbackRequest = { reason: string }
+
+export type AdminCampaignAudiencePreview = {
+  campaignId: string
+  questId: string
+  campaignType: string
+  campaignTitle: string
+  campaignEnabled: boolean
+  pilotStatus: string
+  releaseDecision: string
+  organizationId: string
+  eligibleStudents: number
+  excludedTeachersOrAdmins: number
+  excludedUnacceptedMembers: number
+  excludedProfileMismatches: number
+}
+
+export type AdminCampaignAuditEvent = {
+  id: string
+  campaignId: string
+  action: string
+  actorId: string
+  occurredAt: string
+  rollbackReason?: string | null
+  note?: string | null
 }
 
 export type PoiUnlockRateItem = {
@@ -343,10 +466,51 @@ export type AdminAnalyticsOverview = {
   journeyDropOff: JourneyDropOffItem[]
   poiHeatmap: PoiHeatmapItem[]
   sessionQuality: SessionQualityMetrics
-  questCompletedCount?: number
+  questCompletedCount?: number | null
   journeyNote: string
   privacyThreshold?: number
   questCompletedSuppressed?: boolean
+  activeUsers?: number | null
+  eventCount?: number | null
+  activitySuppressed?: boolean
+  referralUsers?: number | null
+  referralSuppressed?: boolean
+}
+
+export type ActivitySeriesPoint = {
+  bucketStart: string
+  activeUsers: number | null
+  eventCount: number | null
+  suppressed: boolean
+}
+
+export type ActivitySeries = {
+  locationId: string | null
+  range: string
+  bucket: string
+  privacyThreshold: number
+  series: ActivitySeriesPoint[]
+}
+
+export type ActivityHeatmapCell = {
+  dayIndex: number
+  slotIndex: number
+  activeUsers: number | null
+  eventCount: number | null
+  intensity: number
+  suppressed: boolean
+}
+
+export type ActivityHeatmap = {
+  locationId: string | null
+  range: string
+  privacyThreshold: number
+  dayLabels: string[]
+  slotLabels: string[]
+  cells: ActivityHeatmapCell[]
+  peakMorningLabel: string
+  peakAfternoonLabel: string
+  daysWithData: number
 }
 
 export type AdminDeleteImpact = {
@@ -381,15 +545,45 @@ export type AdminTrashItem = {
   locationId?: string | null
   name: string
   deletedBy: string
+  deletedByName?: string | null
   deleteReason: string
   deletedAt: string
   rowVersion: number
 }
 
+export type AdminPurgeRequest = {
+  rowVersion: number
+  reason: string
+  idempotencyKey?: string
+}
+
+export type AdminTrashBulkItem = {
+  resourceType: AdminContentType
+  id: string
+  rowVersion: number
+}
+
+export type AdminTrashBulkResult = {
+  succeeded: number
+  failedCount: number
+  failed: Array<{ resourceType: string; id: string; message: string }>
+}
+
+export type AdminTrashEmptyResult = {
+  purged: number
+  failedCount: number
+  failed: Array<{ resourceType: string; id: string; message: string }>
+}
+
 export type AdminAuditEvent = {
   id: string
   actorId: string
+  /** Prefer FE name; BE may send actorDisplayName */
   actorName?: string | null
+  actorDisplayName?: string | null
+  /** Prefer FE name; BE may send actorEmail (already masked) */
+  actorEmailMasked?: string | null
+  actorEmail?: string | null
   entityType: string
   entityId: string
   action: string
@@ -397,7 +591,73 @@ export type AdminAuditEvent = {
   newRowVersion?: number | null
   reason?: string | null
   metadata?: Record<string, unknown> | null
+  before?: Record<string, unknown> | null
+  after?: Record<string, unknown> | null
   occurredAt: string
+  eventHash?: string | null
+  prevEventHash?: string | null
+}
+
+export type AdminAuditIntegrityResult = {
+  valid: boolean
+  checkedCount: number
+  chainTip?: string | null
+  expectedTip?: string | null
+  brokenEventId?: string | null
+  from?: string | null
+  to?: string | null
+}
+
+export type AdminAuditQuery = AdminPageQuery & {
+  entityType?: string
+  entityId?: string
+  actor?: string
+  actorId?: string
+  action?: string
+  from?: string
+  to?: string
+}
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+
+function auditQueryParams(query: AdminAuditQuery = {}) {
+  const entityIdFromQ =
+    query.entityId || (query.q && UUID_RE.test(query.q.trim()) ? query.q.trim() : undefined)
+  return {
+    page: query.page,
+    size: query.size,
+    entityType: query.entityType || query.type || undefined,
+    entityId: entityIdFromQ || undefined,
+    actor: query.actor || undefined,
+    actorId: query.actorId || undefined,
+    action: query.action || undefined,
+    from: query.from || undefined,
+    to: query.to || undefined,
+    sort: query.sort || undefined,
+  }
+}
+
+export function normalizeAdminAuditEvent(event: AdminAuditEvent): AdminAuditEvent {
+  const metadata = event.metadata && typeof event.metadata === 'object' ? event.metadata : null
+  const before =
+    event.before ??
+    (metadata && typeof metadata.before === 'object' && metadata.before
+      ? (metadata.before as Record<string, unknown>)
+      : null)
+  const after =
+    event.after ??
+    (metadata && typeof metadata.after === 'object' && metadata.after
+      ? (metadata.after as Record<string, unknown>)
+      : null)
+  return {
+    ...event,
+    actorName: event.actorName ?? event.actorDisplayName ?? null,
+    actorEmailMasked: event.actorEmailMasked ?? event.actorEmail ?? null,
+    before,
+    after,
+    metadata,
+  }
 }
 
 export type AdminDashboardSummary = {
@@ -406,6 +666,32 @@ export type AdminDashboardSummary = {
   reviewPendingCount: number
   trashCount: number
   contentReportsLast30Days: number
+  openContentReports: number
+}
+
+export type AdminRevenueMonth = {
+  month: string
+  b2cRevenueVnd: number
+  b2bRevenueVnd: number
+}
+
+export type AdminPlanRevenue = {
+  plan: string
+  description?: string | null
+  revenueVnd: number
+}
+
+export type AdminBillingOverview = {
+  actualRevenueMonthVnd: number
+  previousMonthRevenueVnd?: number | null
+  monthOverMonthPct: number | null
+  estimatedMrrVnd: number
+  estimatedArrVnd: number
+  revenueCoveragePct: number | null
+  activePaidSubscriptions: number
+  updatedAt: string
+  monthlyRevenue: AdminRevenueMonth[]
+  planRevenue: AdminPlanRevenue[]
 }
 
 export type OrganizationAnalytics = {
@@ -416,6 +702,152 @@ export type OrganizationAnalytics = {
   completionRatePct: number
   fullTourRatePct: number
   note: string
+  lastCrmSyncedAt?: string | null
+  crmLinkedInquiryCount?: number | null
+}
+
+export type OrgContract = {
+  id: string
+  organizationId: string
+  title: string
+  contractCode: string
+  licenseSeats?: number | null
+  planType?: string | null
+  status: string
+  startsOn?: string | null
+  endsOn?: string | null
+  documentUrl?: string | null
+  notes?: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export type OrgContractInput = {
+  title: string
+  contractCode: string
+  licenseSeats?: number | null
+  planType?: string | null
+  status?: string
+  startsOn?: string | null
+  endsOn?: string | null
+  documentUrl?: string | null
+  notes?: string | null
+}
+
+export type OrgArReport = {
+  organizationId: string
+  organizationName: string
+  from: string
+  to: string
+  memberCount: number
+  checkins: number
+  visitSessions: number
+  onsiteSessions: number
+  discoveries: number
+  questCompletions: number
+  dailyCheckins: Array<{ day: string; count: number }>
+}
+
+export type OrgCrmSyncResult = {
+  organizationId: string
+  linkedCount: number
+  syncedAt: string
+  inquiries: Array<{ id: string; siteName: string; contactEmail: string; status: string }>
+}
+
+export type OrgArCard = {
+  id: string
+  organizationId: string
+  userId: string
+  email: string
+  displayName: string
+  cardCode: string
+  status: string
+  issuedAt: string
+  revokedAt?: string | null
+}
+
+export type OrgArCardIssueResult = {
+  issued: number
+  skipped: number
+  cards: OrgArCard[]
+}
+
+export type OrgCertificate = {
+  id: string
+  organizationId: string
+  userId: string
+  email: string
+  displayName: string
+  title: string
+  certificateCode: string
+  issuedAt: string
+}
+
+export type OrgCertificateBulkResult = {
+  issued: number
+  certificates: OrgCertificate[]
+}
+
+export type OrgActivityLog = {
+  id: string
+  actorId?: string | null
+  actorDisplayName?: string | null
+  actorName?: string | null
+  actorEmail?: string | null
+  entityType: string
+  entityId?: string | null
+  action: string
+  reason?: string | null
+  occurredAt: string
+}
+
+export type AdminOrganizationInput = {
+  name: string
+  planType?: string
+  contactEmail?: string
+  status?: string
+  opsNote?: string
+}
+
+export type AdminOrgInvite = {
+  inviteCode: string
+  expiresAt: string | null
+  organizationId: string
+  inviteUrl: string
+}
+
+export type AdminOrgMemberResult = {
+  userId: string
+  email: string
+  displayName: string
+  accountCreated: boolean
+  credentialsEmailed: boolean
+  temporaryPassword?: string | null
+}
+
+export type AdminRosterImportResult = {
+  created: number
+  enrolled: number
+  skipped: number
+  errors: string[]
+}
+
+export type AdminCreateUserInput = {
+  email: string
+  displayName?: string
+  role?: 'USER' | 'ORG_MEMBER' | 'TEACHER' | 'ADMIN'
+  sendCredentialsEmail?: boolean
+}
+
+export type AdminCreateUserResult = {
+  id: string
+  email: string
+  displayName: string
+  role: string
+  accountCreated: boolean
+  credentialsEmailed: boolean
+  temporaryPassword?: string | null
 }
 
 export type AdminBillingSettings = {
@@ -455,12 +887,18 @@ export type AdminStation = {
 }
 
 export type AdminContentReport = {
-  id: string
+  id?: string
+  eventId: string
   stationCode: string | null
   sessionId: string | null
   payload: string
   occurredAt: string
-  statusHint: 'NEW' | 'REVIEWED' | string
+  status: 'NEW' | 'IN_REVIEW' | 'RESOLVED' | 'REJECTED' | 'REVIEWED' | string
+  statusHint?: 'NEW' | 'REVIEWED' | string
+  adminNote?: string | null
+  reviewedBy?: string | null
+  reviewedAt?: string | null
+  rowVersion: number
 }
 
 export type AdminStationImportItem = {
@@ -490,10 +928,52 @@ export type AdminStationQrToken = {
 }
 
 export const adminApi = {
-  listUsers: (page = 0, size = 20) =>
-    getPageData<AdminUserSummary>(httpClient.get('/api/admin/users', { params: { page, size } })),
-  updateRole: (userId: string, role: 'USER' | 'ORG_MEMBER' | 'TEACHER' | 'ADMIN') =>
-    getData<AdminUserSummary>(httpClient.patch(`/api/admin/users/${userId}/role`, { role })),
+  listUsers: (query: AdminUserQuery | number = {}, legacySize = 20) => {
+    const params = typeof query === 'number' ? { page: query, size: legacySize } : query
+    return getPageData<AdminUserSummary>(httpClient.get('/api/admin/users', { params }))
+  },
+  createUser: (body: AdminCreateUserInput) =>
+    getData<AdminCreateUserResult>(httpClient.post('/api/admin/users', body)),
+  updateRole: (userId: string, role: 'USER' | 'ORG_MEMBER' | 'TEACHER' | 'ADMIN', reason: string, expectedRole: 'USER' | 'ORG_MEMBER' | 'TEACHER' | 'ADMIN') =>
+    getData<AdminUserSummary>(httpClient.patch(`/api/admin/users/${userId}/role`, { role, reason, expectedRole })),
+  updateUserStatus: (
+    userId: string,
+    status: 'ACTIVE' | 'SUSPENDED',
+    reason: string,
+    expectedStatus: 'ACTIVE' | 'SUSPENDED',
+  ) =>
+    getData<AdminUserSummary>(
+      httpClient.patch(`/api/admin/users/${userId}/status`, { status, reason, expectedStatus }),
+    ),
+  updateUserTier: (
+    userId: string,
+    tier: 'FREE' | 'PREMIUM',
+    reason: string,
+    expectedTier: 'FREE' | 'PREMIUM',
+  ) =>
+    getData<AdminUserSummary>(
+      httpClient.patch(`/api/admin/users/${userId}/tier`, { tier, reason, expectedTier }),
+    ),
+  forceVerifyUser: (userId: string, reason: string) =>
+    getData<AdminUserSummary>(httpClient.post(`/api/admin/users/${userId}/verify`, { reason })),
+  resendUserVerification: (userId: string) =>
+    getData<{ userId: string; emailed: boolean; debugVerificationToken?: string | null }>(
+      httpClient.post(`/api/admin/users/${userId}/resend-verification`),
+    ),
+  bulkUsers: (body: {
+    userIds: string[]
+    action: AdminUserBulkAction
+    reason?: string
+    role?: 'USER' | 'ORG_MEMBER' | 'TEACHER' | 'ADMIN'
+    tier?: 'FREE' | 'PREMIUM'
+  }) => getData<AdminUserBulkResult>(httpClient.post('/api/admin/users/bulk', body)),
+  exportUsersCsv: async (query: AdminUserQuery = {}) => {
+    const res = await httpClient.get<Blob>('/api/admin/users/export.csv', {
+      params: query,
+      responseType: 'blob',
+    })
+    return res.data
+  },
 
   listDiscoveryPoints: (locationId?: string) =>
     getData<AdminDiscoveryPoint[]>(
@@ -549,39 +1029,164 @@ export const adminApi = {
         sort: query.sort || undefined,
       },
     })),
-  listAudit: (query: AdminPageQuery & { entityType?: string; entityId?: string; actorId?: string; action?: string; from?: string; to?: string } = {}) =>
+  purgeTrashItem: (type: AdminContentType, id: string, body: AdminPurgeRequest) =>
+    getData<void>(httpClient.delete(`/api/admin/trash/${type}/${id}`, { data: body })),
+  bulkTrash: (body: { action: 'RESTORE' | 'PURGE'; items: AdminTrashBulkItem[]; reason?: string }) =>
+    getData<AdminTrashBulkResult>(httpClient.post('/api/admin/trash/bulk', body)),
+  emptyTrash: (body: { reason: string; type?: AdminContentType }) =>
+    getData<AdminTrashEmptyResult>(httpClient.post('/api/admin/trash/empty', body)),
+  listAudit: (query: AdminAuditQuery = {}) =>
     getPageData<AdminAuditEvent>(httpClient.get('/api/admin/audit', {
-      params: {
-        page: query.page,
-        size: query.size,
-        entityType: query.entityType || query.type || undefined,
-        entityId: query.entityId || query.q || undefined,
-        actorId: query.actorId || undefined,
-        action: query.action || undefined,
-        from: query.from || undefined,
-        to: query.to || undefined,
-        sort: query.sort || undefined,
-      },
+      params: auditQueryParams(query),
+    })).then((page) => ({
+      ...page,
+      items: page.items.map(normalizeAdminAuditEvent),
     })),
 
-  analyticsOverview: (locationId: string) =>
+  verifyAuditIntegrity: (query: AdminAuditQuery = {}) =>
+    getData<AdminAuditIntegrityResult>(
+      httpClient.get('/api/admin/audit/integrity', { params: auditQueryParams(query) }),
+    ),
+
+  exportAuditJson: async (query: AdminAuditQuery = {}) => {
+    const res = await httpClient.get<Blob>('/api/admin/audit/export.json', {
+      params: auditQueryParams(query),
+      responseType: 'blob',
+    })
+    return res.data
+  },
+
+  analyticsOverview: (locationId: string, range?: string) =>
     getData<AdminAnalyticsOverview>(
-      httpClient.get('/api/admin/analytics/overview', { params: { locationId } }),
+      httpClient.get('/api/admin/analytics/overview', { params: { locationId, range } }),
+    ),
+
+  analyticsActivitySeries: (locationId: string, range?: string, bucket: 'DAY' | 'WEEK' = 'DAY') =>
+    getData<ActivitySeries>(
+      httpClient.get('/api/admin/analytics/activity-series', {
+        params: { locationId, range, bucket },
+      }),
+    ),
+
+  analyticsActivityHeatmap: (locationId: string, range?: string) =>
+    getData<ActivityHeatmap>(
+      httpClient.get('/api/admin/analytics/activity-heatmap', { params: { locationId, range } }),
     ),
 
   organizationAnalytics: (orgId: string) =>
     getData<OrganizationAnalytics>(httpClient.get(`/api/admin/organizations/${orgId}/analytics`)),
 
-  listOrganizations: () =>
-    getData<AdminOrganizationSummary[]>(httpClient.get('/api/admin/organizations')),
+  listOrganizations: (query: AdminOrganizationQuery = {}) =>
+    getPageData<AdminOrganizationSummary>(httpClient.get('/api/admin/organizations', { params: query })),
 
-  listB2b2cInquiries: () =>
-    getData<AdminB2b2cInquiry[]>(httpClient.get('/api/admin/b2b2c-inquiries')),
+  createOrganization: (body: AdminOrganizationInput) =>
+    getData<AdminOrganizationSummary>(httpClient.post('/api/admin/organizations', body)),
+
+  updateOrganization: (orgId: string, body: Partial<AdminOrganizationInput>) =>
+    getData<AdminOrganizationSummary>(httpClient.patch(`/api/admin/organizations/${orgId}`, body)),
+
+  generateOrgInvite: (orgId: string) =>
+    getData<AdminOrgInvite>(httpClient.post(`/api/admin/organizations/${orgId}/invite-code`)),
+
+  addOrgMember: (
+    orgId: string,
+    body: { email: string; displayName?: string; sendCredentialsEmail?: boolean },
+  ) => getData<AdminOrgMemberResult>(httpClient.post(`/api/admin/organizations/${orgId}/members`, body)),
+
+  exportOrgRosterCsv: async (orgId: string) => {
+    const res = await httpClient.get<Blob>(`/api/admin/organizations/${orgId}/roster/export.csv`, {
+      responseType: 'blob',
+    })
+    return res.data
+  },
+
+  importOrgRosterCsv: (orgId: string, file: File) => {
+    const form = new FormData()
+    form.append('file', file)
+    return getData<AdminRosterImportResult>(
+      httpClient.post(`/api/admin/organizations/${orgId}/roster/import`, form),
+    )
+  },
+
+  listOrgContracts: (orgId: string) =>
+    getData<OrgContract[]>(httpClient.get(`/api/admin/organizations/${orgId}/contracts`)),
+  createOrgContract: (orgId: string, body: OrgContractInput) =>
+    getData<OrgContract>(httpClient.post(`/api/admin/organizations/${orgId}/contracts`, body)),
+  updateOrgContract: (orgId: string, contractId: string, body: OrgContractInput) =>
+    getData<OrgContract>(httpClient.patch(`/api/admin/organizations/${orgId}/contracts/${contractId}`, body)),
+  cancelOrgContract: (orgId: string, contractId: string) =>
+    getData<OrgContract>(httpClient.delete(`/api/admin/organizations/${orgId}/contracts/${contractId}`)),
+
+  getOrgArReport: (orgId: string, query: { from?: string; to?: string } = {}) =>
+    getData<OrgArReport>(httpClient.get(`/api/admin/organizations/${orgId}/ar-report`, { params: query })),
+
+  listOrgActivityLogs: (orgId: string, query: AdminPageQuery = {}) =>
+    getPageData<OrgActivityLog>(
+      httpClient.get(`/api/admin/organizations/${orgId}/activity-logs`, {
+        params: { page: query.page ?? 0, size: query.size ?? 10 },
+      }),
+    ),
+
+  syncOrgCrm: (orgId: string) =>
+    getData<OrgCrmSyncResult>(httpClient.post(`/api/admin/organizations/${orgId}/sync-crm`)),
+
+  listOrgArCards: (orgId: string) =>
+    getData<OrgArCard[]>(httpClient.get(`/api/admin/organizations/${orgId}/ar-cards`)),
+  issueOrgArCards: (orgId: string, body?: { userIds?: string[] }) =>
+    getData<OrgArCardIssueResult>(httpClient.post(`/api/admin/organizations/${orgId}/ar-cards`, body ?? {})),
+  revokeOrgArCard: (orgId: string, cardId: string) =>
+    getData<OrgArCard>(httpClient.patch(`/api/admin/organizations/${orgId}/ar-cards/${cardId}`)),
+
+  listOrgCertificates: (orgId: string) =>
+    getData<OrgCertificate[]>(httpClient.get(`/api/admin/organizations/${orgId}/certificates`)),
+  issueOrgCertificates: (orgId: string, body?: { userIds?: string[]; title?: string }) =>
+    getData<OrgCertificateBulkResult>(
+      httpClient.post(`/api/admin/organizations/${orgId}/certificates/bulk`, body ?? {}),
+    ),
+  exportOrgCertificatesCsv: async (orgId: string) => {
+    const res = await httpClient.get<Blob>(`/api/admin/organizations/${orgId}/certificates/export.csv`, {
+      responseType: 'blob',
+    })
+    return res.data
+  },
+
+  listB2b2cInquiries: (query: AdminPageQuery & { status?: string } = {}) =>
+    getPageData<AdminB2b2cInquiry>(httpClient.get('/api/admin/b2b2c-inquiries', { params: query })),
+
+  createB2b2cInquiry: (body: {
+    siteName: string
+    contactName: string
+    contactEmail: string
+    contactPhone?: string | null
+    packageType: string
+    message?: string | null
+    adminNotes?: string | null
+    interestSiteCode?: string | null
+    status?: string | null
+  }) => getData<AdminB2b2cInquiry>(httpClient.post('/api/admin/b2b2c-inquiries', body)),
 
   updateB2b2cInquiryStatus: (id: string, status: string, adminNotes?: string | null) =>
     getData<AdminB2b2cInquiry>(
       httpClient.patch(`/api/admin/b2b2c-inquiries/${id}`, { status, adminNotes }),
     ),
+
+  createB2bInvoice: (body: {
+    orgName?: string | null
+    planType: string
+    contactEmail?: string | null
+    organizationId?: string | null
+    licenseCount?: number | null
+  }) =>
+    getData<{
+      orderCode: string
+      amountVnd: number
+      status: string
+      planType: string
+      orgName: string
+      qrUrl?: string | null
+      expiresAt?: string | null
+      licenseCount?: number
+    }>(httpClient.post('/api/admin/billing/invoices', body)),
 
   listRecentPayments: (limit = 20) =>
     getData<AdminRecentPayment[]>(
@@ -593,12 +1198,51 @@ export const adminApi = {
       httpClient.get('/api/admin/billing/payments', { params: { status, limit } }),
     ),
 
+  listPayments: (query: AdminPaymentQuery = {}) =>
+    getPageData<AdminRecentPayment>(httpClient.get('/api/admin/billing/payments', { params: query })),
+
+  markPaymentPaid: (channel: string, id: string, reason: string) =>
+    getData<AdminPaymentOperationResponse>(
+      httpClient.post(`/api/admin/billing/payments/${channel.toLowerCase()}/${id}/mark-paid`, { reason }),
+    ),
+
+  refundPayment: (channel: string, id: string, reason: string) =>
+    getData<AdminPaymentOperationResponse>(
+      httpClient.post(`/api/admin/billing/payments/${channel.toLowerCase()}/${id}/refund`, { reason }),
+    ),
+
+  voidPayment: (channel: string, id: string, reason: string) =>
+    getData<AdminPaymentOperationResponse>(
+      httpClient.post(`/api/admin/billing/payments/${channel.toLowerCase()}/${id}/void`, { reason }),
+    ),
+
+  exportPaymentsCsv: async (query: AdminPaymentQuery = {}) => {
+    const res = await httpClient.get<Blob>('/api/admin/billing/payments/export.csv', {
+      params: query,
+      responseType: 'blob',
+    })
+    return res.data
+  },
+
+  billingOverview: async (months = 12) => {
+    const data = await getData<Partial<AdminBillingOverview>>(
+      httpClient.get('/api/admin/billing/overview', { params: { months } }),
+    )
+    if (!Array.isArray(data.monthlyRevenue) || !Array.isArray(data.planRevenue) ||
+      typeof data.actualRevenueMonthVnd !== 'number' || typeof data.estimatedMrrVnd !== 'number' ||
+      typeof data.estimatedArrVnd !== 'number' || typeof data.activePaidSubscriptions !== 'number' ||
+      typeof data.updatedAt !== 'string') {
+      throw new Error('Máy chủ chưa cung cấp dữ liệu tổng quan doanh thu đã phê duyệt.')
+    }
+    return data as AdminBillingOverview
+  },
+
   pilotKpi: () => getData<PilotKpi>(httpClient.get('/api/admin/analytics/pilot-kpi')),
 
-  listContentReports: (days = 30, limit = 50) =>
-    getData<AdminContentReport[]>(
-      httpClient.get('/api/admin/content-reports', { params: { days, limit } }),
-    ),
+  listContentReports: (query: AdminPageQuery & { status?: string; from?: string; to?: string } = {}) =>
+    getPageData<AdminContentReport>(httpClient.get('/api/admin/content-reports', { params: query })),
+  updateContentReport: (eventId: string, body: { status: string; adminNote?: string | null; rowVersion: number }) =>
+    getData<AdminContentReport>(httpClient.patch(`/api/admin/content-reports/${eventId}`, body)),
 
   referralStats: (days = 30) =>
     getListData<ReferralStatsItem>(httpClient.get('/api/admin/referral/stats', { params: { days } })),
@@ -633,7 +1277,11 @@ export const adminApi = {
       httpClient.get(`/api/admin/locations/${locationId}/era-count`),
     ),
 
-  listNarrativePilots: (query: { page?: number; size?: number; q?: string; reviewStatus?: string; rolloutState?: string; sort?: string } = {}) =>
+  /** Toggle AR availability for a location. Ghi audit log server-side. */
+  toggleArAvailability: (locationId: string, body: { isArAvailable: boolean; reason: string }) =>
+    getData<void>(httpClient.patch(`/api/admin/locations/${locationId}/ar-availability`, body)),
+
+  listNarrativePilots: (query: { page?: number; size?: number; q?: string; reviewStatus?: string; rolloutState?: string; locationId?: string; sort?: string } = {}) =>
     getPageData<NarrativePilotAdmin>(httpClient.get('/api/admin/narrative-investigations', { params: query })),
   narrativeDetail: (questId: string) =>
     getData<NarrativePilotDetail>(httpClient.get(`/api/admin/narrative-investigations/${questId}`)),
@@ -651,12 +1299,32 @@ export const adminApi = {
     getData<NarrativePilotDetail>(httpClient.post(`/api/admin/narrative-investigations/${questId}/enable`, body, { headers: { 'Idempotency-Key': idempotencyKey } })),
   pauseNarrative: (questId: string, body: NarrativeRolloutRequest, idempotencyKey: string) =>
     getData<NarrativePilotDetail>(httpClient.post(`/api/admin/narrative-investigations/${questId}/pause`, body, { headers: { 'Idempotency-Key': idempotencyKey } })),
+  /** Rollback is the reversible Admin action for an active narrative pilot; BE records it as PAUSED. */
+  rollbackNarrative: (questId: string, body: NarrativeRolloutRequest, idempotencyKey: string) =>
+    getData<NarrativePilotDetail>(httpClient.post(`/api/admin/narrative-investigations/${questId}/rollback`, body, { headers: { 'Idempotency-Key': idempotencyKey } })),
   resumeNarrative: (questId: string, body: NarrativeRolloutRequest, idempotencyKey: string) =>
     getData<NarrativePilotDetail>(httpClient.post(`/api/admin/narrative-investigations/${questId}/resume`, body, { headers: { 'Idempotency-Key': idempotencyKey } })),
   publishNarrativeDraft: (questId: string, body: NarrativeRolloutRequest, idempotencyKey: string) =>
     getData<NarrativePilotDetail>(httpClient.post(`/api/admin/narrative-investigations/${questId}/publish-draft`, body, { headers: { 'Idempotency-Key': idempotencyKey } })),
   narrativeAudit: (questId: string) =>
     getListData<AdminAuditEvent>(httpClient.get(`/api/admin/narrative-investigations/${questId}/audit`)),
+
+  updateCampaign: (campaignId: string, body: Record<string, unknown>) =>
+    getData<AdminQuestCampaign>(httpClient.put(`/api/quest-campaigns/${campaignId}`, body)),
+  publishCampaign: (campaignId: string) =>
+    getData<AdminQuestCampaign>(httpClient.post(`/api/quest-campaigns/${campaignId}/publish`)),
+  unpublishCampaign: (campaignId: string) =>
+    getData<AdminQuestCampaign>(httpClient.post(`/api/quest-campaigns/${campaignId}/unpublish`)),
+  updateCampaignGate: (campaignId: string, body: AdminCampaignGateRequest) =>
+    getData<AdminQuestCampaign>(httpClient.put(`/api/quest-campaigns/${campaignId}/pilot-gate`, body)),
+  listCampaignAudit: (campaignId: string) =>
+    getListData<AdminCampaignAuditEvent>(httpClient.get(`/api/quest-campaigns/${campaignId}/audit`)),
+  rollbackCampaign: (campaignId: string, body: AdminCampaignRollbackRequest) =>
+    getData<AdminQuestCampaign>(httpClient.post(`/api/quest-campaigns/${campaignId}/rollback`, body)),
+  previewCampaignAudience: (campaignId: string, organizationId: string) =>
+    getData<AdminCampaignAudiencePreview>(httpClient.get(`/api/quest-campaigns/${campaignId}/preview-audience`, {
+      params: { orgId: organizationId },
+    })),
 
   dashboardSummary: () =>
     getData<AdminDashboardSummary>(httpClient.get('/api/admin/dashboard')),

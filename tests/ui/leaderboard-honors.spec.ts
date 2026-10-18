@@ -28,18 +28,23 @@ const stories = () => ({ userId: 'me', updatedAt: '2026-10-17T00:00:00Z',
 })
 async function setup(page: Page) {
   const state = { board: board(), passport: passport(), community: community(), passportFailed: false, communityFailed: false, stories: stories(), storiesFailed: false, failed: false, personalFailed: false, userId: 'me',
-    mailStatus: { available: true, verified: true, email: 'me@example.test' as string | null, cooldownSeconds: 0, remainingToday: 3 }, mailFailed: false, mailUploads: [] as Buffer[] }
+    mailStatus: { available: true, verified: true, email: 'me@example.test' as string | null, cooldownSeconds: 0, remainingToday: 3 }, mailFailed: false, mailUploads: [] as Buffer[], avatarUrl: null as string | null }
   const requests: string[] = []
   await page.addInitScript(() => {
     for (const [key, value] of Object.entries({ timelens_token: 'honors-ui', timelens_user_id: 'me',
       timelens_display_name: 'Huy Nguyễn', timelens_role: 'USER', timelens_tier: 'FREE', timelens_email_verified: '1',
       timelens_mode: 'online', histar_consent_v1: JSON.stringify({ analytics: false, camera: false, gps: false }) })) localStorage.setItem(key, value)
     localStorage.setItem('timelens_points', '999999')
+    const originalCreateObjectURL = URL.createObjectURL.bind(URL)
+    URL.createObjectURL = (blob: Blob | MediaSource) => {
+      if (blob instanceof Blob && blob.type === 'image/png') (window as Window & { preparedPassportBlob?: Blob }).preparedPassportBlob = blob
+      return originalCreateObjectURL(blob)
+    }
   })
   await page.route(url => url.pathname.startsWith('/api/'), async route => {
     const url = new URL(route.request().url()); requests.push(`${route.request().method()} ${url.pathname}${url.search}`)
     const profile = { id: state.userId, email: 'me@example.test', displayName: 'Huy Nguyễn', role: 'USER', tier: 'FREE', emailVerified: true,
-      avatarUrl: null, orgId: null, orgSubscription: 'NONE', totalPoints: 120, level: 2, levelName: 'Lữ hành di sản',
+      avatarUrl: state.avatarUrl, orgId: null, orgSubscription: 'NONE', totalPoints: 120, level: 2, levelName: 'Lữ hành di sản',
       pointsToNextLevel: 180, levelProgressPercent: 10, activeVisitSites: [] }
     if (url.pathname === '/api/leaderboard') {
       return route.fulfill({ status: state.failed ? 503 : 200, json: state.failed ? { success: false, message: 'Unavailable' } : { success: true, data: state.board } })
@@ -200,16 +205,15 @@ test('community metrics are real scoped data with explicit definitions and retry
   await expect(page.getByTestId('honors-community')).toContainText('Củ Chi')
 })
 
-test('passport prepares fresh private facts, honors visibility choices and downloads a PNG', async ({ page }) => {
+test('passport auto-exports server facts instead of local cached XP and downloads a PNG', async ({ page }) => {
   const { state } = await setup(page)
+  state.passport.totalPoints = 250
   await page.goto('/leaderboard')
   await page.getByRole('button', { name: 'Thiết kế Hộ chiếu của bạn', exact: true }).click()
   const dialog = page.getByRole('dialog', { name: 'Hộ chiếu nhà thám hiểm' })
   await expect(dialog).toBeVisible()
   await dialog.getByLabel('Hiển thị tên của tôi').uncheck()
-  state.passport.totalPoints = 250
-  await dialog.getByRole('button', { name: 'Tạo ảnh từ thành tích mới nhất' }).click()
-  await expect(dialog.getByRole('img', { name: 'Ảnh hộ chiếu đã chuẩn bị' })).toBeVisible()
+  await expect(dialog.getByRole('button', { name: 'Tải ảnh về máy', exact: true })).toBeEnabled()
   await expect(dialog.getByTestId('passport-export-facts')).toContainText('250')
   await expect(dialog.getByTestId('passport-export-facts')).not.toContainText('999999')
   const downloadEvent = page.waitForEvent('download')
@@ -232,10 +236,13 @@ test('passport email sends the same complete PNG as download and enforces cooldo
   const { state } = await setup(page); await page.goto('/leaderboard')
   await page.getByRole('button', { name: 'Thiết kế Hộ chiếu của bạn' }).click()
   const dialog = page.getByRole('dialog', { name: 'Hộ chiếu nhà thám hiểm' })
-  await expect(dialog.getByRole('button', { name: 'Nhận qua email', exact: true })).toBeDisabled()
-  await dialog.getByRole('button', { name: 'Tạo ảnh từ thành tích mới nhất' }).click()
-  await expect(dialog.getByAltText('Ảnh hộ chiếu đã chuẩn bị')).toBeVisible()
-  const bytes = await dialog.getByAltText('Ảnh hộ chiếu đã chuẩn bị').evaluate(async (img: HTMLImageElement) => Array.from(new Uint8Array(await (await fetch(img.src)).arrayBuffer())))
+  await expect(dialog.getByRole('button', { name: 'Tải ảnh về máy', exact: true })).toBeEnabled()
+  const downloadEvent = page.waitForEvent('download')
+  await dialog.getByRole('button', { name: 'Tải ảnh về máy', exact: true }).click()
+  const download = await downloadEvent
+  const downloadedPath = await download.path()
+  expect(downloadedPath).not.toBeNull()
+  const bytes = readFileSync(downloadedPath!)
   expect(Buffer.from(bytes).readUInt32BE(16)).toBe(1200)
   expect(Buffer.from(bytes).readUInt32BE(20)).toBe(1500)
   await expect(dialog.getByTestId('passport-email-recipient')).toContainText('me@example.test')
@@ -254,7 +261,6 @@ test('unverified and unavailable email never claim success and keep download usa
   state.mailStatus.verified = false; state.mailStatus.email = null
   await page.goto('/leaderboard'); await page.getByRole('button', { name: 'Thiết kế Hộ chiếu của bạn' }).click()
   const dialog = page.getByRole('dialog', { name: 'Hộ chiếu nhà thám hiểm' })
-  await dialog.getByRole('button', { name: 'Tạo ảnh từ thành tích mới nhất' }).click()
   await expect(dialog.getByRole('button', { name: 'Tải ảnh về máy' })).toBeEnabled()
   await expect(dialog.getByRole('button', { name: 'Nhận qua email', exact: true })).toBeDisabled()
   await expect(dialog.getByTestId('passport-email-recipient')).toContainText('xác minh')
@@ -265,7 +271,6 @@ test('provider email failure is honest and does not block downloading the passpo
   const { state } = await setup(page); state.mailFailed = true
   await page.goto('/leaderboard'); await page.getByRole('button', { name: 'Thiết kế Hộ chiếu của bạn' }).click()
   const dialog = page.getByRole('dialog', { name: 'Hộ chiếu nhà thám hiểm' })
-  await dialog.getByRole('button', { name: 'Tạo ảnh từ thành tích mới nhất' }).click()
   await expect(dialog.getByRole('button', { name: 'Nhận qua email', exact: true })).toBeEnabled()
   await dialog.getByRole('button', { name: 'Nhận qua email', exact: true }).click()
   await expect(dialog.getByTestId('passport-email-feedback')).toContainText('chưa')
@@ -282,7 +287,6 @@ test('disabled mail and exhausted daily limits leave the download action availab
   state.mailStatus.available = true; state.mailStatus.remainingToday = 0
   await page.getByRole('button', { name: 'Thiết kế Hộ chiếu của bạn' }).click()
   dialog = page.getByRole('dialog', { name: 'Hộ chiếu nhà thám hiểm' })
-  await dialog.getByRole('button', { name: 'Tạo ảnh từ thành tích mới nhất' }).click()
   await expect(dialog.getByTestId('passport-email-recipient')).toContainText('0/3')
   await expect(dialog.getByRole('button', { name: 'Nhận qua email', exact: true })).toBeDisabled()
   await expect(dialog.getByRole('button', { name: 'Tải ảnh về máy' })).toBeEnabled()
@@ -299,7 +303,6 @@ test('pending email prevents duplicate clicks while keeping PNG download availab
   })
   await page.goto('/leaderboard'); await page.getByRole('button', { name: 'Thiết kế Hộ chiếu của bạn' }).click()
   const dialog = page.getByRole('dialog', { name: 'Hộ chiếu nhà thám hiểm' })
-  await dialog.getByRole('button', { name: 'Tạo ảnh từ thành tích mới nhất' }).click()
   await expect(dialog.getByRole('button', { name: 'Nhận qua email', exact: true })).toBeEnabled()
   await dialog.getByRole('button', { name: 'Nhận qua email', exact: true }).click()
   await expect(dialog.getByRole('button', { name: 'Đang gửi email…', exact: true })).toBeDisabled()
@@ -318,12 +321,26 @@ test('anonymous passport hides identifying image text and sends no invented emai
   })
   await page.goto('/leaderboard'); await page.getByRole('button', { name: 'Thiết kế Hộ chiếu của bạn' }).click()
   const dialog = page.getByRole('dialog', { name: 'Hộ chiếu nhà thám hiểm' })
+  await expect(dialog.getByRole('button', { name: 'Tải ảnh về máy', exact: true })).toBeEnabled()
+  await page.evaluate(() => { (window as Window & { passportDrawnText?: string[] }).passportDrawnText!.length = 0 })
   await dialog.getByLabel('Hiển thị tên của tôi').uncheck()
-  await dialog.getByRole('button', { name: 'Tạo ảnh từ thành tích mới nhất' }).click()
-  await expect(dialog.getByAltText('Ảnh hộ chiếu đã chuẩn bị')).toBeVisible()
+  await expect(dialog.getByRole('button', { name: 'Tải ảnh về máy', exact: true })).toBeEnabled()
   const drawn = await page.evaluate(() => (window as Window & { passportDrawnText?: string[] }).passportDrawnText!.join('\n'))
   expect(drawn).not.toContain('me@example.test'); expect(drawn).not.toContain('me@timelens.vn')
-  expect(drawn).not.toContain('HUY NGUYỄN'); expect(drawn).toContain('THÁM HIỂM TIMELENS')
+  expect(drawn).not.toContain('Huy Nguyễn'); expect(drawn).not.toContain('HUY<NGUYEN'); expect(drawn).toContain('Một nhà thám hiểm TimeLens')
+})
+
+test('passport never discloses signed avatar URLs to a third party image proxy', async ({ page }) => {
+  const { state } = await setup(page)
+  state.avatarUrl = 'https://private-avatar.example.test/photo.png?signature=test-only-signed-avatar'
+  await page.addInitScript(url => localStorage.setItem('timelens_avatar_url', url), state.avatarUrl)
+  const leaked: string[] = []
+  await page.route('https://wsrv.nl/**', async route => { leaked.push(route.request().url()); await route.abort() })
+  await page.route('https://private-avatar.example.test/**', route => route.abort())
+  await page.goto('/leaderboard'); await page.getByRole('button', { name: 'Thiết kế Hộ chiếu của bạn' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Hộ chiếu nhà thám hiểm' })
+  await expect(dialog.getByRole('button', { name: 'Tải ảnh về máy', exact: true })).toBeEnabled()
+  expect(leaked).toEqual([])
 })
 
 test('desktop composition pairs ranking and passport without a dangling sticky column', async ({ page }) => {
@@ -356,14 +373,16 @@ test('personal timeline preserves real dates and distinguishes unknown historica
   await expect(timeline).toContainText('Dấu ấn 5')
 })
 
-test('next step selects nearest unfinished path and keeps its exact destination', async ({ page }) => {
+test('retired next step stays absent while independent achievement ties and timeline remain', async ({ page }) => {
   await setup(page); await page.goto('/leaderboard')
-  const next = page.getByTestId('honors-next-step')
-  await expect(next).toContainText('Chinh phục lòng đất')
-  await expect(next).toContainText('3/4')
-  await expect(next.getByRole('link', { name: /Tiếp tục tầng còn lại/ })).toHaveAttribute('href', '/explore?honorsPath=depths&target=layer3')
-  await expect(page.getByTestId('honors-spotlights')).toContainText('Muôn cách để tỏa sáng')
-  await expect(page.getByTestId('honors-spotlights').getByText('Cùng dẫn đầu', { exact: true })).toHaveCount(4)
+  await expect(page.getByTestId('honors-timeline')).toContainText('La Bàn Khởi Nguyên')
+  await expect(page.getByTestId('honors-next-step')).toHaveCount(0)
+  await expect(page.getByRole('link', { name: /Tiếp tục tầng còn lại/ })).toHaveCount(0)
+  const spotlights = page.getByTestId('honors-spotlights')
+  await expect(spotlights).toContainText('Muôn cách để tỏa sáng')
+  await expect(spotlights.getByText('Cùng dẫn đầu', { exact: true })).toHaveCount(4)
+  await expect(spotlights.getByText('Đồng hạng 1', { exact: true })).toHaveCount(8)
+  await expect(page.getByTestId('honors-viewer')).toContainText('#12')
 })
 
 test('optional stories error cannot hide ranks or invent an empty achievement history', async ({ page }) => {
@@ -377,12 +396,17 @@ test('optional stories error cannot hide ranks or invent an empty achievement hi
   await expect(page.getByTestId('honors-timeline')).toBeVisible()
 })
 
-test('completed paths celebrate completion without promising more rewards', async ({ page }) => {
+test('completed paths keep timeline and honors without retired unfinished actions or reward promises', async ({ page }) => {
   const { state } = await setup(page)
   state.stories.paths = state.stories.paths.map(path => ({ ...path, completed: path.total, percent: 100, complete: true }))
   await page.goto('/leaderboard')
-  await expect(page.getByTestId('honors-next-step')).toContainText('Trọn vẹn một hành trình')
-  await expect(page.getByTestId('honors-next-step')).not.toContainText('còn lại')
+  await expect(page.getByTestId('honors-timeline')).toContainText('La Bàn Khởi Nguyên')
+  await expect(page.getByTestId('honors-spotlights')).toContainText('Muôn cách để tỏa sáng')
+  await expect(page.getByTestId('honors-next-step')).toHaveCount(0)
+  for (const path of state.stories.paths) {
+    await expect(page.getByRole('link', { name: path.actionLabel, exact: true })).toHaveCount(0)
+  }
+  await expect(page.getByText(/nhận thêm.*(?:XP|thưởng)|thưởng thêm.*XP/i)).toHaveCount(0)
 })
 
 test('stories reject a different owner and unsafe navigation links', async ({ page }) => {
@@ -438,8 +462,7 @@ test('mobile passport keeps two email and download actions visible', async ({ pa
   await page.goto('/leaderboard')
   await page.getByRole('button', { name: 'Thiết kế Hộ chiếu của bạn' }).click()
   const dialog = page.getByRole('dialog', { name: 'Hộ chiếu nhà thám hiểm' })
-  await dialog.getByRole('button', { name: 'Tạo ảnh từ thành tích mới nhất' }).click()
-  await expect(dialog.getByAltText('Ảnh hộ chiếu đã chuẩn bị')).toBeVisible()
+  await expect(dialog.getByRole('button', { name: 'Tải ảnh về máy', exact: true })).toBeEnabled()
   const action = dialog.getByRole('button', { name: 'Nhận qua email', exact: true })
   const bounds = await action.boundingBox()
   expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(844)
@@ -450,15 +473,20 @@ test('mobile passport keeps two email and download actions visible', async ({ pa
   await page.screenshot({ path: 'test-results/honors-passport-mobile.png' })
 })
 
-test('changing privacy settings invalidates a prepared passport', async ({ page }) => {
+test('changing privacy settings regenerates the prepared passport', async ({ page }) => {
   await setup(page); await page.goto('/leaderboard')
   await page.getByRole('button', { name: 'Thiết kế Hộ chiếu của bạn' }).click()
   const dialog = page.getByRole('dialog', { name: 'Hộ chiếu nhà thám hiểm' })
-  await dialog.getByRole('button', { name: 'Tạo ảnh từ thành tích mới nhất' }).click()
   await expect(dialog.getByRole('button', { name: 'Tải ảnh về máy' })).toBeEnabled()
+  const before = await page.evaluate(() => URL.createObjectURL((window as Window & { preparedPassportBlob?: Blob }).preparedPassportBlob!))
   await dialog.getByLabel('Hiển thị tổng XP', { exact: true }).uncheck()
-  await expect(dialog.getByRole('button', { name: 'Tải ảnh về máy' })).toBeDisabled()
-  await expect(dialog.getByAltText('Ảnh hộ chiếu đã chuẩn bị')).toHaveCount(0)
+  await expect(dialog.getByRole('button', { name: 'Tải ảnh về máy' })).toBeEnabled()
+  await expect.poll(() => page.evaluate(async prior => {
+    const previous = await (await fetch(prior)).arrayBuffer()
+    const current = await (window as Window & { preparedPassportBlob?: Blob }).preparedPassportBlob!.arrayBuffer()
+    return Array.from(new Uint8Array(previous)).join(',') !== Array.from(new Uint8Array(current)).join(',')
+  }, before)).toBe(true)
+  await page.evaluate(url => URL.revokeObjectURL(url), before)
 })
 
 test('a slow optional personal endpoint does not block community ranks', async ({ page }) => {

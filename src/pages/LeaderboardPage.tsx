@@ -838,6 +838,7 @@ export function LeaderboardPage() {
                                     type="button"
                                     className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white border border-blue-200 hover:bg-blue-50 text-xs font-black text-[#0275FB] uppercase tracking-wider transition-colors shadow-sm cursor-pointer"
                                     onClick={() => setRulesOpen(true)}
+                                    aria-label="Nguyên tắc vinh danh"
                                 >
                                     <MaterialIcon name="info" className="text-[15px]" />
                                     <span>Nguyên tắc vinh danh</span>
@@ -846,6 +847,7 @@ export function LeaderboardPage() {
                                     type="button"
                                     className={`w-9 h-9 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-[#0275FB] shadow-sm transition-colors cursor-pointer ${loading ? 'opacity-50' : ''}`}
                                     onClick={refresh}
+                                    aria-label="Làm mới bảng vinh danh"
                                     disabled={loading}
                                 >
                                     <MaterialIcon name="refresh" className={`text-[18px] ${loading ? 'animate-spin' : ''}`} />

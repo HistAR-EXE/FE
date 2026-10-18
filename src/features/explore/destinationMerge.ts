@@ -24,6 +24,8 @@ export type StaticDestination = {
 
 export type MergedDestination = StaticDestination & {
   locationId: string
+  /** BE-authoritative flag — whether AR experience is live for this site. */
+  isArAvailable: boolean
 }
 
 function normalizeName(value: string): string {
@@ -113,6 +115,8 @@ export function mergeDestinations(
       image: api?.coverImage ?? dest.image,
       formattedAddress: api?.formattedAddress ?? geo?.formattedAddress ?? dest.formattedAddress,
       googleMapsUrl: api?.googleMapsUrl ?? geo?.googleMapsUrl ?? dest.googleMapsUrl,
+      // BE is source of truth for AR readiness; fall back to false when API not yet loaded.
+      isArAvailable: api?.isArAvailable ?? false,
     }
   })
 }
@@ -128,7 +132,7 @@ export function mergedToMapLocations(merged: MergedDestination[]): HeritageLocat
     longitude: d.longitude,
     formattedAddress: d.formattedAddress,
     googleMapsUrl: d.googleMapsUrl,
-    isArAvailable: d.isReady,
+    isArAvailable: d.isArAvailable,
     createdAt: new Date().toISOString(),
   }))
 }

@@ -1,4 +1,5 @@
 // Generic onsite hub: pack → scan → story → wrapped (per pilot site).
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { MaterialIcon } from '../../components/ui/MaterialIcon'
 import { StoryJourneyPanel } from '../story/StoryJourneyPanel'
@@ -8,6 +9,56 @@ import {
   locationIdFromSiteCode,
   type PilotSiteCode,
 } from '../../shared/config/constants'
+import { appEnv } from '../../shared/config/env'
+
+/** Matches PackPrepPage constants. */
+const MEDIA_CACHE = 'histar-media'
+const MANIFEST_KEY = 'histar_pack_manifest_v1'
+
+type PackAsset = { url: string; required: boolean }
+type PackManifest = { assets: PackAsset[] }
+
+type CacheStatus = { pct: number; total: number; cached: number }
+
+function requestUrl(asset: PackAsset): string {
+  return asset.url.startsWith('/') ? `${appEnv.apiUrl}${asset.url}` : asset.url
+}
+
+function usePackCacheStatus(siteCode: string): CacheStatus {
+  const [status, setStatus] = useState<CacheStatus>({ pct: 0, total: 0, cached: 0 })
+
+  useEffect(() => {
+    if (typeof caches === 'undefined') return
+    let cancelled = false
+    ;(async () => {
+      try {
+        const raw =
+          localStorage.getItem(`${MANIFEST_KEY}:${siteCode}:lite`) ??
+          localStorage.getItem(`${MANIFEST_KEY}:lite`)
+        if (!raw) return
+        const manifest: PackManifest = JSON.parse(raw)
+        const assets = manifest.assets ?? []
+        if (!assets.length) return
+        const cache = await caches.open(MEDIA_CACHE)
+        let cached = 0
+        await Promise.all(
+          assets.map(async (a) => {
+            const hit = await cache.match(requestUrl(a))
+            if (hit) cached += 1
+          }),
+        )
+        if (!cancelled) setStatus({ pct: Math.round((cached / assets.length) * 100), total: assets.length, cached })
+      } catch {
+        // Cache API unavailable (private browsing, non-HTTPS) — ignore
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [siteCode])
+
+  return status
+}
 
 type SiteOnsiteHubProps = {
   siteCode?: PilotSiteCode | string
@@ -27,6 +78,21 @@ export function SiteOnsiteHub({
   const code = (site?.siteCode ?? siteCode) as string
   const title = site?.name ?? 'Hành trình onsite'
   const region = site?.region ?? ''
+  const cacheStatus = usePackCacheStatus(code)
+
+  const packLabel =
+    cacheStatus.total === 0
+      ? 'Tải về'
+      : cacheStatus.pct === 100
+        ? '✅ Sẵn offline'
+        : `${cacheStatus.pct}% đã tải`
+
+  const packSubLabel =
+    cacheStatus.total === 0
+      ? 'Gói Lite / Full offline'
+      : cacheStatus.pct === 100
+        ? `${cacheStatus.cached}/${cacheStatus.total} tệp`
+        : `${cacheStatus.cached}/${cacheStatus.total} tệp đã lưu`
 
   return (
     <section data-testid="site-onsite-hub" data-site={code} className={`space-y-6 ${className}`}>
@@ -49,11 +115,18 @@ export function SiteOnsiteHub({
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <Link
             to={`/pack-prep?site=${encodeURIComponent(code)}`}
-            className="p-4 rounded-2xl bg-black/40 border border-white/10 hover:border-[#388cf1]/50 transition-colors"
+            className={`p-4 rounded-2xl bg-black/40 border transition-colors ${
+              cacheStatus.pct === 100
+                ? 'border-emerald-400/50 hover:border-emerald-300'
+                : 'border-white/10 hover:border-[#388cf1]/50'
+            }`}
           >
-            <MaterialIcon name="download" className="text-[#388cf1] text-2xl" />
-            <p className="mt-2 text-xs font-black text-white">Chuẩn bị hành trang</p>
-            <p className="text-[10px] text-gray-500">Gói Lite / Full offline</p>
+            <MaterialIcon
+              name={cacheStatus.pct === 100 ? 'offline_pin' : 'download'}
+              className={`text-2xl ${cacheStatus.pct === 100 ? 'text-emerald-400' : 'text-[#388cf1]'}`}
+            />
+            <p className="mt-2 text-xs font-black text-white">{packLabel}</p>
+            <p className="text-[10px] text-gray-500">{packSubLabel}</p>
           </Link>
           <Link
             to={`/scan?locationId=${encodeURIComponent(resolvedLocationId)}&site=${encodeURIComponent(code)}`}

@@ -206,7 +206,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const value: AuthContextValue = {
-    isAuthenticated: Boolean(user && getToken()),
+    isAuthenticated: Boolean((user ?? readStoredUser()) && getToken()),
     isLoading,
     user,
     login,

@@ -219,10 +219,6 @@ async function loadSingleImage(
         const cacheBusted = `${highResUrl}${highResUrl.includes('?') ? '&' : '?'}tl_cv=1`
         tasks.push(loadElementFromSrc(cacheBusted, timeoutMs, true))
 
-        if (!highResUrl.includes('localhost') && !highResUrl.includes('127.0.0.1')) {
-            const proxyUrl = `https://wsrv.nl/?url=${encodeURIComponent(highResUrl)}&w=512&h=512&fit=cover&output=png`
-            tasks.push(loadElementFromSrc(proxyUrl, timeoutMs, true))
-        }
     }
 
     return firstValidImage(tasks)
@@ -645,11 +641,12 @@ export async function renderPassport(
     ctx.stroke()
 
     const textStartX = avatarX + avatarSize + 34
+    const identityWidth = innerX + innerW - 190 - textStartX
     ctx.fillStyle = '#0275FB'
-    ctx.font = `900 20px ${font}`
+    ctx.font = `900 18px ${font}`
     drawTrackedText(
         ctx,
-        'HỌ VÀ TÊN NHÀ THÁM HIỂM / EXPLORER FULL NAME',
+        'NHÀ THÁM HIỂM / EXPLORER FULL NAME',
         textStartX,
         avatarY + 38,
         1.2,
@@ -663,14 +660,15 @@ export async function renderPassport(
     ctx.textAlign = 'left'
     ctx.fillStyle = '#0F1B33'
     ctx.font = `900 46px ${font}`
-    ctx.fillText(displayHolderName.slice(0, 26), textStartX, avatarY + 92)
+    ctx.fillText(displayHolderName, textStartX, avatarY + 92, identityWidth)
 
     ctx.fillStyle = '#64748B'
     ctx.font = `700 25px ${font}`
     ctx.fillText(
         options.name ? candidateEmail : 'Thông tin cá nhân đã ẩn',
         textStartX,
-        avatarY + 132
+        avatarY + 132,
+        identityWidth
     )
 
     // Đóng Dấu mộc đỏ thương hiệu TimeLens × HistAR ở góc phải khu vực Họ tên

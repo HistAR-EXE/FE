@@ -646,14 +646,16 @@ function PassportEditor({
                         {email.feedback ||
                             (busy
                                 ? 'Đang đồng bộ hộ chiếu chính thức…'
-                                : 'Hộ chiếu chính thức đã sẵn sàng để tải về máy hoặc nhận qua email.')}
+                                : prepared
+                                    ? 'Ảnh hộ chiếu đã sẵn sàng để tải về máy hoặc nhận qua email.'
+                                    : 'Chưa tạo được ảnh hộ chiếu. Vui lòng đóng và mở lại để thử lại.')}
                     </span>
                 </span>
                 <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
                     <button
                         className="flex-1 sm:flex-initial px-6 py-3 rounded-xl bg-[#0275FB] hover:bg-[#015CC8] disabled:opacity-40 text-white font-black text-xs uppercase tracking-wider cursor-pointer transition-all shadow-md flex items-center justify-center gap-2"
                         type="button"
-                        disabled={!prepared || busy || email.sending}
+                        disabled={!prepared || busy}
                         aria-label="Tải ảnh về máy"
                         onClick={handleDownload}
                     >

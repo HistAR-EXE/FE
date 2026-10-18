@@ -29,6 +29,7 @@ const navItems: readonly NavigationItem[] = [
     // --- 3 TÍNH NĂNG ĐỘT PHÁ CỦA TIMELENS ---
     { to: `/tour/360/${CU_CHI_LOCATION_ID}`, icon: '360', label: 'Tham quan 360°', prefixes: ['/tour/360'], modes: 'online' as const },
     { to: `/diorama/${CU_CHI_LOCATION_ID}`, icon: 'layers', label: 'Sa bàn Lịch sử', prefixes: ['/diorama'], modes: 'online' as const },
+    { to: `/time-portal/${CU_CHI_LOCATION_ID}`, icon: 'history', label: 'Cổng Thời Gian', prefixes: ['/time-portal'], modes: 'online' as const },
     { to: '/chat', icon: 'forum', label: 'Trò chuyện AI', prefixes: ['/chat'], modes: 'both' as const },
 
     // --- TÍNH NĂNG CHỈ DÀNH CHO THỰC ĐỊA ONSITE ---
@@ -49,7 +50,7 @@ const navItems: readonly NavigationItem[] = [
 ] as const
 
 const mobileNavItems: readonly NavigationItem[] = [
-    { to: '/explore', icon: 'explore', label: 'Khám phá', modes: 'both' as const, prefixes: ['/explore', '/home', '/tour/360', '/diorama'] },
+    { to: '/explore', icon: 'explore', label: 'Khám phá', modes: 'both' as const, prefixes: ['/explore', '/home', '/tour/360', '/diorama', '/time-portal'] },
     { to: '/chat', icon: 'forum', label: 'Trợ lý AI', modes: 'both' as const, prefixes: ['/chat'] },
     { to: '/scan', icon: 'qr_code_scanner', label: 'Quét AR', modes: 'offline' as const, prefixes: ['/scan'] },
     { to: '/quests', icon: 'assignment', label: 'Nhiệm vụ', modes: 'both' as const, prefixes: ['/quests'] },

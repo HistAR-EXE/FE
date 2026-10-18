@@ -49,7 +49,7 @@ export function getFriendlyErrorMessage(error: unknown, context: ErrorContext): 
     if (error.code === 'CCU_LIMIT_EXCEEDED') {
       return 'Trường đã đạt giới hạn CCU. Thử lại sau hoặc liên hệ giáo viên.'
     }
-    if (error.status === 403) return 'Bạn chưa đủ điều kiện truy cập nội dung này.'
+    if (error.status === 403) return 'Bạn không đủ quyền thực hiện thao tác này. Dữ liệu đang nhập vẫn được giữ lại.'
     if (error.code === 'VALIDATION_ERROR') return error.message || 'Dữ liệu gửi lên không hợp lệ.'
     return error.message || 'Có lỗi xảy ra từ hệ thống.'
   }

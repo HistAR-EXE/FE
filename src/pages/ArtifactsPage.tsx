@@ -437,7 +437,7 @@ export function ArtifactsPage() {
                                     className="w-full h-full object-cover scale-[1.15]"
                                 />
                                 <div className="absolute inset-0 shadow-[inset_0_0_50px_rgba(0,0,0,0.9)] pointer-events-none z-20" />
-                            </div>
+                                        </div>
 
                             {/* [HÌNH ẢNH PHÍA TRƯỚC] - Mũ Cối Hologram */}
                             {/* ĐÃ FIX: Dùng scale-[1.15] cho thẻ img thay vì dùng chung với class animate float để ảnh luôn chìm lấp viền đen */}
@@ -451,7 +451,7 @@ export function ArtifactsPage() {
                                 <div className="absolute inset-0 shadow-[inset_0_0_40px_rgba(0,0,0,0.6)] pointer-events-none z-10" />
 
                                 {/* ĐÃ XÓA: Bảng điều khiển chứa 2 icon góc trên bên trái */}
-                            </div>
+                                </div>
 
                             {/* [ẢNH MASCOT LƠ LỬNG] */}
                             <div className="absolute -bottom-10 md:-bottom-16 right-[-5%] md:-right-8 z-40 w-[180px] md:w-[220px] animate-[float_4s_ease-in-out_infinite] drop-shadow-[0_20px_30px_rgba(0,0,0,0.6)]">

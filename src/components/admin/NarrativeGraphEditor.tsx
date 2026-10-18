@@ -1,5 +1,7 @@
+import { useEffect, useState } from 'react'
 import { MaterialIcon } from '../ui/MaterialIcon'
-import type { NarrativeGraphAdmin, NarrativeNodeAdmin, NarrativeNodeType } from '../../features/admin/api'
+import type { NarrativeGraphAdmin, NarrativeNodeAdmin, NarrativeNodeType, NarrativeSourceAdmin } from '../../features/admin/api'
+import { AdminModal } from './AdminModal'
 
 const NARRATIVE_NODE_TYPES: NarrativeNodeType[] = [
   'TOUR_360_OBSERVATION',
@@ -9,12 +11,12 @@ const NARRATIVE_NODE_TYPES: NarrativeNodeType[] = [
   'OUTCOME',
 ]
 
-const inputClass = 'w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:bg-slate-100 disabled:text-slate-500'
+const inputClass = 'w-full rounded-lg border border-outline-variant bg-surface-container-low px-3 py-2 text-sm text-on-surface focus:outline-none disabled:opacity-50'
 
 function Field({ label, path, errors, children }: { label: string; path: string; errors: Record<string, string>; children: React.ReactNode }) {
   const error = errors[path]
   const errorId = `${path.replaceAll('.', '-')}-error`
-  return <label className="block text-sm font-semibold text-slate-700"><span>{label}</span>{children}{error && <span id={errorId} className="mt-1 block text-xs font-semibold text-red-700">{error}</span>}</label>
+  return <label className="block font-label-sm text-label-sm text-outline"><span>{label}</span>{children}{error && <span id={errorId} className="mt-1 block font-body-sm text-body-sm font-semibold text-error">{error}</span>}</label>
 }
 
 function listValue(value?: string[]) { return value?.join('\n') ?? '' }
@@ -40,19 +42,19 @@ export function NarrativeGraphEditor({ graph, errors, onChange }: { graph: Narra
   }
 
   return <div className="space-y-4">
-    <div className="flex flex-wrap items-end justify-between gap-3 rounded-xl bg-slate-50 p-4">
+    <div className="flex flex-wrap items-end justify-between gap-3 rounded-xl bg-surface-container p-4">
       <Field label="Node bắt đầu" path="startNodeCode" errors={errors}>
         <select className={`${inputClass} mt-1 min-w-64`} value={graph.startNodeCode} onChange={(event) => onChange({ ...graph, startNodeCode: event.target.value })} aria-describedby={errors.startNodeCode ? 'startNodeCode-error' : undefined}>
           <option value="">Chọn node bắt đầu</option>{graph.nodes.map((node) => <option key={node.code} value={node.code}>{node.code}</option>)}
         </select>
       </Field>
-      <button type="button" onClick={addNode} className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-bold text-slate-800 hover:bg-slate-100"><MaterialIcon name="add" /> Thêm node</button>
+      <button type="button" onClick={addNode} className="ops-btn-primary"><MaterialIcon name="add" className="text-[16px]" /> Thêm node</button>
     </div>
     {graph.nodes.map((node, nodeIndex) => {
       const base = `nodes.${nodeIndex}`
       const sourceOptions = graph.sources.map((source) => source.sourceId)
-      return <section key={`${node.code}-${nodeIndex}`} id={`node-${node.code}`} className="rounded-xl border border-slate-200 bg-white p-4" aria-labelledby={`node-title-${nodeIndex}`}>
-        <div className="mb-4 flex flex-wrap items-start justify-between gap-3"><div><p className="text-xs font-bold text-slate-500">Node {nodeIndex + 1}</p><h4 id={`node-title-${nodeIndex}`} className="font-black text-slate-950">{node.title || node.code || 'Node chưa đặt tên'}</h4></div><button type="button" onClick={() => removeNode(nodeIndex)} className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-sm font-bold text-red-700 hover:bg-red-50"><MaterialIcon name="delete" /> Xóa</button></div>
+      return <section key={`${node.code}-${nodeIndex}`} id={`node-${node.code}`} className="ops-card p-4" aria-labelledby={`node-title-${nodeIndex}`}>
+        <div className="mb-4 flex flex-wrap items-start justify-between gap-3"><div><p className="font-label-sm text-label-sm text-outline">Node {nodeIndex + 1}</p><h4 id={`node-title-${nodeIndex}`} className="font-headline-sm text-on-surface">{node.title || node.code || 'Node chưa đặt tên'}</h4></div><button type="button" onClick={() => removeNode(nodeIndex)} className="inline-flex items-center gap-1 rounded-lg px-2 py-1 font-label-sm text-label-sm font-bold text-error hover:bg-error-container/30"><MaterialIcon name="delete" className="text-[16px]" /> Xóa</button></div>
         <div className="grid gap-3 md:grid-cols-2">
           <Field label="Mã node" path={`${base}.code`} errors={errors}><input className={`${inputClass} mt-1`} value={node.code} onChange={(event) => patchNode(nodeIndex, { code: event.target.value })} /></Field>
           <Field label="Loại node" path={`${base}.type`} errors={errors}><select className={`${inputClass} mt-1`} value={node.type} onChange={(event) => patchNode(nodeIndex, { type: event.target.value as NarrativeNodeType })}>{NARRATIVE_NODE_TYPES.map((type) => <option key={type}>{type}</option>)}</select></Field>
@@ -63,7 +65,7 @@ export function NarrativeGraphEditor({ graph, errors, onChange }: { graph: Narra
           {node.type === 'OUTCOME' && <Field label="Số chứng cứ tối thiểu" path={`${base}.minimumEvidence`} errors={errors}><input type="number" min="0" className={`${inputClass} mt-1`} value={node.minimumEvidence ?? 0} onChange={(event) => patchNode(nodeIndex, { minimumEvidence: Number(event.target.value) })} /></Field>}
           {node.type === 'EVIDENCE' && <><Field label="Evidence key" path={`${base}.evidenceKey`} errors={errors}><input className={`${inputClass} mt-1`} value={node.evidenceKey ?? ''} onChange={(event) => patchNode(nodeIndex, { evidenceKey: event.target.value })} /></Field><Field label="Linked minigame ID" path={`${base}.linkedMinigameId`} errors={errors}><input className={`${inputClass} mt-1`} value={node.linkedMinigameId ?? ''} onChange={(event) => patchNode(nodeIndex, { linkedMinigameId: event.target.value || null })} /></Field></>}
           {['TOUR_360_OBSERVATION', 'AI_INTERVIEW', 'SOURCE_COMPARISON', 'EVIDENCE'].includes(node.type) && <div className="md:col-span-2"><Field label="Checklist quan sát (mỗi dòng một mục)" path={`${base}.observationChecklist`} errors={errors}><textarea rows={3} className={`${inputClass} mt-1 resize-y`} value={listValue(node.observationChecklist)} onChange={(event) => patchNode(nodeIndex, { observationChecklist: parseList(event.target.value) })} /></Field></div>}
-          {['SOURCE_COMPARISON', 'EVIDENCE'].includes(node.type) && <div className="md:col-span-2"><p className="text-sm font-semibold text-slate-700">Nguồn tham chiếu</p><div className="mt-2 flex flex-wrap gap-2">{sourceOptions.length === 0 ? <span className="text-sm text-slate-500">Thêm source ở tab Nguồn & citation.</span> : sourceOptions.map((sourceId) => <label key={sourceId} className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm"><input type="checkbox" checked={node.sourceIds?.includes(sourceId) ?? false} onChange={(event) => patchNode(nodeIndex, { sourceIds: event.target.checked ? [...(node.sourceIds ?? []), sourceId] : (node.sourceIds ?? []).filter((item) => item !== sourceId) })} />{sourceId}</label>)}</div>{node.sourceIds?.map((_, sourceIndex) => errors[`${base}.sourceIds.${sourceIndex}`] && <p key={sourceIndex} className="mt-1 text-xs font-semibold text-red-700">{errors[`${base}.sourceIds.${sourceIndex}`]}</p>)}</div>}
+          {['SOURCE_COMPARISON', 'EVIDENCE'].includes(node.type) && <div className="md:col-span-2"><p className="text-sm font-semibold text-slate-700">Nguồn tham chiếu</p><div className="mt-2 flex flex-wrap gap-2">{sourceOptions.length === 0 ? <span className="text-sm text-slate-500">Thêm nguồn ở tab Nguồn & trích dẫn.</span> : sourceOptions.map((sourceId) => <label key={sourceId} className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm"><input type="checkbox" checked={node.sourceIds?.includes(sourceId) ?? false} onChange={(event) => patchNode(nodeIndex, { sourceIds: event.target.checked ? [...(node.sourceIds ?? []), sourceId] : (node.sourceIds ?? []).filter((item) => item !== sourceId) })} />{sourceId}</label>)}</div>{node.sourceIds?.map((_, sourceIndex) => errors[`${base}.sourceIds.${sourceIndex}`] && <p key={sourceIndex} className="mt-1 text-xs font-semibold text-red-700">{errors[`${base}.sourceIds.${sourceIndex}`]}</p>)}</div>}
         </div>
         <div className="mt-4 border-t border-slate-200 pt-4"><div className="mb-2 flex items-center justify-between"><p className="text-sm font-black text-slate-900">Lựa chọn chuyển node</p><button type="button" onClick={() => patchNode(nodeIndex, { choices: [...node.choices, { code: '', targetNodeCode: '' }] })} className="text-sm font-bold text-blue-700 hover:underline">+ Thêm lựa chọn</button></div><div className="space-y-2">{node.choices.length === 0 ? <p className="text-sm text-slate-500">Node kết thúc, chưa có lựa chọn tiếp theo.</p> : node.choices.map((choice, choiceIndex) => { const choiceBase = `${base}.choices.${choiceIndex}`; return <div key={choiceIndex} className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]"><input aria-label={`Nhãn lựa chọn ${choiceIndex + 1}`} className={inputClass} value={choice.code} onChange={(event) => patchNode(nodeIndex, { choices: node.choices.map((item, index) => index === choiceIndex ? { ...item, code: event.target.value } : item) })} placeholder="Nhãn lựa chọn" /><div><select aria-label={`Node đích ${choiceIndex + 1}`} className={inputClass} value={choice.targetNodeCode} onChange={(event) => patchNode(nodeIndex, { choices: node.choices.map((item, index) => index === choiceIndex ? { ...item, targetNodeCode: event.target.value } : item) })}><option value="">Chọn node đích</option>{graph.nodes.map((target) => <option key={target.code} value={target.code}>{target.code}</option>)}</select>{errors[`${choiceBase}.targetNodeCode`] && <p className="mt-1 text-xs font-semibold text-red-700">{errors[`${choiceBase}.targetNodeCode`]}</p>}</div><button type="button" aria-label={`Xóa lựa chọn ${choiceIndex + 1}`} onClick={() => patchNode(nodeIndex, { choices: node.choices.filter((_, index) => index !== choiceIndex) })} className="rounded-lg px-2 text-red-700 hover:bg-red-50"><MaterialIcon name="close" /></button></div> })}</div></div>
       </section>
@@ -71,18 +73,272 @@ export function NarrativeGraphEditor({ graph, errors, onChange }: { graph: Narra
   </div>
 }
 
+function truncateText(value: string, max = 120) {
+  const trimmed = value.trim()
+  if (!trimmed) return 'Chưa có trích dẫn'
+  if (trimmed.length <= max) return trimmed
+  return `${trimmed.slice(0, max).trimEnd()}…`
+}
+
+function emptySource(): NarrativeSourceAdmin {
+  return { sourceId: '', version: '', locale: 'vi', citation: '', url: '' }
+}
+
 export function NarrativeSourcesEditor({ graph, errors, onChange }: { graph: NarrativeGraphAdmin; errors: Record<string, string>; onChange: (graph: NarrativeGraphAdmin) => void }) {
-  const patchSource = (index: number, patch: Partial<NarrativeGraphAdmin['sources'][number]>) => onChange({ ...graph, sources: graph.sources.map((source, sourceIndex) => sourceIndex === index ? { ...source, ...patch } : source) })
-  return <div className="space-y-4"><div className="flex items-start justify-between gap-3"><div><h3 className="font-black text-slate-950">Nguồn & citation</h3><p className="mt-1 text-sm text-slate-600">Locale <strong>vi</strong> bắt buộc source ID, version và citation. Locale khác là tùy chọn trong pilot này.</p></div><button type="button" onClick={() => onChange({ ...graph, sources: [...graph.sources, { sourceId: '', version: '', locale: 'vi', citation: '', url: '' }] })} className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm font-bold"><MaterialIcon name="add" /> Thêm nguồn</button></div>
-    {graph.sources.length === 0 ? <p className="rounded-xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-600">Chưa có nguồn. Thêm ít nhất một nguồn tiếng Việt trước khi review.</p> : <div className="overflow-x-auto"><table className="min-w-[900px] w-full text-sm"><thead><tr className="border-b border-slate-200 text-left text-slate-600">{['Source ID', 'Version', 'Locale', 'Citation', 'URL', ''].map((label) => <th key={label} className="p-2">{label}</th>)}</tr></thead><tbody>{graph.sources.map((source, index) => <tr key={`${source.sourceId}-${index}`} className="border-b border-slate-100 align-top"><td className="p-2"><input className={inputClass} value={source.sourceId} onChange={(event) => patchSource(index, { sourceId: event.target.value })} />{errors[`sources.${index}.sourceId`] && <p className="mt-1 text-xs text-red-700">{errors[`sources.${index}.sourceId`]}</p>}</td><td className="p-2"><input className={inputClass} value={source.version} onChange={(event) => patchSource(index, { version: event.target.value })} />{errors[`sources.${index}.version`] && <p className="mt-1 text-xs text-red-700">{errors[`sources.${index}.version`]}</p>}</td><td className="p-2"><input className={`${inputClass} w-24`} value={source.locale} onChange={(event) => patchSource(index, { locale: event.target.value })} /></td><td className="p-2"><textarea rows={3} className={`${inputClass} min-w-64 resize-y`} value={source.citation} onChange={(event) => patchSource(index, { citation: event.target.value })} />{errors[`sources.${index}.citation`] && <p className="mt-1 text-xs text-red-700">{errors[`sources.${index}.citation`]}</p>}</td><td className="p-2"><input type="url" className={`${inputClass} min-w-56`} value={source.url ?? ''} onChange={(event) => patchSource(index, { url: event.target.value || null })} /></td><td className="p-2"><button type="button" aria-label={`Xóa nguồn ${source.sourceId || index + 1}`} onClick={() => onChange({ ...graph, sources: graph.sources.filter((_, sourceIndex) => sourceIndex !== index) })} className="rounded-lg p-2 text-red-700 hover:bg-red-50"><MaterialIcon name="delete" /></button></td></tr>)}</tbody></table></div>}
-  </div>
+  const [editingIndex, setEditingIndex] = useState<number | null>(null)
+  const [draft, setDraft] = useState<NarrativeSourceAdmin | null>(null)
+  const [isCreating, setIsCreating] = useState(false)
+
+  useEffect(() => {
+    if (editingIndex == null) return
+    if (editingIndex < 0 || editingIndex >= graph.sources.length) {
+      setEditingIndex(null)
+      setDraft(null)
+      setIsCreating(false)
+    }
+  }, [editingIndex, graph.sources.length])
+
+  const openEdit = (index: number) => {
+    setIsCreating(false)
+    setEditingIndex(index)
+    setDraft({ ...graph.sources[index] })
+  }
+  const openCreate = () => {
+    const next = [...graph.sources, emptySource()]
+    onChange({ ...graph, sources: next })
+    setIsCreating(true)
+    setEditingIndex(next.length - 1)
+    setDraft(emptySource())
+  }
+  const closeEditor = (discardCreate = false) => {
+    if (discardCreate && isCreating && editingIndex != null) {
+      onChange({
+        ...graph,
+        sources: graph.sources.filter((_, index) => index !== editingIndex),
+      })
+    }
+    setEditingIndex(null)
+    setDraft(null)
+    setIsCreating(false)
+  }
+  const saveEditor = () => {
+    if (editingIndex == null || !draft) return
+    onChange({
+      ...graph,
+      sources: graph.sources.map((source, index) =>
+        index === editingIndex
+          ? {
+              ...draft,
+              url: draft.url?.trim() ? draft.url.trim() : null,
+              path: draft.path?.trim() ? draft.path.trim() : null,
+            }
+          : source,
+      ),
+    })
+    setEditingIndex(null)
+    setDraft(null)
+    setIsCreating(false)
+  }
+  const removeSource = (index: number) => {
+    onChange({ ...graph, sources: graph.sources.filter((_, sourceIndex) => sourceIndex !== index) })
+    if (editingIndex === index) {
+      setEditingIndex(null)
+      setDraft(null)
+      setIsCreating(false)
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h3 className="font-headline-md text-headline-md text-on-surface">Nguồn & trích dẫn</h3>
+          <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant">
+            Bản tiếng Việt bắt buộc mã nguồn, phiên bản và trích dẫn. Dùng nút Sửa để xem/chỉnh toàn bộ nội dung.
+          </p>
+        </div>
+        <button type="button" onClick={openCreate} className="ops-btn-primary">
+          <MaterialIcon name="add" className="text-[16px]" /> Thêm nguồn
+        </button>
+      </div>
+
+      {graph.sources.length === 0 ? (
+        <p className="rounded-xl border border-dashed border-outline-variant p-6 text-center font-body-sm text-body-sm text-on-surface-variant">
+          Chưa có nguồn. Thêm ít nhất một nguồn tiếng Việt trước khi duyệt.
+        </p>
+      ) : (
+        <ul className="space-y-3">
+          {graph.sources.map((source, index) => {
+            const hasError = Boolean(
+              errors[`sources.${index}.sourceId`] ||
+                errors[`sources.${index}.version`] ||
+                errors[`sources.${index}.citation`],
+            )
+            return (
+              <li
+                key={`${source.sourceId || 'source'}-${index}`}
+                className={`rounded-xl border p-4 ${
+                  hasError
+                    ? 'border-error/40 bg-error-container/20'
+                    : 'border-outline-variant bg-surface-container'
+                }`}
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-code-sm text-code-sm text-primary">
+                        {source.sourceId || `Nguồn #${index + 1}`}
+                      </span>
+                      {source.version && (
+                        <>
+                          <span className="h-1 w-1 rounded-full bg-outline" />
+                          <span className="font-code-sm text-code-sm text-outline">{source.version}</span>
+                        </>
+                      )}
+                      <span className="rounded bg-surface-container-highest px-2 py-0.5 font-label-sm text-label-sm uppercase text-on-surface-variant">
+                        {source.locale || '—'}
+                      </span>
+                    </div>
+                    <p className="mt-2 whitespace-pre-wrap break-words font-body-sm text-body-sm text-on-surface">
+                      {truncateText(source.citation, 180)}
+                    </p>
+                    {source.url && (
+                      <a
+                        href={source.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="mt-1.5 inline-flex max-w-full items-center gap-1 truncate font-label-sm text-label-sm text-secondary hover:underline"
+                      >
+                        <MaterialIcon name="link" className="shrink-0 text-[14px]" />
+                        <span className="truncate">{source.url}</span>
+                      </a>
+                    )}
+                    {(errors[`sources.${index}.sourceId`] ||
+                      errors[`sources.${index}.version`] ||
+                      errors[`sources.${index}.citation`]) && (
+                      <p className="mt-2 font-body-sm text-body-sm font-semibold text-error">
+                        {errors[`sources.${index}.citation`] ||
+                          errors[`sources.${index}.sourceId`] ||
+                          errors[`sources.${index}.version`]}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => openEdit(index)}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-outline-variant px-3 py-2 font-label-sm text-label-sm text-on-surface hover:bg-surface-container-high"
+                    >
+                      <MaterialIcon name="edit" className="text-[16px]" /> Sửa
+                    </button>
+                    <button
+                      type="button"
+                      aria-label={`Xóa nguồn ${source.sourceId || index + 1}`}
+                      onClick={() => removeSource(index)}
+                      className="ops-icon-btn ops-icon-btn-danger"
+                    >
+                      <MaterialIcon name="delete" className="text-[16px]" />
+                    </button>
+                  </div>
+                </div>
+              </li>
+            )
+          })}
+        </ul>
+      )}
+
+      {editingIndex != null && draft && (
+        <AdminModal
+          title={
+            isCreating
+              ? 'Thêm nguồn & trích dẫn'
+              : draft.sourceId?.trim()
+                ? `Sửa nguồn · ${draft.sourceId}`
+                : 'Sửa nguồn & trích dẫn'
+          }
+          onClose={() => closeEditor(true)}
+          wide
+        >
+          <form
+            className="space-y-4"
+            onSubmit={(event) => {
+              event.preventDefault()
+              saveEditor()
+            }}
+          >
+            <div className="grid gap-3 sm:grid-cols-3">
+              <label className="block font-label-sm text-label-sm text-outline sm:col-span-1">
+                Mã nguồn
+                <input
+                  className={`${inputClass} mt-1`}
+                  value={draft.sourceId}
+                  onChange={(event) => setDraft({ ...draft, sourceId: event.target.value })}
+                  required
+                />
+              </label>
+              <label className="block font-label-sm text-label-sm text-outline">
+                Phiên bản
+                <input
+                  className={`${inputClass} mt-1`}
+                  value={draft.version}
+                  onChange={(event) => setDraft({ ...draft, version: event.target.value })}
+                  required
+                />
+              </label>
+              <label className="block font-label-sm text-label-sm text-outline">
+                Ngôn ngữ
+                <input
+                  className={`${inputClass} mt-1`}
+                  value={draft.locale}
+                  onChange={(event) => setDraft({ ...draft, locale: event.target.value })}
+                  required
+                />
+              </label>
+            </div>
+            <label className="block font-label-sm text-label-sm text-outline">
+              Trích dẫn (đầy đủ)
+              <textarea
+                rows={8}
+                className={`${inputClass} mt-1 min-h-[10rem] resize-y`}
+                value={draft.citation}
+                onChange={(event) => setDraft({ ...draft, citation: event.target.value })}
+                required
+              />
+            </label>
+            <label className="block font-label-sm text-label-sm text-outline">
+              Liên kết
+              <input
+                type="url"
+                className={`${inputClass} mt-1`}
+                value={draft.url ?? ''}
+                onChange={(event) => setDraft({ ...draft, url: event.target.value || null })}
+                placeholder="https://…"
+              />
+            </label>
+            <div className="flex flex-wrap justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => closeEditor(true)}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-outline-variant px-3 py-2 font-label-sm text-label-sm text-on-surface hover:bg-surface-container-high"
+              >
+                Hủy
+              </button>
+              <button type="submit" className="ops-btn-primary">
+                <MaterialIcon name="check" className="text-[16px]" /> Áp dụng
+              </button>
+            </div>
+          </form>
+        </AdminModal>
+      )}
+    </div>
+  )
 }
 
 export function NarrativeRewardsEditor({ graph, fixed, fixedXp, onChange }: { graph: NarrativeGraphAdmin; fixed: boolean; fixedXp?: number | null; onChange: (graph: NarrativeGraphAdmin) => void }) {
   const rewardNodes = graph.nodes.map((node, index) => ({ node, index })).filter(({ node }) => node.type === 'EVIDENCE' || node.type === 'OUTCOME')
   const patchReward = (index: number, rewardXp: number | null) => onChange({ ...graph, nodes: graph.nodes.map((node, nodeIndex) => nodeIndex === index ? { ...node, rewardXp } : node) })
-  return <div className="space-y-4"><div><h3 className="font-black text-slate-950">Reward & ending</h3><p className="mt-1 text-sm text-slate-600">Kết quả phản ánh đúng các node runtime. Chỉ trường <code>rewardXp</code> trong graph có thể chỉnh sửa.</p></div>{fixed && <div role="note" className="flex gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4 text-blue-900"><MaterialIcon name="lock" /><div><p className="font-bold">Reward do backend cố định</p><p className="text-sm">Giá trị runtime{typeof fixedXp === 'number' ? `: ${fixedXp} XP` : ''}; frontend chỉ hiển thị, không gửi thay đổi.</p></div></div>}
-    <div className="space-y-3">{rewardNodes.map(({ node, index }) => <div key={node.code} className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200 p-4"><div><p className="font-black text-slate-950">{node.title || node.code}</p><p className="mt-1 text-xs font-bold text-slate-500">{node.type} · {graph.outcomeNodeCodes.includes(node.code) ? 'Ending' : 'Reward checkpoint'}</p>{node.type === 'OUTCOME' && <p className="mt-2 max-w-2xl text-sm text-slate-600">{node.prompt || 'Chưa có nội dung kết thúc.'}</p>}</div><label className="text-sm font-semibold text-slate-700">Reward XP<input type="number" min="0" disabled={fixed} className={`${inputClass} mt-1 w-32`} value={node.rewardXp ?? ''} onChange={(event) => patchReward(index, event.target.value === '' ? null : Number(event.target.value))} /></label></div>)}</div>
-    <div><h4 className="font-bold text-slate-900">Danh sách ending</h4><ul className="mt-2 space-y-2">{graph.outcomeNodeCodes.map((code) => { const node = graph.nodes.find((item) => item.code === code); return <li key={code} className="rounded-lg bg-slate-50 px-3 py-2"><span className="font-semibold text-slate-900">{node?.title || code}</span><span className="ml-2 text-sm text-slate-600">{node?.minimumEvidence ?? 0} chứng cứ tối thiểu</span></li> })}</ul></div>
+  return <div className="space-y-4"><div><h3 className="font-headline-md text-headline-md text-on-surface">Phần thưởng & kết thúc</h3><p className="mt-1 font-body-sm text-body-sm text-on-surface-variant">Kết quả phản ánh đúng các nút đang chạy. Chỉ trường <code>rewardXp</code> trong sơ đồ có thể chỉnh sửa.</p></div>{fixed && <div role="note" className="flex gap-3 rounded-xl border border-outline-variant bg-primary/10 p-4 text-primary"><MaterialIcon name="lock" /><div><p className="font-headline-sm text-on-surface">Phần thưởng do máy chủ cố định</p><p className="font-body-sm text-body-sm text-on-surface-variant">Giá trị đang chạy{typeof fixedXp === 'number' ? `: ${fixedXp} XP` : ''}; giao diện chỉ hiển thị, không gửi thay đổi.</p></div></div>}
+    <div className="space-y-3">{rewardNodes.map(({ node, index }) => <div key={node.code} className="ops-card flex flex-wrap items-center justify-between gap-4 p-4"><div><p className="font-headline-sm text-on-surface">{node.title || node.code}</p><p className="mt-1 font-code-sm text-code-sm text-outline">{node.type} · {graph.outcomeNodeCodes.includes(node.code) ? 'Kết thúc' : 'Điểm nhận thưởng'}</p>{node.type === 'OUTCOME' && <p className="mt-2 max-w-2xl font-body-sm text-body-sm text-on-surface-variant">{node.prompt || 'Chưa có nội dung kết thúc.'}</p>}</div><label className="font-label-sm text-label-sm text-outline">XP thưởng<input type="number" min="0" disabled={fixed} className={`${inputClass} mt-1 w-32`} value={node.rewardXp ?? ''} onChange={(event) => patchReward(index, event.target.value === '' ? null : Number(event.target.value))} /></label></div>)}</div>
+    <div><h4 className="font-headline-sm text-on-surface">Danh sách ending</h4><ul className="mt-2 space-y-2">{graph.outcomeNodeCodes.map((code) => { const node = graph.nodes.find((item) => item.code === code); return <li key={code} className="rounded-lg bg-surface-container px-3 py-2"><span className="font-semibold text-on-surface">{node?.title || code}</span><span className="ml-2 font-body-sm text-body-sm text-on-surface-variant">{node?.minimumEvidence ?? 0} chứng cứ tối thiểu</span></li> })}</ul></div>
   </div>
 }

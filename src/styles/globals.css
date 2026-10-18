@@ -44,6 +44,7 @@
     --color-heritage-bronze: #b45309;
     --color-heritage-crimson: #b91c1c;
     --color-heritage-jade: #0d9488;
+    --color-heritage-gold: #d97706;
 }
 
 @layer base {
@@ -1538,101 +1539,124 @@
     cursor: pointer;
 }
 
-/* Admin Console light workspace */
-.admin-console {
-    --admin-ink: #172033;
-    --admin-muted: #526176;
-    --admin-line: #dbe2ec;
-    --admin-surface: #ffffff;
-    --admin-subtle: #f5f7fa;
-    --admin-subtle-strong: #eaf0f6;
-    color: var(--admin-ink);
+/* Admin ops console theme lives in admin-ops.css (Stitch dark shell). */
+
+
+/* ==========================================
+   PWA SAFE AREA & MOBILE UTILITIES
+   ========================================== */
+.safe-area-top {
+    padding-top: env(safe-area-inset-top, 0px);
 }
 
-.admin-console .bg-surface,
-.admin-console .bg-surface-container,
-.admin-console .bg-surface-container-low,
-.admin-console .bg-surface-container-high,
-.admin-console .bg-surface-container-highest {
-    background-color: var(--admin-surface) !important;
+.safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-.admin-console .bg-surface-container-lowest,
-.admin-console .bg-surface-dim {
-    background-color: var(--admin-subtle) !important;
+.safe-area-x {
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
 }
 
-.admin-console .bg-surface-variant {
-    background-color: var(--admin-subtle-strong) !important;
+/* Ensure minimum touch target size (48x48 per WCAG) */
+.touch-target {
+    min-width: 48px;
+    min-height: 48px;
 }
 
-.admin-console .text-on-surface,
-.admin-console .text-on-background {
-    color: var(--admin-ink) !important;
+/* Prevent text selection on interactive elements */
+.no-select {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
 }
 
-.admin-console .text-on-surface-variant {
-    color: var(--admin-muted) !important;
+/* Prevent iOS bounce/overscroll on fixed layouts */
+.no-overscroll {
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
 }
 
-.admin-console .border-outline,
-.admin-console .border-outline-variant {
-    border-color: var(--admin-line) !important;
-}
-
-.admin-console input,
-.admin-console textarea,
-.admin-console select {
-    background-color: var(--admin-surface);
-    color: var(--admin-ink);
-}
-
-.admin-console button:focus-visible,
-.admin-console a:focus-visible,
-.admin-console input:focus-visible,
-.admin-console textarea:focus-visible,
-.admin-console select:focus-visible {
-    outline: 3px solid rgba(217, 119, 6, 0.35);
-    outline-offset: 2px;
-}
-
-.admin-console .bg-\[\#121826\],
-.admin-console .bg-\[\#0b0e14\],
-.admin-console .bg-\[\#10141d\],
-.admin-console .bg-\[\#0e121b\] {
-    background-color: var(--admin-surface) !important;
-}
-
-.admin-console .text-white {
-    color: var(--admin-ink) !important;
-}
-
-.admin-console .text-slate-300,
-.admin-console .text-slate-400 {
-    color: var(--admin-muted) !important;
-}
-
-.admin-console .text-slate-500,
-.admin-console .text-slate-600 {
-    color: #64748b !important;
-}
-
-.admin-console .border-white\/10,
-.admin-console .border-white\/15 {
-    border-color: var(--admin-line) !important;
-}
-
-.admin-console .border-dashed {
-    border-color: #cbd5e1 !important;
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .admin-console *,
-    .admin-console *::before,
-    .admin-console *::after {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-        scroll-behavior: auto !important;
+/* Smooth scrolling for PWA */
+@media (prefers-reduced-motion: no-preference) {
+    .scroll-smooth {
+        scroll-behavior: smooth;
     }
 }
+
+/* Aliases used by SideNavMobile / TopNavCompact */
+.pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.pt-safe {
+    padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* --- Material Symbols: chong vo layout khi font chua tai xong --- */
+.material-symbols-outlined {
+  display: inline-block;
+  width: 1em;
+  min-width: 1em;
+  max-width: 1em;
+  overflow: hidden;
+  line-height: 1;
+  vertical-align: middle;
+  white-space: nowrap;
+  text-align: center;
+  font-feature-settings: 'liga';
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+  flex: 0 0 auto;
+}
+
+/* ===== Time Portal · Hành trình xuyên thời gian ===== */
+@keyframes tp-progress { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes tp-enter { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes tp-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes tp-art-zoom { from { transform: scale(1); } to { transform: scale(1.06); } }
+@keyframes tp-spin { to { transform: rotate(360deg); } }
+@keyframes tp-flag { 0%, 100% { transform: skewY(0deg) scaleX(1); } 50% { transform: skewY(-2.5deg) scaleX(0.97); } }
+@keyframes tp-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes tp-dash { to { stroke-dashoffset: -18; } }
+@keyframes tp-ping { 0% { transform: scale(1); opacity: 0.8; } 100% { transform: scale(2.8); opacity: 0; } }
+@keyframes tp-ring { from { transform: translate(-50%, -50%) scale(0.08); opacity: 0.9; } to { transform: translate(-50%, -50%) scale(2.4); opacity: 0; } }
+@keyframes tp-firefly {
+  0% { transform: translate(0, 0); opacity: 0; }
+  15% { opacity: 0.95; }
+  50% { transform: translate(var(--dx), var(--dy)); opacity: 0.35; }
+  85% { opacity: 0.9; }
+  100% { transform: translate(calc(var(--dx) * -0.6), calc(var(--dy) * 1.3)); opacity: 0; }
+}
+@keyframes tp-fall {
+  0% { transform: translate(0, -12vh) rotate(0deg); opacity: 0; }
+  10% { opacity: 0.75; }
+  100% { transform: translate(var(--dx), 112vh) rotate(260deg); opacity: 0; }
+}
+@keyframes tp-rise {
+  0% { transform: translate(0, 12vh); opacity: 0; }
+  15% { opacity: 0.9; }
+  100% { transform: translate(var(--dx), -112vh); opacity: 0; }
+}
+@keyframes tp-drift {
+  0% { transform: translate(0, 0); opacity: 0; }
+  30% { opacity: 0.65; }
+  100% { transform: translate(var(--dx), var(--dy)); opacity: 0; }
+}
+.tp-particle {
+  position: absolute;
+  border-radius: 9999px;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tp-particle { display: none; }
+  .tp-anim { animation: none !important; }
+}
+.tp-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+}
+.tp-scroll::-webkit-scrollbar { width: 6px; }
+.tp-scroll::-webkit-scrollbar-track { background: transparent; }
+.tp-scroll::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.18); border-radius: 9999px; }
