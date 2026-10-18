@@ -7,6 +7,7 @@ import { getData, httpClient } from '../shared/api/httpClient'
 import { appEnv } from '../shared/config/env'
 import { emitEvent } from '../lib/pilotEvents'
 import { isPilotSiteCode } from '../shared/config/constants'
+import { useOnlineStatus } from '../shared/hooks'
 /** Same cache name as the Workbox runtime rule for /media/ in vite.config.ts. */
 const MEDIA_CACHE = 'histar-media'
 const MANIFEST_KEY = 'histar_pack_manifest_v1'

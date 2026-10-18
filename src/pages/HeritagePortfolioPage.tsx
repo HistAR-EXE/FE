@@ -1,6 +1,5 @@
 // src/pages/HeritagePortfolioPage.tsx
 import { MaterialIcon } from '../components/ui/MaterialIcon'
-import { Button } from '../components/ui/Button'
 import { PublicHeader } from '../components/layout/PublicHeader'
 import { PublicFooter } from '../components/layout/PublicFooter'
 import { Link } from 'react-router-dom'

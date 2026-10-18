@@ -3,7 +3,7 @@
 // trọn vẹn trong khung ở PhotoStage) hoặc tranh minh hoạ SVG phủ kín,
 // chuyển cảnh mờ dần, cùng hạt bụi/đom đóm, film grain, vignette.
 
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { useEffect, useState, type CSSProperties, type ReactNode } from 'react'
 import type { EraStory, StoryVisual } from './storyData'
 import { StoryArt } from './StoryArt'
 
@@ -90,7 +90,7 @@ type Props = {
 
 export function StoryBackdrop({ story, visual, visualKey, durationMs }: Props) {
   const [layers, setLayers] = useState<Layer[]>(() => [{ key: visualKey, visual }])
-  const firstKey = useRef(visualKey)
+  const [firstKey] = useState(() => visualKey)
 
   useEffect(() => {
     setLayers((prev) => (prev[prev.length - 1]?.key === visualKey ? prev : [...prev.slice(-1), { key: visualKey, visual }]))
@@ -107,7 +107,7 @@ export function StoryBackdrop({ story, visual, visualKey, durationMs }: Props) {
   return (
     <div className="absolute inset-0 overflow-hidden bg-black">
       {layers.map((l) => (
-        <FadeLayer key={l.key} instant={l.key === firstKey.current}>
+        <FadeLayer key={l.key} instant={l.key === firstKey}>
           {l.visual.kind === 'photo' ? (
             <img
               src={l.visual.src}

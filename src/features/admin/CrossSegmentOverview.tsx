@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useMediaQuery } from '../../shared/hooks'
 import { Link } from 'react-router-dom'
 import { MaterialIcon } from '../../components/ui/MaterialIcon'
 import {
@@ -34,8 +33,6 @@ function pctBar(value: number, max: number, color: string) {
 }
 
 export function CrossSegmentOverview() {
-  const isMobile = useMediaQuery('(max-width: 640px)')
-
   const [data, setData] = useState<SegmentData>({
     billing: null,
     inquiries: [],

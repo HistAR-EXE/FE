@@ -18,7 +18,7 @@ type Props = {
 }
 
 export function ReferralShareWidget({ code }: Props) {
-  const { toast } = useToast()
+  const { showToast } = useToast()
   const [info, setInfo] = useState<CreatorPublicStats | null>(null)
   const [loading, setLoading] = useState(true)
   const [copied, setCopied] = useState(false)
@@ -40,12 +40,12 @@ export function ReferralShareWidget({ code }: Props) {
     try {
       await navigator.clipboard.writeText(referralUrl)
       setCopied(true)
-      toast({ type: 'success', message: 'Đã sao chép link giới thiệu!' })
+      showToast({ type: 'success', message: 'Đã sao chép link giới thiệu!' })
       setTimeout(() => setCopied(false), 2000)
     } catch {
-      toast({ type: 'error', message: 'Không thể sao chép' })
+      showToast({ type: 'error', message: 'Không thể sao chép' })
     }
-  }, [referralUrl, toast])
+  }, [referralUrl, showToast])
 
   const shareNative = useCallback(async () => {
     if (!navigator.share) return

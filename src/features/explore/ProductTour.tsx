@@ -1,5 +1,5 @@
 // src/features/explore/ProductTour.tsx
-import { useState, useCallback, useEffect, type ReactNode } from 'react'
+import { useState, useCallback, type ReactNode } from 'react'
 import { MaterialIcon } from '../../components/ui/MaterialIcon'
 import { Button } from '../../components/ui/Button'
 import { useLocalStorage } from '../../shared/hooks/useLocalStorage'

@@ -59,6 +59,8 @@ type TeacherOnboardingWizardProps = {
 }
 
 export function TeacherOnboardingWizard({ orgId, onComplete, onAction }: TeacherOnboardingWizardProps) {
+  // Kept in the public prop contract for callers that scope onboarding to an organization.
+  void orgId
   const [step, setStep] = useState(0)
   const [, setComplete] = useLocalStorage(STORAGE_KEY, false)
 
