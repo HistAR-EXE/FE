@@ -44,6 +44,7 @@
     --color-heritage-bronze: #b45309;
     --color-heritage-crimson: #b91c1c;
     --color-heritage-jade: #0d9488;
+    --color-heritage-gold: #d97706;
 }
 
 @layer base {
@@ -1540,3 +1541,71 @@
 
 /* Admin ops console theme lives in admin-ops.css (Stitch dark shell). */
 
+
+/* ==========================================
+   PWA SAFE AREA & MOBILE UTILITIES
+   ========================================== */
+.safe-area-top {
+    padding-top: env(safe-area-inset-top, 0px);
+}
+
+.safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.safe-area-x {
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+}
+
+/* Ensure minimum touch target size (48x48 per WCAG) */
+.touch-target {
+    min-width: 48px;
+    min-height: 48px;
+}
+
+/* Prevent text selection on interactive elements */
+.no-select {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+}
+
+/* Prevent iOS bounce/overscroll on fixed layouts */
+.no-overscroll {
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Smooth scrolling for PWA */
+@media (prefers-reduced-motion: no-preference) {
+    .scroll-smooth {
+        scroll-behavior: smooth;
+    }
+}
+
+/* Aliases used by SideNavMobile / TopNavCompact */
+.pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.pt-safe {
+    padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* --- Material Symbols: chong vo layout khi font chua tai xong --- */
+.material-symbols-outlined {
+  display: inline-block;
+  width: 1em;
+  min-width: 1em;
+  max-width: 1em;
+  overflow: hidden;
+  line-height: 1;
+  vertical-align: middle;
+  white-space: nowrap;
+  text-align: center;
+  font-feature-settings: 'liga';
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+  flex: 0 0 auto;
+}

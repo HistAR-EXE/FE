@@ -1,5 +1,6 @@
 // src/pages/LeaderboardPage.tsx
 import { useEffect, useState } from 'react'
+import { useDebounce } from '../shared/hooks'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { SimpleTopNav } from '../components/layout/TopNav'
@@ -26,6 +27,7 @@ export function LeaderboardPage() {
 
     const [scope, setScope] = useState<'all' | 'city' | 'week' | 'school'>('all')
     const [city, setCity] = useState('TP.HCM')
+    const debouncedCity = useDebounce(city, 400)
     const [data, setData] = useState<LeaderboardResponse | null>(null)
     const [loading, setLoading] = useState(true)
     const [archivedMessage, setArchivedMessage] = useState<string | null>(null)
@@ -44,7 +46,7 @@ export function LeaderboardPage() {
         const handleLeaderboardError = (error: unknown) => {
             if (error instanceof ApiError && (error.code === 'TRIAL_EXPIRED' || error.status === 403)) {
                 setArchivedMessage(error.message || 'Gói của trường đã hết hạn, bảng xếp hạng hiện ở chế độ lưu trữ.')
-                setData({ scope: groupId ? 'group' : scope, city: scope === 'city' ? city.trim() || null : null, entries: [] })
+                setData({ scope: groupId ? 'group' : scope, city: scope === 'city' ? debouncedCity.trim() || null : null, entries: [] })
             } else if (error instanceof ApiError && error.status === 422) {
                 // Âm thầm bỏ qua lỗi 422 từ Backend (nếu có lọt vào) vì giao diện Khóa Premium đã tự giải thích
                 setArchivedMessage(null)
@@ -66,19 +68,19 @@ export function LeaderboardPage() {
                 .catch(handleLeaderboardError)
             return
         }
-        if (scope === 'city' && !city.trim()) {
+        if (scope === 'city' && !debouncedCity.trim()) {
             setLoading(false)
             return
         }
         viralApi
-            .leaderboard(scope, scope === 'city' ? city.trim() : undefined)
+            .leaderboard(scope, scope === 'city' ? debouncedCity.trim() : undefined)
             .then((res) => {
                 setArchivedMessage(null)
                 setData(res)
                 setLoading(false)
             })
             .catch(handleLeaderboardError)
-    }, [scope, city, groupId, showToast, xpRefresh])
+    }, [scope, debouncedCity, groupId, showToast, xpRefresh])
 
     useEffect(() => {
         const onDiscovery = () => setXpRefresh((n) => n + 1)

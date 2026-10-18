@@ -7,7 +7,7 @@ export type CuChiSceneSlug =
   | 'thong-gio'
   | 'gieng'
 
-export type EraValue = 1948 | 1968 | 2026
+export type EraValue = 1948 | 1968 | 1975 | 2026
 
 export type ARSceneConfig = {
   slug: CuChiSceneSlug

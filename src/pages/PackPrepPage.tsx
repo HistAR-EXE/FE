@@ -68,20 +68,9 @@ export function PackPrepPage() {
   const [error, setError] = useState<string | null>(null)
   const [states, setStates] = useState<Record<string, AssetState>>({})
   const [running, setRunning] = useState(false)
-  const [online, setOnline] = useState(() => (typeof navigator === 'undefined' ? true : navigator.onLine))
+  const online = useOnlineStatus()
 
   const cacheSupported = typeof caches !== 'undefined'
-
-  useEffect(() => {
-    const on = () => setOnline(true)
-    const off = () => setOnline(false)
-    window.addEventListener('online', on)
-    window.addEventListener('offline', off)
-    return () => {
-      window.removeEventListener('online', on)
-      window.removeEventListener('offline', off)
-    }
-  }, [])
 
   useEffect(() => {
     let cancelled = false

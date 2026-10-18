@@ -6,6 +6,9 @@ export function eraBadgeClass(era: number): string {
   if (era === 1968) {
     return 'bg-heritage-bronze/15 text-heritage-bronze border-heritage-bronze/40'
   }
+  if (era === 1975) {
+    return 'bg-heritage-gold/15 text-heritage-gold border-heritage-gold/40'
+  }
   if (era >= 2000) {
     return 'bg-heritage-jade/15 text-heritage-jade border-heritage-jade/40'
   }

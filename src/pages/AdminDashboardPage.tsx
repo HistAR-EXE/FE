@@ -10,6 +10,7 @@ import {
 } from '../features/admin/api'
 import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
+import { CrossSegmentOverview } from '../features/admin/CrossSegmentOverview'
 
 const money = (value: number | null | undefined) =>
   typeof value === 'number' ? value.toLocaleString('vi-VN') : '—'
@@ -562,6 +563,8 @@ export function AdminDashboardPage() {
           </Link>
         </aside>
       </div>
+      {/* Cross-segment analytics */}
+      <CrossSegmentOverview />
     </section>
   )
 }

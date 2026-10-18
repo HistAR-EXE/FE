@@ -38,6 +38,7 @@ import {
   writeAdminDraft,
 } from '../features/admin/state'
 import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
+import { ReferralLeaderboard } from '../features/admin/ReferralLeaderboard'
 import { useAuth } from '../shared/auth/useAuth'
 import { useToast } from '../shared/ui/toast/useToast'
 
@@ -1633,6 +1634,9 @@ export function AdminBillingPage() {
               </>
             )}
           </section>
+
+          {/* Referral Leaderboard */}
+          <ReferralLeaderboard />
         </>
       )}
 
