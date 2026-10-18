@@ -2,13 +2,13 @@ import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { EraLockedModal } from '../components/monetization/EraLockedModal'
-import { TimePortalViewer } from '../features/time-portal/TimePortalViewer'
 import { TimelineExplorerView } from '../features/time-portal/TimelineExplorerView'
+import { XuaNayView } from '../features/time-portal/xuaNay/XuaNayView'
+import { isXuaNaySpot, type XuaNaySpotId } from '../features/time-portal/xuaNay/xuaNayData'
 import { ERA_VALUES, type EraValue } from '../features/time-portal/eraLabels'
 const TunnelScene3D = lazy(() =>
   import('../features/time-portal/TunnelScene3D').then((m) => ({ default: m.TunnelScene3D }))
 )
-import { photoScenesApi, type PhotoScene } from '../features/photo-scenes/api'
 import { recordDiscoveryEngagement } from '../features/gamification/discoveryRouting'
 import { notifyEngagementOutcome } from '../features/gamification/handleEngagement'
 import { analyticsApi } from '../features/analytics/api'
@@ -27,7 +27,8 @@ function isPremiumEra(era: EraValue): boolean {
   return era === 1948 || era === 1968 || era === 1975
 }
 
-type PortalMode = 'timeline' | 'compare' | '3d'
+/** 'xua-nay' = chế độ "Xưa & Nay" (trước đây là "So sánh"; ?view=compare vẫn mở được). */
+type PortalMode = 'timeline' | 'xua-nay' | '3d'
 
 export function TimePortalPage() {
   const { locationId: locationParam } = useParams<{ locationId?: string }>()
@@ -38,36 +39,18 @@ export function TimePortalPage() {
   const requestedEra = parseEra(params.get('era'))
   const questRecord = params.get('questRecord')
   const initialView = params.get('view')
+  const initialSpot = params.get('spot')
 
-  const [mode, setMode] = useState<PortalMode>(initialView === 'compare' ? 'compare' : 'timeline')
-  const [scenes, setScenes] = useState<PhotoScene[]>([])
-  const [scenesLoading, setScenesLoading] = useState(true)
-  const [sceneIndex, setSceneIndex] = useState(0)
+  const [mode, setMode] = useState<PortalMode>(initialView === 'compare' || initialView === 'xua-nay' ? 'xua-nay' : 'timeline')
+  const [spot, setSpot] = useState<XuaNaySpotId>(isXuaNaySpot(initialSpot) ? initialSpot : 'bep-hoang-cam')
+  /** Khoảnh khắc đang xem khi rời Dòng thời gian — để quay lại đúng chỗ. */
+  const [returnMoment, setReturnMoment] = useState<string | undefined>(undefined)
   const [era, setEra] = useState<EraValue>(premium || !isPremiumEra(requestedEra) ? requestedEra : 2026)
   const [paywallOpen, setPaywallOpen] = useState(!premium && isPremiumEra(requestedEra))
   const [paywallEra, setPaywallEra] = useState<EraValue>(isPremiumEra(requestedEra) ? requestedEra : 1948)
   const { showToast } = useToast()
   const { applyEngagement } = useUserProgress()
   const recordedEra = useRef<string | null>(null)
-
-  useEffect(() => {
-    let cancelled = false
-    setScenesLoading(true)
-    photoScenesApi
-      .byLocation(locationId)
-      .then((list) => {
-        if (!cancelled) setScenes(list)
-      })
-      .catch(() => {
-        if (!cancelled) setScenes([])
-      })
-      .finally(() => {
-        if (!cancelled) setScenesLoading(false)
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [locationId])
 
   useEffect(() => {
     if (!isAuthenticated || !premium || !isPremiumEra(era)) return
@@ -115,10 +98,19 @@ export function TimePortalPage() {
         {mode === 'timeline' ? (
           <TimelineExplorerView
             initialEra={era}
+            initialMomentId={returnMoment}
             isPremium={premium}
             onPremiumRequired={requirePremium}
-            onSwitchToCompare={() => setMode('compare')}
-            onSwitchTo3D={() => setMode('3d')}
+            onSwitchTo3D={() => {
+              setReturnMoment(undefined)
+              setMode('3d')
+            }}
+            onOpenXuaNay={(next, momentId) => {
+              setSpot(next)
+              setReturnMoment(momentId)
+              setMode('xua-nay')
+            }}
+            onEraChange={setEra}
           />
         ) : mode === '3d' ? (
           <div className="relative flex-1 min-h-0 bg-gradient-to-b from-sky-900 via-sky-800 to-amber-900">
@@ -169,41 +161,13 @@ export function TimePortalPage() {
             {/* 3D controls hint */}
             <div className="absolute top-4 right-4 z-20 rounded-lg bg-black/50 backdrop-blur-sm px-3 py-2 border border-white/10">
               <p className="text-[10px] text-white/50 leading-relaxed">
-                Kéo để xoay · Cuộn để zoom
+                Kéo để xoay · Cuộn để zoom · Chuột phải để di chuyển
               </p>
             </div>
           </div>
-        ) : scenesLoading ? (
-          <div className="flex flex-1 items-center justify-center bg-surface text-sm text-on-surface-variant" role="status" aria-live="polite">
-            Đang tải ảnh lịch sử...
-          </div>
         ) : (
           <div className="relative flex-1 min-h-0">
-            <TimePortalViewer
-              scenes={scenes}
-              sceneIndex={sceneIndex}
-              onSceneIndexChange={setSceneIndex}
-              initialEra={era}
-              isPremium={premium}
-              onPremiumRequired={(next) => requirePremium(next)}
-              onEraChange={(next) => {
-                if (!premium && isPremiumEra(next)) {
-                  requirePremium(next)
-                  return
-                }
-                setEra(next)
-              }}
-            />
-
-            {/* Switch back to timeline mode */}
-            <button
-              type="button"
-              onClick={() => setMode('timeline')}
-              className="absolute top-4 right-4 z-30 flex items-center gap-1.5 px-3 py-2.5 min-h-[44px] rounded-full bg-black/50 border border-white/20 text-xs text-white/80 backdrop-blur-sm hover:bg-black/70 transition-colors"
-            >
-              <span className="material-symbols-outlined text-base">timeline</span>
-              <span className="hidden sm:inline">Dòng thời gian</span>
-            </button>
+            <XuaNayView spot={spot} onSpotChange={setSpot} onBack={() => setMode('timeline')} />
           </div>
         )}
       </main>

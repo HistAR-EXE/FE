@@ -1609,3 +1609,54 @@
   -webkit-font-smoothing: antialiased;
   flex: 0 0 auto;
 }
+
+/* ===== Time Portal · Hành trình xuyên thời gian ===== */
+@keyframes tp-progress { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes tp-enter { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes tp-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes tp-art-zoom { from { transform: scale(1); } to { transform: scale(1.06); } }
+@keyframes tp-spin { to { transform: rotate(360deg); } }
+@keyframes tp-flag { 0%, 100% { transform: skewY(0deg) scaleX(1); } 50% { transform: skewY(-2.5deg) scaleX(0.97); } }
+@keyframes tp-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes tp-dash { to { stroke-dashoffset: -18; } }
+@keyframes tp-ping { 0% { transform: scale(1); opacity: 0.8; } 100% { transform: scale(2.8); opacity: 0; } }
+@keyframes tp-ring { from { transform: translate(-50%, -50%) scale(0.08); opacity: 0.9; } to { transform: translate(-50%, -50%) scale(2.4); opacity: 0; } }
+@keyframes tp-firefly {
+  0% { transform: translate(0, 0); opacity: 0; }
+  15% { opacity: 0.95; }
+  50% { transform: translate(var(--dx), var(--dy)); opacity: 0.35; }
+  85% { opacity: 0.9; }
+  100% { transform: translate(calc(var(--dx) * -0.6), calc(var(--dy) * 1.3)); opacity: 0; }
+}
+@keyframes tp-fall {
+  0% { transform: translate(0, -12vh) rotate(0deg); opacity: 0; }
+  10% { opacity: 0.75; }
+  100% { transform: translate(var(--dx), 112vh) rotate(260deg); opacity: 0; }
+}
+@keyframes tp-rise {
+  0% { transform: translate(0, 12vh); opacity: 0; }
+  15% { opacity: 0.9; }
+  100% { transform: translate(var(--dx), -112vh); opacity: 0; }
+}
+@keyframes tp-drift {
+  0% { transform: translate(0, 0); opacity: 0; }
+  30% { opacity: 0.65; }
+  100% { transform: translate(var(--dx), var(--dy)); opacity: 0; }
+}
+.tp-particle {
+  position: absolute;
+  border-radius: 9999px;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tp-particle { display: none; }
+  .tp-anim { animation: none !important; }
+}
+.tp-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+}
+.tp-scroll::-webkit-scrollbar { width: 6px; }
+.tp-scroll::-webkit-scrollbar-track { background: transparent; }
+.tp-scroll::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.18); border-radius: 9999px; }
