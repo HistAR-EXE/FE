@@ -1,5 +1,5 @@
 import { expect, type Page } from '@playwright/test'
-import { SEED, STORAGE_KEYS } from './constants'
+import { SEED, STORAGE_KEYS } from './constants.ts'
 
 export const DISPOSABLE_ADMIN = {
   userId: 'histar-e2e-admin',

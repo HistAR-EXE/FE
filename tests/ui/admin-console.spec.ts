@@ -9,7 +9,7 @@ test.beforeEach(async ({ page }) => {
 test('admin landing exposes approved navigation and dashboard permissions', async ({ page }) => {
   await page.goto('/admin')
   await expectAdminPage(page, 'Bàn điều hành')
-  const navigation = page.getByRole('navigation', { name: 'Điều hướng quản trị' })
+  const navigation = page.getByRole('navigation', { name: 'Điều hướng Admin Console' })
   await expect(navigation.getByRole('link', { name: 'Nội dung' })).toHaveAttribute('href', '/admin/content')
   await expect(navigation.getByRole('link', { name: 'Pilot cốt truyện' })).toHaveAttribute('href', '/admin/narrative-pilots')
   await expect(navigation.getByRole('link', { name: 'Thùng rác' })).toHaveAttribute('href', '/admin/trash')
@@ -21,7 +21,7 @@ test('non-admin session cannot enter the admin console', async ({ page }) => {
   await seedAdminSession(page, 'USER')
   await mockAdminApi(page, 'USER')
   await page.goto('/admin')
-  await expect(page).toHaveURL(/\/home$/)
+  await expect(page).toHaveURL(/\/explore$/)
 })
 
 test('billing route keeps payment channel filter and CSV export wired', async ({ page }) => {
