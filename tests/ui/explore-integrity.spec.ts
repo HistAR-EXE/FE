@@ -18,6 +18,7 @@ async function setup(page: Page, state = { value: snapshot(), failLoad: false, f
     // Authentication fixture stands for signing in again after clearing storage; it seeds no XP.
     const values = { timelens_token: 'ui-fixture', timelens_user_id: 'explorer-a', timelens_display_name: 'explorer-a',
       timelens_role: 'USER', timelens_tier: 'FREE', timelens_email_verified: '1', timelens_mode: 'online',
+      'timelens:product-tour-complete': 'true',
       histar_consent_v1: JSON.stringify({ analytics: false, camera: false, gps: false }) }
     for (const [key, value] of Object.entries(values)) localStorage.setItem(key, value)
   })
