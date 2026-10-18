@@ -1,0 +1,107 @@
+.honors-next-story { position: relative; display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(220px, 1fr); overflow: hidden; border: 1px solid #bad6fa; border-radius: 26px; margin-bottom: 38px; background: linear-gradient(115deg, #edf5ff, #fff 62%, #fff9da); box-shadow: 0 12px 35px #144a7c08; }
+.honors-next-copy { padding: 34px 36px 30px; }
+.honors-next-copy h2 { font-size: clamp(25px, 2.3vw, 34px); line-height: 1.4; letter-spacing: -.9px; color: #123968; font-weight: 900; max-width: 590px; }
+.honors-next-copy > p:not(.honors-kicker) { font-size: 14px; line-height: 1.9; color: #536d8d; max-width: 560px; margin: 15px 0 21px; }
+.honors-next-copy .honors-primary-yellow { margin: 0; width: fit-content; gap: 22px; padding-inline: 22px; }
+.honors-next-map { position: relative; padding: 31px 30px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; background-image: linear-gradient(#367fe808 1px, transparent 1px), linear-gradient(90deg, #367fe808 1px, transparent 1px); background-size: 23px 23px; }
+.honors-next-map::before { content: ''; position: absolute; width: 165px; height: 165px; border: 1px dashed #c9a22845; border-radius: 50%; pointer-events: none; top: 17px; left: calc(50% - 83px); }
+.honors-next-emblem { display: grid; place-items: center; width: 76px; height: 76px; border-radius: 24px; background: linear-gradient(140deg, #fff6bf, #ffd342); color: #9b6a00; border: 4px solid white; box-shadow: 0 8px 23px #bf921728; margin-bottom: 15px; transform: rotate(-7deg); }
+.honors-next-emblem .material-symbols-outlined { font-size: 37px; transform: rotate(7deg); }
+.honors-next-caption { font-size: 10px; letter-spacing: 1.4px; color: #7b6d40; font-weight: 800; }
+.honors-next-map h3 { font-size: 19px; line-height: 1.5; font-weight: 900; margin: 7px 0 10px; color: #123968; }
+.honors-next-meter { display: flex; gap: 10px; align-items: baseline; font-size: 12px; color: #607994; }
+.honors-next-meter b { font-size: 24px; color: #0068ef; font-weight: 900; }
+.honors-next-map progress { margin-top: 12px; max-width: 200px; }
+.honors-paths { grid-column: 1/-1; display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); border-top: 1px solid #d8e5f4; background: #ffffffb0; }
+.honors-paths a { min-width: 0; display: flex; align-items: center; gap: 10px; padding: 17px 18px; border-right: 1px solid #e2eaf4; color: #295983; transition: background .2s; font-size: 12px; font-weight: 750; line-height: 1.5; }
+.honors-paths a:last-child { border-right: 0; }
+.honors-paths a:hover { background: #eaf3ff; }
+.honors-paths small { display: block; font-weight: 500; font-size: 11px; margin-top: 3px; color: #647d98; }
+.honors-paths .honors-path-done > .material-symbols-outlined { color: #198f6e; }
+.honors-next-complete { border-color: #c4dfd2; }
+.honors-story-heading { display: flex; align-items: end; justify-content: space-between; gap: 30px; margin-bottom: 24px; }
+.honors-story-heading h2 { font-size: 28px; line-height: 1.4; letter-spacing: -.8px; font-weight: 900; color: #13345a; }
+.honors-story-heading > p { max-width: 340px; color: #617995; font-size: 13px; line-height: 1.9; }
+.honors-spotlights { margin-bottom: 37px; }
+.honors-spotlight-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 20px; }
+.honors-spotlight { --story-accent: #0068ef; --story-wash: #edf5ff; border: 1px solid #d6e5f7; border-radius: 23px; padding: 24px; background: linear-gradient(135deg, var(--story-wash), #fff 50%); display: flex; flex-direction: column; min-width: 0; box-shadow: 0 7px 24px #144a7c05; transition: box-shadow .25s, border-color .25s; }
+.honors-spotlight:hover { box-shadow: 0 12px 27px #144a7c10; border-color: #a6c8ef; }
+.honors-spotlight-1 { --story-accent: #197c67; --story-wash: #eefaf5; }
+.honors-spotlight-2 { --story-accent: #946200; --story-wash: #fff8df; }
+.honors-spotlight-3 { --story-accent: #a34855; --story-wash: #fff1f2; }
+.honors-spotlight-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.honors-spotlight-icon { display: grid; place-items: center; background: var(--story-wash); color: var(--story-accent); width: 48px; height: 48px; border: 1px solid #ffffff; border-radius: 15px; box-shadow: 0 3px 10px #143b6b06; }
+.honors-spotlight-icon .material-symbols-outlined { font-size: 27px; }
+.honors-spotlight-number { color: var(--story-accent); opacity: .2; font-size: 39px; font-weight: 900; letter-spacing: -2px; line-height: 1; }
+.honors-spotlight h3 { font-size: 20px; line-height: 1.5; color: #163554; font-weight: 900; }
+.honors-criteria { margin: 8px 0 17px; color: #5c7692; font-size: 12px; line-height: 1.85; }
+.honors-criteria summary { cursor: pointer; width: fit-content; color: var(--story-accent); font-weight: 650; text-underline-offset: 3px; }
+.honors-criteria summary:hover { text-decoration: underline; }
+.honors-criteria p { margin: 10px 0 7px; }
+.honors-criteria small { font-size: 11px; }
+.honors-spotlight-caption { text-transform: uppercase; letter-spacing: 1px; font-size: 10px; font-weight: 800; color: #758ba4; margin-bottom: 7px; }
+.honors-spotlight-people { list-style: none; margin: 0 0 18px; padding: 0; }
+.honors-spotlight-people li { display: flex; align-items: center; gap: 10px; padding: 11px 0; min-width: 0; border-bottom: 1px solid #e7edf5; }
+.honors-spotlight-people li:last-child { border-bottom: 0; }
+.honors-spotlight-people .honors-avatar { width: 37px; height: 37px; font-size: 12px; flex-shrink: 0; }
+.honors-spotlight-people li > span:not(.honors-avatar) { flex: 1; min-width: 0; }
+.honors-spotlight-people b { font-size: 13px; line-height: 1.6; overflow-wrap: anywhere; }
+.honors-spotlight-people strong { color: var(--story-accent); font-size: 19px; text-align: right; flex-shrink: 0; }
+.honors-spotlight-people strong small { display: block; font-size: 10px; font-weight: 500; color: #70869f; }
+.honors-spotlight-me b { color: #0068ef; }
+.honors-spotlight footer { margin-top: auto; border-top: 1px dashed #dce5f1; padding-top: 14px; display: flex; flex-direction: column; gap: 8px; color: #5c7490; font-size: 12px; line-height: 1.8; }
+.honors-spotlight footer b { color: var(--story-accent); }
+.honors-spotlight footer small { display: block; font-size: 11px; }
+.honors-spotlight-empty { display: flex; gap: 12px; align-items: center; color: #6a819b; font-size: 13px; line-height: 1.9; min-height: 90px; padding-block: 12px; }
+.honors-timeline-intro { font-size: 14px; line-height: 1.9; color: #5d7694; margin: -8px 0 26px; }
+.honors-moments { list-style: none; margin: 0; padding: 0; }
+.honors-moments li { position: relative; display: flex; align-items: start; gap: 18px; padding-bottom: 27px; }
+.honors-moments li:not(:last-child)::before { content: ''; position: absolute; left: 19px; top: 44px; bottom: 5px; width: 1px; background: linear-gradient(#ffd861, #d8e5f6); }
+.honors-moment-pin { display: grid; place-items: center; flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%; color: #b08000; background: #fff6d5; border: 1px solid #ffe2a1; }
+.honors-moment-pin .material-symbols-outlined { font-size: 20px; }
+.honors-moments li > div { min-width: 0; flex: 1; }
+.honors-moments time, .honors-undated { font-size: 11px; font-weight: 700; color: #6e85a0; line-height: 1.8; }
+.honors-moments h3 { margin: 5px 0 7px; font-size: 18px; color: #173d65; font-weight: 850; line-height: 1.5; overflow-wrap: anywhere; }
+.honors-moments p { font-size: 13px; line-height: 1.9; color: #5e7693; }
+.honors-moments a { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; color: #0068ef; font-weight: 750; margin-top: 8px; }
+.honors-history-toggle { display: flex; align-items: center; justify-content: center; width: 100%; gap: 10px; background: #edf5ff; color: #0066dc; padding: 12px; border: 1px solid #cfe0f7; border-radius: 12px; font-size: 13px; font-weight: 750; cursor: pointer; }
+.honors-timeline-note { border-top: 1px solid #e1eaf6; padding-top: 17px; margin-top: 20px; color: #788da5; font-size: 11px; line-height: 1.9; }
+.honors-timeline-empty { padding: 14px 0; color: #607b98; font-size: 14px; line-height: 1.9; }
+.honors-timeline-empty > .material-symbols-outlined { font-size: 40px; color: #9ac0f2; }
+.honors-timeline-empty h3 { font-size: 20px; font-weight: 850; color: #183d66; margin: 12px 0; }
+.honors-timeline-empty a { margin-top: 20px; width: fit-content; }
+.honors-story-unavailable { border: 1px dashed #b7cdeb; padding: 22px; background: #f8fbff; border-radius: 18px; margin-bottom: 28px; font-size: 13px; color: #5d7590; line-height: 1.9; }
+.honors-story-unavailable button { margin-top: 9px; }
+.honors-stories-loading { font-size: 13px; padding: 20px 0; color: #637b98; }
+@media (max-width: 700px) {
+  .honors-next-story { grid-template-columns: 1fr; border-radius: 21px; }
+  .honors-next-copy { padding: 25px 22px 18px; }
+  .honors-next-copy h2 { font-size: 28px; }
+  .honors-next-copy > p:not(.honors-kicker) { font-size: 14px; }
+  .honors-next-copy .honors-primary-yellow { width: 100%; font-size: 13px; }
+  .honors-next-map { padding: 22px; }
+  .honors-next-map::before { display: none; }
+  .honors-next-emblem { width: 59px; height: 59px; border-radius: 18px; }
+  .honors-next-emblem .material-symbols-outlined { font-size: 29px; }
+  .honors-paths { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .honors-paths a { padding: 15px 12px; gap: 7px; font-size: 11px; border-bottom: 1px solid #e2eaf4; }
+  .honors-paths small { font-size: 10px; }
+  .honors-story-heading { display: block; }
+  .honors-story-heading h2 { font-size: 26px; }
+  .honors-story-heading > p { margin-top: 13px; font-size: 14px; }
+  .honors-spotlight-grid { grid-template-columns: 1fr; gap: 15px; }
+  .honors-spotlight { padding: 22px; }
+  .honors-spotlight h3 { font-size: 21px; }
+  .honors-spotlight-people b { font-size: 14px; }
+  .honors-criteria { font-size: 13px; }
+  .honors-moments li { gap: 13px; }
+  .honors-moments h3 { font-size: 18px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .honors-next-emblem { animation: honors-compass 6s ease-in-out infinite; }
+  .honors-spotlight { animation: honors-enter 600ms ease-out both; }
+  .honors-spotlight:nth-child(2) { animation-delay: 70ms; }
+  .honors-spotlight:nth-child(3) { animation-delay: 140ms; }
+  .honors-spotlight:nth-child(4) { animation-delay: 210ms; }
+}
+@keyframes honors-compass { 0%,100% { transform: rotate(-7deg); } 50% { transform: rotate(5deg) translateY(-4px); } }

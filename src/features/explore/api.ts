@@ -25,6 +25,7 @@ export type ExploreAttemptResponse = {
 
 export const exploreApi = {
   snapshot: () => getData<ExploreSnapshot>(httpClient.get('/api/me/explore')),
+  readSnapshot: () => getData<ExploreSnapshot>(httpClient.get('/api/me/explore/summary', { timeout: 20000 })),
   submit: (locationId: string, key: string, answer?: number) =>
     getData<ExploreAttemptResponse>(httpClient.post('/api/me/explore/attempts', { locationId, key, answer })),
   recordDiorama: (locationId: string) =>
