@@ -14,7 +14,7 @@ import { emitEvent } from '../lib/pilotEvents'
 import { useAuth } from '../shared/auth/useAuth'
 import { useToast } from '../shared/ui/toast/useToast'
 import mascotImg from '../assets/mascot.png'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { buildChatPath, saveSelectedLocationId } from '../features/chat/chatRoute'
 import { useAppMode } from '../shared/context/useAppMode'
 
@@ -633,6 +633,8 @@ const MAX_ARCHIVE_XP =
 // Thành tích chỉ được khôi phục từ server sau khi đăng nhập.
 
 export function ExplorePage() {
+    const [honorsParams] = useSearchParams()
+    const appliedHonorsLink = useRef<string | null>(null)
     const { user } = useAuth()
     const userId = user?.id
     const navigate = useNavigate()
@@ -1038,6 +1040,48 @@ export function ExplorePage() {
     }
 
     const allCiphersUnlocked = unlockedCipherIds.length === SECRET_CIPHERS.length
+
+    // A vinh danh link selects a view only. It never records evidence or submits a quiz.
+    useEffect(() => {
+        if (dataStatus !== 'ready' || !userId || snapshotOwner !== userId) return
+        const path = honorsParams.get('honorsPath')
+        const target = honorsParams.get('target')
+        const sections: Record<string, string> = { depths: 'depth-quiz-section', ciphers: 'honors-ciphers', evidence: 'honors-evidence', dossiers: 'honors-dossiers' }
+        if (!path || !Object.prototype.hasOwnProperty.call(sections, path)) return
+        const identity = `${userId}:${path}:${target ?? ''}`
+        if (appliedHonorsLink.current === identity) return
+        if (path === 'depths' && target) {
+            const layer = DEPTH_LAYERS.find(item => item.id === target)
+            if (!layer) return
+            setActiveDepthId(layer.id)
+        } else if (path === 'ciphers' && target) {
+            const cipher = SECRET_CIPHERS.find(item => item.discoveryKey === `cipher:${target}`)
+            if (!cipher) return
+            ++cipherViewVersion.current
+            setActiveCipher(cipher)
+            setSelectedCipherOption(null)
+            setCipherFeedback(unlockedKeys.includes(cipher.discoveryKey) ? 'success' : 'idle')
+        } else if (path === 'dossiers' && target) {
+            const dossier = STORY_DOSSIERS.find(item => item.discoveryKey === `dossier:${target}`)
+            if (!dossier) return
+            const archive = document.getElementById('honors-dossiers')
+            exploreScrollYRef.current = archive ? archive.getBoundingClientRect().top + window.scrollY : window.scrollY
+            ++dossierViewVersion.current
+            setActiveDossier(dossier)
+            setSelectedQuizOption(null)
+            setQuizSubmitted(unlockedKeys.includes(dossier.discoveryKey))
+            setDossierPassed(unlockedKeys.includes(dossier.discoveryKey))
+        } else if (path === 'evidence' && target && target !== 'conclusion') {
+            const clue = INVESTIGATION_CLUES.find(item => item.discoveryKey === `clue:${target}`)
+            if (!clue) return
+            setActiveClueCode(clue.code)
+        }
+        appliedHonorsLink.current = identity
+        const frame = requestAnimationFrame(() => document.getElementById(sections[path])?.scrollIntoView({
+            behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start',
+        }))
+        return () => cancelAnimationFrame(frame)
+    }, [dataStatus, userId, snapshotOwner, honorsParams, unlockedKeys])
 
     if (!user || snapshotOwner !== user.id || dataStatus !== 'ready') {
         return <AppLayout activeBorder="right" mobileTitle="Khám phá">
@@ -1677,6 +1721,7 @@ export function ExplorePage() {
                                             <button
                                                 key={layer.id}
                                                 type="button"
+                                                aria-pressed={isSelected}
                                                 onClick={() => handleSelectDepthLayer(layer)}
                                                 className={`w-full text-left p-3.5 sm:p-4 rounded-2xl border-2 transition-all cursor-pointer flex items-center justify-between gap-3 ${
                                                     isSelected
@@ -1947,7 +1992,7 @@ export function ExplorePage() {
                     {/* --------------------------------------------------------- */}
                     {/* MODULE 2: BÀN GIẢI MÃ MẬT LỆNH & MẬT THƯ CHIẾN KHU        */}
                     {/* --------------------------------------------------------- */}
-                    <section className="space-y-6">
+                    <section id="honors-ciphers" className="space-y-6">
                         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
                             <div>
                                 <div className="flex items-center gap-2 text-xs font-black text-[#0275FB] uppercase tracking-wider">
@@ -2037,7 +2082,7 @@ export function ExplorePage() {
                     {/* --------------------------------------------------------- */}
                     {/* MODULE 3: BẢNG ĐIỀU TRA CHỨNG CỨ LỊCH SỬ (LIGHT MODE)     */}
                     {/* --------------------------------------------------------- */}
-                    <section className="bg-white border-2 border-[#0275FB]/20 rounded-[2.2rem] p-6 sm:p-8 shadow-[0_15px_40px_rgba(2,117,251,0.08)] space-y-6">
+                    <section id="honors-evidence" className="bg-white border-2 border-[#0275FB]/20 rounded-[2.2rem] p-6 sm:p-8 shadow-[0_15px_40px_rgba(2,117,251,0.08)] space-y-6">
                         <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-100 pb-5">
                             <div>
                                 <div className="flex items-center gap-2 text-xs font-black text-[#0275FB] uppercase tracking-wider">
@@ -2163,7 +2208,7 @@ export function ExplorePage() {
                     {/* --------------------------------------------------------- */}
                     {/* MODULE 4: KHO LƯU TRỮ "MẢNH CHUYỆN ĐẤT THÉP"              */}
                     {/* --------------------------------------------------------- */}
-                    <section className="space-y-6">
+                    <section id="honors-dossiers" className="space-y-6">
                         <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-4 border-b border-slate-200 pb-4">
                             <div className="pr-2">
                                 <div className="flex items-center gap-2 text-xs font-black text-[#0275FB] uppercase tracking-wider">

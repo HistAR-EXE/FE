@@ -18,6 +18,7 @@ async function setup(page: Page, state = { value: snapshot(), failLoad: false, f
     // Authentication fixture stands for signing in again after clearing storage; it seeds no XP.
     const values = { timelens_token: 'ui-fixture', timelens_user_id: 'explorer-a', timelens_display_name: 'explorer-a',
       timelens_role: 'USER', timelens_tier: 'FREE', timelens_email_verified: '1', timelens_mode: 'online',
+      'timelens:product-tour-complete': 'true',
       histar_consent_v1: JSON.stringify({ analytics: false, camera: false, gps: false }) }
     for (const [key, value] of Object.entries(values)) localStorage.setItem(key, value)
   })
@@ -43,6 +44,33 @@ async function setup(page: Page, state = { value: snapshot(), failLoad: false, f
   })
   return { state, writes }
 }
+
+test('honors link opens exact unfinished depth without submitting an answer', async ({ page }) => {
+  const { writes } = await setup(page)
+  await page.goto('/explore?honorsPath=depths&target=layer3')
+  await expect(page.locator('#depth-quiz-section')).toContainText('-12m')
+  await expect(page.locator('#depth-quiz-section').getByRole('button', { pressed: true })).toContainText('Tầng 3')
+  expect(writes.filter(w => w.path.includes('/attempts'))).toHaveLength(0)
+})
+
+test('honors cipher link opens its actual quiz and closing it stays closed', async ({ page }) => {
+  const { writes } = await setup(page)
+  await page.goto('/explore?honorsPath=ciphers&target=two-wells')
+  await expect(page.getByRole('dialog')).toBeVisible()
+  await expect(page.getByRole('dialog')).toContainText('MẬT THƯ KỸ THUẬT 68-ĐH')
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  expect(writes.filter(w => w.path.includes('/attempts'))).toHaveLength(0)
+})
+
+test('honors dossier link returns to archive instead of the page hero', async ({ page }) => {
+  const { writes } = await setup(page)
+  await page.goto('/explore?honorsPath=dossiers&target=architecture')
+  await expect(page.getByRole('button', { name: /Quay lại Kho Sử Liệu/ })).toBeVisible()
+  await page.getByRole('button', { name: /Quay lại Kho Sử Liệu/ }).click()
+  await expect(page.locator('#honors-dossiers')).toBeInViewport()
+  expect(writes.filter(w => w.path.includes('/attempts'))).toHaveLength(0)
+})
 
 test('restores server XP, level and discoveries after clearing browser storage', async ({ page }) => {
   const { writes } = await setup(page, { value: snapshot('explorer-a', 205, ['depth_quiz:surface']), failLoad: false, failAttempt: false })

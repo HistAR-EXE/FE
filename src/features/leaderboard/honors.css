@@ -1,0 +1,1222 @@
+.honors-layout{
+  background:#f2f7ff;
+  color:#112747
+}
+.honors-page{
+  --honors-blue:#0068ef;
+  --honors-ink:#112747;
+  --honors-muted:#6a7e99;
+  --honors-line:#dfe9f6;
+  background:#f2f7ff;
+  min-height:100vh;
+  color:var(--honors-ink);
+  padding-bottom:35px
+}
+.honors-page button,.honors-page a{
+  touch-action:manipulation
+}
+.honors-page button:focus-visible,.honors-page a:focus-visible,.honors-dialog button:focus-visible{
+  outline:3px solid #0068ef;
+  outline-offset:4px
+}
+.honors-page button{
+  cursor:pointer
+}
+.honors-page button:disabled{
+  cursor:wait;
+  opacity:.45
+}
+.honors-breadcrumb{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  padding:22px 4%;
+  background:#fff;
+  font-size:12px;
+  color:#7286a0
+}
+.honors-breadcrumb>span>span{
+  margin:0 12px;
+  color:#c0cbda
+}
+.honors-breadcrumb b{
+  color:#284260
+}
+.honors-profile-link{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  color:#0068ef;
+  font-weight:700
+}
+.honors-hero{
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+  background:linear-gradient(115deg,#0353b8,#0275fb 68%,#0461d1);
+  border-bottom:4px solid #ffcf10;
+  min-height:300px;
+  padding:46px 4%;
+  color:#fff
+}
+.honors-hero:before{
+  content:'';
+  position:absolute;
+  inset:0;
+  z-index:-1;
+  background-image:linear-gradient(#ffffff0b 1px,transparent 1px),linear-gradient(90deg,#ffffff0b 1px,transparent 1px);
+  background-size:44px 44px
+}
+.honors-hero:after{
+  content:'';
+  position:absolute;
+  right:-70px;
+  top:-90px;
+  width:450px;
+  height:450px;
+  border:1px solid #ffffff20;
+  border-radius:50%;
+  z-index:-1;
+  box-shadow:0 0 0 55px #ffffff05,0 0 0 110px #ffffff03
+}
+.honors-hero-copy{
+  position:relative;
+  z-index:1;
+  max-width:73%
+}
+.honors-eyebrow{
+  font-size:10px;
+  text-transform:uppercase;
+  font-weight:800;
+  letter-spacing:1.8px;
+  color:#ffe16d;
+  margin:0 0 20px
+}
+.honors-hero h1{
+  font-size:clamp(27px,2.6vw,43px);
+  line-height:1.35;
+  font-weight:900;
+  letter-spacing:-1.4px;
+  margin:0 0 19px
+}
+.honors-hero h1 span{
+  color:#ffdc4d
+}
+.honors-intro{
+  font-size:13px;
+  line-height:1.95;
+  max-width:660px;
+  color:#ecf4ff
+}
+.honors-hero-tag{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  margin-top:19px;
+  border:1px solid #ffffff39;
+  background:#ffffff13;
+  padding:8px 12px;
+  border-radius:30px;
+  font-size:10px;
+  font-weight:700
+}
+.honors-hero-tag .material-symbols-outlined{
+  font-size:17px
+}
+.honors-mascot{
+  position:absolute;
+  right:3%;
+  bottom:12px;
+  width:23%;
+  max-width:260px;
+  filter:drop-shadow(0 15px 20px #003d7933);
+  pointer-events:none
+}
+.honors-content{
+  max-width:1480px;
+  margin:auto;
+  padding:28px 4% 0
+}
+.honors-toolbar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  margin-bottom:24px
+}
+.honors-scope{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  flex-wrap:wrap;
+  font-size:12px
+}
+.honors-scope>.material-symbols-outlined{
+  color:#0068ef;
+  font-size:21px
+}
+.honors-scope>span:last-child{
+  border-left:1px solid #cddbed;
+  padding-left:12px;
+  font-size:10px;
+  color:#6c819c
+}
+.honors-toolbar-actions{
+  display:flex;
+  gap:10px;
+  align-items:center
+}
+.honors-text-button{
+  border:0;
+  background:transparent;
+  color:#0062d8;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  font-size:11px;
+  font-weight:700;
+  padding:8px 0
+}
+.honors-text-button>.material-symbols-outlined{
+  font-size:18px
+}
+.honors-icon-button{
+  display:inline-grid;
+  place-items:center;
+  width:35px;
+  height:35px;
+  border-radius:10px;
+  border:1px solid #d7e4f3;
+  background:#fff;
+  color:#0068ef;
+  flex-shrink:0
+}
+.honors-icon-button>.material-symbols-outlined{
+  font-size:20px
+}
+.honors-manifesto{
+  background:#fff;
+  border:1px solid var(--honors-line);
+  border-radius:17px;
+  display:flex;
+  gap:17px;
+  align-items:center;
+  padding:20px 24px;
+  margin-bottom:25px
+}
+.honors-manifesto-icon{
+  display:grid;
+  place-items:center;
+  background:#fff3b7;
+  color:#a57500;
+  border-radius:13px;
+  width:45px;
+  height:45px;
+  flex-shrink:0
+}
+.honors-manifesto h2{
+  font-weight:800;
+  font-size:13px;
+  line-height:1.8;
+  margin:0 0 5px
+}
+.honors-manifesto p{
+  font-size:11px;
+  line-height:1.8;
+  color:var(--honors-muted);
+  margin:0
+}
+.honors-grid{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 300px;
+  gap:24px;
+  align-items:start
+}
+.honors-community,.honors-personal{
+  display:flex;
+  flex-direction:column;
+  gap:24px;
+  min-width:0
+}
+.honors-card{
+  background:#fff;
+  border:1px solid var(--honors-line);
+  border-radius:19px;
+  padding:24px;
+  box-shadow:0 5px 15px #1b4c8408
+}
+.honors-section-title{
+  display:flex;
+  justify-content:space-between;
+  gap:16px;
+  align-items:center;
+  margin-bottom:20px
+}
+.honors-section-title h2{
+  font-size:17px;
+  font-weight:800;
+  letter-spacing:-.45px;
+  margin:0;
+  line-height:1.5
+}
+.honors-section-title h3{
+  font-size:13px;
+  font-weight:800;
+  margin:0
+}
+.honors-section-title>span:not(.material-symbols-outlined),.honors-section-title a{
+  font-size:10px;
+  color:#6c809a;
+  text-align:right
+}
+.honors-section-title a{
+  color:#0068ef;
+  white-space:nowrap;
+  font-weight:700
+}
+.honors-kicker{
+  text-transform:uppercase;
+  letter-spacing:1.25px;
+  font-size:9px;
+  color:#788da7;
+  font-weight:800;
+  line-height:1.8;
+  margin:0 0 5px
+}
+.honors-gold{
+  color:#c49912
+}
+.honors-blue{
+  color:#0068ef
+}
+.honors-avatar{
+  width:38px;
+  height:38px;
+  border-radius:50%;
+  background:#e9f1ff;
+  color:#496caa;
+  font-size:12px;
+  font-weight:800;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  flex-shrink:0;
+  overflow:hidden
+}
+.honors-avatar img{
+  width:100%;
+  height:100%;
+  object-fit:cover
+}
+.honors-avatar-me{
+  background:#ffeda0;
+  color:#836200
+}
+.honors-avatar-large{
+  width:76px;
+  height:76px;
+  border:4px solid white;
+  outline:2px solid #d4e2f6;
+  font-size:20px;
+  box-shadow:0 7px 13px #12427210
+}
+.honors-podium{
+  display:flex;
+  gap:15px;
+  align-items:flex-end;
+  padding:10px 2px 26px
+}
+.honors-winner{
+  flex:1;
+  text-align:center;
+  min-width:0
+}
+.honors-winner-1{
+  order:2
+}
+.honors-winner-2{
+  order:1
+}
+.honors-winner-3{
+  order:3
+}
+.honors-crown{
+  height:32px;
+  color:#d1a000;
+  margin-bottom:7px
+}
+.honors-crown>.material-symbols-outlined{
+  font-size:34px
+}
+.honors-winner-1 .honors-avatar{
+  width:90px;
+  height:90px;
+  outline-color:#ffcd08;
+  background:#fff3ba;
+  color:#957500
+}
+.honors-winner h3{
+  font-size:12px;
+  font-weight:800;
+  text-overflow:ellipsis;
+  overflow:hidden;
+  white-space:nowrap;
+  margin:17px 0 8px
+}
+.honors-winner p{
+  font-size:16px;
+  font-weight:900;
+  color:#0068ef;
+  margin:0 0 6px
+}
+.honors-winner p span{
+  font-size:10px
+}
+.honors-winner>small{
+  font-size:9px;
+  line-height:1.6;
+  color:#7489a3;
+  display:block
+}
+.honors-step{
+  height:76px;
+  margin-top:20px;
+  border-radius:14px 14px 0 0;
+  background:linear-gradient(#eaf2ff,#f8fbff);
+  border:1px solid #dfeaff;
+  border-bottom:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:4px;
+  font-size:12px;
+  font-weight:800;
+  color:#657fa6
+}
+.honors-step>.material-symbols-outlined{
+  font-size:28px;
+  opacity:.7
+}
+.honors-winner-1 .honors-step{
+  height:104px;
+  background:linear-gradient(#ffdc54,#fff5cb);
+  border-color:#f9dc76;
+  color:#906b00
+}
+.honors-winner-3 .honors-step{
+  height:62px;
+  background:linear-gradient(#ffe6d4,#fff9f3);
+  border-color:#ffe0c7;
+  color:#996b47
+}
+.honors-list-title{
+  margin:10px 0 8px
+}
+.honors-table-wrap{
+  width:100%;
+  overflow-x:auto
+}
+.honors-table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:12px;
+  text-align:left
+}
+.honors-table th{
+  text-transform:uppercase;
+  font-size:9px;
+  letter-spacing:.65px;
+  font-weight:600;
+  color:#6d8099;
+  padding:14px 9px;
+  border-bottom:1px solid var(--honors-line)
+}
+.honors-table td{
+  padding:15px 9px;
+  border-bottom:1px solid #edf2f9;
+  vertical-align:middle
+}
+.honors-table tr:last-child td{
+  border-bottom:0
+}
+.honors-table th:first-child,.honors-table td:first-child{
+  width:52px
+}
+.honors-table td:first-child{
+  font-weight:800;
+  color:#6f839d
+}
+.honors-table th:last-child,.honors-table td:last-child{
+  text-align:right;
+  white-space:nowrap
+}
+.honors-table td:last-child{
+  font-weight:800;
+  color:#0068ef
+}
+.honors-table td:last-child>span{
+  font-size:9px
+}
+.honors-person{
+  display:flex;
+  gap:11px;
+  align-items:center;
+  min-width:0
+}
+.honors-person>div{
+  min-width:0
+}
+.honors-person b{
+  display:block;
+  font-size:11px;
+  overflow-wrap:anywhere;
+  line-height:1.6
+}
+.honors-person small{
+  font-size:9px;
+  color:#7489a3;
+  display:block;
+  margin-top:4px
+}
+.honors-you{
+  display:inline-block;
+  font-size:8px;
+  background:#ffec9c;
+  color:#705600;
+  border-radius:4px;
+  padding:1px 5px;
+  margin-left:5px
+}
+.honors-row-me td{
+  background:#fffae1
+}
+.honors-row-me td:first-child{
+  border-radius:10px 0 0 10px
+}
+.honors-row-me td:last-child{
+  border-radius:0 10px 10px 0
+}
+.honors-footnote{
+  font-size:10px;
+  color:#6f839f;
+  line-height:1.9;
+  margin:18px 0 0
+}
+.honors-viewer{
+  border-color:#f3d166;
+  background:linear-gradient(145deg,#fffcec,#fff 70%);
+  position:sticky;
+  top:20px
+}
+.honors-viewer-heading{
+  display:flex;
+  align-items:center;
+  gap:11px;
+  margin-top:16px
+}
+.honors-viewer-heading h2{
+  font-size:14px;
+  font-weight:800;
+  margin:0;
+  overflow-wrap:anywhere
+}
+.honors-viewer-heading p{
+  font-size:10px;
+  color:#6b7f98;
+  margin:5px 0 0
+}
+.honors-viewer-rank{
+  margin:22px 0 20px
+}
+.honors-viewer-rank>b{
+  display:block;
+  font-size:46px;
+  font-weight:900;
+  letter-spacing:-2px;
+  line-height:1.1
+}
+.honors-viewer-rank>b.honors-unranked{
+  font-size:23px;
+  letter-spacing:-.6px;
+  line-height:1.5
+}
+.honors-viewer-rank>span{
+  display:block;
+  font-size:10px;
+  line-height:1.8;
+  color:#6a7e97;
+  margin-top:8px
+}
+.honors-viewer-xp{
+  border-top:1px dashed #dfdbc4;
+  padding-top:18px;
+  display:flex;
+  flex-direction:column;
+  gap:8px
+}
+.honors-viewer-xp>span{
+  font-size:10px;
+  color:#6e7d92
+}
+.honors-viewer-xp>b{
+  font-size:26px;
+  font-weight:900;
+  color:#0068ef;
+  line-height:1.4
+}
+.honors-viewer-xp small{
+  font-size:11px
+}
+.honors-viewer-meta{
+  display:flex;
+  justify-content:space-between;
+  font-size:10px;
+  color:#70829b;
+  margin:11px 0 18px
+}
+.honors-page progress{
+  width:100%;
+  height:7px;
+  border:0;
+  border-radius:10px;
+  overflow:hidden;
+  background:#e9f0fa;
+  display:block;
+  accent-color:#0068ef
+}
+.honors-page progress::-webkit-progress-bar{
+  background:#e9f0fa;
+  border-radius:10px
+}
+.honors-page progress::-webkit-progress-value{
+  background:#0068ef;
+  border-radius:10px
+}
+.honors-hint{
+  font-size:10px;
+  color:#6f819a;
+  line-height:1.9;
+  margin:10px 0
+}
+.honors-distance{
+  font-size:10px;
+  line-height:1.9;
+  padding-top:15px;
+  color:#697d96
+}
+.honors-distance b{
+  color:#0068ef
+}
+.honors-primary{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  padding:13px 18px;
+  border:0;
+  border-radius:11px;
+  background:#0068ef;
+  color:white;
+  font-size:12px;
+  font-weight:800;
+  text-align:center;
+  line-height:1.5
+}
+.honors-primary:hover{
+  background:#005ace
+}
+.honors-primary-yellow{
+  background:#ffce08;
+  color:#3e3500;
+  width:100%;
+  margin-top:17px;
+  font-size:11px
+}
+.honors-primary-yellow:hover{
+  background:#ffdc48
+}
+.honors-primary>.material-symbols-outlined{
+  font-size:18px
+}
+.honors-badge-card .honors-section-title{
+  gap:8px
+}
+.honors-badge-card h2{
+  font-size:13px
+}
+.honors-badges{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:8px
+}
+.honors-badges a{
+  padding:7px;
+  border:1px solid #e1ecf9;
+  border-radius:13px;
+  background:#f6faff;
+  transition:transform .2s
+}
+.honors-badges a:hover{
+  transform:translateY(-3px)
+}
+.honors-badges img{
+  width:100%;
+  aspect-ratio:1;
+  object-fit:contain
+}
+.honors-quote{
+  border:1px solid #d9e9ff;
+  background:#eaf3ff;
+  border-radius:17px;
+  padding:22px;
+  color:#4a698e;
+  font-size:11px;
+  line-height:1.9
+}
+.honors-quote>.material-symbols-outlined{
+  display:block;
+  color:#80b3f3;
+  font-size:29px;
+  margin-bottom:6px
+}
+.honors-quote b{
+  font-size:13px;
+  color:#005fcf;
+  display:block
+}
+.honors-quote p{
+  margin:8px 0 0
+}
+.honors-updated{
+  font-size:9px;
+  color:#6e829e;
+  line-height:2;
+  text-align:center
+}
+.honors-personal-stats{
+  display:flex;
+  gap:40px;
+  padding:8px 0 22px;
+  border-bottom:1px solid var(--honors-line);
+  margin-bottom:20px
+}
+.honors-personal-stats b{
+  font-size:27px;
+  font-weight:900;
+  color:#0068ef;
+  display:block;
+  margin-bottom:4px
+}
+.honors-personal-stats b small{
+  font-size:13px;
+  color:#7f94ad
+}
+.honors-personal-stats span{
+  font-size:10px;
+  color:#6c819b
+}
+.honors-milestone{
+  display:flex;
+  gap:17px;
+  align-items:center;
+  padding:8px 0;
+  color:inherit
+}
+.honors-milestone>img{
+  width:70px;
+  height:70px;
+  object-fit:contain;
+  background:#f4f8ff;
+  border-radius:13px;
+  padding:6px
+}
+.honors-milestone>div{
+  flex:1;
+  min-width:0
+}
+.honors-milestone span{
+  font-size:9px;
+  text-transform:uppercase;
+  color:#728aa8;
+  letter-spacing:1px
+}
+.honors-milestone h3{
+  font-size:14px;
+  font-weight:800;
+  margin:6px 0
+}
+.honors-milestone p{
+  font-size:10px;
+  color:#6c819b;
+  margin:0 0 12px;
+  overflow-wrap:anywhere;
+  line-height:1.7
+}
+.honors-milestone small{
+  font-size:10px;
+  font-weight:700;
+  color:#0068ef;
+  display:block;
+  margin-top:12px
+}
+.honors-personal-error{
+  font-size:12px;
+  line-height:1.9;
+  color:#6c819b
+}
+.honors-state{
+  text-align:center;
+  padding:45px 22px
+}
+.honors-state h2{
+  font-size:20px;
+  font-weight:800;
+  margin:15px 0
+}
+.honors-state p{
+  font-size:12px;
+  line-height:1.9;
+  margin:15px auto 25px;
+  max-width:520px;
+  color:#6c819b
+}
+.honors-state>a:not(.honors-primary){
+  display:block;
+  font-size:12px;
+  color:#0068ef;
+  margin-top:18px
+}
+.honors-state>.material-symbols-outlined{
+  font-size:36px;
+  color:#789ccc
+}
+.honors-empty{
+  text-align:center;
+  padding:30px 10px
+}
+.honors-empty>.material-symbols-outlined{
+  font-size:44px;
+  color:#0068ef;
+  background:#edf5ff;
+  padding:18px;
+  border-radius:50%
+}
+.honors-empty h3{
+  font-size:17px;
+  font-weight:800;
+  margin:22px 0 12px
+}
+.honors-empty p{
+  color:#6c819b;
+  font-size:12px;
+  line-height:1.9;
+  margin-bottom:22px
+}
+.honors-skeleton{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:20px;
+  padding:30px;
+  background:#fff;
+  border:1px solid #dfe9f6;
+  border-radius:18px
+}
+.honors-skeleton>span{
+  height:210px;
+  border-radius:15px;
+  background:linear-gradient(115deg,#eef3fb,#f7faff,#eef3fb);
+  background-size:200% 100%;
+  animation:honors-shimmer 1.5s linear infinite
+}
+.honors-skeleton p{
+  grid-column:1/-1;
+  color:#6c819b;
+  font-size:12px;
+  text-align:center
+}
+.honors-footer{
+  text-align:center;
+  font-size:12px;
+  font-weight:700;
+  color:#677f9c;
+  padding:45px 20px 10px
+}
+.honors-footer span{
+  display:block;
+  margin-top:9px;
+  font-size:10px;
+  font-weight:400;
+  color:#7c90aa
+}
+.honors-back{
+  display:inline-block;
+  color:#0068ef;
+  font-size:12px;
+  font-weight:700;
+  margin:0 0 20px
+}
+.honors-dialog{
+  border:1px solid #d8e6fa;
+  border-radius:22px;
+  background:#fff;
+  color:#112747;
+  max-width:560px;
+  width:calc(100% - 32px);
+  padding:28px;
+  box-shadow:0 25px 100px #102c4d38;
+  line-height:1.9;
+  font-size:13px;
+  max-height:85dvh;
+  overflow:auto
+}
+.honors-dialog::backdrop{
+  background:#09204280;
+  backdrop-filter:blur(4px)
+}
+.honors-dialog .honors-section-title{
+  align-items:start
+}
+.honors-dialog h2{
+  font-size:20px
+}
+.honors-dialog p{
+  margin:15px 0
+}
+.honors-dialog ul{
+  list-style:disc;
+  padding-left:20px;
+  color:#526c8c
+}
+.honors-dialog li{
+  margin-bottom:12px
+}
+.honors-dialog .honors-quote{
+  margin:20px 0
+}
+.honors-dialog .honors-primary{
+  width:100%
+}
+@keyframes honors-shimmer{
+  to{
+    background-position:-200% 0
+  }
+}
+@media(min-width:1600px){
+  .honors-hero{
+    padding-left:max(4%,calc((100% - 1360px)/2));
+    padding-right:max(4%,calc((100% - 1360px)/2))
+  }
+}
+@media(max-width:1100px){
+  .honors-grid{
+    grid-template-columns:minmax(0,1fr) 270px;
+    gap:18px
+  }
+  .honors-card{
+    padding:19px
+  }
+  .honors-content{
+    padding:22px 24px 0
+  }
+  .honors-podium{
+    gap:10px
+  }
+  .honors-winner h3{
+    font-size:11px
+  }
+  .honors-hero-copy{
+    max-width:75%
+  }
+  .honors-hero h1{
+    font-size:30px
+  }
+  .honors-section-title h2{
+    font-size:15px
+  }
+}
+@media(max-width:900px){
+  .honors-grid{
+    grid-template-columns:1fr
+  }
+  .honors-personal{
+    display:contents
+  }
+  .honors-viewer{
+    position:static;
+    grid-row:1
+  }
+  .honors-community{
+    grid-row:2
+  }
+  .honors-viewer-rank{
+    margin:17px 0
+  }
+  .honors-viewer-xp{
+    flex-direction:row;
+    align-items:center;
+    justify-content:space-between
+  }
+  .honors-viewer .honors-primary{
+    width:auto;
+    min-width:210px
+  }
+  .honors-viewer .honors-viewer-heading{
+    margin-top:12px
+  }
+  .honors-badge-card{
+    grid-row:3
+  }
+  .honors-badges{
+    grid-template-columns:repeat(6,1fr)
+  }
+  .honors-hero-copy{
+    max-width:76%
+  }
+  .honors-mascot{
+    width:23%;
+    right:1%
+  }
+  .honors-hero h1{
+    font-size:29px
+  }
+  .honors-intro{
+    font-size:12px
+  }
+}
+@media(max-width:600px){
+  .honors-breadcrumb{
+    padding:17px 18px;
+    font-size:10px
+  }
+  .honors-profile-link{
+    font-size:10px
+  }
+  .honors-hero{
+    padding:29px 21px 28px;
+    min-height:310px
+  }
+  .honors-hero-copy{
+    max-width:100%
+  }
+  .honors-eyebrow{
+    font-size:8px;
+    letter-spacing:1.3px;
+    margin-bottom:17px
+  }
+  .honors-hero h1{
+    font-size:26px;
+    letter-spacing:-1px;
+    line-height:1.4;
+    max-width:100%
+  }
+  .honors-intro{
+    font-size:11px;
+    line-height:1.9;
+    max-width:76%;
+    margin-top:17px
+  }
+  .honors-mascot{
+    width:115px;
+    right:0;
+    bottom:15px
+  }
+  .honors-hero-tag{
+    font-size:8px;
+    padding:7px 9px
+  }
+  .honors-content{
+    padding:20px 15px 0
+  }
+  .honors-toolbar{
+    align-items:flex-start;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-bottom:18px
+  }
+  .honors-toolbar-actions{
+    width:100%;
+    justify-content:space-between
+  }
+  .honors-text-button{
+    font-size:10px
+  }
+  .honors-manifesto{
+    padding:16px;
+    align-items:flex-start;
+    gap:12px;
+    margin-bottom:19px
+  }
+  .honors-manifesto-icon{
+    width:33px;
+    height:33px;
+    border-radius:10px
+  }
+  .honors-manifesto-icon>.material-symbols-outlined{
+    font-size:21px
+  }
+  .honors-manifesto h2{
+    font-size:11px
+  }
+  .honors-manifesto p{
+    font-size:10px
+  }
+  .honors-card{
+    padding:18px 15px;
+    border-radius:16px
+  }
+  .honors-section-title{
+    gap:10px;
+    margin-bottom:17px
+  }
+  .honors-section-title h2{
+    font-size:15px
+  }
+  .honors-section-title>span:not(.material-symbols-outlined){
+    font-size:8px;
+    max-width:85px
+  }
+  .honors-kicker{
+    font-size:8px;
+    letter-spacing:.85px
+  }
+  .honors-podium{
+    gap:7px;
+    padding-top:0
+  }
+  .honors-avatar-large{
+    width:60px;
+    height:60px;
+    font-size:17px
+  }
+  .honors-winner-1 .honors-avatar{
+    width:70px;
+    height:70px
+  }
+  .honors-winner h3{
+    font-size:10px;
+    white-space:normal;
+    line-height:1.7;
+    height:34px;
+    display:-webkit-box;
+    -webkit-line-clamp:2;
+    -webkit-box-orient:vertical
+  }
+  .honors-winner p{
+    font-size:13px
+  }
+  .honors-winner>small{
+    font-size:8px
+  }
+  .honors-step{
+    font-size:10px;
+    margin-top:12px
+  }
+  .honors-table{
+    font-size:10px
+  }
+  .honors-table th{
+    font-size:8px;
+    padding:12px 5px
+  }
+  .honors-table td{
+    padding:13px 5px
+  }
+  .honors-table td:first-child,.honors-table th:first-child{
+    width:35px
+  }
+  .honors-table td:last-child>span{
+    display:none
+  }
+  .honors-person{
+    gap:7px
+  }
+  .honors-person .honors-avatar{
+    width:29px;
+    height:29px;
+    font-size:9px
+  }
+  .honors-person b{
+    font-size:10px
+  }
+  .honors-person small{
+    font-size:8px
+  }
+  .honors-table td:last-child{
+    font-size:11px
+  }
+  .honors-personal-stats{
+    gap:25px
+  }
+  .honors-personal-stats b{
+    font-size:24px
+  }
+  .honors-personal-stats span{
+    font-size:9px
+  }
+  .honors-milestone{
+    gap:12px
+  }
+  .honors-milestone>img{
+    width:52px;
+    height:52px
+  }
+  .honors-milestone h3{
+    font-size:13px
+  }
+  .honors-milestone p{
+    font-size:9px
+  }
+  .honors-badges{
+    grid-template-columns:repeat(3,1fr)
+  }
+  .honors-viewer .honors-primary{
+    width:100%
+  }
+  .honors-viewer-rank>b{
+    font-size:39px
+  }
+  .honors-quote{
+    padding:19px
+  }
+  .honors-skeleton{
+    gap:10px;
+    padding:20px
+  }
+  .honors-skeleton>span{
+    height:160px
+  }
+  .honors-dialog{
+    padding:23px;
+    font-size:12px
+  }
+  .honors-dialog h2{
+    font-size:18px
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  .honors-page *{
+    animation:none!important;
+    transition:none!important
+  }
+}
+.honors-joint-first .honors-avatar{
+  outline-color:#ffcd08;
+  background:#fff3ba;
+  color:#957500
+}
+.honors-joint-first .honors-step{
+  background:linear-gradient(#ffdc54,#fff5cb);
+  border-color:#f9dc76;
+  color:#906b00
+}
+.honors-page .material-symbols-outlined,.honors-dialog .material-symbols-outlined{
+  display:inline-block;
+  width:1em;
+  max-width:1em;
+  overflow:hidden;
+  flex-shrink:0;
+  vertical-align:middle
+}
