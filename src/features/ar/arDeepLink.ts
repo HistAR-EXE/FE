@@ -1,5 +1,6 @@
 import { CU_CHI_AR_SCENES, AR_ENABLED_LOCATION_IDS, getArSceneBySceneId } from './cuChiArScenes'
 import type { ARMode, CuChiSceneSlug, EraValue } from './types'
+import { locationSlug, timePortalPath } from '../../shared/config/locationSlug'
 
 export function isArEnabledLocation(locationId: string | undefined | null): boolean {
   return !!locationId && AR_ENABLED_LOCATION_IDS.has(locationId)
@@ -34,7 +35,7 @@ export function buildArUrl({
   params.set('scene', slug)
   params.set('era', String(era))
   if (discoverKey) params.set('discoverKey', discoverKey)
-  return `/time-portal/${locationId}/ar?${params.toString()}`
+  return `/time-portal/${locationSlug(locationId)}/ar?${params.toString()}`
 }
 
 export function buildPortalUrl(locationId: string, sceneId?: string, era?: EraValue, discoverKey?: string | null): string {
@@ -42,8 +43,7 @@ export function buildPortalUrl(locationId: string, sceneId?: string, era?: EraVa
   if (sceneId) params.set('scene', sceneId)
   if (era) params.set('era', String(era))
   if (discoverKey) params.set('discoverKey', discoverKey)
-  const q = params.toString()
-  return `/time-portal/${locationId}${q ? `?${q}` : ''}`
+  return timePortalPath(locationId, params)
 }
 
 export function defaultArMode(): ARMode {

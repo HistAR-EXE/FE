@@ -8,6 +8,7 @@ import { useAppMode } from '../../shared/context/useAppMode'
 import { useAuth } from '../../shared/auth/useAuth'
 import type { UserRole } from '../../shared/auth/types'
 import { CU_CHI_LOCATION_ID } from '../../shared/config/constants'
+import { timePortalPath } from '../../shared/config/locationSlug'
 import { buildChatPath } from '../../features/chat/chatRoute'
 
 type NavItem = {
@@ -29,7 +30,7 @@ const navItems: readonly NavigationItem[] = [
     // --- 3 TÍNH NĂNG ĐỘT PHÁ CỦA TIMELENS ---
     { to: `/tour/360/${CU_CHI_LOCATION_ID}`, icon: '360', label: 'Tham quan 360°', prefixes: ['/tour/360'], modes: 'online' as const },
     { to: `/diorama/${CU_CHI_LOCATION_ID}`, icon: 'layers', label: 'Sa bàn Lịch sử', prefixes: ['/diorama'], modes: 'online' as const },
-    { to: `/time-portal/${CU_CHI_LOCATION_ID}`, icon: 'history', label: 'Cổng Thời Gian', prefixes: ['/time-portal'], modes: 'online' as const },
+    { to: timePortalPath(CU_CHI_LOCATION_ID), icon: 'history', label: 'Cổng Thời Gian', prefixes: ['/time-portal'], modes: 'online' as const },
     { to: '/chat', icon: 'forum', label: 'Trò chuyện AI', prefixes: ['/chat'], modes: 'both' as const },
 
     // --- TÍNH NĂNG CHỈ DÀNH CHO THỰC ĐỊA ONSITE ---

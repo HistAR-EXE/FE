@@ -18,6 +18,8 @@ import { isAdminPreview } from '../shared/access/contentAccess'
 import { CU_CHI_LOCATION_ID, getPilotSite, siteCodeFromLocationId } from '../shared/config/constants'
 import { StoryJourneyPanel } from '../features/story/StoryJourneyPanel'
 import { SiteOnsiteHub } from '../features/stations/SiteOnsiteHub'
+import { timePortalPath } from '../shared/config/locationSlug'
+import { hasTimePortalContent } from '../features/time-portal/availability'
 
 const PREVIEW_CHAR_LIMIT = 480
 
@@ -268,13 +270,13 @@ export function HeritageDetailPage() {
 
             {activeTab === 'experiences' && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-md mb-xl">
-                <Link to={`/time-portal/${location.id}`} className={`group relative w-full h-[120px] rounded-xl overflow-hidden bg-surface-container border border-primary/50 hover:border-primary transition-colors flex items-center p-md gap-md ${onlineHighlight(true)}`}>
+                <Link to={timePortalPath(location.id)} className={`group relative w-full h-[120px] rounded-xl overflow-hidden bg-surface-container border border-primary/50 hover:border-primary transition-colors flex items-center p-md gap-md ${onlineHighlight(true)}`}>
                   <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center text-primary z-10"><MaterialIcon name="motion_photos_on" className="text-4xl" /></div>
-                  <div className="z-10 text-left"><h3 className="font-title-md text-title-md text-primary mb-1">Cổng Thời Gian</h3><p className="font-body-md text-body-md text-on-surface-variant">So sánh 4 thời kỳ (1948 · 1968 · 1975 · 2026) trên điện thoại</p></div>
+                  <div className="z-10 text-left"><h3 className="font-title-md text-title-md text-primary mb-1">Cổng Thời Gian</h3><p className="font-body-md text-body-md text-on-surface-variant">{hasTimePortalContent(location.id) ? 'Hành trình 4 thời kỳ (1948 · 1968 · 1975 · Hiện nay)' : 'Nội dung đang được cập nhật'}</p></div>
                 </Link>
                 {location.id === CU_CHI_LOCATION_ID && (
                   <Link
-                    to={`/time-portal/${location.id}?view=ar`}
+                    to={timePortalPath(location.id, { view: 'ar' })}
                     className={`group relative w-full h-[100px] rounded-xl overflow-hidden bg-surface-container border border-secondary/40 hover:border-secondary transition-colors flex items-center p-md gap-md ${onlineHighlight(true)}`}
                   >
                     <div className="w-12 h-12 rounded-full bg-secondary/15 flex items-center justify-center text-secondary">

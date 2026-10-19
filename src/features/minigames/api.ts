@@ -14,9 +14,14 @@ export type Minigame = {
   stationCode: string
   gameType: MinigameType
   title: string
+  /** Rỗng khi game còn khoá — BE không gửi câu hỏi/đáp án ra ngoài. */
   config: Record<string, unknown>
   sortOrder: number
   bestScore?: number | null
+  /** Mở sau khi quét QR check-in tại chính trạm này. */
+  unlocked: boolean
+  /** 'CHECKIN' khi chưa quét QR tại trạm; null khi đã mở. */
+  lockReason?: string | null
 }
 
 /** Seeded IDs (V27 Cu Chi) — fallback when linking before list fetch. */

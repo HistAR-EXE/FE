@@ -10,11 +10,15 @@ type Props = {
   spot: XuaNaySpotId
   onSpotChange: (spot: XuaNaySpotId) => void
   onBack: () => void
+  /** Người dùng đã tự kéo so sánh tại điểm này và ở lại đủ lâu (ghi nhận bước nhiệm vụ). */
+  onSpotViewed?: (spot: XuaNaySpotId) => void
 }
 
 const RATIO = 4 / 3
 /** Chiều cao hàng nút dưới khung (px). */
 const CTRL_H = 52
+/** Thời gian ở lại một điểm sau khi tự kéo, để tính là đã xem (ms). */
+const VIEWED_AFTER_MS = 4000
 const XUA = '#fbbf24'
 const NAY = '#2dd4bf'
 
@@ -22,7 +26,7 @@ function reducedMotion() {
   return typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 }
 
-export function XuaNayView({ spot, onSpotChange, onBack }: Props) {
+export function XuaNayView({ spot, onSpotChange, onBack, onSpotViewed }: Props) {
   const data = XUA_NAY[spot]
   const stageRef = useRef<HTMLDivElement>(null)
   const frameRef = useRef<HTMLDivElement>(null)
@@ -32,6 +36,23 @@ export function XuaNayView({ spot, onSpotChange, onBack }: Props) {
   /** Người xem đã tự kéo — không chạy gợi ý nữa. */
   const touched = useRef(false)
   const anim = useRef(0)
+  /** Điểm mà người xem đã tự tương tác (kéo / phím / nút). */
+  const [engagedSpot, setEngagedSpot] = useState<XuaNaySpotId | null>(null)
+  const reportedSpots = useRef(new Set<XuaNaySpotId>())
+  const onSpotViewedRef = useRef(onSpotViewed)
+  useEffect(() => {
+    onSpotViewedRef.current = onSpotViewed
+  }, [onSpotViewed])
+
+  // Đã tự tương tác và ở lại điểm đó ≥ VIEWED_AFTER_MS → báo đã xem (mỗi điểm một lần).
+  useEffect(() => {
+    if (engagedSpot !== spot || reportedSpots.current.has(spot)) return
+    const t = window.setTimeout(() => {
+      reportedSpots.current.add(spot)
+      onSpotViewedRef.current?.(spot)
+    }, VIEWED_AFTER_MS)
+    return () => window.clearTimeout(t)
+  }, [engagedSpot, spot])
 
   // Khung 4:3 vừa khít vùng hiển thị
   useLayoutEffect(() => {
@@ -98,6 +119,7 @@ export function XuaNayView({ spot, onSpotChange, onBack }: Props) {
   const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
     stopHint()
     touched.current = true
+    setEngagedSpot(spot)
     setDragging(true)
     e.currentTarget.setPointerCapture(e.pointerId)
     setPos(posFromEvent(e.clientX))
@@ -118,12 +140,14 @@ export function XuaNayView({ spot, onSpotChange, onBack }: Props) {
     e.preventDefault()
     stopHint()
     touched.current = true
+    setEngagedSpot(spot)
     setPos(Math.max(0, Math.min(100, next)))
   }
 
   const snap = (v: number) => {
     stopHint()
     touched.current = true
+    setEngagedSpot(spot)
     setPos(v)
   }
 

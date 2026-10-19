@@ -7,7 +7,6 @@ import './shared/i18n'
 import App from './App.tsx'
 import { AuthProvider } from './shared/auth/AuthContext'
 import { AppModeProvider } from './shared/context/AppModeProvider'
-import { UserProgressProvider } from './shared/context/UserProgressProvider'
 import { ToastProvider } from './shared/ui/toast/ToastProvider'
 import { ThemeProvider } from './shared/theme/ThemeProvider'
 import { registerAppServiceWorker } from './pwa/registerSW'
@@ -26,9 +25,8 @@ createRoot(document.getElementById('root')!).render(
       <AppModeProvider>
         <AuthProvider>
           <ToastProvider>
-            <UserProgressProvider>
-              <App />
-            </UserProgressProvider>
+            {/* UserProgressProvider nằm trong Router (routes/AppRoutes.tsx). */}
+            <App />
           </ToastProvider>
         </AuthProvider>
       </AppModeProvider>

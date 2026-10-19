@@ -10,13 +10,17 @@ export type QuestStep = {
     objective: string
     description?: string
     hint?: string
-    actionType: 'artifact' | 'portal' | 'tour' | 'checkin' | 'briefing' | 'dialogue' | 'reveal' | 'minigame'
+    actionType: 'artifact' | 'portal' | 'tour' | 'checkin' | 'briefing' | 'dialogue' | 'reveal' | 'minigame' | 'xuanay' | 'station'
     minigameId?: string | null
     actionLabel?: string
     xpPartial?: number
     chatPrompt?: string
     portalEra?: number
     previewImage?: string
+    /** Bước bắt buộc để hoàn thành nhiệm vụ (nhiệm vụ v2). Thiếu = bắt buộc. */
+    required?: boolean
+    /** Bước cần Premium — luôn là tùy chọn. */
+    premium?: boolean
 }
 
 export type QuestRewardType = 'EXPLORE_XP' | 'CHAPTER_REWARD' | 'QUEST_COMPLETION_REWARD'
@@ -68,6 +72,11 @@ export type Quest = {
     unlockAfterQuestId?: string | null
     unlockDiscoveryKeys?: string | null
     rewardSummary?: QuestRewardSummary
+    /** ONLINE = làm từ xa, ONSITE = phải có mặt tại di tích (nhiệm vụ v2). */
+    track?: 'ONLINE' | 'ONSITE'
+    sortOrder?: number
+    difficulty?: 'EASY' | 'MEDIUM' | 'HARD' | null
+    estimatedMinutes?: number | null
 }
 
 export type QuestProgress = {

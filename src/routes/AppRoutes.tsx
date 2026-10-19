@@ -35,11 +35,13 @@ import { AuthRoute } from '../shared/router/AuthRoute'
 import { EmailVerifiedRoute } from '../shared/router/EmailVerifiedRoute'
 import { ProtectedRoute } from '../shared/router/ProtectedRoute'
 import { VisitSessionProvider } from '../features/visit/VisitSessionProvider'
+import { UserProgressProvider } from '../shared/context/UserProgressProvider'
 import { AboutPage } from '../pages/AboutPage'
 import { HeritagePortfolioPage } from '../pages/HeritagePortfolioPage'
 import { ProductTourWrapper } from '../features/explore/ProductTour'
 import { GoogleRedirectCompletion } from '../shared/auth/GoogleRedirectCompletion'
 import { AdminConsoleLayout } from '../components/admin/AdminConsoleLayout'
+import { locationSlug, resolveLocationParam } from '../shared/config/locationSlug'
 
 const ArtifactsPage = lazy(() => import('../pages/ArtifactsPage').then((module) => ({ default: module.ArtifactsPage })))
 const ArtifactDetailPage = lazy(() => import('../pages/ArtifactDetailPage').then((module) => ({ default: module.ArtifactDetailPage })))
@@ -83,7 +85,7 @@ function LegacyTimePortalArRedirect() {
     const location = useLocation()
     const params = new URLSearchParams(location.search)
     params.set('view', 'ar')
-    return <Navigate replace to={`/time-portal/${locationId ?? ''}?${params.toString()}`} />
+    return <Navigate replace to={`/time-portal/${locationId ? locationSlug(resolveLocationParam(locationId) ?? locationId) : ''}?${params.toString()}`} />
 }
 
 export function AppRoutes() {
@@ -92,6 +94,8 @@ export function AppRoutes() {
             <AppErrorBoundary>
             <GoogleRedirectCompletion />
             <VisitSessionProvider>
+                {/* Trong Router: màn "Hoàn thành nhiệm vụ" dùng useNavigate. */}
+                <UserProgressProvider>
                 <Suspense fallback={<RouteLoadingFallback />}>
                     <Routes>
                         {/* Public — guest landing only */}
@@ -188,6 +192,7 @@ export function AppRoutes() {
                         <Route path="*" element={<NotFoundPage />} />
                     </Routes>
                 </Suspense>
+                </UserProgressProvider>
             </VisitSessionProvider>
             </AppErrorBoundary>
         </BrowserRouter>

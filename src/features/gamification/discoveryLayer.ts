@@ -4,6 +4,7 @@ import { discoveryBindingsApi, type DiscoveryBindingDto } from './discoveryBindi
 import { readAppMode } from '../../shared/context/AppModeProvider'
 import { getToken } from '../../shared/auth/session'
 import type { RecordDiscoveryResponse } from './engagementTypes'
+import { timePortalPath } from '../../shared/config/locationSlug'
 
 export const DISCOVERY_RECORDED_EVENT = 'histar:discovery-recorded'
 
@@ -58,8 +59,7 @@ export type DiscoveryBinding = {
 }
 
 function timePortalHref(locationId: string, params: Record<string, string>): string {
-  const search = new URLSearchParams(params).toString()
-  return `/time-portal/${locationId}${search ? `?${search}` : ''}`
+  return timePortalPath(locationId, params)
 }
 
 function hrefFromTemplate(template: string | undefined, locationId: string, unlockKey: string): string {
@@ -106,6 +106,16 @@ function bindingForUnlockKey(unlockKey: string, locationId?: string): DiscoveryB
       recordKey: unlockKey,
       engagement: 'time_portal',
       buildHref: (locId) => timePortalHref(locId, { era }),
+    }
+  }
+
+  if (unlockKey.startsWith('xuanay:')) {
+    const spot = unlockKey.slice('xuanay:'.length)
+    return {
+      unlockKey,
+      recordKey: unlockKey,
+      engagement: 'time_portal',
+      buildHref: (locId) => timePortalHref(locId, { view: 'xua-nay', spot }),
     }
   }
 

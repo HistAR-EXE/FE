@@ -35,6 +35,8 @@ type Props = {
   initialMomentId?: string
   /** Báo mốc đang xem cho trang cha (để chế độ 3D mở đúng mốc). */
   onEraChange?: (era: EraValue) => void
+  /** Người dùng đã xem hết các khoảnh khắc của một chương (tới slide câu đố). */
+  onChapterFinished?: (era: EraValue) => void
 }
 
 type Photo = Extract<StoryVisual, { kind: 'photo' }>
@@ -91,6 +93,7 @@ export function TimelineExplorerView({
   onOpenXuaNay,
   initialMomentId,
   onEraChange,
+  onChapterFinished,
 }: Props) {
   const [era, setEra] = useState<EraValue>(initialEra ?? 2026)
   const [index, setIndex] = useState(() => {
@@ -207,6 +210,15 @@ export function TimelineExplorerView({
       setPlaying(true)
     }
   }
+
+  /* ---------------- Xem hết chương ---------------- */
+
+  const finishedEras = useRef(new Set<EraValue>())
+  useEffect(() => {
+    if (!isQuiz || finishedEras.current.has(era)) return
+    finishedEras.current.add(era)
+    onChapterFinished?.(era)
+  }, [era, isQuiz, onChapterFinished])
 
   /* ---------------- Câu đố ---------------- */
 

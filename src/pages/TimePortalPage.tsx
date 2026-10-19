@@ -1,11 +1,13 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react'
-import { useParams, useSearchParams } from 'react-router-dom'
+import { lazy, Suspense, useCallback, useRef, useState } from 'react'
+import { Navigate, useLocation, useParams, useSearchParams } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { EraLockedModal } from '../components/monetization/EraLockedModal'
 import { TimelineExplorerView } from '../features/time-portal/TimelineExplorerView'
 import { XuaNayView } from '../features/time-portal/xuaNay/XuaNayView'
 import { isXuaNaySpot, type XuaNaySpotId } from '../features/time-portal/xuaNay/xuaNayData'
 import { ERA_VALUES, type EraValue } from '../features/time-portal/eraLabels'
+import { hasTimePortalContent } from '../features/time-portal/availability'
+import { TimePortalComingSoon } from '../features/time-portal/TimePortalComingSoon'
 const TunnelScene3D = lazy(() =>
   import('../features/time-portal/TunnelScene3D').then((m) => ({ default: m.TunnelScene3D }))
 )
@@ -17,6 +19,7 @@ import { useAuth } from '../shared/auth/useAuth'
 import { useUserProgress } from '../shared/context/UserProgressProvider'
 import { useToast } from '../shared/ui/toast/useToast'
 import { CU_CHI_LOCATION_ID } from '../shared/config/constants'
+import { resolveLocationParam, shouldCanonicalizeLocationParam, timePortalPath } from '../shared/config/locationSlug'
 
 function parseEra(raw: string | null): EraValue {
   const value = Number(raw)
@@ -33,11 +36,12 @@ type PortalMode = 'timeline' | 'xua-nay' | '3d'
 export function TimePortalPage() {
   const { locationId: locationParam } = useParams<{ locationId?: string }>()
   const [params] = useSearchParams()
-  const locationId = locationParam ?? CU_CHI_LOCATION_ID
+  const routerLocation = useLocation()
+  // Nhận cả slug (/time-portal/dia-dao-cu-chi) lẫn UUID (link cũ); không có tham số thì mặc định Củ Chi.
+  const locationId = locationParam ? resolveLocationParam(locationParam) : CU_CHI_LOCATION_ID
   const { user, isAuthenticated } = useAuth()
   const premium = hasPremiumAccess(user)
   const requestedEra = parseEra(params.get('era'))
-  const questRecord = params.get('questRecord')
   const initialView = params.get('view')
   const initialSpot = params.get('spot')
 
@@ -50,30 +54,36 @@ export function TimePortalPage() {
   const [paywallEra, setPaywallEra] = useState<EraValue>(isPremiumEra(requestedEra) ? requestedEra : 1948)
   const { showToast } = useToast()
   const { applyEngagement } = useUserProgress()
-  const recordedEra = useRef<string | null>(null)
+  const recordedKeys = useRef(new Set<string>())
 
-  useEffect(() => {
-    if (!isAuthenticated || !premium || !isPremiumEra(era)) return
-    if (questRecord !== `era:${era}`) return
-    if (recordedEra.current === questRecord) return
-    recordedEra.current = questRecord
-    void recordDiscoveryEngagement({
-      recordKey: `era:${era}`,
-      locationId,
-      source: 'time_portal',
-      onSuccess: (response) => notifyEngagementOutcome(response, showToast, applyEngagement, { locationId }),
-      onError: () => {
-        recordedEra.current = null
-      },
-    })
-  }, [applyEngagement, era, isAuthenticated, locationId, premium, questRecord, showToast])
+  /**
+   * Ghi nhận bước nhiệm vụ khi người dùng thật sự xem nội dung:
+   * `era:<năm>` khi xem hết một chương Dòng thời gian, `xuanay:<điểm>` khi tự kéo so sánh Xưa & Nay.
+   * BE vẫn chặn 1948/1968 nếu tài khoản không có Premium.
+   */
+  const recordViewed = useCallback(
+    (recordKey: string) => {
+      if (!isAuthenticated || !locationId || recordedKeys.current.has(recordKey)) return
+      recordedKeys.current.add(recordKey)
+      void recordDiscoveryEngagement({
+        recordKey,
+        locationId,
+        source: 'time_portal',
+        onSuccess: (response) => notifyEngagementOutcome(response, showToast, applyEngagement, { locationId }),
+        onError: () => {
+          recordedKeys.current.delete(recordKey)
+        },
+      })
+    },
+    [applyEngagement, isAuthenticated, locationId, showToast],
+  )
 
   const requirePremium = (next: EraValue) => {
     setPaywallEra(next)
     setPaywallOpen(true)
     void analyticsApi.recordEvent({
       eventType: 'PAYWALL_ERA_LOCKED_VIEW',
-      locationId,
+      locationId: locationId ?? undefined,
       source: 'time_portal',
       eventKey: String(next),
     })
@@ -82,20 +92,29 @@ export function TimePortalPage() {
   const onPaywallUpgrade = () => {
     void analyticsApi.recordEvent({
       eventType: 'PAYWALL_ERA_UPGRADE_CLICK',
-      locationId,
+      locationId: locationId ?? undefined,
       source: 'time_portal',
       eventKey: String(paywallEra),
     })
   }
 
+  // Link cũ dùng UUID → chuyển sang đường dẫn đẹp, giữ nguyên query.
+  if (locationId && shouldCanonicalizeLocationParam(locationParam)) {
+    return <Navigate replace to={timePortalPath(locationId, routerLocation.search)} />
+  }
+
+  const ready = hasTimePortalContent(locationId)
+
   return (
     <AppLayout
       activeBorder="left"
-      mobileBackTo={`/explore/${locationId}`}
+      mobileBackTo={locationId ? `/explore/${locationId}` : '/explore'}
       mobileTitle="Cổng thời gian"
     >
       <main className="mt-14 flex h-[calc(100dvh-3.5rem)] flex-col md:mt-0 md:h-screen">
-        {mode === 'timeline' ? (
+        {!ready ? (
+          <TimePortalComingSoon locationId={locationId} />
+        ) : mode === 'timeline' ? (
           <TimelineExplorerView
             initialEra={era}
             initialMomentId={returnMoment}
@@ -111,6 +130,7 @@ export function TimePortalPage() {
               setMode('xua-nay')
             }}
             onEraChange={setEra}
+            onChapterFinished={(finished) => recordViewed(`era:${finished}`)}
           />
         ) : mode === '3d' ? (
           <div className="relative flex-1 min-h-0 bg-gradient-to-b from-sky-900 via-sky-800 to-amber-900">
@@ -167,7 +187,12 @@ export function TimePortalPage() {
           </div>
         ) : (
           <div className="relative flex-1 min-h-0">
-            <XuaNayView spot={spot} onSpotChange={setSpot} onBack={() => setMode('timeline')} />
+            <XuaNayView
+              spot={spot}
+              onSpotChange={setSpot}
+              onBack={() => setMode('timeline')}
+              onSpotViewed={(viewed) => recordViewed(`xuanay:${viewed}`)}
+            />
           </div>
         )}
       </main>
@@ -175,7 +200,7 @@ export function TimePortalPage() {
         open={paywallOpen}
         eraLabel={paywallEra}
         onClose={() => setPaywallOpen(false)}
-        pricingHref={`/pricing?next=${encodeURIComponent(`/time-portal/${locationId}?era=${paywallEra}`)}`}
+        pricingHref={`/pricing?next=${encodeURIComponent(timePortalPath(locationId ?? CU_CHI_LOCATION_ID, { era: String(paywallEra) }))}`}
         onUpgradeClick={onPaywallUpgrade}
       />
     </AppLayout>

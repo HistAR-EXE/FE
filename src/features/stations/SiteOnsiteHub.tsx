@@ -94,83 +94,60 @@ export function SiteOnsiteHub({
         ? `${cacheStatus.cached}/${cacheStatus.total} tệp`
         : `${cacheStatus.cached}/${cacheStatus.total} tệp đã lưu`
 
+  const tile = 'flex flex-col gap-1 rounded-2xl bg-white p-4 ring-1 ring-[#0275FB]/10 transition hover:-translate-y-0.5 hover:ring-[#0275FB]/40'
+
   return (
     <section data-testid="site-onsite-hub" data-site={code} className={`space-y-6 ${className}`}>
-      <div className="rounded-3xl border border-[#fe951c]/25 bg-gradient-to-br from-[#161824] to-[#0f1015] p-5 sm:p-6">
-        <div className="flex items-start gap-3 mb-4">
-          <div className="w-11 h-11 rounded-2xl bg-[#fe951c]/15 border border-[#fdb438]/40 flex items-center justify-center shrink-0">
-            <MaterialIcon name="explore" className="text-[#fdb438] text-xl" />
+      <div className="rounded-3xl bg-gradient-to-br from-[#F2F7FF] to-[#FFF8DC] p-5 ring-1 ring-[#0275FB]/10 sm:p-6">
+        <div className="mb-4 flex items-start gap-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#0275FB] text-white shadow-[0_4px_0_#0159C2]">
+            <MaterialIcon name="explore" className="text-xl" />
           </div>
           <div>
-            <h2 className="text-lg font-black text-white">
+            <h2 className="text-lg font-black text-[#0F1B33]">
               {title}
-              {region ? <span className="text-sm font-bold text-gray-400"> · Miền {region}</span> : null}
+              {region ? <span className="text-sm font-bold text-slate-500"> · Miền {region}</span> : null}
             </h2>
-            <p className="text-xs text-gray-400 mt-1">
+            <p className="mt-1 text-xs font-semibold text-slate-600">
               Một địa điểm – 6 trạm – một mạch truyện. Tải gói trước khi vào; quét QR tại trạm để mở chương.
             </p>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <Link
-            to={`/pack-prep?site=${encodeURIComponent(code)}`}
-            className={`p-4 rounded-2xl bg-black/40 border transition-colors ${
-              cacheStatus.pct === 100
-                ? 'border-emerald-400/50 hover:border-emerald-300'
-                : 'border-white/10 hover:border-[#388cf1]/50'
-            }`}
-          >
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <Link to={`/pack-prep?site=${encodeURIComponent(code)}`} className={tile}>
             <MaterialIcon
               name={cacheStatus.pct === 100 ? 'offline_pin' : 'download'}
-              className={`text-2xl ${cacheStatus.pct === 100 ? 'text-emerald-400' : 'text-[#388cf1]'}`}
+              className={`text-2xl ${cacheStatus.pct === 100 ? 'text-emerald-500' : 'text-[#0275FB]'}`}
             />
-            <p className="mt-2 text-xs font-black text-white">{packLabel}</p>
-            <p className="text-[10px] text-gray-500">{packSubLabel}</p>
+            <p className="mt-1 text-xs font-black text-[#0F1B33]">{packLabel}</p>
+            <p className="text-[10px] font-semibold text-slate-500">{packSubLabel}</p>
           </Link>
-          <Link
-            to={`/scan?locationId=${encodeURIComponent(resolvedLocationId)}&site=${encodeURIComponent(code)}`}
-            className="p-4 rounded-2xl bg-black/40 border border-white/10 hover:border-emerald-400/50 transition-colors"
-          >
-            <MaterialIcon name="qr_code_scanner" className="text-emerald-400 text-2xl" />
-            <p className="mt-2 text-xs font-black text-white">Quét QR trạm</p>
-            <p className="text-[10px] text-gray-500">Check-in hiện diện</p>
+          <Link to={`/scan?locationId=${encodeURIComponent(resolvedLocationId)}&site=${encodeURIComponent(code)}`} className={tile}>
+            <MaterialIcon name="qr_code_scanner" className="text-2xl text-emerald-500" />
+            <p className="mt-1 text-xs font-black text-[#0F1B33]">Quét QR trạm</p>
+            <p className="text-[10px] font-semibold text-slate-500">Check-in hiện diện</p>
           </Link>
-          <Link
-            to={`/explore/${resolvedLocationId}`}
-            className="p-4 rounded-2xl bg-black/40 border border-white/10 hover:border-[#fe951c]/50 transition-colors"
-          >
-            <MaterialIcon name="map" className="text-[#fe951c] text-2xl" />
-            <p className="mt-2 text-xs font-black text-white">Chi tiết di tích</p>
-            <p className="text-[10px] text-gray-500">Tour & trải nghiệm</p>
+          <Link to={`/sites/${encodeURIComponent(code)}/stations/ST01/media`} className={tile}>
+            <MaterialIcon name="photo_library" className="text-2xl text-[#F5A800]" />
+            <p className="mt-1 text-xs font-black text-[#0F1B33]">Xem trước 6 trạm</p>
+            <p className="text-[10px] font-semibold text-slate-500">Ảnh thật & thuyết minh</p>
           </Link>
-          <Link
-            to={`/journey-wrapped?site=${encodeURIComponent(code)}`}
-            className="p-4 rounded-2xl bg-black/40 border border-white/10 hover:border-purple-400/50 transition-colors"
-          >
-            <MaterialIcon name="auto_awesome" className="text-purple-300 text-2xl" />
-            <p className="mt-2 text-xs font-black text-white">Hồ sơ giao liên</p>
-            <p className="text-[10px] text-gray-500">Wrapped 9:16</p>
+          <Link to={`/journey-wrapped?site=${encodeURIComponent(code)}`} className={tile}>
+            <MaterialIcon name="auto_awesome" className="text-2xl text-purple-500" />
+            <p className="mt-1 text-xs font-black text-[#0F1B33]">Hồ sơ giao liên</p>
+            <p className="text-[10px] font-semibold text-slate-500">Wrapped 9:16</p>
           </Link>
         </div>
 
-        <div className="mt-4 flex flex-wrap gap-2">
-          <Link
-            to="/mode-select"
-            className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#fdb438] hover:text-white"
-          >
+        <div className="mt-4 flex flex-wrap gap-3">
+          <Link to="/mode-select" className="inline-flex items-center gap-1.5 text-[11px] font-black text-[#0275FB] hover:underline">
             <MaterialIcon name="swap_horiz" className="text-sm" /> Chọn chế độ Onsite
           </Link>
-          <Link
-            to="/squad"
-            className="inline-flex items-center gap-1.5 text-[11px] font-bold text-gray-400 hover:text-white"
-          >
+          <Link to="/squad" className="inline-flex items-center gap-1.5 text-[11px] font-black text-slate-600 hover:underline">
             <MaterialIcon name="groups" className="text-sm" /> Tiểu đội
           </Link>
-          <Link
-            to={`/pricing?site=${encodeURIComponent(code)}`}
-            className="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-400 hover:text-white"
-          >
+          <Link to={`/pricing?site=${encodeURIComponent(code)}`} className="inline-flex items-center gap-1.5 text-[11px] font-black text-[#8A6A00] hover:underline">
             <MaterialIcon name="payments" className="text-sm" /> Journey Pass / Premium
           </Link>
         </div>

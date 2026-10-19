@@ -22,7 +22,7 @@ export function QuestCompleteOverlay({
         <div className="text-4xl mb-sm" aria-hidden>
           🎉
         </div>
-        <h2 className="font-display-md text-secondary">Quest hoàn thành!</h2>
+        <h2 className="font-display-md text-secondary">Hoàn thành nhiệm vụ!</h2>
         <p className="font-title-md text-on-surface mt-sm">{quest.title}</p>
         <p className="text-sm text-on-surface-variant mt-xs">
           +{quest.pointsAwarded} XP • Bước {quest.stepsTotal}/{quest.stepsTotal}
@@ -89,6 +89,9 @@ export function QuestCompleteOverlay({
               </button>
             )}
           </div>
+          <button type="button" onClick={onClose} className="mx-auto px-4 py-2 text-sm text-on-surface-variant underline-offset-2 hover:underline">
+            Ở lại trang này
+          </button>
         </div>
       </div>
     </div>
