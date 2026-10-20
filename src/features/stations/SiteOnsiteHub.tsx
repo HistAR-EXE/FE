@@ -12,7 +12,7 @@ import {
 import { appEnv } from '../../shared/config/env'
 
 /** Matches PackPrepPage constants. */
-const MEDIA_CACHE = 'histar-media'
+const MEDIA_CACHE = 'histar-media-v2'
 const MANIFEST_KEY = 'histar_pack_manifest_v1'
 
 type PackAsset = { url: string; required: boolean }

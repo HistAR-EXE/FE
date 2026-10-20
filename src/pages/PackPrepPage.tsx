@@ -9,7 +9,7 @@ import { emitEvent } from '../lib/pilotEvents'
 import { isPilotSiteCode } from '../shared/config/constants'
 import { useOnlineStatus } from '../shared/hooks'
 /** Same cache name as the Workbox runtime rule for /media/ in vite.config.ts. */
-const MEDIA_CACHE = 'histar-media'
+const MEDIA_CACHE = 'histar-media-v2'
 const MANIFEST_KEY = 'histar_pack_manifest_v1'
 
 type PackTier = 'lite' | 'full'

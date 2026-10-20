@@ -133,22 +133,6 @@ export function ScanPage() {
             const locationId =
                 targetLocationId || locationIdFromSiteCode(station.siteCode) || CU_CHI_LOCATION_ID
             const site = station.siteCode || siteCodeFromLocationId(locationId)
-            try {
-                const packKey = `histar_pack_manifest_v1:${site}:lite`
-                const skipped = sessionStorage.getItem(`histar_pack_skip:${site}`)
-                if (!localStorage.getItem(packKey) && !localStorage.getItem('histar_pack_manifest_v1:lite') && !skipped) {
-                    const goPack = window.confirm(
-                        'Chưa tải gói Lite offline. Mở trang Chuẩn bị hành trang trước khi vào trạm? (Hủy = bỏ qua lần này)',
-                    )
-                    if (goPack) {
-                        window.location.href = `/pack-prep?site=${encodeURIComponent(site)}`
-                        return
-                    }
-                    sessionStorage.setItem(`histar_pack_skip:${site}`, '1')
-                }
-            } catch {
-                /* ignore */
-            }
             const clientUuid = crypto.randomUUID()
             emitEvent('station_arrived', {
                 stationCode: station.stationCode,
@@ -456,9 +440,9 @@ export function ScanPage() {
                         className="mb-md rounded-xl border border-[#fe951c]/40 bg-[#fe951c]/10 p-md flex flex-col sm:flex-row sm:items-center gap-3"
                     >
                         <div className="flex-1">
-                            <p className="text-sm font-bold text-[#fdb438]">Tải gói Lite trước khi vào hầm?</p>
+                            <p className="text-sm font-bold text-[#fdb438]">Tùy chọn: tải gói Lite trước khi vào hầm</p>
                             <p className="text-xs text-on-surface-variant mt-1">
-                                Gói offline giúp media/FAQ vẫn mở khi sóng yếu. Bạn có thể bỏ qua một lần nếu đi cùng hướng dẫn viên.
+                                Gói offline giúp media/FAQ vẫn mở khi sóng yếu; không bắt buộc để quét QR hoặc mở mini-game.
                             </p>
                         </div>
                         <div className="flex flex-wrap gap-2 shrink-0">
