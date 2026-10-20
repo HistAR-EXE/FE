@@ -1,0 +1,329 @@
+{
+  "generated": "2026-10-20",
+  "compiler": "Locally vendored MindAR 1.2.5",
+  "bundle": "/assets/cu-chi-targets.mind",
+  "bundleBytes": 7337782,
+  "bundleSha256": "1ef3f5caeed529cafbd3129eeb18fbdf14aac78e604368dad4bb04bb61008c23",
+  "photos": [
+    {
+      "artifact": "hat",
+      "name": "Mũ cối",
+      "photo": "DSCF9675.JPG",
+      "caption": "Mô hình chiến sĩ bên võng tại khu di tích",
+      "targetIndex": 0,
+      "original": "/assets/ar-targets/originals/DSCF9675.JPG",
+      "originalBytes": 11650861,
+      "originalSha256": "0cfd1682ffdc67b008b52a0f08b13a35183f882afb338f9bf95f9e71f50d8d02",
+      "sourceSize": [
+        6000,
+        3376
+      ],
+      "sourceExifOrientation": 1,
+      "webImage": "/assets/ar-targets/DSCF9675.jpg",
+      "webBytes": 723440,
+      "webSize": [
+        1600,
+        900
+      ],
+      "webSha256": "b6b80041c62eaec92bb4c0fa7752380c1ea9f9b9be891d0944dfc274b2f6a120",
+      "channels": 3,
+      "processing": "Full frame, EXIF orientation applied, longest side 1600px, JPEG quality 95 / 4:4:4; no grayscale, crop, recoloring or overlays",
+      "compiledSize": [
+        1024,
+        576
+      ],
+      "matchingLevels": 9,
+      "trackingLevels": 2,
+      "matchingFeatures": 3002,
+      "photoCredit": "Project team, field visit at Cu Chi; supplied by the user"
+    },
+    {
+      "artifact": "lamp",
+      "name": "Đèn dầu",
+      "photo": "DSCF9765.JPG",
+      "caption": "Không gian sinh hoạt được tái hiện trong nhà",
+      "targetIndex": 1,
+      "original": "/assets/ar-targets/originals/DSCF9765.JPG",
+      "originalBytes": 12781464,
+      "originalSha256": "66a1fa572b0b34ce682c8afa8fae76067745f6b763d57038ebe2e3c58706167d",
+      "sourceSize": [
+        6000,
+        3376
+      ],
+      "sourceExifOrientation": 1,
+      "webImage": "/assets/ar-targets/DSCF9765.jpg",
+      "webBytes": 803744,
+      "webSize": [
+        1600,
+        900
+      ],
+      "webSha256": "af8fbca4d6b480d9d635535138a7724b3a7e74700c51d88da1d24a935773ad28",
+      "channels": 3,
+      "processing": "Full frame, EXIF orientation applied, longest side 1600px, JPEG quality 95 / 4:4:4; no grayscale, crop, recoloring or overlays",
+      "compiledSize": [
+        1024,
+        576
+      ],
+      "matchingLevels": 9,
+      "trackingLevels": 2,
+      "matchingFeatures": 3265,
+      "photoCredit": "Project team, field visit at Cu Chi; supplied by the user"
+    },
+    {
+      "artifact": "canteen",
+      "name": "Bi đông",
+      "photo": "DSCF9786.JPG",
+      "caption": "Cảnh chuẩn bị thực phẩm và tiếp tế",
+      "targetIndex": 2,
+      "original": "/assets/ar-targets/originals/DSCF9786.JPG",
+      "originalBytes": 12637553,
+      "originalSha256": "020bb8045e14fcac4cd620ca36929fe99470ffccc0b1ca01b01d851febe3bcb0",
+      "sourceSize": [
+        6000,
+        3376
+      ],
+      "sourceExifOrientation": 1,
+      "webImage": "/assets/ar-targets/DSCF9786.jpg",
+      "webBytes": 800901,
+      "webSize": [
+        1600,
+        900
+      ],
+      "webSha256": "f35b4463e669963b63c1256d178a544ae7fd79485e3d3015a61b97fbe2370328",
+      "channels": 3,
+      "processing": "Full frame, EXIF orientation applied, longest side 1600px, JPEG quality 95 / 4:4:4; no grayscale, crop, recoloring or overlays",
+      "compiledSize": [
+        1024,
+        576
+      ],
+      "matchingLevels": 9,
+      "trackingLevels": 2,
+      "matchingFeatures": 3324,
+      "photoCredit": "Project team, field visit at Cu Chi; supplied by the user"
+    },
+    {
+      "artifact": "compass",
+      "name": "La bàn",
+      "photo": "DSCF9770.JPG",
+      "caption": "Cảnh người dân trên lối đi trong khu di tích",
+      "targetIndex": 3,
+      "original": "/assets/ar-targets/originals/DSCF9770.JPG",
+      "originalBytes": 11744059,
+      "originalSha256": "6daabf3dcf3406bd1ec44656a1013ecdca1baffa69005a088da25a284bca6e77",
+      "sourceSize": [
+        6000,
+        3376
+      ],
+      "sourceExifOrientation": 8,
+      "webImage": "/assets/ar-targets/DSCF9770.jpg",
+      "webBytes": 862720,
+      "webSize": [
+        900,
+        1600
+      ],
+      "webSha256": "4fe2e16c97ffc08ea35cf9fa497bf69b065bbf7f8799fc99677894c97f6261f2",
+      "channels": 3,
+      "processing": "Full frame, EXIF orientation applied, longest side 1600px, JPEG quality 95 / 4:4:4; no grayscale, crop, recoloring or overlays",
+      "compiledSize": [
+        576,
+        1024
+      ],
+      "matchingLevels": 9,
+      "trackingLevels": 2,
+      "matchingFeatures": 3474,
+      "photoCredit": "Project team, field visit at Cu Chi; supplied by the user"
+    },
+    {
+      "artifact": "binoculars",
+      "name": "Ống nhòm",
+      "photo": "DSCF9691.JPG",
+      "caption": "Cảnh người dân và chiến sĩ tại khu tái hiện",
+      "targetIndex": 4,
+      "original": "/assets/ar-targets/originals/DSCF9691.JPG",
+      "originalBytes": 13507809,
+      "originalSha256": "8c7c39370084e56b11e94a501b64abeb9bbbe97b0fbabfe2d7a71bd9a2cef371",
+      "sourceSize": [
+        6000,
+        3376
+      ],
+      "sourceExifOrientation": 1,
+      "webImage": "/assets/ar-targets/DSCF9691.jpg",
+      "webBytes": 711337,
+      "webSize": [
+        1600,
+        900
+      ],
+      "webSha256": "223a8a6db65e94d4d825c626528e88d82dbc2601a12fa23bd030d434b9456ee9",
+      "channels": 3,
+      "processing": "Full frame, EXIF orientation applied, longest side 1600px, JPEG quality 95 / 4:4:4; no grayscale, crop, recoloring or overlays",
+      "compiledSize": [
+        1024,
+        576
+      ],
+      "matchingLevels": 9,
+      "trackingLevels": 2,
+      "matchingFeatures": 3259,
+      "photoCredit": "Project team, field visit at Cu Chi; supplied by the user"
+    },
+    {
+      "artifact": "shovel",
+      "name": "Xẻng",
+      "photo": "DSCF9805.JPG",
+      "caption": "Cảnh lao động với công cụ thủ công",
+      "targetIndex": 5,
+      "original": "/assets/ar-targets/originals/DSCF9805.JPG",
+      "originalBytes": 11675514,
+      "originalSha256": "bbdf646e140fa8f3037f9d2fb93d878ef981c4c0ff7f0088e3b0e0601e061d82",
+      "sourceSize": [
+        6000,
+        3376
+      ],
+      "sourceExifOrientation": 1,
+      "webImage": "/assets/ar-targets/DSCF9805.jpg",
+      "webBytes": 737683,
+      "webSize": [
+        1600,
+        900
+      ],
+      "webSha256": "983d07d44192b3bbb5a5b1816b944c0b64687509a071664a4fb46fe0fd6edccd",
+      "channels": 3,
+      "processing": "Full frame, EXIF orientation applied, longest side 1600px, JPEG quality 95 / 4:4:4; no grayscale, crop, recoloring or overlays",
+      "compiledSize": [
+        1024,
+        576
+      ],
+      "matchingLevels": 9,
+      "trackingLevels": 2,
+      "matchingFeatures": 3404,
+      "photoCredit": "Project team, field visit at Cu Chi; supplied by the user"
+    },
+    {
+      "artifact": "pot",
+      "name": "Nồi nấu ăn",
+      "photo": "DSCF9792.JPG",
+      "caption": "Khu tái hiện bếp Hoàng Cầm",
+      "targetIndex": 6,
+      "original": "/assets/ar-targets/originals/DSCF9792.JPG",
+      "originalBytes": 11603168,
+      "originalSha256": "ba79c44fd19a4da5b153f50739facfc0bb2f9c68ab25d6b9c790021d12a33c58",
+      "sourceSize": [
+        6000,
+        3376
+      ],
+      "sourceExifOrientation": 1,
+      "webImage": "/assets/ar-targets/DSCF9792.jpg",
+      "webBytes": 736638,
+      "webSize": [
+        1600,
+        900
+      ],
+      "webSha256": "c6bb740b44bdd9176edc7bb1ef42df800f9bf653044108fe26fa5227dd8be368",
+      "channels": 3,
+      "processing": "Full frame, EXIF orientation applied, longest side 1600px, JPEG quality 95 / 4:4:4; no grayscale, crop, recoloring or overlays",
+      "compiledSize": [
+        1024,
+        576
+      ],
+      "matchingLevels": 9,
+      "trackingLevels": 2,
+      "matchingFeatures": 3281,
+      "photoCredit": "Project team, field visit at Cu Chi; supplied by the user"
+    },
+    {
+      "artifact": "rifle",
+      "name": "AK-47",
+      "photo": "DSCF9756.JPG",
+      "caption": "Mô hình chiến sĩ chào trong khu tái hiện",
+      "targetIndex": 7,
+      "original": "/assets/ar-targets/originals/DSCF9756.JPG",
+      "originalBytes": 13565276,
+      "originalSha256": "76805187382955d3d5ce2fbc9d038a83e14b06598cebeec4f14aa07bb3b895ff",
+      "sourceSize": [
+        6000,
+        3376
+      ],
+      "sourceExifOrientation": 1,
+      "webImage": "/assets/ar-targets/DSCF9756.jpg",
+      "webBytes": 876660,
+      "webSize": [
+        1600,
+        900
+      ],
+      "webSha256": "71f832e40e97cb1951c4ce3b6321d19f6dfaeb4cbcbe80d206aa5089bc0c0344",
+      "channels": 3,
+      "processing": "Full frame, EXIF orientation applied, longest side 1600px, JPEG quality 95 / 4:4:4; no grayscale, crop, recoloring or overlays",
+      "compiledSize": [
+        1024,
+        576
+      ],
+      "matchingLevels": 9,
+      "trackingLevels": 2,
+      "matchingFeatures": 3435,
+      "photoCredit": "Project team, field visit at Cu Chi; supplied by the user"
+    },
+    {
+      "artifact": "flashlight",
+      "name": "Đèn pin",
+      "photo": "DSCF9806.JPG",
+      "caption": "Cảnh người dân tại cửa hầm",
+      "targetIndex": 8,
+      "original": "/assets/ar-targets/originals/DSCF9806.JPG",
+      "originalBytes": 12650418,
+      "originalSha256": "f3bf862c7252ef1b8d551b4fc2f7b5d37f9c09d36f4127f1b4b19aa6ef2a89f0",
+      "sourceSize": [
+        6000,
+        3376
+      ],
+      "sourceExifOrientation": 1,
+      "webImage": "/assets/ar-targets/DSCF9806.jpg",
+      "webBytes": 630613,
+      "webSize": [
+        1600,
+        900
+      ],
+      "webSha256": "1b2f5ea5d03b33af8e96d4b7d24240aa7e0497d7f67a661ca48553d30d5937a0",
+      "channels": 3,
+      "processing": "Full frame, EXIF orientation applied, longest side 1600px, JPEG quality 95 / 4:4:4; no grayscale, crop, recoloring or overlays",
+      "compiledSize": [
+        1024,
+        576
+      ],
+      "matchingLevels": 9,
+      "trackingLevels": 2,
+      "matchingFeatures": 3225,
+      "photoCredit": "Project team, field visit at Cu Chi; supplied by the user"
+    },
+    {
+      "artifact": "firstaid",
+      "name": "Hộp sơ cứu",
+      "photo": "DSCF9803.JPG",
+      "caption": "Cảnh chăm sóc người bị thương",
+      "targetIndex": 9,
+      "original": "/assets/ar-targets/originals/DSCF9803.JPG",
+      "originalBytes": 12306873,
+      "originalSha256": "db21beef3cdbeb47e328b284c1425aef10124dd496f1d32a7a8f0dd28c61202e",
+      "sourceSize": [
+        6000,
+        3376
+      ],
+      "sourceExifOrientation": 1,
+      "webImage": "/assets/ar-targets/DSCF9803.jpg",
+      "webBytes": 681214,
+      "webSize": [
+        1600,
+        900
+      ],
+      "webSha256": "39b356e4e1868af4dc8542b03661158172ef6575782784031220515043878a82",
+      "channels": 3,
+      "processing": "Full frame, EXIF orientation applied, longest side 1600px, JPEG quality 95 / 4:4:4; no grayscale, crop, recoloring or overlays",
+      "compiledSize": [
+        1024,
+        576
+      ],
+      "matchingLevels": 9,
+      "trackingLevels": 2,
+      "matchingFeatures": 2348,
+      "photoCredit": "Project team, field visit at Cu Chi; supplied by the user"
+    }
+  ]
+}

@@ -62,6 +62,7 @@ const SAFE_REDIRECT_PREFIXES = [
   '/heritage',
   '/chat',
   '/scan',
+  '/ar-experience',
   '/photo-frame',
   '/teacher',
   '/pricing',
@@ -76,6 +77,7 @@ const SAFE_REDIRECT_PREFIXES = [
 
 export function isSafeRedirect(path: string): boolean {
   if (!path.startsWith('/') || path.startsWith('//')) return false
+  if (path.split(/[?#]/, 1)[0] === '/ar-experience') return true
   return SAFE_REDIRECT_PREFIXES.some((prefix) => path === prefix || path.startsWith(`${prefix}/`))
 }
 

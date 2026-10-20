@@ -33,8 +33,8 @@ const navItems: readonly NavigationItem[] = [
     { to: timePortalPath(CU_CHI_LOCATION_ID), icon: 'history', label: 'Cổng Thời Gian', prefixes: ['/time-portal'], modes: 'online' as const },
     { to: '/chat', icon: 'forum', label: 'Trò chuyện AI', prefixes: ['/chat'], modes: 'both' as const },
 
-    // --- TÍNH NĂNG CHỈ DÀNH CHO THỰC ĐỊA ONSITE ---
-    { to: '/scan', icon: 'qr_code_scanner', label: 'Quét thực địa', prefixes: ['/scan'], modes: 'offline' as const },
+    // Trung tâm AR dùng chung cho khám phá từ xa và hành trình tại di tích.
+    { to: '/ar-experience', icon: 'view_in_ar', label: 'Khám phá AR', prefixes: ['/ar-experience', '/scan'], modes: 'both' as const },
 
     { to: '/quests', icon: 'assignment', label: 'Nhiệm vụ', prefixes: ['/quests'], modes: 'both' as const },
     { to: '/artifacts', icon: 'history_edu', label: 'Cổ vật', prefixes: ['/artifacts'], modes: 'both' as const },
@@ -53,7 +53,7 @@ const navItems: readonly NavigationItem[] = [
 const mobileNavItems: readonly NavigationItem[] = [
     { to: '/explore', icon: 'explore', label: 'Khám phá', modes: 'both' as const, prefixes: ['/explore', '/home', '/tour/360', '/diorama', '/time-portal'] },
     { to: '/chat', icon: 'forum', label: 'Trợ lý AI', modes: 'both' as const, prefixes: ['/chat'] },
-    { to: '/scan', icon: 'qr_code_scanner', label: 'Quét AR', modes: 'offline' as const, prefixes: ['/scan'] },
+    { to: '/ar-experience', icon: 'view_in_ar', label: 'AR', modes: 'both' as const, prefixes: ['/ar-experience', '/scan'] },
     { to: '/quests', icon: 'assignment', label: 'Nhiệm vụ', modes: 'both' as const, prefixes: ['/quests'] },
     { to: '/artifacts', icon: 'history_edu', label: 'Cổ vật', modes: 'both' as const, prefixes: ['/artifacts'] },
 ] as const

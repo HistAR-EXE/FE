@@ -1,0 +1,1793 @@
+/* src/features/ar/arExperience.css */
+@keyframes arMascotFloat {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    25% { transform: translateY(-8px) rotate(-1.5deg); }
+    50% { transform: translateY(2px) rotate(0deg); }
+    75% { transform: translateY(-5px) rotate(1.5deg); }
+}
+
+@keyframes arOrbitSpin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.ar-experience-shell {
+    background: #f2f7ff;
+    color: #0f1b33;
+}
+
+.ar-experience {
+    background:
+            radial-gradient(ellipse at top right, rgba(219, 234, 254, 0.75) 0%, transparent 55%),
+            radial-gradient(ellipse at bottom left, rgba(255, 251, 235, 0.7) 0%, transparent 55%),
+            #f2f7ff;
+    min-height: 100vh;
+    padding-top: 3.5rem;
+    color: #0f1b33;
+}
+
+.ar-experience button,
+.ar-print-page button {
+    cursor: pointer;
+}
+
+.ar-experience :is(button, a):focus-visible,
+.ar-print-page :is(button, a):focus-visible {
+    outline: 3px solid #0275fb;
+    outline-offset: 4px;
+}
+
+/* ========================================================================== */
+/* 1. HERO BANNER: ĐÀI KHÁM PHÁ DI SẢN SỐ 3D & WEB AR                         */
+/* ========================================================================== */
+.ar-hero {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1.25fr 0.95fr;
+    align-items: center;
+    gap: 32px;
+    overflow: hidden;
+    min-height: 390px;
+    padding: 52px max(28px, 5%) 68px;
+    background: linear-gradient(135deg, #0353b8 0%, #0275fb 52%, #014296 100%);
+    color: #ffffff;
+    border-bottom: 4px solid #fdc908;
+    box-shadow: 0 18px 45px rgba(2, 117, 251, 0.25);
+}
+
+.ar-hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+            linear-gradient(to right, rgba(255, 255, 255, 0.07) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(255, 255, 255, 0.07) 1px, transparent 1px);
+    background-size: 2.75rem 2.75rem;
+    pointer-events: none;
+}
+
+.ar-hero::after {
+    content: "";
+    position: absolute;
+    top: -120px;
+    right: 8%;
+    width: 460px;
+    height: 460px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(253, 201, 8, 0.28) 0%, transparent 68%);
+    pointer-events: none;
+}
+
+.ar-hero-copy {
+    position: relative;
+    z-index: 2;
+    max-width: 720px;
+}
+
+.ar-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    line-height: 1.5;
+    color: #0275fb;
+}
+
+.ar-hero .ar-eyebrow {
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: rgba(15, 27, 51, 0.35);
+    border: 1px solid rgba(253, 201, 8, 0.55);
+    color: #fff2c3;
+    backdrop-filter: blur(8px);
+}
+
+.ar-eyebrow > span:first-child {
+    width: 8px;
+    height: 8px;
+    background: #fdc908;
+    border-radius: 50%;
+    box-shadow: 0 0 0 3px rgba(253, 201, 8, 0.25);
+    flex-shrink: 0;
+}
+
+.ar-hero h1 {
+    margin: 18px 0 16px;
+    font-size: clamp(34px, 4vw, 58px);
+    line-height: 1.1;
+    font-weight: 900;
+    letter-spacing: -0.035em;
+    color: #ffffff;
+    text-shadow: 0 4px 16px rgba(15, 27, 51, 0.22);
+}
+
+.ar-hero h1 em {
+    font-style: normal;
+    background: linear-gradient(90deg, #fff2c3 0%, #fdc908 55%, #ffd93d 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.ar-hero-copy > p:not(.ar-eyebrow) {
+    line-height: 1.75;
+    font-size: 15px;
+    font-weight: 500;
+    color: rgba(239, 246, 255, 0.95);
+    max-width: 580px;
+}
+
+.ar-hero-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 24px;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.ar-hero-tags > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    backdrop-filter: blur(10px);
+    color: #ffffff;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.ar-hero-tags .material-symbols-outlined {
+    color: #fdc908;
+    font-size: 19px;
+}
+
+/* Cột phải Hero: Vòng xoay La bàn & Linh vật Chrono */
+.ar-hero-visual {
+    position: relative;
+    z-index: 2;
+    min-height: 290px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ar-orbit {
+    position: absolute;
+    width: 240px;
+    height: 240px;
+    border: 1.5px solid rgba(255, 255, 255, 0.28);
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+}
+
+.ar-orbit::after {
+    content: "";
+    position: absolute;
+    top: 14%;
+    right: 10%;
+    width: 11px;
+    height: 11px;
+    background: #fdc908;
+    border-radius: 50%;
+    box-shadow: 0 0 0 6px rgba(253, 201, 8, 0.22);
+}
+
+.ar-orbit-two {
+    width: 310px;
+    height: 310px;
+    border: 2px dashed rgba(253, 201, 8, 0.55);
+    background: none;
+    animation: arOrbitSpin 26s linear infinite;
+}
+
+.ar-hero-mascot {
+    position: relative;
+    z-index: 3;
+    width: 205px;
+    height: 205px;
+    object-fit: contain;
+    filter: drop-shadow(0 18px 32px rgba(0, 0, 0, 0.42));
+    animation: arMascotFloat 6s ease-in-out infinite;
+    user-select: none;
+}
+
+.ar-hero-visual .ar-hero-icon {
+    position: absolute;
+    left: calc(50% - 135px);
+    bottom: 24px;
+    z-index: 4;
+    font-size: 28px;
+    color: #0f1b33;
+    background: linear-gradient(135deg, #fff2c3 0%, #fdc908 100%);
+    width: 52px;
+    height: 52px;
+    border-radius: 16px;
+    display: grid;
+    place-items: center;
+    border: 2px solid #ffffff;
+    box-shadow: 0 10px 24px rgba(15, 27, 51, 0.3);
+    transform: rotate(-8deg);
+}
+
+.ar-visual-coord {
+    position: absolute;
+    top: 6px;
+    right: 12px;
+    z-index: 4;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: #ffffff;
+    color: #0f1b33;
+    border: 2px solid #fdc908;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 0.12em;
+    box-shadow: 0 8px 20px rgba(15, 27, 51, 0.2);
+}
+
+.ar-visual-label {
+    position: absolute;
+    bottom: 4px;
+    right: 12px;
+    z-index: 4;
+    padding: 8px 16px;
+    border-radius: 16px;
+    background: rgba(15, 27, 51, 0.9);
+    border: 1.5px solid rgba(253, 201, 8, 0.65);
+    backdrop-filter: blur(8px);
+    font-size: 9px;
+    font-weight: 800;
+    line-height: 1.55;
+    text-align: right;
+    letter-spacing: 0.08em;
+    color: #fff2c3;
+    box-shadow: 0 10px 25px rgba(15, 27, 51, 0.35);
+}
+
+.ar-visual-label strong {
+    color: #fdc908;
+    font-weight: 900;
+}
+
+/* ========================================================================== */
+/* 2. THANH CHUYỂN ĐỔI 3 CHẾ ĐỘ TRẢI NGHIỆM (MODE NAVIGATION)                 */
+/* ========================================================================== */
+.ar-main {
+    position: relative;
+    max-width: 1440px;
+    padding: 0 28px 48px;
+    margin: auto;
+}
+
+.ar-mode-nav {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(16px);
+    border: 2px solid rgba(2, 117, 251, 0.16);
+    border-radius: 26px;
+    box-shadow: 0 18px 45px rgba(2, 72, 153, 0.1);
+    margin-top: -34px;
+    position: relative;
+    z-index: 5;
+}
+
+.ar-mode-nav button {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    text-align: left;
+    padding: 16px 18px;
+    border: 2px solid transparent;
+    border-radius: 18px;
+    background: #f4f9ff;
+    color: #0f1b33;
+    transition: all 0.22s ease;
+}
+
+.ar-mode-nav button:hover {
+    background: #eaf3ff;
+    border-color: rgba(2, 117, 251, 0.3);
+    transform: translateY(-1px);
+}
+
+.ar-mode-nav button[aria-current] {
+    background: linear-gradient(135deg, #042a6b 0%, #0275fb 55%, #014296 100%);
+    color: #ffffff;
+    border-color: #fdc908;
+    box-shadow: 0 12px 28px rgba(2, 117, 251, 0.28);
+}
+
+.ar-option-icon {
+    width: 46px;
+    height: 46px;
+    display: grid;
+    place-items: center;
+    border-radius: 14px;
+    background: #ffffff;
+    color: #0275fb;
+    border: 1px solid rgba(2, 117, 251, 0.15);
+    box-shadow: 0 4px 10px rgba(2, 117, 251, 0.08);
+    flex-shrink: 0;
+}
+
+.ar-mode-nav button[aria-current] .ar-option-icon {
+    background: linear-gradient(135deg, #fff2c3 0%, #fdc908 100%);
+    color: #0f1b33;
+    border-color: #ffffff;
+}
+
+.ar-mode-nav strong {
+    display: block;
+    font-size: 15px;
+    font-weight: 900;
+    letter-spacing: -0.01em;
+}
+
+.ar-mode-nav small {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    opacity: 0.78;
+    margin-top: 3px;
+}
+
+.ar-option-number {
+    margin-left: auto;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(15, 27, 51, 0.06);
+    font-size: 11px;
+    font-weight: 900;
+    color: #64748b;
+}
+
+.ar-mode-nav button[aria-current] .ar-option-number {
+    background: rgba(253, 201, 8, 0.2);
+    border: 1px solid rgba(253, 201, 8, 0.65);
+    color: #fff2c3;
+}
+
+/* ========================================================================== */
+/* 3. BỘ SƯU TẬP HIỆN VẬT (COLLECTION HEADER & BENTO SHELF)                   */
+/* ========================================================================== */
+.ar-section-heading {
+    display: flex;
+    gap: 20px;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin: 36px 0 14px;
+}
+
+.ar-section-heading h2 {
+    font-size: clamp(22px, 2.2vw, 30px);
+    line-height: 1.25;
+    font-weight: 900;
+    letter-spacing: -0.025em;
+    color: #0f1b33;
+    margin-top: 6px;
+}
+
+.ar-section-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    white-space: nowrap;
+    padding: 8px 16px;
+    background: #fffbeb;
+    border: 2px solid #fdc908;
+    border-radius: 999px;
+    color: #0f1b33;
+    font-weight: 900;
+    box-shadow: 0 4px 12px rgba(253, 201, 8, 0.2);
+}
+
+.ar-collection-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 0 0 16px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+}
+
+.ar-collection-toolbar .ar-text-link {
+    flex-shrink: 0;
+    padding: 6px 12px;
+    border-radius: 10px;
+    background: #eaf3ff;
+    border: 1px solid rgba(2, 117, 251, 0.2);
+}
+
+/* Kệ trưng bày 10 hiện vật: 5 cột x 2 hàng cân đối trên Desktop */
+.ar-artifact-tabs {
+    display: grid;
+    grid-template-rows: repeat(2, minmax(96px, auto)); /* Tăng nhẹ chiều cao để đủ 2 dòng mô tả */
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(245px, calc((100% - 24px) / 3));
+    gap: 10px;
+    overflow-x: auto;
+    padding: 4px 4px 12px;
+}
+
+.ar-artifact-tabs button {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    width: 100%;
+    padding: 12px 14px;
+    text-align: left;
+    border: 2px solid rgba(2, 117, 251, 0.14);
+    border-radius: 18px;
+    background: #ffffff;
+    box-shadow: 0 6px 18px rgba(15, 27, 51, 0.04);
+    transition: all 0.2s ease;
+}
+
+.ar-artifact-tabs button:hover {
+    border-color: #0275fb;
+    background: #f8fbff;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px rgba(2, 117, 251, 0.1);
+}
+
+.ar-artifact-tabs button[aria-pressed="true"] {
+    border-color: #fdc908;
+    background: linear-gradient(135deg, #fffbeb 0%, #ffffff 55%, #eaf3ff 100%);
+    box-shadow:
+            0 0 0 2px rgba(2, 117, 251, 0.2),
+            0 12px 26px rgba(2, 117, 251, 0.12);
+}
+
+.ar-artifact-thumbnail {
+    flex-shrink: 0;
+    width: 52px;
+    height: 56px;
+    object-fit: contain;
+    background: linear-gradient(180deg, #f2f7ff 0%, #ffffff 100%);
+    border: 1.5px solid #dbeafe;
+    border-radius: 12px;
+    padding: 4px;
+}
+
+.ar-artifact-tabs button[aria-pressed="true"] .ar-artifact-thumbnail {
+    border-color: #0275fb;
+    background: #ffffff;
+}
+
+.ar-artifact-tabs button > span:not(.material-symbols-outlined) {
+    min-width: 0;
+    flex: 1;
+}
+
+.ar-artifact-tabs strong {
+    display: block;
+    font-size: 13.5px;
+    font-weight: 900;
+    color: #0f1b33;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ar-artifact-tabs small {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    white-space: normal; /* Bỏ nowrap để không bị cắt mất chữ */
+    line-height: 1.35;
+}
+
+.ar-artifact-tabs .ar-artifact-attribution {
+    font-size: 9.5px;
+    font-weight: 700;
+    color: #0275fb;
+    margin-top: 3px;
+}
+
+.ar-artifact-tabs button > .material-symbols-outlined:last-child {
+    margin-left: auto;
+    font-size: 20px;
+    color: #94a3b8;
+    flex-shrink: 0;
+}
+
+.ar-artifact-tabs button[aria-pressed="true"] > .material-symbols-outlined:last-child {
+    color: #0275fb;
+}
+
+.ar-review-label {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 6px;
+    background: #fef3c7;
+    color: #92400e;
+    font-size: 8px;
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    margin-bottom: 3px;
+}
+
+.ar-review-notice {
+    margin-bottom: 20px;
+    padding: 16px 20px;
+    border: 2px solid #fdc908;
+    border-left: 6px solid #0275fb;
+    background: #fffbeb;
+    border-radius: 16px;
+    font-size: 12.5px;
+    line-height: 1.7;
+    color: #0f1b33;
+}
+
+.ar-review-notice p {
+    margin-top: 4px;
+    color: #475569;
+}
+
+/* ========================================================================== */
+/* 4. KHUNG TRƯNG BÀY 3D & CÂU CHUYỆN HIỆN VẬT (3D EXHIBIT SURFACE)           */
+/* ========================================================================== */
+.ar-surface {
+    background: #ffffff;
+    border: 2px solid rgba(2, 117, 251, 0.15);
+    border-radius: 32px;
+    overflow: hidden;
+    box-shadow: 0 18px 45px rgba(2, 117, 251, 0.08);
+}
+
+.ar-exhibit {
+    display: grid;
+    grid-template-columns: 1.35fr 1fr;
+    min-height: 490px;
+    padding: 16px;
+    gap: 16px;
+}
+
+.ar-exhibit-stage {
+    position: relative;
+    background:
+            radial-gradient(circle at 50% 45%, #ffffff 0%, #eef6ff 55%, #d8e9ff 100%);
+    border: 2px solid rgba(2, 117, 251, 0.22);
+    border-radius: 24px;
+    min-width: 0;
+    overflow: hidden;
+    box-shadow: inset 0 0 40px rgba(2, 117, 251, 0.06);
+}
+
+.ar-model-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-height: 460px;
+    padding: 36px 28px;
+}
+
+.ar-specimen-icon {
+    width: 128px;
+    height: 128px;
+    border: 3px solid #fdc908;
+    border-radius: 36px;
+    display: grid;
+    place-items: center;
+    outline: 2px dashed rgba(2, 117, 251, 0.35);
+    outline-offset: 12px;
+    margin-bottom: 30px;
+    background: linear-gradient(135deg, #ffffff 0%, #fffbeb 100%);
+    box-shadow: 0 16px 35px rgba(2, 117, 251, 0.14);
+}
+
+.ar-specimen-icon > .material-symbols-outlined {
+    font-size: 64px;
+    color: #0275fb;
+}
+
+.ar-specimen-index {
+    display: inline-block;
+    padding: 5px 14px;
+    border-radius: 999px;
+    background: #eaf3ff;
+    border: 1px solid rgba(2, 117, 251, 0.25);
+    color: #0275fb;
+    letter-spacing: 0.15em;
+    font-size: 10px;
+    font-weight: 900;
+}
+
+.ar-model-placeholder h3 {
+    font-size: 30px;
+    font-weight: 900;
+    color: #0f1b33;
+    letter-spacing: -0.02em;
+    margin: 12px 0 6px;
+}
+
+.ar-model-placeholder > p {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 24px;
+}
+
+.ar-model-placeholder > small {
+    margin-top: 14px;
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.ar-exhibit-story {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 32px 30px;
+    background: linear-gradient(180deg, #f8fbff 0%, #ffffff 60%, #fffbeb 100%);
+    border: 1.5px solid rgba(2, 117, 251, 0.12);
+    border-radius: 24px;
+}
+
+.ar-exhibit-story h2 {
+    font-size: clamp(28px, 2.5vw, 36px);
+    letter-spacing: -0.03em;
+    font-weight: 900;
+    color: #0f1b33;
+    margin: 10px 0 14px;
+}
+
+.ar-exhibit-story > p:not(.ar-eyebrow):not(.ar-footnote) {
+    font-size: 14px;
+    line-height: 1.8;
+    font-weight: 500;
+    color: #334155;
+}
+
+.ar-object-details {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 20px 0 24px;
+    padding: 14px 16px;
+    border-radius: 16px;
+    background: #f2f7ff;
+    border: 1.5px solid rgba(2, 117, 251, 0.2);
+    border-left: 4px solid #0275fb;
+    color: #0f1b33;
+    font-size: 12.5px;
+    font-weight: 800;
+}
+
+.ar-object-details .material-symbols-outlined {
+    color: #0275fb;
+    font-size: 22px;
+    flex-shrink: 0;
+}
+
+/* Hệ thống Nút Bấm Thương Hiệu */
+.ar-button {
+    display: inline-flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: center;
+    min-height: 50px;
+    border-radius: 16px;
+    padding: 13px 24px;
+    font-size: 13px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border: 2px solid transparent;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.ar-button:hover {
+    filter: brightness(1.04);
+    transform: translateY(-2px);
+}
+
+.ar-button .material-symbols-outlined {
+    font-size: 21px;
+}
+
+.ar-button-blue {
+    background: linear-gradient(135deg, #0275fb 0%, #015cc8 100%);
+    color: #ffffff;
+    box-shadow: 0 10px 24px rgba(2, 117, 251, 0.3);
+}
+
+.ar-button-yellow {
+    background: linear-gradient(135deg, #fdc908 0%, #ffd93d 55%, #fdb900 100%);
+    color: #0f1b33;
+    box-shadow: 0 10px 24px rgba(253, 201, 8, 0.38);
+}
+
+.ar-button-light {
+    background: #ffffff;
+    color: #0275fb;
+    border-color: #0275fb;
+}
+
+.ar-footnote {
+    font-size: 11.5px;
+    line-height: 1.75;
+    font-weight: 500;
+    color: #64748b;
+    margin: 16px 0;
+}
+
+.ar-text-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #0275fb;
+    font-size: 12.5px;
+    font-weight: 800;
+    text-decoration: none;
+    background: none;
+    border: none;
+    padding: 6px 0;
+    text-align: left;
+}
+
+.ar-text-link:hover {
+    text-decoration: underline;
+}
+
+/* ========================================================================== */
+/* 5. CHẾ ĐỘ 02: KẾT NỐI 2 MÀN HÌNH AR TẠI NHÀ (HANDOFF VIEW)                 */
+/* ========================================================================== */
+.ar-handoff {
+    display: grid;
+    grid-template-columns: 1fr 1.05fr;
+    padding: 16px;
+    gap: 16px;
+}
+
+.ar-target-display {
+    padding: 32px;
+    background: linear-gradient(180deg, #07132c 0%, #0e224d 60%, #033980 100%);
+    border: 2px solid #fdc908;
+    border-radius: 24px;
+    color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    box-shadow: 0 16px 40px rgba(15, 27, 51, 0.22);
+}
+
+.ar-target-label {
+    display: inline-block;
+    padding: 6px 16px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #fff2c3 0%, #fdc908 100%);
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 0.12em;
+    color: #0f1b33;
+    margin-bottom: 20px;
+}
+
+.ar-target-display > img {
+    max-height: 390px;
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+    filter: none;
+    background: #ffffff;
+    border: 14px solid #ffffff;
+    border-radius: 18px;
+    box-shadow: 0 14px 32px rgba(0, 0, 0, 0.35);
+}
+
+.ar-target-display > p {
+    font-size: 12px;
+    font-weight: 500;
+    color: #dbeafe;
+    margin-top: 20px;
+    margin-bottom: 8px;
+    line-height: 1.7;
+}
+
+.ar-target-display .ar-text-link {
+    color: #fdc908;
+}
+
+.ar-handoff-guide {
+    padding: 30px 32px;
+    background: #f8fbff;
+    border: 1.5px solid rgba(2, 117, 251, 0.14);
+    border-radius: 24px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.ar-handoff-guide h2 {
+    font-size: clamp(24px, 2.2vw, 30px);
+    font-weight: 900;
+    color: #0f1b33;
+    letter-spacing: -0.025em;
+    line-height: 1.25;
+    margin-top: 10px;
+}
+
+.ar-numbered-steps {
+    list-style: none;
+    margin: 22px 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.ar-numbered-steps li {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 13px 16px;
+    border-radius: 16px;
+    background: #ffffff;
+    border: 1.5px solid #e2e8f0;
+    box-shadow: 0 4px 12px rgba(15, 27, 51, 0.03);
+}
+
+.ar-numbered-steps li > span {
+    border-radius: 10px;
+    background: #0275fb;
+    color: #fdc908;
+    font-size: 12px;
+    font-weight: 900;
+    width: 30px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+}
+
+.ar-numbered-steps strong {
+    font-size: 13.5px;
+    font-weight: 900;
+    color: #0f1b33;
+}
+
+.ar-numbered-steps p {
+    font-size: 12px;
+    font-weight: 500;
+    color: #64748b;
+    margin-top: 3px;
+    line-height: 1.55;
+}
+
+.ar-qr-row {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 16px;
+    border-radius: 20px;
+    background: #ffffff;
+    border: 2px solid #fdc908;
+    margin-bottom: 18px;
+    box-shadow: 0 8px 22px rgba(253, 201, 8, 0.14);
+}
+
+.ar-qr-row > img {
+    width: 112px;
+    height: 112px;
+    flex-shrink: 0;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    padding: 4px;
+    background: #ffffff;
+}
+
+.ar-qr-row > div {
+    min-width: 0;
+}
+
+.ar-qr-row strong {
+    display: block;
+    font-size: 14px;
+    font-weight: 900;
+    color: #0f1b33;
+}
+
+.ar-phone-link {
+    display: block;
+    overflow-wrap: anywhere;
+    font-size: 11px;
+    font-weight: 600;
+    color: #64748b;
+    line-height: 1.6;
+    margin-top: 2px;
+}
+
+.ar-error {
+    padding: 14px 16px;
+    border-radius: 14px;
+    background: #fffbeb;
+    border: 1.5px solid #fdc908;
+    color: #92400e;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.65;
+    margin: 12px 0;
+}
+
+/* ========================================================================== */
+/* 6. CHẾ ĐỘ 03: TRẢI NGHIỆM THỰC ĐỊA TẠI CỦ CHI (ONSITE VIEW)                */
+/* ========================================================================== */
+.ar-onsite {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    margin-top: 30px;
+    padding: 16px;
+    gap: 16px;
+}
+
+.ar-onsite > div:first-child {
+    padding: 32px;
+    background: #f8fbff;
+    border-radius: 24px;
+    border: 1.5px solid rgba(2, 117, 251, 0.12);
+}
+
+.ar-onsite h2 {
+    font-size: clamp(26px, 2.5vw, 34px);
+    font-weight: 900;
+    color: #0f1b33;
+    letter-spacing: -0.03em;
+    margin: 12px 0;
+}
+
+.ar-onsite p {
+    font-size: 14px;
+    line-height: 1.8;
+    font-weight: 500;
+    color: #475569;
+}
+
+.ar-onsite ol {
+    padding-left: 20px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #0f1b33;
+    line-height: 2.2;
+    margin: 20px 0 24px;
+}
+
+.ar-inline-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    align-items: center;
+}
+
+.ar-onsite-image {
+    position: relative;
+    min-height: 360px;
+    border-radius: 24px;
+    overflow: hidden;
+    border: 2px solid #fdc908;
+}
+
+.ar-onsite-image img {
+    height: 100%;
+    width: 100%;
+    object-fit: cover;
+}
+
+.ar-onsite-image span {
+    position: absolute;
+    inset: auto 0 0;
+    padding: 40px 24px 22px;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 0.12em;
+    color: #fff2c3;
+    background: linear-gradient(transparent, rgba(15, 27, 51, 0.88));
+}
+
+/* ========================================================================== */
+/* 7. TRÌNH XEM 3D TƯƠNG TÁC & BUỒNG CAMERA AR                                */
+/* ========================================================================== */
+.ar-model-viewer {
+    height: 100%;
+    min-height: 460px;
+    position: relative;
+}
+
+.ar-model-canvas {
+    position: absolute;
+    inset: 0;
+    touch-action: none;
+}
+
+.ar-model-canvas canvas {
+    display: block;
+}
+
+.ar-viewer-badge {
+    position: absolute;
+    top: 18px;
+    left: 18px;
+    display: inline-flex;
+    gap: 8px;
+    align-items: center;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1.5px solid rgba(2, 117, 251, 0.25);
+    box-shadow: 0 4px 14px rgba(15, 27, 51, 0.08);
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    color: #0f1b33;
+    pointer-events: none;
+}
+
+.ar-viewer-badge span {
+    background: #0275fb;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    box-shadow: 0 0 0 3px rgba(2, 117, 251, 0.2);
+}
+
+.ar-model-status {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    align-items: center;
+    justify-content: center;
+    padding: 30px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 800;
+    color: #0f1b33;
+    background: rgba(242, 247, 255, 0.88);
+    backdrop-filter: blur(6px);
+}
+
+.ar-model-controls {
+    position: absolute;
+    bottom: 44px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    padding: 6px;
+    gap: 6px;
+    border: 1.5px solid rgba(2, 117, 251, 0.22);
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    box-shadow: 0 10px 28px rgba(15, 27, 51, 0.12);
+}
+
+.ar-model-controls button {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    font-size: 19px;
+    font-weight: 800;
+    background: #f2f7ff;
+    color: #0275fb;
+    border: 1px solid transparent;
+    transition: all 0.18s ease;
+}
+
+.ar-model-controls button:hover {
+    background: #0275fb;
+    color: #ffffff;
+}
+
+.ar-model-controls button[aria-pressed="true"] {
+    background: #fdc908;
+    color: #0f1b33;
+}
+
+.ar-model-hint {
+    position: absolute;
+    bottom: 14px;
+    width: 100%;
+    text-align: center;
+    color: #475569;
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 0 12px;
+    pointer-events: none;
+}
+
+/* Khung Camera AR */
+.ar-recognition-note {
+    padding: 14px 18px;
+    border-radius: 16px;
+    background: #fffbeb;
+    border: 1.5px solid #fdc908;
+    font-size: 12.5px;
+    font-weight: 700;
+    line-height: 1.65;
+    color: #0f1b33;
+    margin-bottom: 14px;
+}
+
+.ar-camera-panel {
+    background: #ffffff;
+    border: 2px solid rgba(2, 117, 251, 0.18);
+    border-radius: 28px;
+    overflow: hidden;
+    box-shadow: 0 18px 45px rgba(15, 27, 51, 0.1);
+}
+
+.ar-camera-stage {
+    position: relative;
+    height: 520px;
+    background: #07132c;
+    overflow: hidden;
+}
+
+.ar-camera-frame {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
+
+.ar-camera-intro {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px;
+    text-align: center;
+    background: radial-gradient(circle at center, #14356b 0%, #07132c 72%);
+    color: #ffffff;
+}
+
+.ar-camera-symbol {
+    width: 92px;
+    height: 92px;
+    display: grid;
+    place-items: center;
+    border: 2px solid #fdc908;
+    background: rgba(2, 117, 251, 0.25);
+    border-radius: 26px;
+    color: #fdc908;
+    margin-bottom: 24px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+}
+
+.ar-camera-symbol > .material-symbols-outlined {
+    font-size: 50px;
+}
+
+.ar-camera-intro h2 {
+    font-size: 28px;
+    font-weight: 900;
+    max-width: 460px;
+}
+
+.ar-camera-intro p {
+    font-size: 13.5px;
+    line-height: 1.8;
+    max-width: 440px;
+    color: #dbeafe;
+    margin: 14px 0 24px;
+}
+
+.ar-camera-intro small {
+    display: block;
+    color: #94a3b8;
+    font-size: 11px;
+    line-height: 1.7;
+    margin-top: 18px;
+    max-width: 340px;
+}
+
+.ar-camera-state {
+    position: absolute;
+    left: 18px;
+    right: 18px;
+    top: 18px;
+    margin: auto;
+    width: max-content;
+    max-width: calc(100% - 36px);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    color: #ffffff;
+    background: rgba(15, 27, 51, 0.88);
+    border: 1.5px solid rgba(253, 201, 8, 0.65);
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 800;
+    backdrop-filter: blur(8px);
+}
+
+.ar-camera-state > span {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #fdc908;
+    flex-shrink: 0;
+}
+
+.ar-camera-state.is-found > span {
+    background: #4ade80;
+}
+
+.ar-stop-camera {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    gap: 7px;
+    align-items: center;
+    background: #ffffff;
+    color: #0f1b33;
+    font-size: 12px;
+    font-weight: 900;
+    padding: 10px 18px;
+    border-radius: 999px;
+    border: 2px solid #fdc908;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+}
+
+.ar-presentation-controls {
+    padding: 18px 24px;
+    background: #f4f9ff;
+    border-bottom: 1px solid #d8e5f5;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.ar-presentation-controls label {
+    flex: 1 1 220px;
+    font-size: 12.5px;
+    font-weight: 800;
+    color: #0f1b33;
+}
+
+.ar-presentation-controls output {
+    float: right;
+    font-variant-numeric: tabular-nums;
+    font-weight: 900;
+    color: #0275fb;
+}
+
+.ar-presentation-controls input {
+    display: block;
+    width: 100%;
+    margin: 10px 0 0;
+    accent-color: #0275fb;
+}
+
+.ar-presentation-controls > div {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.ar-presentation-controls button {
+    min-height: 40px;
+    min-width: 42px;
+    padding: 8px 14px;
+    border: 1.5px solid #cbdcf2;
+    border-radius: 10px;
+    background: #ffffff;
+    color: #0275fb;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.ar-presentation-controls button[aria-pressed="true"] {
+    background: #0275fb;
+    border-color: #0275fb;
+    color: #ffffff;
+}
+
+.ar-camera-guide {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 22px 24px;
+    background: #ffffff;
+}
+
+.ar-camera-guide img {
+    width: 120px;
+    height: auto;
+    flex-shrink: 0;
+    border-radius: 12px;
+    border: 1.5px solid #e2e8f0;
+}
+
+.ar-camera-guide strong {
+    font-size: 14px;
+    font-weight: 900;
+    color: #0f1b33;
+}
+
+.ar-camera-guide p {
+    font-size: 12px;
+    line-height: 1.75;
+    color: #475569;
+    margin: 6px 0;
+}
+
+.ar-camera-guide a {
+    font-size: 12px;
+    color: #0275fb;
+    font-weight: 800;
+}
+
+.ar-camera-bottom {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    justify-content: space-between;
+    margin-top: 16px;
+}
+
+/* Footer & Credit */
+.ar-asset-credit {
+    font-size: 11.5px;
+    font-weight: 600;
+    line-height: 1.8;
+    color: #64748b;
+    margin: 20px 4px 0;
+    text-align: center;
+}
+
+.ar-asset-credit a {
+    color: #0275fb;
+    font-weight: 800;
+    text-decoration: underline;
+}
+
+.ar-page-footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 28px auto 0;
+    padding-top: 20px;
+    border-top: 1px solid rgba(2, 117, 251, 0.14);
+    max-width: 760px;
+    color: #475569;
+    font-size: 11.5px;
+    font-weight: 700;
+    line-height: 1.7;
+}
+
+.ar-page-footer > .material-symbols-outlined {
+    font-size: 18px;
+    color: #0275fb;
+    flex-shrink: 0;
+}
+
+/* ========================================================================== */
+/* 8. CHẾ ĐỘ IN THẺ DI SẢN (PRINT CARD VIEW - ĐẢM BẢO VỪA 1 TRANG A4 <1047PX) */
+/* ========================================================================== */
+.ar-print-page {
+    min-height: 100vh;
+    background: #edf3fb;
+    color: #0f1b33;
+    padding: 28px 20px;
+}
+
+.ar-print-actions {
+    max-width: 800px;
+    margin: 0 auto 24px;
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.ar-print-card {
+    max-width: 800px;
+    margin: auto;
+    background: #ffffff;
+    border: 2px solid #fdc908;
+    border-radius: 24px;
+    padding: 36px 40px;
+    text-align: center;
+    box-shadow: 0 18px 45px rgba(15, 27, 51, 0.08);
+}
+
+.ar-print-card .ar-eyebrow {
+    justify-content: center;
+}
+
+.ar-print-card h1 {
+    font-size: 30px;
+    font-weight: 900;
+    margin: 8px 0 22px;
+}
+
+.ar-print-card img {
+    max-height: 160mm;
+    display: block;
+    width: 100%;
+    height: auto;
+    margin: 0 auto;
+}
+
+.ar-print-card p {
+    font-size: 13px;
+    line-height: 1.7;
+    margin: 20px 0 10px;
+}
+
+.ar-print-card small {
+    color: #64748b;
+    font-size: 10.5px;
+}
+
+.ar-print-card img,
+.ar-target-display > img,
+.ar-camera-guide img {
+    filter: none;
+    object-fit: contain;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+}
+
+/* ========================================================================== */
+/* 9. TƯƠNG THÍCH MÀN HÌNH (RESPONSIVE & MOBILE 390PX & PRINT)                */
+/* ========================================================================== */
+@media (min-width: 768px) {
+    .ar-experience {
+        padding-top: 0;
+    }
+}
+
+@media (max-width: 1200px) {
+    .ar-artifact-tabs {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 1100px) {
+    .ar-mode-nav button {
+        padding: 14px 12px;
+        gap: 10px;
+    }
+    .ar-option-number {
+        display: none;
+    }
+    .ar-exhibit-story,
+    .ar-handoff-guide,
+    .ar-target-display {
+        padding: 24px;
+    }
+}
+
+@media (max-width: 767px) {
+    .ar-hero {
+        padding: 28px 20px 48px;
+        min-height: 290px;
+        grid-template-columns: 1fr;
+    }
+    .ar-hero-copy {
+        max-width: 100%;
+    }
+    .ar-hero h1 {
+        font-size: 34px;
+    }
+    .ar-hero-visual {
+        display: none;
+    }
+    .ar-hero .ar-eyebrow {
+        font-size: 9px;
+    }
+    .ar-hero-copy > p:not(.ar-eyebrow) {
+        font-size: 13px;
+    }
+    .ar-main {
+        padding: 0 14px 28px;
+    }
+    .ar-mode-nav {
+        padding: 6px;
+        gap: 6px;
+        border-radius: 18px;
+        margin-top: -24px;
+    }
+    .ar-mode-nav button {
+        padding: 12px 6px;
+        flex-direction: column;
+        text-align: center;
+        gap: 6px;
+        border-radius: 12px;
+    }
+    .ar-option-icon {
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+    }
+    .ar-option-icon .material-symbols-outlined {
+        font-size: 20px;
+    }
+    .ar-mode-nav strong {
+        font-size: 11px;
+    }
+    .ar-mode-nav small {
+        display: none;
+    }
+    .ar-section-heading {
+        margin: 26px 0 12px;
+    }
+    .ar-section-heading h2 {
+        font-size: 21px;
+    }
+    .ar-section-chip {
+        display: none;
+    }
+    .ar-collection-toolbar {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 6px;
+    }
+    .ar-artifact-tabs {
+        display: grid;
+        grid-template-columns: none;
+        grid-template-rows: repeat(2, 82px);
+        grid-auto-flow: column;
+        grid-auto-columns: minmax(225px, 78%);
+        gap: 8px;
+        overflow-x: auto;
+        padding: 4px 2px 10px;
+        scroll-snap-type: x proximity;
+    }
+    .ar-artifact-tabs button {
+        padding: 10px;
+        gap: 10px;
+    }
+    .ar-artifact-tabs strong {
+        font-size: 12px;
+    }
+    .ar-artifact-tabs small {
+        font-size: 9.5px;
+    }
+    .ar-artifact-thumbnail {
+        width: 42px;
+        height: 46px;
+    }
+    .ar-exhibit,
+    .ar-handoff,
+    .ar-onsite {
+        grid-template-columns: 1fr;
+        padding: 12px;
+        gap: 12px;
+    }
+    .ar-model-placeholder,
+    .ar-model-viewer {
+        min-height: 350px;
+    }
+    .ar-exhibit-story,
+    .ar-target-display,
+    .ar-handoff-guide,
+    .ar-onsite > div:first-child {
+        padding: 20px;
+    }
+    .ar-exhibit-story h2,
+    .ar-onsite h2 {
+        font-size: 26px;
+    }
+    .ar-handoff-guide h2 {
+        font-size: 22px;
+    }
+    .ar-onsite-image {
+        min-height: 220px;
+        height: 220px;
+    }
+    .ar-camera-stage {
+        height: 460px;
+    }
+    .ar-camera-guide {
+        gap: 12px;
+        padding: 16px;
+        align-items: flex-start;
+    }
+    .ar-camera-guide img {
+        width: 84px;
+    }
+    .ar-print-card {
+        padding: 24px;
+    }
+    .ar-print-card h1 {
+        font-size: 24px;
+    }
+}
+
+/* Thu gọn Hero khi ở chế độ Camera trực tiếp */
+.ar-experience.is-camera .ar-hero {
+    min-height: 0;
+    padding: 26px max(28px, 5%) 48px;
+    grid-template-columns: 1fr;
+}
+.ar-experience.is-camera .ar-hero h1 {
+    font-size: 32px;
+    margin: 10px 0;
+}
+.ar-experience.is-camera .ar-hero h1 br,
+.ar-experience.is-camera .ar-hero-visual,
+.ar-experience.is-camera .ar-hero-tags,
+.ar-experience.is-camera .ar-hero-copy > p:not(.ar-eyebrow) {
+    display: none;
+}
+.ar-experience.is-camera .ar-hero h1 em {
+    margin-left: 8px;
+}
+
+@media (max-width: 767px) {
+    .ar-experience.is-camera .ar-hero {
+        padding: 20px 18px 40px;
+    }
+    .ar-experience.is-camera .ar-hero h1 {
+        font-size: 22px;
+    }
+    .ar-experience.is-camera .ar-section-heading {
+        display: none;
+    }
+    .ar-experience.is-camera .ar-artifact-tabs {
+        margin-top: 16px;
+    }
+}
+
+@media print {
+    .ar-print-actions {
+        display: none !important;
+    }
+    .ar-print-page {
+        background: #ffffff;
+        padding: 0;
+    }
+    .ar-print-card {
+        max-width: 100%;
+        border: none;
+        box-shadow: none;
+        padding: 8mm;
+        break-inside: avoid;
+    }
+    .ar-print-card img {
+        max-height: 155mm;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ar-experience * {
+        transition: none !important;
+        animation: none !important;
+    }
+}
+
+/* Đồng bộ trang Scan thực địa */
+.onsite-scan-shell {
+    background: #f2f7ff;
+    color: #0f1b33;
+}
+.onsite-scan-shell main {
+    background: #f2f7ff;
+}
+.onsite-scan-header {
+    background: linear-gradient(135deg, #0353b8 0%, #0275fb 55%, #014296 100%);
+    border-bottom: 4px solid #fdc908;
+    color: #ffffff;
+    padding: 28px;
+    border-radius: 24px;
+    margin-bottom: 24px;
+}
+.onsite-scan-header > a {
+    font-size: 11px;
+    color: #d8eaff;
+}
+.onsite-scan-header .ar-eyebrow {
+    color: #fdc908;
+    margin: 20px 0 8px;
+}
+.onsite-scan-header h1 {
+    font-size: 32px;
+    font-weight: 900;
+}
+.onsite-scan-header > p:last-child {
+    font-size: 12px;
+    color: #e0edff;
+    margin-top: 10px;
+}
+.onsite-scan-shell .bg-surface-container,
+.onsite-scan-shell .bg-surface-container-high {
+    background: #ffffff;
+}
+.onsite-scan-shell .border-outline-variant {
+    border-color: #d8e5f5;
+}
+.onsite-scan-shell .text-on-surface {
+    color: #0f1b33;
+}
+.onsite-scan-shell .text-on-surface-variant {
+    color: #64748b;
+}
+.onsite-scan-shell .text-primary,
+.onsite-scan-shell .text-secondary {
+    color: #0275fb;
+}
+.onsite-scan-shell .bg-primary {
+    background: #0275fb;
+    color: #ffffff;
+}
+.onsite-scan-shell .neo-input {
+    background: #f2f7ff;
+    border: 1px solid #cbdcf2;
+    color: #0f1b33;
+}
+.onsite-scan-shell .text-error {
+    color: #b91c1c;
+}
+.ar-experience-shell header.fixed {
+    background: #ffffffee !important;
+    border-bottom: 1px solid #d8e5f5 !important;
+    color: #0f1b33;
+}
+.ar-experience-shell header.fixed .text-white {
+    color: #0f1b33 !important;
+}
+.ar-image-actions { display:flex; flex-direction:column; align-items:center; gap:16px; width:100%; margin-top:18px; }
+.ar-photo-help { display:block; margin-top:20px; font-size:11px; line-height:1.7; opacity:.8; }
+.ar-flow-summary { font-size:15px; font-weight:700; line-height:1.7; margin:18px 0; color:#416083; }
+.ar-webcam-option, .ar-card-email, .ar-device-note { border:1px solid #dce6f4; border-radius:18px; padding:20px; margin-top:20px; background:#fff; }
+.ar-webcam-option summary { cursor:pointer; font-size:14px; font-weight:750; }
+.ar-webcam-option p, .ar-email-content p, .ar-device-note p { font-size:13px; line-height:1.8; margin:14px 0; }
+.ar-email-content { margin-top:16px; }
+.ar-email-content small { display:block; margin-top:12px; font-size:12px; }
+.ar-email-content a { color:#006ce5; text-decoration:underline; }
+.ar-email-feedback { padding:12px; border-radius:12px; background:#edf4ff; }
+.ar-email-content button:disabled { opacity:.55; cursor:not-allowed; }
+@media(max-width:767px) { .ar-handoff-guide { padding:22px; } .ar-handoff-guide h2 { font-size:24px; } .ar-webcam-option,.ar-card-email,.ar-device-note { padding:16px; } .ar-image-actions .ar-button { width:100%; justify-content:center; } }

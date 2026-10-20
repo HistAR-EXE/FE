@@ -1,6 +1,6 @@
 // src/routes/AppRoutes.tsx
 import { lazy, Suspense } from 'react'
-import { BrowserRouter, Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AppErrorBoundary, SectionErrorBoundary } from '../components/ui/ErrorBoundary'
 import { LoadingOverlay } from '../components/ui/Spinner'
 import { CharacterExplorePage } from '../pages/CharacterExplorePage'
@@ -41,7 +41,6 @@ import { HeritagePortfolioPage } from '../pages/HeritagePortfolioPage'
 import { ProductTourWrapper } from '../features/explore/ProductTour'
 import { GoogleRedirectCompletion } from '../shared/auth/GoogleRedirectCompletion'
 import { AdminConsoleLayout } from '../components/admin/AdminConsoleLayout'
-import { locationSlug, resolveLocationParam } from '../shared/config/locationSlug'
 
 const ArtifactsPage = lazy(() => import('../pages/ArtifactsPage').then((module) => ({ default: module.ArtifactsPage })))
 const ArtifactDetailPage = lazy(() => import('../pages/ArtifactDetailPage').then((module) => ({ default: module.ArtifactDetailPage })))
@@ -62,6 +61,7 @@ const CheckoutB2BPage = lazy(() => import('../pages/CheckoutB2BPage').then((modu
 const CheckoutB2B2CPage = lazy(() => import('../pages/CheckoutB2B2CPage').then((module) => ({ default: module.CheckoutB2B2CPage })))
 const Tour360Page = lazy(() => import('../pages/Tour360Page').then((module) => ({ default: module.Tour360Page })))
 const TimePortalPage = lazy(() => import('../pages/TimePortalPage').then((module) => ({ default: module.TimePortalPage })))
+const ArExperiencePage = lazy(() => import('../pages/ArExperiencePage').then((module) => ({ default: module.ArExperiencePage })))
 const AdminAnalyticsPage = lazy(() => import('../pages/AdminAnalyticsPage').then((module) => ({ default: module.AdminAnalyticsPage })))
 const AdminBillingPage = lazy(() => import('../pages/AdminBillingPage').then((module) => ({ default: module.AdminBillingPage })))
 const AdminContentPage = lazy(() => import('../pages/AdminContentPage').then((module) => ({ default: module.AdminContentPage })))
@@ -81,11 +81,7 @@ function RouteLoadingFallback() {
 }
 
 function LegacyTimePortalArRedirect() {
-    const { locationId } = useParams<{ locationId: string }>()
-    const location = useLocation()
-    const params = new URLSearchParams(location.search)
-    params.set('view', 'ar')
-    return <Navigate replace to={`/time-portal/${locationId ? locationSlug(resolveLocationParam(locationId) ?? locationId) : ''}?${params.toString()}`} />
+    return <Navigate replace to="/ar-experience" />
 }
 
 export function AppRoutes() {
@@ -101,6 +97,8 @@ export function AppRoutes() {
                         {/* Public — guest landing only */}
                         <Route path="/" element={<OnboardingPage />} />
                         <Route path="/about" element={<AboutPage />} />
+                        <Route path="/ar-experience" element={<SectionErrorBoundary label="Khám phá AR"><ArExperiencePage /></SectionErrorBoundary>} />
+                        <Route path="/time-portal/:locationId/ar" element={<LegacyTimePortalArRedirect />} />
                         <Route path="/heritage-portfolio" element={<HeritagePortfolioPage />} />
                         <Route path="/pricing" element={<PricingPage />} />
 
@@ -141,7 +139,6 @@ export function AppRoutes() {
                                 <Route path="/explore" element={<SectionErrorBoundary label="Khám phá"><ProductTourWrapper><ExplorePage /></ProductTourWrapper></SectionErrorBoundary>} />
                                 <Route path="/explore/:locationId" element={<HeritageDetailPage />} />
                                 <Route path="/diorama/:locationId?" element={<SectionErrorBoundary label="Diorama"><BattleDioramaPage /></SectionErrorBoundary>} />
-                                <Route path="/time-portal/:locationId/ar" element={<LegacyTimePortalArRedirect />} />
                                 <Route path="/time-portal/:locationId" element={<SectionErrorBoundary label="Cổng thời gian"><TimePortalPage /></SectionErrorBoundary>} />
                                 <Route path="/tour/360/:locationId?" element={<SectionErrorBoundary label="Tour 360"><Tour360Page /></SectionErrorBoundary>} />
                                 <Route path="/quests" element={<QuestsPage />} />

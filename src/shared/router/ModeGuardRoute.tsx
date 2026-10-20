@@ -13,10 +13,6 @@ export function ModeGuardRoute() {
     return <Navigate to="/mode-select" replace state={{ from: `${location.pathname}${location.search}` }} />
   }
 
-  if (mode === 'online' && location.pathname === '/scan') {
-    return <Navigate to="/explore" replace />
-  }
-
   if (mode === 'offline' && isOnlinePriorityRoute(location.pathname)) {
     return <Navigate to="/scan" replace />
   }

@@ -1,0 +1,249 @@
+{
+  "generated": "2026-10-20",
+  "assets": [
+    {
+      "id": "hat",
+      "name": "Mũ cối",
+      "status": "published",
+      "model": "/assets/hat.glb",
+      "bytes": 451760,
+      "sha256": "f1dc1fd19d7825479a27c48e938093b0fa5a43455accbe0e593fa713fb680cf7",
+      "triangles": 378,
+      "meshes": 1,
+      "animations": [],
+      "embeddedTextures": 3,
+      "source": "https://sketchfab.com/3d-models/nva-pith-helmet-mu-coi-sao-vang-7ccc0bdff4ba4af8afcde410758e017d",
+      "displayAuthor": "Long Nguyễn",
+      "embeddedAttribution": {
+        "author": "Long Nguyễn (https://sketchfab.com/LongNguyen89)",
+        "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+        "source": "https://sketchfab.com/3d-models/nva-pith-helmet-mu-coi-sao-vang-7ccc0bdff4ba4af8afcde410758e017d",
+        "title": "NVA PITH HELMET - Mũ Cối Sao Vàng"
+      },
+      "license": "CC BY 4.0",
+      "acquisition": "Existing project asset",
+      "modifications": "None; downloaded GLB unchanged",
+      "historicalVerification": "Illustrative model; not authenticated as a Cu Chi museum artifact"
+    },
+    {
+      "id": "lamp",
+      "name": "Đèn dầu",
+      "status": "published",
+      "model": "/assets/lamp-web.glb",
+      "bytes": 3253264,
+      "sha256": "0bdfe5a223c044a89319c8b18283d13ac51b1ab4b26fb061e9174359bf95686e",
+      "triangles": 18080,
+      "meshes": 7,
+      "animations": [
+        "SphereAction"
+      ],
+      "embeddedTextures": 9,
+      "source": "https://sketchfab.com/3d-models/old-oil-lamp-46c8a25584664f4cbba0e6b8d63bea57",
+      "displayAuthor": "YSIR",
+      "embeddedAttribution": {
+        "author": "YSIR (https://sketchfab.com/YSIR)",
+        "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+        "source": "https://sketchfab.com/3d-models/old-oil-lamp-46c8a25584664f4cbba0e6b8d63bea57",
+        "title": "Old Oil Lamp"
+      },
+      "license": "CC BY 4.0",
+      "acquisition": "Existing project asset",
+      "modifications": "Existing web texture optimization; geometry retained",
+      "historicalVerification": "Illustrative model; not authenticated as a Cu Chi museum artifact"
+    },
+    {
+      "id": "canteen",
+      "name": "Bi đông",
+      "status": "published",
+      "model": "/assets/artifacts/canteen.glb",
+      "bytes": 1632336,
+      "sha256": "a78d4598f7dab44a01dd6cecf8eb6369fd5679118ba3c35bbd3a10f86f5be31d",
+      "triangles": 11688,
+      "meshes": 1,
+      "animations": [],
+      "embeddedTextures": 2,
+      "source": "https://sketchfab.com/3d-models/free-military-water-canteen-c40d358a515e4c66a506e5d8d6530e8e",
+      "displayAuthor": "tamminen",
+      "embeddedAttribution": {
+        "author": "tamminen (https://sketchfab.com/tamminen)",
+        "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+        "source": "https://sketchfab.com/3d-models/free-military-water-canteen-c40d358a515e4c66a506e5d8d6530e8e",
+        "title": "Free Military Water Canteen"
+      },
+      "license": "CC BY 4.0",
+      "acquisition": "Sketchfab official download dialog, GLB 1K, 2026-10-20",
+      "modifications": "None; downloaded GLB unchanged",
+      "historicalVerification": "Illustrative model; not authenticated as a Cu Chi museum artifact"
+    },
+    {
+      "id": "compass",
+      "name": "La bàn",
+      "status": "published",
+      "model": "/assets/artifacts/compass.glb",
+      "bytes": 4301176,
+      "sha256": "3048c46d700b359ae4e5715cd289474dead5eb0bc8b3e93be89cb6f22241b8cc",
+      "triangles": 3329,
+      "meshes": 7,
+      "animations": [
+        "Take 001"
+      ],
+      "embeddedTextures": 6,
+      "source": "https://sketchfab.com/3d-models/used-military-compass-c3655cea571c4894a773bcd4e67eda86",
+      "displayAuthor": "Slayer4Demons",
+      "embeddedAttribution": {
+        "author": "ArdianVrijenhoek (https://sketchfab.com/ArdianVrijenhoek)",
+        "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+        "source": "https://sketchfab.com/3d-models/used-military-compass-c3655cea571c4894a773bcd4e67eda86",
+        "title": "Used Military Compass"
+      },
+      "license": "CC BY 4.0",
+      "acquisition": "Sketchfab official download dialog, GLB 1K, 2026-10-20",
+      "modifications": "None; downloaded GLB unchanged",
+      "historicalVerification": "Illustrative model; not authenticated as a Cu Chi museum artifact"
+    },
+    {
+      "id": "binoculars",
+      "name": "Ống nhòm",
+      "status": "published",
+      "model": "/assets/artifacts/binoculars.glb",
+      "bytes": 2980160,
+      "sha256": "5eb6c60db6b8b5546f0ae7fb4a57475569e0f1e31b6ce58a2d98199f79dade80",
+      "triangles": 4864,
+      "meshes": 1,
+      "animations": [],
+      "embeddedTextures": 3,
+      "source": "https://sketchfab.com/3d-models/binoculars-b38216dc4d5248428060d4b854c3d9e5",
+      "displayAuthor": "TORI106",
+      "embeddedAttribution": {
+        "author": "TORI106 (https://sketchfab.com/TORI106)",
+        "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+        "source": "https://sketchfab.com/3d-models/binoculars-b38216dc4d5248428060d4b854c3d9e5",
+        "title": "binoculars"
+      },
+      "license": "CC BY 4.0",
+      "acquisition": "Sketchfab official download dialog, GLB 1K, 2026-10-20",
+      "modifications": "None; downloaded GLB unchanged",
+      "historicalVerification": "Illustrative model; not authenticated as a Cu Chi museum artifact"
+    },
+    {
+      "id": "shovel",
+      "name": "Xẻng",
+      "status": "published",
+      "model": "/assets/artifacts/shovel.glb",
+      "bytes": 2412968,
+      "sha256": "501f3c8a6947292ec3a2f5c76933732ad580daac8529b763a6e8e41fed5528b7",
+      "triangles": 900,
+      "meshes": 1,
+      "animations": [],
+      "embeddedTextures": 3,
+      "source": "https://sketchfab.com/3d-models/shovel-7760f7723cb5430aa3343a165522474a",
+      "displayAuthor": "FFeller",
+      "embeddedAttribution": {
+        "author": "FFeller (https://sketchfab.com/FFeller)",
+        "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+        "source": "https://sketchfab.com/3d-models/shovel-7760f7723cb5430aa3343a165522474a",
+        "title": "Shovel"
+      },
+      "license": "CC BY 4.0",
+      "acquisition": "Sketchfab official download dialog, GLB 1K, 2026-10-20",
+      "modifications": "None; downloaded GLB unchanged",
+      "historicalVerification": "Illustrative model; not authenticated as a Cu Chi museum artifact"
+    },
+    {
+      "id": "pot",
+      "name": "Nồi nấu ăn",
+      "status": "published",
+      "model": "/assets/artifacts/pot.glb",
+      "bytes": 2781928,
+      "sha256": "c0994c050f4324a43fa4e537260fdedf5121ed32a2bc2460fa98e09f99790355",
+      "triangles": 452,
+      "meshes": 1,
+      "animations": [],
+      "embeddedTextures": 3,
+      "source": "https://sketchfab.com/3d-models/cooking-pot-game-ready-38f0889da545459093cdc411a0e7ae99",
+      "displayAuthor": "Levi Giovani",
+      "embeddedAttribution": {
+        "author": "Vinoskii (https://sketchfab.com/vinoskii)",
+        "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+        "source": "https://sketchfab.com/3d-models/cooking-pot-game-ready-38f0889da545459093cdc411a0e7ae99",
+        "title": "Cooking Pot (Game-Ready)"
+      },
+      "license": "CC BY 4.0",
+      "acquisition": "Sketchfab official download dialog, GLB 1K, 2026-10-20",
+      "modifications": "None; downloaded GLB unchanged",
+      "historicalVerification": "Illustrative model; not authenticated as a Cu Chi museum artifact"
+    },
+    {
+      "id": "rifle",
+      "name": "AK-47",
+      "status": "published",
+      "model": "/assets/artifacts/rifle.glb",
+      "bytes": 3429808,
+      "sha256": "f682bf46b0b00a69658c2c1fba1d4a17e61c180778b4da79e7ef9c241a27990f",
+      "triangles": 9152,
+      "meshes": 31,
+      "animations": [],
+      "embeddedTextures": 3,
+      "source": "https://sketchfab.com/3d-models/ak-47-game-ready-assault-rifle-weapon-dc58144409534abbb60970638d171f9f",
+      "displayAuthor": "Billy Jackman",
+      "embeddedAttribution": {
+        "author": "Billy Jackman (https://sketchfab.com/billyjackman3d)",
+        "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+        "source": "https://sketchfab.com/3d-models/ak-47-game-ready-assault-rifle-weapon-dc58144409534abbb60970638d171f9f",
+        "title": "AK-47  - Game Ready Assault Rifle Weapon"
+      },
+      "license": "CC BY 4.0",
+      "acquisition": "Sketchfab official download dialog, GLB 1K, 2026-10-20",
+      "modifications": "None; downloaded GLB unchanged",
+      "historicalVerification": "Illustrative model; not authenticated as a Cu Chi museum artifact"
+    },
+    {
+      "id": "flashlight",
+      "name": "Đèn pin",
+      "status": "published",
+      "model": "/assets/artifacts/flashlight.glb",
+      "bytes": 4476412,
+      "sha256": "fb5420e58ced6b24863ae4986f06c22a71a471c5f0ad03b2d996ffa795142cd8",
+      "triangles": 13603,
+      "meshes": 16,
+      "animations": [],
+      "embeddedTextures": 5,
+      "source": "https://sketchfab.com/3d-models/military-flashlight-7b623bd6a4dc4dcbb9cce34f3ddc2227",
+      "displayAuthor": "LukiFisher",
+      "embeddedAttribution": {
+        "author": "LukiFisher (https://sketchfab.com/LukiFisher)",
+        "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+        "source": "https://sketchfab.com/3d-models/military-flashlight-7b623bd6a4dc4dcbb9cce34f3ddc2227",
+        "title": "Military Flashlight"
+      },
+      "license": "CC BY 4.0",
+      "acquisition": "Sketchfab official download dialog, GLB 1K, 2026-10-20",
+      "modifications": "None; downloaded GLB unchanged",
+      "historicalVerification": "Illustrative model; not authenticated as a Cu Chi museum artifact"
+    },
+    {
+      "id": "firstaid",
+      "name": "Hộp sơ cứu",
+      "status": "published",
+      "model": "/assets/artifacts/firstaid.glb",
+      "bytes": 2960924,
+      "sha256": "f82f680f10dca53d8cae5c2ad61a107fd783d58a0aed1134291872dcd04a4f9a",
+      "triangles": 1396,
+      "meshes": 1,
+      "animations": [],
+      "embeddedTextures": 2,
+      "source": "https://sketchfab.com/3d-models/first-aid-box-b09587662ab3469bb24f23be6a6fd033",
+      "displayAuthor": "TahirNilin",
+      "embeddedAttribution": {
+        "author": "TahirNilin (https://sketchfab.com/TahirNilin)",
+        "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+        "source": "https://sketchfab.com/3d-models/first-aid-box-b09587662ab3469bb24f23be6a6fd033",
+        "title": "First aid box"
+      },
+      "license": "CC BY 4.0",
+      "acquisition": "Sketchfab official download dialog, GLB 1K, 2026-10-20",
+      "modifications": "None; downloaded GLB unchanged",
+      "historicalVerification": "Illustrative model; not authenticated as a Cu Chi museum artifact"
+    }
+  ]
+}

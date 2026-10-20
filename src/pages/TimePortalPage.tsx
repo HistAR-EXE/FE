@@ -98,6 +98,8 @@ export function TimePortalPage() {
     })
   }
 
+  if (initialView === 'ar') return <Navigate replace to="/ar-experience" />
+
   // Link cũ dùng UUID → chuyển sang đường dẫn đẹp, giữ nguyên query.
   if (locationId && shouldCanonicalizeLocationParam(locationParam)) {
     return <Navigate replace to={timePortalPath(locationId, routerLocation.search)} />
