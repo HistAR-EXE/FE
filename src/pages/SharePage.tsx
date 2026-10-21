@@ -1,6 +1,6 @@
 // src/pages/SharePage.tsx
-import { useEffect, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { SimpleTopNav } from '../components/layout/TopNav'
 import { viralApi } from '../features/viral/api'
@@ -12,6 +12,8 @@ import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { images } from '../assets/images'
 import { emitEvent } from '../lib/pilotEvents'
 import { downloadBlob, exportStoryImage } from '../lib/heritageImage'
+import { buildStationPagePath, readStationRouteContext } from '../features/stations/stationRoutes'
+import { stationsApi } from '../features/stations/api'
 
 const STORY_FILENAME = 'timelens-heritage-9x16.jpg'
 
@@ -19,12 +21,26 @@ export function SharePage() {
   const [params] = useSearchParams()
   const creationId = params.get('creationId') ?? ''
   const outputUrl = params.get('outputUrl') ? decodeURIComponent(params.get('outputUrl') as string) : ''
+  const stationContext = useMemo(() => readStationRouteContext(params), [params])
+  const [stationName, setStationName] = useState<string | null>(null)
   const [caption, setCaption] = useState('Khám phá di sản Việt cùng TimeLens!')
   const { showToast } = useToast()
 
   useEffect(() => {
     viralApi.sharePrefill().then((data) => setCaption(data.caption))
   }, [])
+
+  useEffect(() => {
+    if (!stationContext) return
+    let cancelled = false
+    stationsApi
+      .get(stationContext.siteCode, stationContext.stationCode)
+      .then((station) => !cancelled && setStationName(station.name))
+      .catch(() => !cancelled && setStationName(null))
+    return () => {
+      cancelled = true
+    }
+  }, [stationContext])
 
   const [exporting, setExporting] = useState(false)
 
@@ -170,6 +186,14 @@ export function SharePage() {
               </div>
             </div>
             <div className="mt-xl pt-lg border-t border-outline-variant/30 flex flex-wrap gap-sm">
+              {stationContext && (
+                <Link
+                  to={buildStationPagePath(stationContext)}
+                  className="w-full rounded-xl border border-primary px-md py-sm text-center font-bold text-primary"
+                >
+                  Về {stationContext.stationCode}{stationName ? ` · ${stationName}` : ''}
+                </Link>
+              )}
               <button onClick={onShare} disabled={exporting} className="flex-1 min-w-[140px] bg-primary hover:bg-primary-container text-on-primary font-title-md py-md px-lg rounded-xl flex justify-center items-center gap-sm disabled:opacity-60">
                 <MaterialIcon name="share" />
                 {exporting ? 'Đang xuất ảnh...' : 'Chia sẻ ngay'}

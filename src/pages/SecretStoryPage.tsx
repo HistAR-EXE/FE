@@ -14,6 +14,7 @@ export function SecretStoryPage() {
   const targetLocationId = locationId ?? ''
   const [story, setStory] = useState<SecretStory | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [unlocked, setUnlocked] = useState(false)
   const { showToast } = useToast()
 
@@ -25,15 +26,19 @@ export function SecretStoryPage() {
     }
     try {
       setLoading(true)
+      setError(null)
       const response = await gamificationApi.secretStory(targetLocationId)
       setStory(response)
       if (!response.locked) {
         setUnlocked(true)
       }
     } catch (e) {
+      setStory(null)
       if (e instanceof ApiError && e.status === 403) {
+        setError('Bạn chưa đủ điều kiện để xem câu chuyện này.')
         showToast({ message: 'Khám phá thêm để mở khoá câu chuyện này.', type: 'info' })
       } else {
+        setError(getFriendlyErrorMessage(e, 'quest'))
         showToast({ message: getFriendlyErrorMessage(e, 'quest'), type: 'error' })
       }
     } finally {
@@ -63,26 +68,31 @@ export function SecretStoryPage() {
             <p className="text-on-surface-variant text-sm">Đang tải câu chuyện bí mật...</p>
           </div>
         )}
-        {!loading && !story && targetLocationId && (
-          <p className="text-on-surface-variant">Không tải được nội dung. Hãy thử lại sau.</p>
+        {!loading && error && targetLocationId && (
+          <section className="rounded-xl border border-error/30 bg-error-container/20 p-md" role="alert">
+            <h1 className="font-headline-lg text-on-surface">Không tải được câu chuyện bí mật</h1>
+            <p className="mt-sm text-on-surface-variant">{error}</p>
+            <button type="button" onClick={loadStory} className="mt-md rounded-lg border border-outline-variant px-md py-sm font-bold">
+              Thử lại
+            </button>
+          </section>
+        )}
+        {!loading && !error && !story && targetLocationId && (
+          <p className="text-on-surface-variant">Địa điểm này chưa có câu chuyện bí mật được phát hành.</p>
         )}
         {story && (
           <section className={`bg-surface-container border border-outline-variant rounded-lg p-md relative overflow-hidden transition-all duration-700 ${story.locked ? 'opacity-90' : ''}`}>
             <h1 className="font-display-lg text-primary mb-sm">{story.title}</h1>
             {story.locked ? (
-              <div className="relative">
-                <div className="blur-sm select-none pointer-events-none opacity-60 whitespace-pre-wrap text-on-surface">
-                  {story.story || 'Nội dung bí mật đang được bảo vệ...'}
-                </div>
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-md bg-background/40 rounded-lg">
+              <div className="flex flex-col items-center gap-md rounded-lg bg-background/40 p-lg text-center">
                   <MaterialIcon name="lock" className="text-5xl text-on-surface-variant" />
-                  <p className="text-on-surface-variant text-center max-w-sm px-md">
-                    Khám phá thêm để mở khoá câu chuyện này. Hoàn thành nhiệm vụ và check-in tại di tích.
+                  <p className="max-w-sm text-on-surface-variant">
+                    {story.unlockCondition || 'Hoàn thành ít nhất một nhiệm vụ tại địa điểm để mở câu chuyện bí mật.'}
                   </p>
+                  {story.lockReason && <span className="rounded-full bg-surface px-sm py-xs text-xs font-bold">Điều kiện: {story.lockReason}</span>}
                   <Link to={`/scan?locationId=${targetLocationId}`} className="inline-flex items-center gap-1 text-secondary underline">
                     Đi tới quét mã <MaterialIcon name="qr_code_scanner" className="text-sm" />
                   </Link>
-                </div>
               </div>
             ) : (
               <p className={`whitespace-pre-wrap text-on-surface transition-all duration-700 ${unlocked ? 'animate-[fadeIn_0.6s_ease-out]' : ''}`}>

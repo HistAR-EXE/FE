@@ -34,6 +34,8 @@ import { probeRagAiHealth } from '../shared/api/aiHealth'
 import { resolveChatLocationId, saveSelectedLocationId } from '../features/chat/chatRoute'
 import { normalizeChatPersona } from '../features/chat/chatPersona'
 import { isPilotSiteCode, siteCodeFromLocationId } from '../shared/config/constants'
+import { stationsApi, type StationInfo } from '../features/stations/api'
+import { buildStationPagePath, normalizeStationRouteContext } from '../features/stations/stationRoutes'
 
 const MESSAGE_PAGE_SIZE = 20
 
@@ -125,6 +127,7 @@ export function ChatPage() {
     const claimedQuizIds = useRef(new Set<string>())
 
     const [characters, setCharacters] = useState<Character[]>([])
+    const [stationInfo, setStationInfo] = useState<StationInfo | null>(null)
     const [characterId, setCharacterId] = useState(initialCharacterId || activePersonaKey)
 
     const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -167,6 +170,8 @@ export function ChatPage() {
     const replayAnswerRef = useRef<() => void>(() => undefined)
     const answerEpochRef = useRef(0)
     const conversationIdRef = useRef<string | null>(null)
+    const chatRequestAbortRef = useRef<AbortController | null>(null)
+    const chatScopeRef = useRef('')
     const beginCallRef = useRef<() => void>(() => undefined)
     const MASCOT_STILL = '/mascot/mascot-5.png'
     const messagesScrollRef = useRef<HTMLDivElement | null>(null)
@@ -220,8 +225,27 @@ export function ChatPage() {
     }, [isAuthenticated])
 
     useEffect(() => {
-        if (stationCode) setActiveStationCode(stationCode)
-    }, [stationCode])
+        if (!stationCode) {
+            setStationInfo(null)
+            return
+        }
+        setActiveStationCode(stationCode)
+        let cancelled = false
+        stationsApi
+            .get(siteCode, stationCode)
+            .then((station) => !cancelled && setStationInfo(station))
+            .catch(() => !cancelled && setStationInfo(null))
+        return () => {
+            cancelled = true
+        }
+    }, [siteCode, stationCode])
+
+    const stationRouteContext = stationCode
+        ? normalizeStationRouteContext({ siteCode, stationCode, locationId })
+        : null
+    const stationReturnHref = stationRouteContext ? buildStationPagePath(stationRouteContext) : null
+    const stationContextKey = stationCode ? `${siteCode}:${stationCode}` : ''
+    chatScopeRef.current = stationContextKey || `location:${locationId ?? ''}`
 
     // GIỮ NGUYÊN BẢN GIAO DIỆN HEAD CỦA BẠN (Fallback Persona chuẩn UI)
     const apiCharacter = useMemo(() => characters.find((c) => c.id === characterId), [characters, characterId])
@@ -400,11 +424,25 @@ export function ChatPage() {
     }, [locationId, characterId, showToast])
 
     useEffect(() => {
+        chatRequestAbortRef.current?.abort()
+        chatRequestAbortRef.current = null
+        callRunRef.current += 1
+        stopActiveSpeech()
         if (!resolvedCharacterId) {
             setConversationId(null)
             setMessages([])
             setHasOlder(false)
             setChatContextReady(false)
+            return
+        }
+
+        if (stationCode) {
+            conversationIdRef.current = null
+            setConversationId(null)
+            setMessages([])
+            setHistoryPage(0)
+            setHasOlder(false)
+            setChatContextReady(true)
             return
         }
 
@@ -436,7 +474,7 @@ export function ChatPage() {
         return () => {
             cancelled = true
         }
-    }, [resolvedCharacterId, loadLatestMessages])
+    }, [resolvedCharacterId, loadLatestMessages, stationCode, stationContextKey])
 
     useEffect(() => {
         if (params.get('autoSend') === '1') return
@@ -601,6 +639,10 @@ export function ChatPage() {
         }
         const userMessageId = `user-${Date.now()}`
         const assistantId = `assistant-${Date.now()}`
+        const requestScopeKey = chatScopeRef.current
+        const requestController = new AbortController()
+        chatRequestAbortRef.current?.abort()
+        chatRequestAbortRef.current = requestController
 
         setMessages((prev) => retryMessageTarget
             ? prev.map((m) => m.id === optimistic.id ? { ...m, failure: undefined } : m)
@@ -620,6 +662,7 @@ export function ChatPage() {
                     narrativeVersion,
                 } as unknown as Record<string, unknown>),
             }, (event) => {
+                if (requestController.signal.aborted || chatScopeRef.current !== requestScopeKey) return
                 if (event.name !== 'delta' || !event.data || typeof event.data !== 'object') return
                 const block = event.data as { content?: string; sources?: ChatSource[] }
                 const streamedContent = block.content
@@ -639,7 +682,8 @@ export function ChatPage() {
                         createdAt: new Date().toISOString(),
                     }]
                 })
-            })
+            }, requestController.signal)
+            if (requestController.signal.aborted || chatScopeRef.current !== requestScopeKey) return
             const reply = {
                 reply: guided.blocks.map((block) => block.content).join('\n\n'),
                 conversationId: guided.conversationId ?? conversationId ?? '',
@@ -683,6 +727,7 @@ export function ChatPage() {
                 ])
             })
         } catch (e) {
+            if (requestController.signal.aborted || chatScopeRef.current !== requestScopeKey) return
             // Logic bắt lỗi và hiển thị retry của đồng đội
             const quota = e instanceof ApiError && (e.code === 'QUOTA_EXCEEDED' || e.status === 429 || (e.status === 422 && /giới hạn/i.test(e.message)))
             const retryable = !quota && !(e instanceof ApiError && (e.status === 401 || e.retryable === false))
@@ -723,7 +768,10 @@ export function ChatPage() {
                 showToast({ message: getFriendlyErrorMessage(e, 'chat'), type: 'error' })
             }
         } finally {
-            setSending(false)
+            if (chatRequestAbortRef.current === requestController) {
+                chatRequestAbortRef.current = null
+                setSending(false)
+            }
         }
     }
 
@@ -938,8 +986,8 @@ export function ChatPage() {
     return (
         <AppLayout
             activeBorder="left"
-            mobileBackTo={locationId ? `/explore/${locationId}` : '/explore'}
-            mobileTitle="Trò chuyện AI"
+            mobileBackTo={stationReturnHref ?? (locationId ? `/explore/${locationId}` : '/explore')}
+            mobileTitle={stationCode ? `Chat · ${stationCode}` : 'Trò chuyện AI'}
             className="h-screen max-h-screen overflow-hidden !bg-[#DCEBFF]"
         >
             {/* ───────── NỀN: xanh nhạt đậm hơn hai thẻ để thẻ trắng "nổi" lên ───────── */}
@@ -1062,6 +1110,11 @@ export function ChatPage() {
                         </div>
                         <div className="min-w-0 flex-1">
                             <h4 className="text-[15px] font-black text-white leading-tight truncate">{displayProfile.name}</h4>
+                            {stationCode && (
+                                <p className="mt-0.5 truncate text-[11px] font-black text-white">
+                                    Đang hỏi về {stationCode} · {stationInfo?.name ?? 'Đang tải tên trạm'}
+                                </p>
+                            )}
                             <p className="mt-0.5 flex items-center gap-1.5 text-[11px] font-bold text-[#FFF2C3] truncate">
                                 {voiceHint ? (
                                     <>
@@ -1079,6 +1132,15 @@ export function ChatPage() {
 
                         {/* Các nút công cụ & Trạng thái Chrono */}
                         <div className="flex items-center gap-2.5">
+                            {stationReturnHref && (
+                                <button
+                                    type="button"
+                                    onClick={() => navigate(stationReturnHref)}
+                                    className="hidden rounded-full border border-white/40 px-3 py-1.5 text-[11px] font-black text-white sm:inline-flex"
+                                >
+                                    Về {stationCode}
+                                </button>
+                            )}
                             {/* Badge trạng thái thay thế cho Lõi AI RAG */}
                             {/* Badge trạng thái AI (UI Mới: Tương phản cao & Hiệu ứng Online Glow) */}
                             <div className="hidden sm:inline-flex items-center gap-2.5 rounded-full bg-white px-3.5 py-1.5 text-[11px] font-black text-[#0275FB] shadow-[0_2px_10px_rgba(0,0,0,0.15)]">

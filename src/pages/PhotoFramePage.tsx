@@ -1,6 +1,6 @@
 // src/pages/PhotoFramePage.tsx
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { SimpleTopNav } from '../components/layout/TopNav'
 import { viralApi, type PhotoFrame } from '../features/viral/api'
@@ -22,48 +22,80 @@ import {
 import { emitEvent } from '../lib/pilotEvents'
 import { getActiveStationCode, isCameraLockedForStation } from '../lib/stationSafety'
 import { ReportContentButton } from '../components/feedback/ReportContentModal'
+import { stationsApi } from '../features/stations/api'
+import { stationMedia } from '../features/stations/stationMedia'
+import {
+  appendStationContext,
+  buildStationPagePath,
+  readStationRouteContext,
+} from '../features/stations/stationRoutes'
 
 export function PhotoFramePage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const stationContext = useMemo(() => readStationRouteContext(searchParams), [searchParams])
   const { user } = useAuth()
   const premium = hasPremiumAccess(user)
   const activeStation = getActiveStationCode()
-  const cameraLocked = isCameraLockedForStation(activeStation)
+  const effectiveStation = stationContext?.stationCode ?? activeStation
+  const cameraLocked = isCameraLockedForStation(effectiveStation)
   const [frames, setFrames] = useState<PhotoFrame[]>([])
   const [frameId, setFrameId] = useState('')
   const [variant, setVariant] = useState<'square' | 'story'>('square')
   const [file, setFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
   const [framesLoading, setFramesLoading] = useState(true)
+  const [stationName, setStationName] = useState<string | null>(null)
   const [lowLight, setLowLight] = useState<LowLightOptions>(DEFAULT_LOW_LIGHT)
   const { showToast } = useToast()
 
   useEffect(() => {
     viralApi
       .frames()
-      .then((data) => {
-        setFrames(data)
-        if (data[0]) setFrameId(data[0].id)
-      })
+      .then(setFrames)
       .catch((e) => showToast({ message: getFriendlyErrorMessage(e, 'upload'), type: 'error' }))
       .finally(() => setFramesLoading(false))
   }, [showToast])
 
   useEffect(() => {
-    if (!cameraLocked) {
-      emitEvent('camera_opened', { stationCode: activeStation ?? undefined, payload: { page: 'photo_frame' } })
+    if (!stationContext) {
+      setStationName(null)
+      return
     }
-  }, [cameraLocked, activeStation])
+    let cancelled = false
+    stationsApi
+      .get(stationContext.siteCode, stationContext.stationCode)
+      .then((station) => !cancelled && setStationName(station.name))
+      .catch(() => !cancelled && setStationName(null))
+    return () => {
+      cancelled = true
+    }
+  }, [stationContext])
+
+  useEffect(() => {
+    if (!cameraLocked) {
+      emitEvent('camera_opened', { stationCode: effectiveStation ?? undefined, payload: { page: 'photo_frame' } })
+    }
+  }, [cameraLocked, effectiveStation])
 
   const selectedFrame = useMemo(() => frames.find((f) => f.id === frameId), [frames, frameId])
   const selectedLocked = selectedFrame?.requiresPremium && !premium
   const previewUrl = useMemo(() => (file ? URL.createObjectURL(file) : null), [file])
+  const stationHero = stationContext
+    ? stationMedia(stationContext.siteCode, stationContext.stationCode)?.hero
+    : null
+  const stationLabel = stationContext
+    ? `${stationContext.stationCode}${stationName ? ` · ${stationName}` : ''}`
+    : null
+  const returnHref = stationContext
+    ? buildStationPagePath(stationContext)
+    : '/pack-prep?site=cu-chi'
   useEffect(() => () => {
     if (previewUrl) URL.revokeObjectURL(previewUrl)
   }, [previewUrl])
 
   const submit = async () => {
-    if (!file || !frameId || selectedLocked) return
+    if (!file || selectedLocked) return
     const maxBytes = 8 * 1024 * 1024
     if (file.size > maxBytes) {
       showToast({ message: 'Ảnh vượt quá 8MB. Vui lòng chọn ảnh nhỏ hơn.', type: 'error' })
@@ -78,8 +110,9 @@ export function PhotoFramePage() {
     try {
       const enhanced = await enhanceCapturedPhoto(file, lowLight).catch(() => file)
       const resized = await resizeImageForUpload(enhanced)
-      const creation = await viralApi.uploadCreation({ file: resized, frameId, variant })
-      navigate(`/share?creationId=${creation.id}&outputUrl=${encodeURIComponent(creation.outputUrl)}`)
+      const creation = await viralApi.uploadCreation({ file: resized, frameId: frameId || null, variant })
+      const sharePath = `/share?creationId=${creation.id}&outputUrl=${encodeURIComponent(creation.outputUrl)}`
+      navigate(stationContext ? appendStationContext(sharePath, stationContext) : sharePath)
       showToast({ message: 'Tạo ảnh thành công.', type: 'success' })
     } catch (e) {
       showToast({ message: getFriendlyErrorMessage(e, 'upload'), type: 'error' })
@@ -91,23 +124,23 @@ export function PhotoFramePage() {
   return (
     <AppLayout
       activeBorder="left"
-      topNav={<SimpleTopNav title="Khung ảnh di sản" />}
-      mobileBackTo="/scan"
-      mobileTitle="Khung ảnh"
+      topNav={<SimpleTopNav title={stationLabel ? `Ảnh kỷ niệm · ${stationLabel}` : 'Ảnh kỷ niệm'} backTo={returnHref} backLabel={stationLabel ? `Về ${stationLabel}` : 'Về hành trình'} />}
+      mobileBackTo={returnHref}
+      mobileTitle={stationLabel ? `Ảnh · ${stationLabel}` : 'Ảnh kỷ niệm'}
     >
       <main className="flex-1 mt-14 md:mt-16 p-md md:p-safe-area-inset flex flex-col lg:flex-row gap-md lg:gap-lg overflow-hidden min-h-0">
         <section className="flex-1 min-h-[280px] lg:min-h-0 bg-surface-container-low rounded-xl border border-surface-variant relative flex items-center justify-center overflow-hidden">
-          <Link to="/home" className="absolute top-md left-md z-20 inline-flex items-center gap-1 px-sm py-xs rounded-full border border-outline-variant bg-surface/80 text-on-surface-variant hover:text-secondary hover:border-secondary transition-colors">
+          <Link to={returnHref} className="absolute top-md left-md z-20 inline-flex items-center gap-1 px-sm py-xs rounded-full border border-outline-variant bg-surface/80 text-on-surface-variant hover:text-secondary hover:border-secondary transition-colors">
             <MaterialIcon name="arrow_back" className="text-sm" />
-            Trở về
+            {stationLabel ? `Về ${stationLabel}` : 'Về hành trình'}
           </Link>
           <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background/80 pointer-events-none" />
           <div className="relative z-10 w-full max-w-2xl aspect-[3/4] p-4 bg-surface rounded-lg border-2 border-outline-variant shadow-[0_0_40px_rgba(242,191,80,0.1)]">
             <div className="w-full h-full border-4 border-primary rounded-sm p-2 relative overflow-hidden">
               <div className="w-full h-full bg-surface-variant relative overflow-hidden">
                 <img
-                  alt={selectedFrame?.name ?? 'Frame preview'}
-                  src={previewUrl || selectedFrame?.imageUrl || images.photoFrameCharacter}
+                  alt={previewUrl ? 'Ảnh kỷ niệm đang chỉnh' : stationLabel ? `Ảnh ${stationLabel}` : 'Ảnh kỷ niệm'}
+                  src={previewUrl || stationHero || images.photoFrameCharacter}
                   crossOrigin="anonymous"
                   className="w-full h-full object-cover"
                   style={previewUrl ? { filter: buildPreviewFilter(lowLight) } : undefined}
@@ -122,8 +155,8 @@ export function PhotoFramePage() {
 
         <aside className="w-full lg:w-[380px] bg-surface-container border border-outline-variant rounded-xl flex flex-col lg:h-full shadow-lg shrink-0">
           <div className="p-lg border-b border-surface-variant">
-            <h2 className="font-headline-lg text-headline-lg text-on-surface">Khung Hình Di Sản</h2>
-            <p className="font-body-md text-body-md text-on-surface-variant mt-2">Hóa thân vào dòng chảy lịch sử qua ống kính công nghệ.</p>
+            <h2 className="font-headline-lg text-headline-lg text-on-surface">{stationLabel ? `Ảnh kỷ niệm · ${stationLabel}` : 'Ảnh kỷ niệm'}</h2>
+            <p className="font-body-md text-body-md text-on-surface-variant mt-2">Chụp hoặc chọn ảnh, điều chỉnh ánh sáng rồi lưu kỷ niệm tại trạm.</p>
           </div>
           <div className="flex-1 overflow-y-auto p-lg flex flex-col gap-xl">
             {framesLoading && <p className="text-sm text-on-surface-variant">Đang tải khung ảnh...</p>}
@@ -136,7 +169,7 @@ export function PhotoFramePage() {
                 className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-md text-sm text-amber-100"
               >
                 <p className="font-bold flex items-center gap-2">
-                  <MaterialIcon name="warning" className="text-base" /> Camera tạm khóa tại trạm {activeStation}
+                  <MaterialIcon name="warning" className="text-base" /> Camera tạm khóa tại trạm {effectiveStation}
                 </p>
                 <p className="mt-1 text-amber-100/80">
                   Cất điện thoại khi đi trong hầm hẹp / khu tưởng niệm. Ưu tiên nghe lời dẫn. Bạn vẫn có thể chọn ảnh từ thư viện (không selfie lên server mặc định).
@@ -166,7 +199,7 @@ export function PhotoFramePage() {
                   </p>
                 </div>
               )}
-              <ReportContentButton stationCode={activeStation ?? undefined} context="photo_frame" />
+              <ReportContentButton stationCode={effectiveStation ?? undefined} context="photo_frame" />
             </div>
             <div className="flex flex-col gap-md">
               <h3 className="font-title-md">Chế độ thiếu sáng</h3>
@@ -196,6 +229,7 @@ export function PhotoFramePage() {
             <div className="flex flex-col gap-md">
               <h3 className="font-title-md">Khung</h3>
               <select value={frameId} onChange={(e) => setFrameId(e.target.value)} className="bg-surface border border-outline-variant rounded-lg px-sm py-sm">
+                <option value="">Không dùng khung</option>
                 {frames.map((f) => (
                   <option key={f.id} value={f.id}>
                     {f.name} ({f.era}){f.requiresPremium ? ' · Premium' : ''}

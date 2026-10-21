@@ -3,6 +3,7 @@
 // Idempotency: every item carries a clientUuid, which BE uses to dedupe on POST /api/events/batch.
 import Dexie, { type EntityTable } from 'dexie'
 import { httpClient } from '../shared/api/httpClient'
+import { getSessionMeta } from '../shared/auth/session'
 
 export type OutboxKind = 'event' | 'checkin'
 
@@ -17,6 +18,7 @@ export type OutboxItem = {
   sessionId?: string
   createdAt: number
   attempts: number
+  ownerUserId?: string
 }
 
 const db = new Dexie('histar-outbox') as Dexie & {
@@ -24,6 +26,9 @@ const db = new Dexie('histar-outbox') as Dexie & {
 }
 db.version(1).stores({
   outbox: 'clientUuid, kind, createdAt',
+})
+db.version(2).stores({
+  outbox: 'clientUuid, kind, ownerUserId, createdAt',
 })
 
 const BATCH_SIZE = 50
@@ -39,6 +44,10 @@ export type EnqueueExtras = {
 }
 
 async function enqueue(kind: OutboxKind, eventType: string, extras: EnqueueExtras): Promise<OutboxItem> {
+  const ownerUserId = getSessionMeta().userId ?? undefined
+  if (kind === 'checkin' && !ownerUserId) {
+    throw new Error('Bạn cần đăng nhập để lưu check-in chờ đồng bộ.')
+  }
   const item: OutboxItem = {
     clientUuid: extras.clientUuid ?? crypto.randomUUID(),
     kind,
@@ -49,6 +58,7 @@ async function enqueue(kind: OutboxKind, eventType: string, extras: EnqueueExtra
     sessionId: extras.sessionId,
     createdAt: Date.now(),
     attempts: 0,
+    ownerUserId,
   }
   await db.outbox.put(item)
   if (typeof navigator !== 'undefined' && navigator.onLine) void flushOutbox()
@@ -79,6 +89,25 @@ export function pendingOutboxCount() {
   return db.outbox.count()
 }
 
+export async function listPendingCheckins(locationId?: string): Promise<OutboxItem[]> {
+  const ownerUserId = getSessionMeta().userId
+  if (!ownerUserId) return []
+  const items = await db.outbox
+    .where('ownerUserId')
+    .equals(ownerUserId)
+    .filter((item) => item.kind === 'checkin')
+    .toArray()
+  if (!locationId) return items
+  return items.filter((item) => {
+    try {
+      const payload = item.payload ? JSON.parse(item.payload) as { locationId?: string } : null
+      return payload?.locationId === locationId
+    } catch {
+      return false
+    }
+  })
+}
+
 let flushing = false
 
 /** 4xx (except auth/timeout/rate-limit) will never succeed on retry, so the item is dropped. */
@@ -107,11 +136,14 @@ async function flushCheckins(items: OutboxItem[]): Promise<{ done: string[]; fai
 export async function flushOutbox(): Promise<number> {
   if (flushing) return 0
   if (typeof navigator !== 'undefined' && !navigator.onLine) return 0
+  const ownerUserId = getSessionMeta().userId
+  if (!ownerUserId) return 0
   flushing = true
   let sent = 0
   try {
     for (;;) {
-      const batch = await db.outbox.orderBy('createdAt').limit(BATCH_SIZE).toArray()
+      const owned = await db.outbox.where('ownerUserId').equals(ownerUserId).sortBy('createdAt')
+      const batch = owned.slice(0, BATCH_SIZE)
       if (batch.length === 0) break
       const failed: OutboxItem[] = []
       const delivered: string[] = []
