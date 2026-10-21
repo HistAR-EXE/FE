@@ -1,7 +1,7 @@
 // src/pages/ScanPage.tsx
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import jsQR from 'jsqr'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import '../features/ar/arExperience.css'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
@@ -32,9 +32,15 @@ import { buildArUrl } from '../features/ar/arDeepLink'
 import { saveSelectedLocationId } from '../features/chat/chatRoute'
 import { parseStationQr, type ParsedStationQr } from '../lib/stationQr'
 import { emitEvent } from '../lib/pilotEvents'
-import { enqueueCheckin, isOfflineLikeError } from '../lib/offlineOutbox'
+import { enqueueCheckin, flushOutbox, isOfflineLikeError, listPendingCheckins } from '../lib/offlineOutbox'
 import { StationNextSteps } from '../features/stations/StationNextSteps'
 import { setActiveStationCode } from '../lib/stationSafety'
+import {
+    mergeScanHistory,
+    type CheckinHistoryItem,
+    type PendingStationCheckin,
+} from '../features/stations/scanHistory'
+import { buildStationPagePath } from '../features/stations/stationRoutes'
 
 const UUID_REGEX =
     /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/i
@@ -92,6 +98,7 @@ function isPackLiteLoaded(siteCode: string): boolean {
 
 export function ScanPage() {
     const { isAuthenticated } = useAuth()
+    const navigate = useNavigate()
     const [params] = useSearchParams()
     const targetLocationId = params.get('locationId') ?? ''
     const sessionLocationId = targetLocationId || CU_CHI_LOCATION_ID
@@ -123,9 +130,11 @@ export function ScanPage() {
     const [cameraEnabled, setCameraEnabled] = useState(false)
     const [cameraError, setCameraError] = useState<string | null>(null)
     const [historySearch, setHistorySearch] = useState('')
-    const [scanHistory, setScanHistory] = useState<
-        Array<{ id: string; label: string; time: string; payload: string }>
-    >([])
+    const [savedHistory, setSavedHistory] = useState<CheckinHistoryItem[]>([])
+    const [pendingHistory, setPendingHistory] = useState<PendingStationCheckin[]>([])
+    const [recognizedCheckin, setRecognizedCheckin] = useState<PendingStationCheckin | null>(null)
+    const [historyLoading, setHistoryLoading] = useState(true)
+    const [historyError, setHistoryError] = useState<string | null>(null)
 
     const videoRef = useRef<HTMLVideoElement | null>(null)
     const streamRef = useRef<MediaStream | null>(null)
@@ -143,14 +152,72 @@ export function ScanPage() {
         [qrCode, targetLocationId],
     )
 
+    const scanHistory = useMemo(
+        () => mergeScanHistory(savedHistory, pendingHistory, recognizedCheckin),
+        [savedHistory, pendingHistory, recognizedCheckin],
+    )
+
+    const refreshHistory = useCallback(async () => {
+        setHistoryLoading(true)
+        setHistoryError(null)
+        try {
+            const pendingItems = await listPendingCheckins(sessionLocationId)
+            setPendingHistory(
+                pendingItems.flatMap((item) => {
+                    try {
+                        const payload = item.payload
+                            ? (JSON.parse(item.payload) as {
+                                  locationId?: string
+                                  stationCode?: string
+                              })
+                            : null
+                        if (!payload?.locationId || !payload.stationCode) return []
+                        return [
+                            {
+                                clientUuid: item.clientUuid,
+                                siteCode: siteCodeFromLocationId(payload.locationId),
+                                stationCode: payload.stationCode,
+                                locationId: payload.locationId,
+                                occurredAt: item.occurredAt,
+                            },
+                        ]
+                    } catch {
+                        return []
+                    }
+                }),
+            )
+            if (isAuthenticated) {
+                setSavedHistory(await gamificationApi.checkinHistory(sessionLocationId))
+            } else {
+                setSavedHistory([])
+            }
+        } catch (error) {
+            setHistoryError(getFriendlyErrorMessage(error, 'checkin'))
+        } finally {
+            setHistoryLoading(false)
+        }
+    }, [isAuthenticated, sessionLocationId])
+
+    useEffect(() => {
+        const syncAndRefresh = async () => {
+            if (isAuthenticated && typeof navigator !== 'undefined' && navigator.onLine) {
+                await flushOutbox()
+            }
+            await refreshHistory()
+        }
+        void syncAndRefresh()
+        const handleOnline = () => window.setTimeout(() => void syncAndRefresh(), 750)
+        window.addEventListener('online', handleOnline)
+        return () => window.removeEventListener('online', handleOnline)
+    }, [isAuthenticated, refreshHistory])
+
     const filteredHistory = useMemo(() => {
         const q = historySearch.trim().toLowerCase()
         if (!q) return scanHistory
         return scanHistory.filter(
             (item) =>
-                item.label.toLowerCase().includes(q) ||
-                item.id.toLowerCase().includes(q) ||
-                item.payload.toLowerCase().includes(q),
+                item.stationName.toLowerCase().includes(q) ||
+                item.stationCode.toLowerCase().includes(q),
         )
     }, [scanHistory, historySearch])
 
@@ -163,6 +230,13 @@ export function ScanPage() {
                 CU_CHI_LOCATION_ID
             const site = station.siteCode || siteCodeFromLocationId(locationId)
             const clientUuid = crypto.randomUUID()
+            setRecognizedCheckin({
+                clientUuid,
+                siteCode: site,
+                stationCode: station.stationCode,
+                locationId,
+                occurredAt: new Date().toISOString(),
+            })
             emitEvent('station_arrived', {
                 stationCode: station.stationCode,
                 payload: { locationId, method: 'QR', siteCode: site },
@@ -195,6 +269,14 @@ export function ScanPage() {
             }
 
             const queueOffline = async () => {
+                if (!station.staticQr) {
+                    setRecognizedCheckin(null)
+                    showToast({
+                        message: 'Mã QR động cần kết nối mạng để xác nhận trước khi hết hạn. Hãy thử lại khi có mạng.',
+                        type: 'error',
+                    })
+                    return
+                }
                 await enqueueCheckin(station.stationCode, {
                     clientUuid,
                     payload: { ...body },
@@ -207,6 +289,8 @@ export function ScanPage() {
                     message: 'Đang offline — đã lưu check-in, sẽ tự gửi khi có mạng.',
                     type: 'success',
                 })
+                setRecognizedCheckin(null)
+                await refreshHistory()
             }
 
             if (typeof navigator !== 'undefined' && !navigator.onLine) {
@@ -252,18 +336,8 @@ export function ScanPage() {
                     eventKey: station.stationCode,
                     source: 'scan',
                 })
-                setScanHistory((prev) => [
-                    {
-                        id: station.stationCode,
-                        label: `Trạm ${station.stationCode}`,
-                        time: new Date().toLocaleTimeString('vi-VN', {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                        }),
-                        payload: station.payload,
-                    },
-                    ...prev.filter((x) => x.payload !== station.payload).slice(0, 9),
-                ])
+                setRecognizedCheckin(null)
+                await refreshHistory()
             } catch (e) {
                 if (isOfflineLikeError(e)) {
                     await queueOffline()
@@ -277,10 +351,11 @@ export function ScanPage() {
                         message: e instanceof Error ? e.message : 'error',
                     },
                 })
+                setRecognizedCheckin(null)
                 throw e
             }
         },
-        [targetLocationId, showToast, applyEngagement, visitSessionId],
+        [targetLocationId, showToast, applyEngagement, visitSessionId, refreshHistory],
     )
 
     const performCheckin = useCallback(
@@ -341,18 +416,6 @@ export function ScanPage() {
                     eventKey: locationId,
                     source: 'scan',
                 })
-                setScanHistory((prev) => [
-                    {
-                        id: locationId,
-                        label: `Di tích ${locationId.slice(0, 6).toUpperCase()}`,
-                        time: new Date().toLocaleTimeString('vi-VN', {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                        }),
-                        payload: normalizedQr,
-                    },
-                    ...prev.slice(0, 9),
-                ])
             } catch (e) {
                 showToast({
                     message: getFriendlyErrorMessage(e, 'checkin'),
@@ -423,26 +486,6 @@ export function ScanPage() {
                                 jsQrResult.data,
                                 locationId,
                             )
-                            setScanHistory((prev) => [
-                                {
-                                    id: locationId,
-                                    label: `Di tích ${locationId.slice(0, 6).toUpperCase()}`,
-                                    time: new Date().toLocaleTimeString('vi-VN', {
-                                        hour: '2-digit',
-                                        minute: '2-digit',
-                                    }),
-                                    payload: normalizedPayload,
-                                },
-                                ...prev
-                                    .filter(
-                                        (x) =>
-                                            !(
-                                                x.id === locationId &&
-                                                x.payload === normalizedPayload
-                                            ),
-                                    )
-                                    .slice(0, 9),
-                            ])
                             setQrCode(normalizedPayload)
                         }
                         showToast({
@@ -850,25 +893,59 @@ export function ScanPage() {
                                     className="w-full rounded-xl bg-white border border-slate-200 focus:border-[#0275FB] px-3.5 py-2 text-xs font-semibold text-[#0F1B33] placeholder:text-slate-400 outline-none mb-3"
                                 />
 
-                                {filteredHistory.length > 0 ? (
+                                {historyError && (
+                                    <div className="mb-3 rounded-xl border border-rose-200 bg-rose-50 p-3 text-center">
+                                        <p className="text-xs font-semibold text-rose-700">{historyError}</p>
+                                        <button
+                                            type="button"
+                                            onClick={() => void refreshHistory()}
+                                            className="mt-2 rounded-lg border border-rose-300 bg-white px-3 py-1.5 text-xs font-black text-rose-700"
+                                        >
+                                            Thử lại
+                                        </button>
+                                    </div>
+                                )}
+                                {historyLoading ? (
+                                    <div className="flex-1 rounded-2xl border border-slate-200 bg-white/70 p-4 text-center text-xs font-semibold text-slate-500">
+                                        Đang tải lịch sử check-in...
+                                    </div>
+                                ) : filteredHistory.length > 0 ? (
                                     <div
                                         id="tl-scan-history-list"
                                         className="space-y-2 max-h-[210px] overflow-y-auto pr-1"
                                     >
                                         {filteredHistory.map((item) => (
                                             <button
-                                                key={`${item.id}-${item.time}-${item.payload}`}
+                                                key={item.id}
                                                 type="button"
-                                                onClick={() => setQrCode(item.payload)}
+                                                onClick={() => navigate(buildStationPagePath(item.context))}
                                                 className="w-full text-left p-3 rounded-xl border border-slate-200/90 bg-white hover:border-[#0275FB] hover:bg-[#F2F7FF] flex items-center justify-between gap-2 transition-all cursor-pointer group"
                                             >
                                                 <div className="min-w-0">
                                                     <p className="text-xs sm:text-sm font-black text-[#0F1B33] truncate group-hover:text-[#0275FB]">
-                                                        {item.label}
+                                                        {item.stationCode} · {item.stationName}
                                                     </p>
                                                     <p className="text-[11px] font-semibold text-slate-500 mt-0.5">
-                                                        {item.time} · {item.id.slice(0, 8)}
+                                                        {new Date(item.occurredAt).toLocaleString('vi-VN', {
+                                                            hour: '2-digit',
+                                                            minute: '2-digit',
+                                                            day: '2-digit',
+                                                            month: '2-digit',
+                                                        })}
                                                     </p>
+                                                    <span className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-black ${
+                                                        item.status === 'SUCCESS'
+                                                            ? 'bg-emerald-100 text-emerald-700'
+                                                            : item.status === 'PENDING_SYNC'
+                                                              ? 'bg-amber-100 text-amber-800'
+                                                              : 'bg-blue-100 text-blue-700'
+                                                    }`}>
+                                                        {item.status === 'SUCCESS'
+                                                            ? 'Check-in thành công'
+                                                            : item.status === 'PENDING_SYNC'
+                                                              ? 'Đang chờ đồng bộ'
+                                                              : 'Đã nhận diện QR'}
+                                                    </span>
                                                 </div>
                                                 <MaterialIcon
                                                     name="chevron_right"
@@ -884,7 +961,7 @@ export function ScanPage() {
                                             className="text-2xl text-slate-300 mb-1"
                                         />
                                         <p className="text-xs font-semibold text-slate-400">
-                                            Các trạm bạn đã quét trong phiên này sẽ lưu tại đây.
+                                            Chưa có lịch sử check-in tại địa điểm này.
                                         </p>
                                     </div>
                                 )}
@@ -1049,16 +1126,6 @@ export function ScanPage() {
                                 </div>
 
                                 <div className="flex flex-wrap gap-3 items-center pt-1">
-                                    <Link
-                                        to={`/secret/${parsedLocationId}`}
-                                        className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-[#0275FB] to-[#015CC8] text-white text-xs font-black uppercase tracking-wider shadow-md hover:brightness-110 transition-all"
-                                    >
-                                        <span>Xem Secret Story</span>
-                                        <MaterialIcon
-                                            name="arrow_forward"
-                                            className="text-base text-[#FDC908]"
-                                        />
-                                    </Link>
                                     {parsedLocationId === CU_CHI_LOCATION_ID && (
                                         <Link
                                             to={buildArUrl({

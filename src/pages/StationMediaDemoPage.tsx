@@ -8,7 +8,6 @@ import { AppLayout } from '../components/layout/AppLayout'
 import { SimpleTopNav } from '../components/layout/TopNav'
 import { ReportContentButton } from '../components/feedback/ReportContentModal'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
-import { buildChatPath } from '../features/chat/chatRoute'
 import { QuestBackdrop } from '../features/gamification/QuestBackdrop'
 import { SoundscapePlayer } from '../features/media/SoundscapePlayer'
 import { VerticalVideoPlayer } from '../features/media/VerticalVideoPlayer'
@@ -16,13 +15,17 @@ import { getSeededMinigameId, minigameApi, type Minigame } from '../features/min
 import { stationsApi, type StationInfo } from '../features/stations/api'
 import { shortChapterTitle, stationMedia, type StationPhoto } from '../features/stations/stationMedia'
 import { stationDisplayName } from '../features/stations/StationNextSteps'
+import {
+    appendStationContext,
+    buildStationCameraPath,
+    buildStationChatPath,
+} from '../features/stations/stationRoutes'
 import { storyApi, type StoryChapter } from '../features/story/api'
 import { useNarration } from '../features/time-portal/timeline/useNarration'
 import { emitEvent } from '../lib/pilotEvents'
 import { setActiveStationCode } from '../lib/stationSafety'
 import { isPilotSiteCode, locationIdFromSiteCode } from '../shared/config/constants'
 import { resolveMediaUrl } from '../shared/config/env'
-import { timePortalPath } from '../shared/config/locationSlug'
 
 const STATIONS = ['ST01', 'ST02', 'ST03', 'ST04', 'ST05', 'ST06'] as const
 const ONSITE_QUEST_BY_SITE: Record<string, string> = { 'cu-chi': '33333333-3333-3333-3333-333333333340' }
@@ -58,13 +61,15 @@ export function StationMediaDemoPage() {
     const stationCode = STATIONS.includes(code.toUpperCase() as (typeof STATIONS)[number]) ? code.toUpperCase() : 'ST01'
     const locationId = locationIdFromSiteCode(site)
     const media = stationMedia(site, stationCode)
-    const name = stationDisplayName(stationCode, site)
+    const fallbackName = stationDisplayName(stationCode, site)
     const videoPath = stationMediaPath(site, stationCode, 'video')
     const audioPath = stationMediaPath(site, stationCode, 'audio')
     const hasVideo = useMediaAvailable(videoPath)
     const hasAudio = useMediaAvailable(audioPath)
     const [station, setStation] = useState<StationInfo | null>(null)
     const [chapter, setChapter] = useState<StoryChapter | null>(null)
+    const [storyLoading, setStoryLoading] = useState(true)
+    const [storyError, setStoryError] = useState(false)
     const [viewer, setViewer] = useState<number | null>(null)
     const [stationGame, setStationGame] = useState<Minigame | null>(null)
     const videoEmitted = useRef(false)
@@ -73,23 +78,37 @@ export function StationMediaDemoPage() {
     const gameId = getSeededMinigameId(site, stationCode)
     const onsiteQuest = ONSITE_QUEST_BY_SITE[site]
     const backHref = onsiteQuest ? `/quests/${onsiteQuest}` : `/pack-prep?site=${encodeURIComponent(site)}`
-    const chatBase = buildChatPath({ locationId })
-    const chatHref = `${chatBase}${chatBase.includes('?') ? '&' : '?'}station=${encodeURIComponent(stationCode)}&site=${encodeURIComponent(site)}`
+    const stationContext = { siteCode: site, stationCode, locationId }
+    const chatHref = buildStationChatPath(stationContext)
+    const cameraHref = buildStationCameraPath(stationContext)
+    const name = station?.name ?? fallbackName
 
     useEffect(() => {
         setActiveStationCode(stationCode)
         videoEmitted.current = false
         audioEmitted.current = false
         setViewer(null)
+        setStation(null)
+        setChapter(null)
         let cancelled = false
         stationsApi
             .get(site, stationCode)
             .then((info) => !cancelled && setStation(info))
             .catch(() => !cancelled && setStation(null))
+        setStoryLoading(true)
+        setStoryError(false)
         storyApi
             .chapters(site)
-            .then((list) => !cancelled && setChapter(list.find((item) => item.stationCode === stationCode) ?? null))
-            .catch(() => !cancelled && setChapter(null))
+            .then((list) => {
+                if (!cancelled) setChapter(list.find((item) => item.stationCode === stationCode) ?? null)
+            })
+            .catch(() => {
+                if (!cancelled) {
+                    setChapter(null)
+                    setStoryError(true)
+                }
+            })
+            .finally(() => !cancelled && setStoryLoading(false))
         setStationGame(null)
         minigameApi
             .listForStation(site, stationCode)
@@ -170,7 +189,7 @@ export function StationMediaDemoPage() {
                     {/* Di động: câu chuyện → mini-game → ảnh. Máy tính: ảnh và câu chuyện bên trái, hành động bên phải. */}
                     <div className="grid items-start gap-6 lg:grid-cols-[1.5fr_1fr]">
                             {/* Câu chuyện trạm */}
-                            <section className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-[#0275FB]/10 sm:p-6 order-1 lg:col-start-1 lg:row-start-1" data-testid="station-story">
+                            <section id="story" className="scroll-mt-24 rounded-3xl bg-white p-5 shadow-sm ring-1 ring-[#0275FB]/10 sm:p-6 order-1 lg:col-start-1 lg:row-start-1" data-testid="station-story">
                                 <div className="flex flex-wrap items-center justify-between gap-3">
                                     <h2 className="flex items-center gap-2 text-lg font-black">
                                         <MaterialIcon name="auto_stories" className="text-[#0275FB]" /> Câu chuyện ở trạm này
@@ -191,7 +210,13 @@ export function StationMediaDemoPage() {
                                 ) : (
                                     <div className="mt-3 h-14 animate-pulse rounded-xl bg-slate-100" />
                                 )}
-                                {chapter && (
+                                {storyLoading ? (
+                                    <div className="mt-4 h-20 animate-pulse rounded-2xl bg-slate-100" />
+                                ) : storyError ? (
+                                    <p className="mt-4 rounded-2xl bg-rose-50 p-4 text-sm font-semibold text-rose-700">
+                                        Không tải được câu chuyện tại trạm. Vui lòng thử lại sau.
+                                    </p>
+                                ) : chapter ? (
                                     <div className={`mt-4 rounded-2xl p-4 ${unlocked ? 'bg-[#F2F7FF]' : 'bg-slate-50'}`}>
                                         <p className="text-[11px] font-black uppercase tracking-widest text-[#0275FB]">
                                             Chương {chapter.chapterNumber} · {shortChapterTitle(chapter.title)}
@@ -202,11 +227,15 @@ export function StationMediaDemoPage() {
                                             <p className="mt-1 flex items-start gap-1.5 text-sm text-slate-500">
                                                 <MaterialIcon name="lock" className="mt-px text-base" />
                                                 {chapter.lockReason === 'SEQUENCE'
-                                                    ? 'Toàn bộ chương mở khi bạn check-in tại trạm (quét QR ở di tích).'
+                                                    ? 'Hãy hoàn thành chương hoặc trạm trước trong hành trình để mở nội dung này.'
                                                     : 'Chương này dành cho Premium hoặc Journey Pass.'}
                                             </p>
                                         )}
                                     </div>
+                                ) : (
+                                    <p className="mt-4 rounded-2xl bg-slate-50 p-4 text-sm font-semibold text-slate-600">
+                                        Trạm chưa có câu chuyện được phát hành.
+                                    </p>
                                 )}
                             </section>
 
@@ -244,7 +273,8 @@ export function StationMediaDemoPage() {
                         <aside className="order-2 space-y-4 lg:col-start-2 lg:row-span-2 lg:row-start-1">
                             {(gameId || stationGame) && (
                                 <Link
-                                    to={`/sites/${site}/stations/${stationCode}/game/${stationGame?.id ?? gameId}`}
+                                    id="minigame"
+                                    to={appendStationContext(`/sites/${site}/stations/${stationCode}/game/${stationGame?.id ?? gameId}`, stationContext)}
                                     data-testid="station-game-link"
                                     data-locked={stationGame ? !stationGame.unlocked : undefined}
                                     className={`flex items-center gap-4 rounded-3xl p-5 shadow-[0_16px_36px_-16px_rgba(2,117,251,0.8)] ${
@@ -272,8 +302,8 @@ export function StationMediaDemoPage() {
                                 <Link to={chatHref} className="flex flex-col gap-2 rounded-2xl bg-white p-4 text-sm font-black shadow-sm ring-1 ring-[#0275FB]/10">
                                     <MaterialIcon name="forum" className="text-2xl text-[#0275FB]" /> Hỏi Chrono về trạm
                                 </Link>
-                                <Link to={timePortalPath(locationId)} className="flex flex-col gap-2 rounded-2xl bg-white p-4 text-sm font-black shadow-sm ring-1 ring-[#0275FB]/10">
-                                    <MaterialIcon name="history" className="text-2xl text-[#0275FB]" /> Cổng thời gian
+                                <Link to={cameraHref} className="flex flex-col gap-2 rounded-2xl bg-white p-4 text-sm font-black shadow-sm ring-1 ring-[#0275FB]/10">
+                                    <MaterialIcon name="photo_camera" className="text-2xl text-[#0275FB]" /> Ảnh kỷ niệm tại trạm
                                 </Link>
                                 <Link
                                     to={`/scan?locationId=${encodeURIComponent(locationId)}&site=${encodeURIComponent(site)}`}
@@ -288,7 +318,7 @@ export function StationMediaDemoPage() {
                             </div>
 
                             {(hasVideo || hasAudio) && (
-                                <section className="space-y-4 rounded-3xl bg-[#0F1B33] p-4 text-white">
+                                <section id="media" className="scroll-mt-24 space-y-4 rounded-3xl bg-[#0F1B33] p-4 text-white">
                                     {hasVideo && (
                                         <div
                                             onPlayCapture={() => {

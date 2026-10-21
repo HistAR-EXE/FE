@@ -12,7 +12,7 @@ export type PhotoFrame = {
 
 export type UserCreation = {
   id: string
-  frameId: string
+  frameId: string | null
   outputUrl: string
   variant: 'square' | 'story'
   createdAt: string
@@ -50,10 +50,10 @@ export type ShareRecorded = {
 
 export const viralApi = {
   frames: () => getListData<PhotoFrame>(httpClient.get('/api/photo-frames')),
-  uploadCreation: async (input: { file: File; frameId: string; variant: 'square' | 'story' }) => {
+  uploadCreation: async (input: { file: File; frameId?: string | null; variant: 'square' | 'story' }) => {
     const formData = new FormData()
     formData.append('file', input.file)
-    formData.append('frameId', input.frameId)
+    if (input.frameId) formData.append('frameId', input.frameId)
     formData.append('variant', input.variant)
     return getData<UserCreation>(
       httpClient.post('/api/user-creations', formData, {

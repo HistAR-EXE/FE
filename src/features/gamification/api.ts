@@ -124,6 +124,18 @@ export type SecretStory = {
     locked: boolean
     title: string
     story: string | null
+    lockReason: string | null
+    unlockCondition: string | null
+}
+
+export type CheckinHistoryItem = {
+    id: string
+    locationId: string
+    siteCode: string
+    stationCode: string
+    stationName: string
+    checkedInAt: string
+    presenceMethod: string
 }
 
 export type DiscoveryPoint = {
@@ -179,6 +191,8 @@ export const gamificationApi = {
     investigationAction: (questId: string, action: NarrativeActionType, nodeCode: string, investigationVersion: number, observationCode?: string) => getData<NarrativeProgress>(httpClient.post(`/api/quests/${questId}/investigation/actions`, { action, nodeCode, observationCode, investigationVersion })),
     checkin: (body: CheckinRequestBody) =>
         getData<CheckinResult>(httpClient.post('/api/checkins', body)),
+    checkinHistory: (locationId: string) =>
+        getListData<CheckinHistoryItem>(httpClient.get('/api/checkins/history', { params: { locationId } })),
     secretStory: (locationId: string) =>
         getData<SecretStory>(httpClient.get(`/api/locations/${locationId}/secret-story`)),
 }

@@ -1,10 +1,17 @@
 // Next-step rail after station check-in / onsite hub CTAs (MVBP onsite loop).
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { MaterialIcon } from '../../components/ui/MaterialIcon'
 import { getSeededMinigameId } from '../minigames/api'
-import { buildChatPath } from '../chat/chatRoute'
 import { CU_CHI_LOCATION_ID, locationIdFromSiteCode } from '../../shared/config/constants'
-import { timePortalPath } from '../../shared/config/locationSlug'
+import { stationsApi } from './api'
+import {
+  appendStationContext,
+  buildStationCameraPath,
+  buildStationChatPath,
+  buildStationPagePath,
+  buildStationStoryPath,
+} from './stationRoutes'
 
 const STATION_NAMES: Record<string, Record<string, string>> = {
   'cu-chi': {
@@ -54,13 +61,23 @@ export function StationNextSteps({
 }: StationNextStepsProps) {
   const site = siteCode.trim().toLowerCase() || 'cu-chi'
   const locId = locationId ?? locationIdFromSiteCode(site) ?? CU_CHI_LOCATION_ID
+  const context = { siteCode: site, stationCode, locationId: locId }
   const gameId = getSeededMinigameId(site, stationCode)
-  const chatBase = buildChatPath({ locationId: locId })
-  const chatHref = `${chatBase}${chatBase.includes('?') ? '&' : '?'}station=${encodeURIComponent(stationCode)}&site=${encodeURIComponent(site)}`
-  const name = stationDisplayName(stationCode, site)
-  const mediaHref = `/sites/${encodeURIComponent(site)}/stations/${encodeURIComponent(stationCode)}/media`
+  const [name, setName] = useState(() => stationDisplayName(stationCode, site))
+  useEffect(() => {
+    let cancelled = false
+    stationsApi
+      .get(site, stationCode)
+      .then((station) => !cancelled && setName(station.name))
+      .catch(() => !cancelled && setName(stationDisplayName(stationCode, site)))
+    return () => {
+      cancelled = true
+    }
+  }, [site, stationCode])
+  const chatHref = buildStationChatPath(context)
+  const mediaHref = buildStationPagePath(context)
   const gameHref = gameId
-    ? `/sites/${encodeURIComponent(site)}/stations/${encodeURIComponent(stationCode)}/game/${gameId}`
+    ? appendStationContext(`/sites/${encodeURIComponent(site)}/stations/${encodeURIComponent(stationCode)}/game/${gameId}`, context)
     : null
 
   return (
@@ -77,7 +94,7 @@ export function StationNextSteps({
       </div>
       {!compact && (
         <p className="text-xs text-gray-400">
-          Ưu tiên nghe lời dẫn / soundscape. Đọc chương truyện sau khi check-in để mở mạch tuần tự.
+          Mở nội dung, câu chuyện hoặc trò chơi gắn trực tiếp với trạm vừa check-in.
         </p>
       )}
       {/* Vừa quét QR xong: mini-game của trạm vừa mở khoá, cho nó là nút nổi nhất. */}
@@ -103,7 +120,7 @@ export function StationNextSteps({
           to={mediaHref}
           className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#388cf1]/15 border border-[#388cf1]/40 text-[#388cf1] text-xs font-bold"
         >
-          <MaterialIcon name="movie" className="text-sm" /> Video & soundscape
+          <MaterialIcon name="explore" className="text-sm" /> Khám phá trạm {stationCode}
         </Link>
         <Link
           to={chatHref}
@@ -112,22 +129,16 @@ export function StationNextSteps({
           <MaterialIcon name="forum" className="text-sm" /> Chat theo trạm
         </Link>
         <Link
-          to={`/quests?locationId=${encodeURIComponent(locId)}&track=onsite`}
+          to={buildStationStoryPath(context)}
           className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-500/15 border border-emerald-400/40 text-emerald-300 text-xs font-bold"
         >
-          <MaterialIcon name="auto_stories" className="text-sm" /> Đọc chương truyện
+          <MaterialIcon name="auto_stories" className="text-sm" /> Câu chuyện tại trạm
         </Link>
         <Link
-          to={timePortalPath(locId)}
+          to={buildStationCameraPath(context)}
           className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/5 border border-white/15 text-white text-xs font-bold"
         >
-          <MaterialIcon name="view_in_ar" className="text-sm" /> Cổng thời gian
-        </Link>
-        <Link
-          to="/photo-frame"
-          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/5 border border-white/15 text-white text-xs font-bold"
-        >
-          <MaterialIcon name="photo_camera" className="text-sm" /> Camera
+          <MaterialIcon name="photo_camera" className="text-sm" /> Ảnh kỷ niệm
         </Link>
       </div>
     </div>
