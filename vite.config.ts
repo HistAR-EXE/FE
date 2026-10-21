@@ -39,13 +39,14 @@ export default defineConfig({
           /^\/ar\//,
           /^\/ar\.html$/,
           /^\/media\//,
+          /^\/films\//,
           /^\/__\/auth\//,
         ],
         runtimeCaching: [
           {
             // Same-origin /media only (Vercel/Vite proxy → R2). Do not intercept media.timelens.asia (CORS).
             // FE must load /media on the app origin (Vercel/Vite proxy). Do not set VITE_MEDIA_BASE_URL to media.*.
-            urlPattern: ({ url }) => url.pathname.startsWith('/media/'),
+            urlPattern: ({ url }) => url.pathname.startsWith('/media/') && !/\.(mp4|m3u8|ts|m4s)$/i.test(url.pathname),
             handler: 'CacheFirst',
             options: {
               cacheName: 'histar-media-v2',

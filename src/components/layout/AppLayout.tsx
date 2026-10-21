@@ -1,15 +1,15 @@
 // src/components/layout/AppLayout.tsx
 import { useEffect, useState, type ReactNode } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 import { SideNav, SideNavMobile, SideNavTablet } from './SideNav'
 import { TopNavCompact } from './TopNav'
-import { useAppMode } from '../../shared/context/useAppMode'
 import { useCcuHeartbeat } from '../../shared/hooks/useCcuHeartbeat'
 import { CcuLimitModal } from '../monetization/CcuLimitModal'
 
 type AppLayoutProps = {
     children: ReactNode
     topNav?: ReactNode
+    /** Legacy page props: sidebar now uses one consistent highlight and account footer. */
     activeBorder?: 'left' | 'right'
     showCta?: boolean
     hideSideNav?: boolean
@@ -23,27 +23,21 @@ type AppLayoutProps = {
 export function AppLayout({
                               children,
                               topNav,
-                              activeBorder = 'right',
-                              showCta = true,
                               hideSideNav = false,
                               hideMobileChrome = false,
                               mobileBackTo,
                               mobileTitle,
                               className = '',
                           }: AppLayoutProps) {
-    const navigate = useNavigate()
     const location = useLocation()
-    const { mode } = useAppMode()
     const { ccuLimitOpen, dismissCcuLimit } = useCcuHeartbeat()
-    const ctaPath = mode === 'offline' ? '/scan' : '/explore'
 
     // Tự động ghi nhận trải nghiệm khi người dùng truy cập các tính năng trên menu trái
     useEffect(() => {
         const path = location.pathname
         if (path.startsWith('/tour/360')) {
             localStorage.setItem('timelens_exp_tour360', '1')
-        } else if (path.startsWith('/diorama')) {
-            localStorage.setItem('timelens_exp_diorama', '1')
+
         } else if (path.startsWith('/chat')) {
             localStorage.setItem('timelens_exp_chat', '1')
         } else if (path.startsWith('/artifacts')) {
@@ -79,13 +73,10 @@ export function AppLayout({
             {!hideSideNav && (
                 <>
                     <SideNav
-                        activeBorder={activeBorder}
-                        showCta={showCta}
-                        onCtaClick={() => navigate(ctaPath)}
                         isCollapsed={isCollapsed}
                         onToggle={handleToggleNav}
                     />
-                    <SideNavTablet activeBorder={activeBorder} />
+                    <SideNavTablet />
                 </>
             )}
 

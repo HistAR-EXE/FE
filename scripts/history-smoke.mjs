@@ -1,0 +1,57 @@
+import { chromium } from 'playwright';
+import { spawn } from 'node:child_process';
+import assert from 'node:assert/strict';
+const server = spawn(process.execPath,['node_modules/vite/bin/vite.js','preview','--host','127.0.0.1','--port','5188'],{stdio:'ignore'});
+let browser; let debugPage;
+try {
+ for(let i=0;i<50;i++){try{await fetch('http://127.0.0.1:5188/');break}catch{await new Promise(r=>setTimeout(r,300))}}
+ browser=await chromium.launch({channel:'msedge',headless:true});
+ const page=await browser.newPage(); debugPage=page; page.on("pageerror",e=>console.log("PAGEERROR",e.message));
+ await page.addInitScript(()=>{
+ localStorage.setItem('histar_consent_v1',JSON.stringify({analytics:false,camera:false,gps:false}));
+ for(const [key,value] of Object.entries({timelens_token:'film-test',timelens_user_id:'film-test',timelens_display_name:'Film Tester',timelens_email_verified:'1'})) localStorage.setItem(key,value);
+ });
+ await page.route('**/api/**',route=>route.fulfill({json:{success:true,data:new URL(route.request().url()).pathname==='/api/profile/me'?{id:'film-test',displayName:'Film Tester',email:'film@example.test',emailVerified:true,role:'USER',tier:'FREE',activeVisitSites:[]}:[]}}));
+ const requests=[];page.on('request',r=>{if(r.url().endsWith('.mp4')) requests.push(r.url())});
+ await page.goto('http://127.0.0.1:5188/diorama/cu-chi',{waitUntil:'domcontentloaded'});
+ console.log('PAGE',page.url());
+ await page.getByRole('heading',{name:'Tái hiện lịch sử',exact:true}).waitFor();
+ assert.equal(requests.length,0);
+ await page.getByRole('button',{name:/01 \/.*Sa bàn tương tác/}).click();
+ await page.getByRole('button',{name:'← Chọn trải nghiệm'}).click();
+ assert.equal(await page.locator('audio').count(),0);
+ await page.screenshot({path:'test-results/history-desktop.png',fullPage:true});
+ await page.getByRole('button',{name:/02 \/.*Phim 3D Củ Chi/}).click();
+ await page.getByRole('heading',{name:'Câu chuyện dưới lòng đất'}).waitFor();
+ assert.equal(requests.length,0);
+ await page.getByRole('button',{name:'▶ Xem phim',exact:true}).click();
+ await page.waitForFunction(()=>document.querySelector('video')?.currentTime>1,{},{timeout:30000});
+ assert.equal(await page.locator('video').evaluate(v=>v.videoWidth),1920);
+ console.log('PLAYBACK',await page.locator('video').evaluate(v=>({duration:v.duration,width:v.videoWidth,height:v.videoHeight,time:v.currentTime})));
+ await page.locator('video').evaluate(v=>{v.currentTime=120;v.pause()});
+ await page.getByRole('button',{name:'← Chọn trải nghiệm'}).click();
+ assert.equal(await page.locator('video').count(),0);
+ await page.getByRole('button',{name:/02 \/.*Phim 3D Củ Chi/}).click();
+ await page.getByRole('button',{name:'▶ Xem phim',exact:true}).click();
+ await page.waitForFunction(()=>document.querySelector('video')?.currentTime>=120);
+ await page.getByRole('combobox',{name:'Chất lượng'}).selectOption('720');
+ await page.waitForFunction(()=>{const v=document.querySelector('video');return v?.videoWidth===1280 && v.currentTime>=120});
+ await page.getByRole('combobox',{name:'Chất lượng'}).selectOption('1080');
+ await page.waitForFunction(()=>{const v=document.querySelector('video');return v?.videoWidth===1920 && v.currentTime>=120});
+ const response=await fetch('http://127.0.0.1:5188/films/cu-chi-1080p-v2.mp4',{headers:{Range:'bytes=0-1023'}});
+ assert.equal(response.status,206);assert.equal((await response.arrayBuffer()).byteLength,1024);
+ await page.setViewportSize({width:390,height:844});
+ await page.screenshot({path:'test-results/history-mobile.png',fullPage:true});
+ assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+ await page.getByRole('button',{name:'← Chọn trải nghiệm'}).click();
+ await page.evaluate(()=>localStorage.setItem('timelens:cu-chi-film:v1','137'));
+ await page.route('**/films/cu-chi-1080p-v2.mp4',async route=>{await new Promise(r=>setTimeout(r,1500));await route.continue().catch(()=>{})});
+ await page.getByRole('button',{name:/02 \/.*Phim 3D Củ Chi/}).click();
+ await page.getByRole('button',{name:'▶ Xem phim',exact:true}).click();
+ await page.getByRole('combobox',{name:'Chất lượng'}).selectOption('720');
+ await page.waitForFunction(()=>{const v=document.querySelector('video');return v?.videoWidth===1280 && v.currentTime>=137});
+ await page.getByRole('combobox',{name:'Chất lượng'}).selectOption('1080');
+ await page.getByRole('button',{name:'Xem lại từ đầu',exact:true}).click();
+ await page.waitForFunction(()=>{const v=document.querySelector('video');return v?.videoWidth===1920 && v.readyState>=2 && v.currentTime<5});
+ console.log('PASS: deferred download, playback, resume, unmount, 1080p/720p switching, HTTP 206 and mobile overflow');
+} catch(e) { console.log("DEBUG",debugPage?.url(),await debugPage?.locator("body").innerText()); throw e; } finally {await browser?.close();server.kill()}

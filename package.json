@@ -24,7 +24,9 @@
     "test:e2e:report": "playwright show-report",
     "test:admin": "node --experimental-strip-types --test scripts/admin-state.test.mjs scripts/admin-foundation.test.mjs scripts/admin-pages.test.mjs",
     "test:ar": "node --test scripts/ar-experience.test.mjs scripts/ar-viewer-math.test.mjs scripts/ar-runtime.test.mjs && playwright test -c playwright.ar.config.ts",
-    "test:all": "powershell -ExecutionPolicy Bypass -File ../scripts/run-all-tests.ps1"
+    "test:all": "powershell -ExecutionPolicy Bypass -File ../scripts/run-all-tests.ps1",
+    "test:history": "node --experimental-strip-types --test scripts/history-film.test.mjs",
+    "test:history:browser": "node scripts/history-smoke.mjs"
   },
   "dependencies": {
     "@photo-sphere-viewer/core": "^5.14.1",
