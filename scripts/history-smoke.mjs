@@ -38,14 +38,14 @@ try {
  await page.waitForFunction(()=>{const v=document.querySelector('video');return v?.videoWidth===1280 && v.currentTime>=120});
  await page.getByRole('combobox',{name:'Chất lượng'}).selectOption('1080');
  await page.waitForFunction(()=>{const v=document.querySelector('video');return v?.videoWidth===1920 && v.currentTime>=120});
- const response=await fetch('http://127.0.0.1:5188/films/cu-chi-1080p-v2.mp4',{headers:{Range:'bytes=0-1023'}});
+ const response=await fetch('http://127.0.0.1:5188/films/cu-chi-1080p-v3.mp4',{headers:{Range:'bytes=0-1023'}});
  assert.equal(response.status,206);assert.equal((await response.arrayBuffer()).byteLength,1024);
  await page.setViewportSize({width:390,height:844});
  await page.screenshot({path:'test-results/history-mobile.png',fullPage:true});
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
  await page.getByRole('button',{name:'← Chọn trải nghiệm'}).click();
  await page.evaluate(()=>localStorage.setItem('timelens:cu-chi-film:v1','137'));
- await page.route('**/films/cu-chi-1080p-v2.mp4',async route=>{await new Promise(r=>setTimeout(r,1500));await route.continue().catch(()=>{})});
+ await page.route('**/films/cu-chi-1080p-v3.mp4',async route=>{await new Promise(r=>setTimeout(r,1500));await route.continue().catch(()=>{})});
  await page.getByRole('button',{name:/02 \/.*Phim 3D Củ Chi/}).click();
  await page.getByRole('button',{name:'▶ Xem phim',exact:true}).click();
  await page.getByRole('combobox',{name:'Chất lượng'}).selectOption('720');

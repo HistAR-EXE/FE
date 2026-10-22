@@ -4,8 +4,8 @@ import { MaterialIcon } from '../../components/ui/MaterialIcon'
 import { resumePosition, switchPosition } from './progress'
 
 const SOURCES = {
-    '1080': import.meta.env.VITE_CU_CHI_FILM_URL?.trim() || '/films/cu-chi-1080p-v2.mp4',
-    '720': import.meta.env.VITE_CU_CHI_FILM_720_URL?.trim() || '/films/cu-chi-v1.mp4',
+    '1080': import.meta.env.VITE_CU_CHI_FILM_URL?.trim() || '/films/cu-chi-1080p-v3.mp4',
+    '720': import.meta.env.VITE_CU_CHI_FILM_720_URL?.trim() || '/films/cu-chi-v2.mp4',
 }
 const KEY = 'timelens:cu-chi-film:v1'
 

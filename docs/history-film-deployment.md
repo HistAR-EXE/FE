@@ -22,3 +22,14 @@
 Hai file MP4 được lưu bằng Git LFS (bản1080p lớn hơn giới hạn Git thường). Cài Git LFS rồi chạy `git lfs install` và `git lfs pull` trong FE. GitHub Actions checkout đã bật `lfs: true`; không dùng file pointer văn bản làm video. File PNG poster vẫn nằm trong Git thường.
 
 Trước khi deploy công khai, upload hai MP4 lên R2/CDN và cấu hình hai URL VITE_ tương ứng. Git LFS lưu bản nguồn cho nhóm, không thay thế CDN phân phối video. Host không hỗ trợ file327MB cần dùng CDN. Các kiểm thử trình duyệt local dùng Edge và demo account đã seed; không tự chạy các script local này trên production.
+
+## Sửa production 2026-10-22
+Production đã trả HTTP206 nhưng body là Git LFS pointer (134 bytes cho1080p,133 bytes cho720p), không phải MP4. Không coi status206 hoặc Content-Type là đủ để xác nhận media.
+
+`npm run build` giờ chạy `scripts/verify-film-assets.mjs`: kiểm tra ftyp, kích thước chính xác và SHA256 cho cả hai bản. Trên Vercel, nếu checkout chỉ có pointer, script tải bản LFS từ media.githubusercontent.com của repo HistAR-EXE/FE tại đúng VERCEL_GIT_COMMIT_SHA, xác minh file tạm rồi mới thay pointer. Nếu tải hoặc xác minh lỗi, build dừng; không xuất bản pointer. Không có token trong frontend, không phát trực tiếp qua GitHub. Bật Git LFS trong Vercel Project Settings > Git vẫn là tùy chọn tối ưu để checkout có sẵn media.
+
+Đường dẫn mới để tránh cache immutable của pointer cũ:
+- /films/cu-chi-1080p-v3.mp4:327231485 bytes, SHA256 E2DEB168530B90F8AF87F863F2B7FCF0F05B2F5357E602DD9F2117186A4F6D35.
+- /films/cu-chi-v2.mp4:64691040 bytes, SHA256 C7DE7DB8E5BEE59063E852961DF4D88FDC8C10A2615777A20F70E2ACF0A315BF.
+
+Nếu có biến VITE_CU_CHI_FILM_URL/VITE_CU_CHI_FILM_720_URL ghi đè, cần cập nhật URL đó cho phù hợp. Sau deploy cần kiểm tra Range0-1023 trả1024bytes, ftyp tại offset4, Content-Range chứa đúng tổng kích thước; kiểm tra phát, tua và chuyển chất lượng trên production. Không cache MP4 trong service worker.

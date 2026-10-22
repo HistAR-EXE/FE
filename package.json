@@ -10,7 +10,7 @@
   "scripts": {
     "predev": "node scripts/sync-ar-catalog.mjs",
     "dev": "vite",
-    "prebuild": "node scripts/sync-ar-catalog.mjs",
+    "prebuild": "node scripts/sync-ar-catalog.mjs && node scripts/verify-film-assets.mjs",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "ci": "npm run lint && npm run build",
@@ -26,7 +26,7 @@
     "test:station-journey": "node --experimental-strip-types --test scripts/station-journey.test.mjs",
     "test:ar": "node --test scripts/ar-experience.test.mjs scripts/ar-viewer-math.test.mjs scripts/ar-runtime.test.mjs && playwright test -c playwright.ar.config.ts",
     "test:all": "powershell -ExecutionPolicy Bypass -File ../scripts/run-all-tests.ps1",
-    "test:history": "node --experimental-strip-types --test scripts/history-film.test.mjs",
+    "test:history": "node --experimental-strip-types --test scripts/history-film.test.mjs scripts/verify-film-assets.test.mjs",
     "test:history:browser": "node scripts/history-smoke.mjs"
   },
   "dependencies": {
