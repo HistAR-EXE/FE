@@ -15,6 +15,7 @@ try {
  await sidebar.getByRole('button',{name:'Mở tài khoản cá nhân'}).waitFor({timeout:5000});
  assert.equal(await sidebar.getByText('Bắt đầu hành trình',{exact:true}).count(),0);
  const logo=sidebar.getByAltText('TimeLens Logo');
+ assert.equal(await logo.evaluate(img=>img.closest('a')?.getAttribute('href')??null),'/','sidebar brand links to public homepage');
  assert.equal(await logo.evaluate(img=>getComputedStyle(img).objectFit),'contain');
  assert.equal(await logo.evaluate(img=>getComputedStyle(img).borderRadius),'0px');
  const slogan=sidebar.getByText('Relive History, Reshape Heritage',{exact:true});
@@ -39,6 +40,14 @@ try {
  const account=page.getByRole('button',{name:'Mở tài khoản cá nhân'});
  const menu=page.getByRole('navigation',{name:'Liên kết tài khoản'});
  await account.click(); await menu.waitFor();
+ for(const height of [520,600,720,900]) {
+  await page.keyboard.press('Escape');await page.setViewportSize({width:1280,height});await account.click();await menu.waitFor();
+  const panel=page.locator('[id='+JSON.stringify(await account.getAttribute('aria-controls'))+']');
+  const metrics=await panel.evaluate(el=>({height:el.clientHeight,scroll:el.scrollHeight,top:el.getBoundingClientRect().top,bottom:el.getBoundingClientRect().bottom}));
+  assert.ok(metrics.scroll<=metrics.height,`account panel should need no scroll at ${height}`);
+  assert.ok(metrics.top>=8&&metrics.bottom<=height,`account panel fits viewport ${height}`);
+ }
+ await page.keyboard.press('Escape');await page.setViewportSize({width:1280,height:800});await account.click();await menu.waitFor();
  for(const [label,path] of [['Hồ sơ cá nhân','/profile'],['Cài đặt','/settings'],['Tổng kết hành trình','/journey-wrapped'],['Nhóm học tập','/groups'],['Biệt đội của tôi','/squad'],['Khung ảnh cá nhân','/photo-frame'],['Chia sẻ hành trình','/share'],['Gói dịch vụ','/pricing']]) assert.equal(await menu.getByRole('link',{name:new RegExp(label)}).getAttribute('href'),path);
  assert.equal(await menu.getByRole('link',{name:'Cổng quản trị',exact:true}).count(),0);
  await page.keyboard.press('Escape'); assert.equal(await menu.count(),0); assert.equal(await account.evaluate(el=>el===document.activeElement),true);
@@ -63,9 +72,14 @@ try {
  box=await page.locator('[id='+JSON.stringify(await account.getAttribute('aria-controls'))+']').boundingBox(); assert.ok(box.y>=64 && box.y+box.height<=520);
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
  await page.screenshot({path:'test-results/sidenav-account-short.png',fullPage:false});
+ await page.keyboard.press('Escape');
+ await sidebar.getByRole('link',{name:'TimeLens - Về trang chủ',exact:true}).click();
+ await page.waitForURL(url=>url.pathname==='/');
+ await page.goBack();await page.waitForURL('**/settings');
+ await account.click();await menu.waitFor();
  await sidebar.getByRole('button',{name:/Đăng xuất/}).click();
  console.log('AFTER_LOGOUT',page.url(),await page.evaluate(()=>({hasToken:!!localStorage.getItem('timelens_token')})));
  await page.waitForURL(url=>url.pathname==='/login',{waitUntil:'domcontentloaded'});
  assert.equal(await page.evaluate(()=>localStorage.getItem('timelens_token')),null);
- console.log('PASS: logout, profile/settings navigation, all personal links, close/focus, left highlight, full logo/slogan, expanded/collapsed/tablet/short layouts');
+ console.log('PASS: homepage logo, no-scroll menu520–900, logout, profile/settings navigation, all personal links, close/focus, left highlight, full logo/slogan, expanded/collapsed/tablet/short layouts');
 } finally {await browser.close()}

@@ -44,3 +44,9 @@ export function eraPeriodName(era: EraValue): string {
     case 2026: return 'Di sản'
   }
 }
+
+/** Default entry starts the historical journey at its first chapter. */
+export function resolvePortalEra(raw: string | null): EraValue {
+  const value = Number(raw)
+  return ERA_VALUES.includes(value as EraValue) ? value as EraValue : ERA_VALUES[0]
+}

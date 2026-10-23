@@ -67,10 +67,10 @@ export function CharacterDetailPage() {
                 Hỏi Chrono
               </Link>
               <Link
-                to={`/explore/${character.locationId}`}
+                to="/explore"
                 className="inline-flex items-center justify-center gap-1 w-full py-sm text-secondary text-sm"
               >
-                Xem di tích <MaterialIcon name="open_in_new" className="text-sm" />
+                Khám phá di tích <MaterialIcon name="open_in_new" className="text-sm" />
               </Link>
             </div>
           </article>

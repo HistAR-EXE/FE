@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 // src/components/layout/SideNav.tsx
 import { useMemo } from 'react'
-import { NavLink, useLocation } from 'react-router-dom'
+import { Link, NavLink, useLocation } from 'react-router-dom'
 import { MaterialIcon } from '../ui/MaterialIcon'
 import type { AppMode } from '../../shared/context/modeContext'
 import { useAppMode } from '../../shared/context/useAppMode'
@@ -26,20 +26,20 @@ type NavigationItem = NavItem & {
 }
 
 const navItems: readonly NavigationItem[] = [
-    { to: '/explore', icon: 'explore', label: 'Khám phá', prefixes: ['/explore', '/home', '/characters'], modes: 'both' as const },
+    { to: '/explore', icon: 'explore', label: 'Khám phá di tích', prefixes: ['/explore', '/home', '/characters'], modes: 'both' as const },
 
     // --- 3 TÍNH NĂNG ĐỘT PHÁ CỦA TIMELENS ---
     { to: `/tour/360/${CU_CHI_LOCATION_ID}`, icon: '360', label: 'Tham quan 360°', prefixes: ['/tour/360'], modes: 'online' as const },
     { to: `/diorama/${CU_CHI_LOCATION_ID}`, icon: 'layers', label: 'Tái hiện lịch sử', prefixes: ['/diorama'], modes: 'online' as const },
     { to: timePortalPath(CU_CHI_LOCATION_ID), icon: 'history', label: 'Cổng Thời Gian', prefixes: ['/time-portal'], modes: 'online' as const },
-    { to: '/chat', icon: 'forum', label: 'Trò chuyện AI', prefixes: ['/chat'], modes: 'both' as const },
+    { to: '/chat', icon: 'forum', label: 'Trợ lý lịch sử AI', prefixes: ['/chat'], modes: 'both' as const },
 
     // Trung tâm AR dùng chung cho khám phá từ xa và hành trình tại di tích.
-    { to: '/ar-experience', icon: 'view_in_ar', label: 'Khám phá AR', prefixes: ['/ar-experience', '/scan'], modes: 'both' as const },
+    { to: '/ar-experience', icon: 'view_in_ar', label: 'Trải nghiệm AR', prefixes: ['/ar-experience', '/scan'], modes: 'both' as const },
 
     { to: '/quests', icon: 'assignment', label: 'Nhiệm vụ', prefixes: ['/quests'], modes: 'both' as const },
-    { to: '/artifacts', icon: 'history_edu', label: 'Cổ vật', prefixes: ['/artifacts'], modes: 'both' as const },
-    { to: '/leaderboard', icon: 'leaderboard', label: 'Xếp hạng', prefixes: ['/leaderboard'], modes: 'both' as const },
+    { to: '/artifacts', icon: 'history_edu', label: 'Bảo tàng 3D', prefixes: ['/artifacts'], modes: 'both' as const },
+    { to: '/leaderboard', icon: 'leaderboard', label: 'Bảng xếp hạng', prefixes: ['/leaderboard'], modes: 'both' as const },
     {
         to: '/admin/content',
         icon: 'admin_panel_settings',
@@ -56,7 +56,7 @@ const mobileNavItems: readonly NavigationItem[] = [
     { to: '/chat', icon: 'forum', label: 'Trợ lý AI', modes: 'both' as const, prefixes: ['/chat'] },
     { to: '/ar-experience', icon: 'view_in_ar', label: 'AR', modes: 'both' as const, prefixes: ['/ar-experience', '/scan'] },
     { to: '/quests', icon: 'assignment', label: 'Nhiệm vụ', modes: 'both' as const, prefixes: ['/quests'] },
-    { to: '/artifacts', icon: 'history_edu', label: 'Cổ vật', modes: 'both' as const, prefixes: ['/artifacts'] },
+    { to: '/artifacts', icon: 'history_edu', label: 'Bảo tàng', modes: 'both' as const, prefixes: ['/artifacts'] },
 ] as const
 
 function withChatPath(items: readonly NavigationItem[], chatPath: string): NavigationItem[] {
@@ -151,7 +151,7 @@ export function SideNav({
                 </button>
             </div>
 
-            <div className={`mb-3 flex shrink-0 items-center gap-2 min-w-0 transition-all ${isCollapsed ? 'justify-center' : ''}`}>
+            <Link to="/" aria-label="TimeLens - Về trang chủ" title="Về trang chủ" className={`mb-3 flex shrink-0 items-center gap-2 min-w-0 rounded-lg transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0275FB] ${isCollapsed ? 'justify-center' : ''}`}>
                 <img src="/brand/icon-192.png" alt="TimeLens Logo" className="h-10 w-8 shrink-0 object-contain" />
 
                 {!isCollapsed && (
@@ -164,7 +164,7 @@ export function SideNav({
                         </span>
                     </div>
                 )}
-            </div>
+            </Link>
 
             <div className="flex flex-col justify-between gap-1 flex-1 min-h-0 overflow-y-auto overflow-x-hidden custom-scrollbar w-full pr-1">
                 {items.map((item) => {
@@ -209,7 +209,7 @@ export function SideNavTablet() {
 
     return (
         <nav className={`hidden md:flex lg:hidden h-dvh w-20 fixed left-0 top-0 border-r backdrop-blur-2xl flex-col py-3 px-2.5 z-40 items-center ${t.shellTablet}`}>
-            <img src="/brand/icon-192.png" alt="TimeLens" className="mb-6 h-10 w-8 shrink-0 object-contain" />
+            <Link to="/" aria-label="TimeLens - Về trang chủ" title="Về trang chủ" className="mb-4 flex h-11 w-full shrink-0 items-center justify-center rounded-lg focus-visible:outline-2 focus-visible:outline-[#0275FB]"><img src="/brand/icon-192.png" alt="TimeLens" className="h-10 w-8 object-contain" /></Link>
             <div className="flex flex-col justify-between gap-1 flex-1 min-h-0 w-full overflow-y-auto custom-scrollbar">
                 {items.map((item) => {
                     const isActive = item.prefixes.some((p) => pathname === p || pathname.startsWith(`${p}/`))

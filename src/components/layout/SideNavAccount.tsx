@@ -83,22 +83,23 @@ export function SideNavAccount({ compact = false }: { compact?: boolean }) {
                 <MaterialIcon name={open ? 'expand_more' : 'expand_less'} className="shrink-0 text-slate-500" />
             </>}
         </button>
-        {open && <div id={panelId} className={`absolute z-[70] w-72 max-w-[calc(100vw-6rem)] overflow-y-auto rounded-2xl border border-blue-100 bg-white p-2 shadow-[0_12px_48px_rgba(15,27,51,0.2)] ${compact ? 'bottom-0 left-full ml-4' : 'bottom-full left-0 mb-3'}`}
-            style={{ maxHeight: 'min(34rem, calc(100dvh - 11rem))' }}>
-            <div className="border-b border-slate-100 px-3 py-3">
-                <p className="break-words text-sm font-bold text-slate-800">{user.displayName}</p>
-                <p className="mt-1 break-all text-xs text-slate-500">{user.email}</p>
-                <span className="mt-2 inline-block rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-800">{membership}</span>
+        {open && <div id={panelId} className={`absolute z-[70] w-96 max-w-[calc(100vw-6rem)] rounded-2xl border border-blue-100 bg-white p-2 shadow-[0_12px_48px_rgba(15,27,51,0.2)] ${compact ? 'bottom-0 left-full ml-4' : 'bottom-full left-0 mb-3'}`}>
+            <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-3 py-2.5">
+                <div className="min-w-0">
+                    <p className="truncate text-sm font-bold text-slate-800" title={user.displayName}>{user.displayName}</p>
+                    <p className="mt-0.5 truncate text-xs text-slate-500" title={user.email}>{user.email}</p>
+                </div>
+                <span className="shrink-0 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-800">{membership}</span>
             </div>
-            <nav aria-label="Liên kết tài khoản" className="space-y-0.5 py-2">
+            <nav aria-label="Liên kết tài khoản" className="grid grid-cols-2 gap-1 py-2">
                 {links.map(link => <NavLink key={link.to} to={link.to} end onClick={() => setOpen(false)}
-                    className={({ isActive }) => `flex items-center gap-3 rounded-lg border-l-[3px] px-3 py-2.5 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-[#0275FB] ${isActive ? 'border-[#FDC908] bg-gradient-to-r from-[#FFF2C3] to-transparent text-[#0275FB]' : 'border-transparent text-slate-700 hover:bg-blue-50 hover:text-[#0275FB]'}`}>
-                    <MaterialIcon name={link.icon} className="text-xl text-[#0275FB]" />{link.label}
+                    className={({ isActive }) => `flex min-h-10 items-center gap-2 rounded-lg border-l-[3px] px-2 py-2 text-xs font-semibold focus-visible:outline-2 focus-visible:outline-[#0275FB] ${isActive ? 'border-[#FDC908] bg-gradient-to-r from-[#FFF2C3] to-transparent text-[#0275FB]' : 'border-transparent text-slate-700 hover:bg-blue-50 hover:text-[#0275FB]'}`}>
+                    <MaterialIcon name={link.icon} className="shrink-0 text-lg text-[#0275FB]" /><span className="min-w-0 leading-4">{link.label}</span>
                 </NavLink>)}
             </nav>
             <div className="border-t border-slate-100 pt-1">
                 <button type="button" onClick={() => { setOpen(false); logout(); navigate('/login') }}
-                    className="flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-left text-sm font-semibold text-red-600 hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-red-500">
+                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-xs font-semibold text-red-600 hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-red-500">
                     <MaterialIcon name="logout" className="text-xl" />Đăng xuất
                 </button>
             </div>

@@ -1,0 +1,71 @@
+/* TimeLens pricing: readable, bright and consistent with the public exhibition. */
+.tl-public .pricing-page{color:#102443}
+.tl-public .pricing-page .pub-lead{font-size:19px;line-height:1.85;color:#344d6b}
+.tl-public .pricing-page .pub-note{font-size:14px;line-height:1.85}
+.tl-public .pricing-page .pub-heading-row>p{font-size:17px;line-height:1.9;max-width:560px}
+.tl-public .pricing-page .pricing-hero h1{font-size:clamp(42px,4.5vw,72px);line-height:1.12}
+.tl-public .pricing-page .pricing-hero-grid{gap:48px}
+.tl-public .pricing-page .pricing-hero-actions .pub-kicker-link{font-size:14px}
+.tl-public .pricing-page .pricing-orbit-node{padding:21px 24px;max-width:290px;border-radius:20px}
+.tl-public .pricing-page .pricing-orbit-node span{font-size:11px;letter-spacing:.08em}
+.tl-public .pricing-page .pricing-orbit-node strong{font-size:16px;line-height:1.6}
+.tl-public .pricing-page .pricing-orbit-core>span{font-size:9px;letter-spacing:.02em}
+.tl-public .pricing-page .pricing-orbit-core{width:240px;height:240px}
+.tl-public .pricing-page .pub-section-nav a{font-size:15px;min-height:68px}
+.tl-public .pricing-guide{background:#fff;padding:35px 0;border-block:1px solid #d8e7fa}
+.tl-public .pricing-guide>.tl-container{display:grid;grid-template-columns:.7fr 1.6fr;gap:35px;align-items:center}
+.tl-public .pricing-guide>.tl-container>div>span{font-size:10px;color:#075bbf;font-weight:850;letter-spacing:.12em}
+.tl-public .pricing-guide h2{font-size:25px;line-height:1.4;font-weight:850;margin-top:12px}
+.tl-public .pricing-guide ol{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px}
+.tl-public .pricing-guide li{display:flex;gap:12px;align-items:start}
+.tl-public .pricing-guide li>span{background:#fff4bd;color:#174a8b;font-weight:850;border-radius:12px;padding:10px;font-size:15px}
+.tl-public .pricing-guide strong{font-size:15px;line-height:1.7}
+.tl-public .pricing-guide li p{font-size:13px;line-height:1.8;color:#526987;margin:6px 0 0}
+.tl-public .pricing-page .pricing-plan{padding:34px 28px;border-radius:26px;box-shadow:0 14px 35px #0275fb0a;border-color:#bdd7fa}
+.tl-public .pricing-page .pricing-plan-tag{font-size:11px;letter-spacing:.07em}
+.tl-public .pricing-page .pricing-plan h3{font-size:34px}
+.tl-public .pricing-page .pricing-plan-description{font-size:16px;line-height:1.8;color:#46607f}
+.tl-public .pricing-page .pricing-plan-price strong{font-size:clamp(30px,2.8vw,43px)}
+.tl-public .pricing-page .pricing-plan-price>span{font-size:14px}
+.tl-public .pricing-page .pricing-plan ul{font-size:15px;line-height:1.85;gap:17px}
+.tl-public .pricing-page .pricing-plan-pass{background:linear-gradient(150deg,#fff,#fff9dc);border-color:#ebd783}
+.tl-public .pricing-page .pricing-plan-premium{background:linear-gradient(145deg,#075dc5,#0275fb);border-color:#0275fb;box-shadow:0 22px 45px #0275fb2a}
+.tl-public .pricing-page .pricing-plan-premium :is(.pricing-plan-description,.pricing-plan-price>span,ul){color:#fff}
+.tl-public .pricing-page .pricing-plan :is(.tl-button,.tl-button-secondary),.tl-public .pricing-page .pricing-org-card :is(.tl-button,.tl-button-secondary){font-size:15px;min-height:50px}
+.tl-public .pricing-page .pricing-comparison summary{font-size:17px;padding:24px}
+.tl-public .pricing-page .pricing-table-scroll table{font-size:14px;min-width:740px}
+.tl-public .pricing-page .pricing-table-scroll caption{font-size:13px}
+.tl-public .pricing-page .pricing-classroom-strip{background:linear-gradient(120deg,#fff7d1,#fff);padding:30px;border-radius:22px}
+.tl-public .pricing-page .pricing-classroom-strip h3{font-size:23px;line-height:1.4}
+.tl-public .pricing-page .pricing-classroom-strip p{font-size:15px;line-height:1.8}
+.tl-public .pricing-page .pricing-classroom-strip :is(.tl-button,.tl-button-secondary){font-size:14px;min-height:48px}
+.tl-public .pricing-page .pricing-org-card{padding:30px 26px;border-radius:24px;box-shadow:0 14px 35px #0275fb0a}
+.tl-public .pricing-page .pricing-org-card h3{font-size:31px}
+.tl-public .pricing-page .pricing-org-card .pricing-plan-price strong{font-size:clamp(28px,2.4vw,37px)}
+.tl-public .pricing-page .pricing-org-card dt{font-size:13px;line-height:1.65}
+.tl-public .pricing-page .pricing-org-card dd{font-size:16px}
+.tl-public .pricing-page .pricing-org-card>p{font-size:15px;line-height:1.85}
+.tl-public .pricing-page #heritage{background:linear-gradient(130deg,#edf5ff,#fff9dc);color:#102443;border-block:1px solid #cddff8}
+.tl-public .pricing-page #heritage :is(.tl-eyebrow,.tl-section-title em){color:#075bbf}
+.tl-public .pricing-page .heritage-brief{background:#fff;border-color:#bcd6fa;box-shadow:0 16px 35px #0275fb10}
+.tl-public .pricing-page .heritage-brief :is(p,dl){color:#45617e;font-size:15px}
+.tl-public .pricing-page .heritage-brief dt{color:#075bbf}
+.tl-public .pricing-page .heritage-brief dl>div{border-color:#dfebfa}
+.tl-public .pricing-page .heritage-service-link{color:#075bbf}
+.tl-public .pricing-page .heritage-service-grid p,.tl-public .pricing-page .heritage-service-grid ul,.tl-public .pricing-page .heritage-steps p{font-size:16px}
+.tl-public .pricing-page .heritage-service-grid article{transition:translate .25s,box-shadow .25s}
+.tl-public .pricing-page .heritage-service-grid article:hover{translate:0 -4px;box-shadow:0 18px 40px #0275fb16}
+.tl-public .pricing-page .pricing-model-grid article{padding:26px;border:1px solid #c8dcf8;border-top:4px solid #0275fb;border-radius:20px;background:#f5f9ff}
+.tl-public .pricing-page .pricing-model-grid article:nth-child(2){background:#fff9df;border-top-color:#fdc908}
+.tl-public .pricing-page .pricing-model-grid h3{font-size:24px}
+.tl-public .pricing-page .pricing-model-grid p{font-size:16px}
+.tl-public .pricing-page .pricing-faq summary{font-size:18px;line-height:1.65}
+.tl-public .pricing-page .pricing-faq details p{font-size:16px;line-height:1.9}
+.tl-public .pricing-page .pricing-faq .pub-lead{font-size:17px}
+.tl-public .pricing-page :is(a,button,summary,select):focus-visible{outline:3px solid #dca900;outline-offset:4px}
+@media(prefers-reduced-motion:no-preference){.tl-public .pricing-page .pricing-hero-grid>div:first-child{animation:pricing-arrive .65s ease-out both}.tl-public .pricing-page .pricing-orbit{animation:pricing-arrive .85s .1s ease-out both}}
+@keyframes pricing-arrive{from{opacity:0;translate:0 22px}to{opacity:1;translate:0 0}}
+@media(max-width:1200px){.tl-public .pricing-guide>.tl-container{grid-template-columns:1fr}.tl-public .pricing-page .pricing-orbit-node{max-width:240px}.tl-public .pricing-page .pricing-orbit-node strong{font-size:14px}.tl-public .pricing-page .pricing-orbit-core{width:200px;height:200px}}
+@media(max-width:900px){.tl-public .pricing-page .pricing-hero-grid{grid-template-columns:1fr}.tl-public .pricing-page .pricing-orbit{max-width:650px;width:100%;margin-inline:auto}.tl-public .pricing-page .pricing-plan-description{min-height:0}.tl-public .pricing-page .pricing-org-card dl{gap:12px}}
+@media(max-width:600px){.tl-public .pricing-page .pub-lead{font-size:17px}.tl-public .pricing-page .pub-heading-row>p{font-size:16px}.tl-public .pricing-page .pricing-orbit-node{max-width:210px;padding:15px 18px}.tl-public .pricing-page .pricing-orbit-node strong{font-size:13px}.tl-public .pricing-page .pricing-orbit-core{width:180px;height:180px}.tl-public .pricing-page .pricing-orbit-core>span{font-size:7px}.tl-public .pricing-guide ol{grid-template-columns:1fr}.tl-public .pricing-page .pricing-plan,.tl-public .pricing-page .pricing-org-card{padding:28px 22px}.tl-public .pricing-page .pricing-faq summary{font-size:16px}.tl-public .pricing-page .pricing-model-grid article{display:block}.tl-public .pricing-page .pricing-classroom-strip{padding:24px 20px}.tl-public .pricing-page .pricing-classroom-strip h3{font-size:20px}}
+@media(prefers-reduced-motion:reduce){.tl-public .pricing-page *,.tl-public .pricing-page *::before,.tl-public .pricing-page *::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}.tl-public .pricing-page .heritage-service-grid article:hover{translate:none}}

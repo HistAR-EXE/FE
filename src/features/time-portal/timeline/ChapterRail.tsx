@@ -15,7 +15,7 @@ type Props = {
 export function ChapterRail({ current, onSelect, isLocked, isSolved }: Props) {
   const curIdx = ERA_VALUES.indexOf(current)
   return (
-    <nav className="pb-safe shrink-0 border-t border-white/10 bg-neutral-950/95 px-2 py-1.5 backdrop-blur-xl sm:px-4" aria-label="Các chương">
+    <nav className="pb-safe shrink-0 border-t border-blue-100 bg-white/95 px-2 py-1.5 backdrop-blur-xl sm:px-4" aria-label="Các chương">
       <ol className="flex items-stretch gap-1">
         {ERA_VALUES.map((e, i) => {
           const s = ERA_STORIES[e]
@@ -29,30 +29,30 @@ export function ChapterRail({ current, onSelect, isLocked, isSolved }: Props) {
                 onClick={() => onSelect(e)}
                 aria-current={active ? 'step' : undefined}
                 className={`flex min-h-[44px] min-w-0 flex-1 items-center gap-2 rounded-xl px-2 py-1 text-left transition-colors sm:px-3 ${
-                  active ? 'bg-white/10' : 'hover:bg-white/5'
+                  active ? 'border border-amber-300 bg-[#fff3b8] shadow-sm' : 'border border-transparent hover:bg-blue-50'
                 }`}
               >
                 <span
                   className="h-2.5 w-2.5 shrink-0 rounded-full"
                   style={{
-                    background: active || passed ? s.accent : 'rgba(255,255,255,0.28)',
-                    boxShadow: active ? `0 0 0 4px ${s.accent}33` : undefined,
+                    background: active ? '#0866d9' : passed ? '#7faeea' : '#cbd5e1',
+                    boxShadow: active ? '0 0 0 4px #0866d91a' : undefined,
                   }}
                 />
                 <span className="min-w-0 leading-tight">
-                  <span className={`block truncate text-xs font-bold ${active ? 'text-white' : 'text-white/65'}`} style={active ? { color: s.accent } : undefined}>
+                  <span className={`block truncate text-xs font-bold ${active ? 'text-blue-800' : 'text-slate-600'}`}>
                     {eraTimelineLabel(e)}
                   </span>
-                  <span className="hidden truncate text-[10px] text-white/45 md:block">{s.chapter.split('·')[1]?.trim()}</span>
+                  <span className="hidden truncate text-[10px] text-slate-500 md:block">{s.chapter.split('·')[1]?.trim()}</span>
                 </span>
                 {locked ? (
-                  <MaterialIcon name="lock" className="ml-auto text-sm text-white/40" />
+                  <MaterialIcon name="lock" className="ml-auto text-sm text-slate-400" />
                 ) : isSolved(e) ? (
-                  <MaterialIcon name="task_alt" className="ml-auto hidden text-sm text-emerald-300 sm:inline-block" />
+                  <MaterialIcon name="task_alt" className="ml-auto hidden text-sm text-emerald-700 sm:inline-block" />
                 ) : null}
               </button>
               {i < ERA_VALUES.length - 1 && (
-                <span className="hidden h-px w-4 shrink-0 sm:block lg:w-8" style={{ background: passed || active ? `${s.accent}88` : 'rgba(255,255,255,0.15)' }} />
+                <span className="hidden h-px w-4 shrink-0 sm:block lg:w-8" style={{ background: passed || active ? '#a5c7f2' : '#e2e8f0' }} />
               )}
             </li>
           )

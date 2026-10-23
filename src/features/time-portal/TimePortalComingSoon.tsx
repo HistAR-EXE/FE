@@ -48,11 +48,11 @@ export function TimePortalComingSoon({ locationId }: Props) {
         <div className="mt-6 flex flex-col justify-center gap-2 sm:flex-row">
           {!notFound && (
             <Link
-              to={`/explore/${locationId}`}
+              to="/explore"
               className="flex min-h-[44px] items-center justify-center gap-1.5 rounded-full border border-white/20 px-5 text-sm font-medium text-white/90 hover:bg-white/10"
             >
               <MaterialIcon name="arrow_back" className="text-base" />
-              Về trang di tích
+              Về trang Khám phá
             </Link>
           )}
           <Link

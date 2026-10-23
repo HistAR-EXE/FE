@@ -13,22 +13,18 @@ type Props = {
   index: number
   durationMs: number
   paused: boolean
-  playing: boolean
-  narration: { supported: boolean; active: boolean; onToggle: () => void }
   quizAnswer: number | undefined
   score: { correct: number; total: number }
   nextChapterLabel: string | null
   onJump: (i: number) => void
   onPrev: () => void
   onNext: () => void
-  onTogglePlay: () => void
   onSegmentEnd: () => void
   onAnswer: (option: number) => void
   onRetry: () => void
   onNextChapter: () => void
   onRestart: () => void
   onOpen3D?: () => void
-  onHoverChange: (hover: boolean) => void
   onOpenPhoto?: () => void
   /** Mở chế độ "Xưa & Nay" tại điểm gắn với khoảnh khắc đang xem. */
   onOpenXuaNay?: (spot: XuaNaySpotId) => void
@@ -41,7 +37,7 @@ function IconButton({ icon, label, onClick, active, accent }: { icon: string; la
       onClick={onClick}
       aria-label={label}
       title={label}
-      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white/85 transition-colors hover:bg-white/15"
+      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-blue-100 bg-blue-50 text-slate-700 transition-colors hover:bg-blue-100"
       style={active && accent ? { borderColor: accent, color: accent, background: `${accent}22` } : undefined}
     >
       <MaterialIcon name={icon} className="text-xl" />
@@ -50,7 +46,7 @@ function IconButton({ icon, label, onClick, active, accent }: { icon: string; la
 }
 
 export function StoryCard(props: Props) {
-  const { story, index, durationMs, paused, playing, narration, quizAnswer, score, nextChapterLabel } = props
+  const { story, index, durationMs, paused, quizAnswer, score, nextChapterLabel } = props
   const total = story.moments.length + 1
   const isQuiz = index >= story.moments.length
   const moment = isQuiz ? null : story.moments[index]
@@ -58,9 +54,7 @@ export function StoryCard(props: Props) {
 
   return (
     <div
-      className="rounded-2xl border border-white/10 bg-black/65 p-4 shadow-2xl backdrop-blur-xl sm:p-5"
-      onMouseEnter={() => props.onHoverChange(true)}
-      onMouseLeave={() => props.onHoverChange(false)}
+      className="rounded-2xl border border-blue-100 bg-white p-4 shadow-[0_8px_32px_-16px_rgba(16,70,130,0.22)] backdrop-blur-xl sm:p-5"
     >
       {/* Thanh tiến trình */}
       <div className="mb-3 flex gap-1" role="tablist" aria-label="Các khoảnh khắc">
@@ -77,7 +71,7 @@ export function StoryCard(props: Props) {
               onClick={() => props.onJump(i)}
               className="group relative h-4 flex-1"
             >
-              <span className="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 overflow-hidden rounded-full bg-white/20 group-hover:bg-white/30">
+              <span className="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 overflow-hidden rounded-full bg-blue-100 group-hover:bg-blue-200">
                 <span
                   key={current ? `${story.era}-${index}` : undefined}
                   className="block h-full w-full origin-left rounded-full"
@@ -110,18 +104,18 @@ export function StoryCard(props: Props) {
             <span className="text-xs font-bold uppercase tracking-wider" style={{ color: accent }}>
               {moment.date}
             </span>
-            <span className="ml-auto text-[11px] tabular-nums text-white/45">
+            <span className="ml-auto text-[11px] tabular-nums text-slate-500">
               {index + 1}/{story.moments.length}
             </span>
           </div>
-          <h3 className="mt-2 text-lg font-bold leading-snug text-white sm:text-xl">{moment.title}</h3>
-          <p className="mt-1.5 text-[13px] leading-relaxed text-white/85 sm:text-sm">{moment.body}</p>
+          <h3 className="mt-2 text-lg font-bold leading-snug text-[#142646] sm:text-xl">{moment.title}</h3>
+          <p className="mt-1.5 text-[13px] leading-relaxed text-slate-700 sm:text-sm">{moment.body}</p>
           {moment.dyk && <DidYouKnow text={moment.dyk} accent={accent} />}
           {moment.xuaNay && props.onOpenXuaNay && (
             <button
               type="button"
               onClick={() => moment.xuaNay && props.onOpenXuaNay?.(moment.xuaNay)}
-              className="mt-2.5 flex min-h-[36px] w-fit items-center gap-1.5 rounded-full border px-3 text-xs font-semibold transition-colors hover:bg-white/10"
+              className="mt-2.5 flex min-h-[36px] w-fit items-center gap-1.5 rounded-full border px-3 text-xs font-semibold transition-colors hover:bg-blue-50"
               style={{ borderColor: `${accent}80`, color: accent }}
             >
               <MaterialIcon name="compare" className="text-base" />
@@ -137,28 +131,18 @@ export function StoryCard(props: Props) {
       {/* Điều khiển */}
       <div className="mt-3 flex items-center gap-2">
         <IconButton icon="chevron_left" label="Khoảnh khắc trước" onClick={props.onPrev} />
-        {!isQuiz && <IconButton icon={playing ? 'pause' : 'play_arrow'} label={playing ? 'Tạm dừng' : 'Tự chạy'} onClick={props.onTogglePlay} />}
         <IconButton icon="chevron_right" label="Khoảnh khắc sau" onClick={props.onNext} />
-        {narration.supported && (
-          <IconButton
-            icon={narration.active ? 'volume_up' : 'volume_off'}
-            label={narration.active ? 'Tắt thuyết minh' : 'Nghe thuyết minh'}
-            onClick={narration.onToggle}
-            active={narration.active}
-            accent={accent}
-          />
-        )}
         {moment?.visual.kind === 'photo' && props.onOpenPhoto ? (
           <button
             type="button"
             onClick={props.onOpenPhoto}
-            className="ml-auto flex min-h-[40px] items-center gap-1 rounded-full px-3 text-[11px] font-medium text-white/70 hover:bg-white/10 hover:text-white"
+            className="ml-auto flex min-h-[40px] items-center gap-1 rounded-full px-3 text-[11px] font-medium text-slate-600 hover:bg-blue-50 hover:text-[#142646]"
           >
             <MaterialIcon name="photo_library" className="text-base" />
             Xem ảnh lớn
           </button>
         ) : (
-          <p className="ml-auto min-w-0 truncate text-right text-[10px] text-white/45">
+          <p className="ml-auto min-w-0 truncate text-right text-[10px] text-slate-500">
             {moment ? moment.visual.caption : `Thử thách: ${score.correct}/${score.total} chương`}
           </p>
         )}
@@ -190,7 +174,7 @@ export function StoryCard(props: Props) {
             <button
               type="button"
               onClick={props.onOpen3D}
-              className="flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl border border-white/20 px-4 text-sm font-medium text-white/90 hover:bg-white/10"
+              className="flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl border border-blue-200 px-4 text-sm font-medium text-slate-700 hover:bg-blue-50"
             >
               <MaterialIcon name="view_in_ar" className="text-lg" />
               Xem 3D
@@ -217,15 +201,15 @@ function QuizPanel({ story, quizAnswer, onAnswer, onRetry }: Props) {
           Thử thách · {story.chapter.split('·')[0].trim()}
         </span>
       </div>
-      <h3 className="mt-2 text-base font-bold leading-snug text-white sm:text-lg">{q.question}</h3>
+      <h3 className="mt-2 text-base font-bold leading-snug text-[#142646] sm:text-lg">{q.question}</h3>
       <div className="mt-3 grid gap-2">
         {q.options.map((opt, i) => {
           const isRight = i === q.answer
           const isPicked = i === quizAnswer
-          let cls = 'border-white/15 bg-white/5 hover:bg-white/10 text-white/90'
-          if (answered && isRight) cls = 'border-emerald-400/70 bg-emerald-500/15 text-emerald-100'
-          else if (answered && isPicked) cls = 'border-rose-400/70 bg-rose-500/15 text-rose-100'
-          else if (answered) cls = 'border-white/10 bg-white/[0.03] text-white/45'
+          let cls = 'border-blue-100 bg-blue-50 hover:bg-blue-50 text-slate-700'
+          if (answered && isRight) cls = 'border-emerald-400/70 bg-emerald-500/15 text-emerald-800'
+          else if (answered && isPicked) cls = 'border-rose-400/70 bg-rose-500/15 text-rose-800'
+          else if (answered) cls = 'border-blue-100 bg-slate-50 text-slate-500'
           return (
             <button
               key={opt}
@@ -238,15 +222,15 @@ function QuizPanel({ story, quizAnswer, onAnswer, onRetry }: Props) {
                 {String.fromCharCode(65 + i)}
               </span>
               <span className="flex-1">{opt}</span>
-              {answered && isRight && <MaterialIcon name="check_circle" className="text-lg text-emerald-300" />}
-              {answered && isPicked && !isRight && <MaterialIcon name="cancel" className="text-lg text-rose-300" />}
+              {answered && isRight && <MaterialIcon name="check_circle" className="text-lg text-emerald-700" />}
+              {answered && isPicked && !isRight && <MaterialIcon name="cancel" className="text-lg text-rose-700" />}
             </button>
           )
         })}
       </div>
       {answered && (
-        <div className="mt-3 rounded-xl bg-white/[0.06] px-3 py-2 text-xs leading-relaxed text-white/80">
-          <span className={`font-semibold ${correct ? 'text-emerald-300' : 'text-rose-300'}`}>{correct ? 'Chính xác! ' : 'Chưa đúng. '}</span>
+        <div className="mt-3 rounded-xl bg-blue-50 px-3 py-2 text-xs leading-relaxed text-slate-600">
+          <span className={`font-semibold ${correct ? 'text-emerald-700' : 'text-rose-700'}`}>{correct ? 'Chính xác! ' : 'Chưa đúng. '}</span>
           {q.explain}
           {!correct && (
             <button type="button" onClick={onRetry} className="ml-1 font-semibold underline underline-offset-2" style={{ color: accent }}>
@@ -275,9 +259,9 @@ function DidYouKnow({ text, accent }: { text: string; accent: string }) {
         Bạn có biết?
         <MaterialIcon name={open ? 'expand_less' : 'expand_more'} className="text-base" />
       </button>
-      <div className={`mt-2 gap-2 rounded-xl border-l-2 bg-white/[0.06] px-3 py-2 sm:mt-3 sm:flex ${open ? 'flex' : 'hidden'}`} style={{ borderColor: accent }}>
+      <div className={`mt-2 gap-2 rounded-xl border-l-2 bg-blue-50 px-3 py-2 sm:mt-3 sm:flex ${open ? 'flex' : 'hidden'}`} style={{ borderColor: accent }}>
         <MaterialIcon name="lightbulb" className="mt-px hidden text-base sm:inline-block" style={{ color: accent }} />
-        <p className="text-xs leading-relaxed text-white/80">
+        <p className="text-xs leading-relaxed text-slate-600">
           <span className="hidden font-semibold sm:inline" style={{ color: accent }}>
             Bạn có biết?{' '}
           </span>

@@ -1,0 +1,15 @@
+.tl-landing .tl-chrono-faq{margin-top:30px;max-width:480px;position:relative;text-align:center}
+.tl-landing .tl-chrono-bubble{position:relative;margin:0 auto 10px;max-width:390px;padding:16px 20px;border:1px solid #bfd8fa;border-radius:20px;background:linear-gradient(130deg,#f1f7ff,#fffbee);box-shadow:0 12px 30px #0275fb0c;text-align:left;min-height:104px}
+.tl-landing .tl-chrono-bubble strong{color:#0275fb;font-size:13px;font-weight:800}
+.tl-landing .tl-chrono-bubble p{font-size:14px;line-height:1.7;color:#334155;margin:6px 0 0}
+.tl-landing .tl-chrono-character{display:block;position:relative;width:100%;border:0;background:transparent;padding:14px 20px;cursor:pointer;perspective:800px;border-radius:28px;isolation:isolate;-webkit-tap-highlight-color:transparent}
+.tl-landing .tl-chrono-character img{position:relative;display:block;width:100%;height:auto;object-fit:contain;filter:drop-shadow(0 16px 16px #0275fb20);animation:chrono-hover 5s ease-in-out infinite;transform:rotateX(var(--chrono-y,0deg)) rotateY(var(--chrono-x,0deg));transition:filter .2s}
+.tl-landing .tl-chrono-character:hover img{filter:drop-shadow(0 20px 22px #0275fb35)}
+.tl-landing .tl-chrono-character:focus-visible{outline:3px solid #0275fb;outline-offset:4px}
+.tl-landing .tl-chrono-halo{position:absolute;inset:12% 8%;border:1px dashed #0275fb35;border-radius:50%;background:radial-gradient(ellipse,#fff0a5 0%,#e8f2ff80 50%,transparent 72%);z-index:-1;transform:rotate(-12deg)}
+.tl-landing .tl-chrono-spark{position:absolute;color:#efb600;font-size:34px;animation:chrono-spark 3s ease-in-out infinite;z-index:2;pointer-events:none}.tl-landing .spark-one{left:6%;top:25%}.tl-landing .spark-two{right:5%;bottom:20%;color:#0275fb;animation-delay:1s}
+.tl-landing .tl-chrono-hint{font-size:12px;color:#56708e;margin:8px 0 0}
+@keyframes chrono-hover{0%,100%{translate:0 0}50%{translate:0 -10px}}
+@keyframes chrono-spark{0%,100%{opacity:.45;scale:.85}50%{opacity:1;scale:1.1}}
+@media(max-width:900px){.tl-landing .tl-chrono-faq{max-width:340px;margin:26px auto 0}.tl-landing .tl-chrono-character{padding-inline:30px}}
+@media(prefers-reduced-motion:reduce){.tl-landing .tl-chrono-character img,.tl-landing .tl-chrono-spark{animation:none;transform:none;transition:none}}

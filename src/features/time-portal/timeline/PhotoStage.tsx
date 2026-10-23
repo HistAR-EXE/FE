@@ -6,6 +6,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { MaterialIcon } from '../../../components/ui/MaterialIcon'
 import type { StoryVisual } from './storyData'
+import { StoryArt } from './StoryArt'
 
 type Photo = Extract<StoryVisual, { kind: 'photo' }>
 type Size = { w: number; h: number }
@@ -91,7 +92,7 @@ function PhotoFrame({
         onClick={() => onOpen(photo)}
         onPointerDown={(e) => e.stopPropagation()}
         onPointerUp={(e) => e.stopPropagation()}
-        className="group block rounded-[3px] bg-[#f1e8d6] text-left shadow-[0_30px_70px_-18px_rgba(0,0,0,0.9)] ring-1 ring-black/25"
+        className="group block rounded-xl bg-white text-left shadow-[0_18px_40px_-18px_rgba(18,63,119,0.4)] ring-1 ring-blue-100"
         style={{ padding: `${FRAME_PAD}px ${FRAME_PAD}px 0` }}
         aria-label={`Xem ảnh lớn: ${photo.caption}`}
       >
@@ -105,7 +106,7 @@ function PhotoFrame({
             style={{
               filter,
               transformOrigin: `${photo.focus[0]}% ${photo.focus[1]}%`,
-              transform: go ? 'scale(1.05)' : 'scale(1)',
+              transform: go ? 'scale(1.015)' : 'scale(1)',
               transition: go ? `transform ${durationMs}ms linear` : undefined,
             }}
           />
@@ -202,7 +203,12 @@ export function PhotoStage({ visual, visualKey, durationMs, filter, dim, onOpen,
             durationMs={durationMs}
             onOpen={onOpen}
           />
-        ) : null,
+        ) : (
+          <div key={l.key} className="absolute inset-4 overflow-hidden rounded-2xl bg-blue-950 shadow-lg" style={{ opacity: l.key === current ? 1 : 0 }} role="img" aria-label={`Minh hoạ: ${l.visual.caption}`}>
+            <StoryArt art={l.visual.art} />
+            <p className="absolute inset-x-0 bottom-0 bg-white/95 p-3 text-center text-xs font-medium text-slate-600">Minh hoạ · {l.visual.caption}</p>
+          </div>
+        ),
       )}
     </div>
   )

@@ -9,6 +9,7 @@ import { CcuLimitModal } from '../monetization/CcuLimitModal'
 type AppLayoutProps = {
     children: ReactNode
     topNav?: ReactNode
+    hideTopNav?: boolean
     /** Legacy page props: sidebar now uses one consistent highlight and account footer. */
     activeBorder?: 'left' | 'right'
     showCta?: boolean
@@ -23,6 +24,7 @@ type AppLayoutProps = {
 export function AppLayout({
                               children,
                               topNav,
+                              hideTopNav = false,
                               hideSideNav = false,
                               hideMobileChrome = false,
                               mobileBackTo,
@@ -86,8 +88,8 @@ export function AppLayout({
                     hideSideNav ? '' : `md:ml-20 ${desktopMargin}`
                 } ${!hideSideNav && !hideMobileChrome ? 'pb-16 md:pb-0' : ''}`}
             >
-                {!hideMobileChrome && <TopNavCompact backTo={mobileBackTo} title={mobileTitle} />}
-                {topNav}
+                {!hideMobileChrome && !hideTopNav && <TopNavCompact backTo={mobileBackTo} title={mobileTitle} />}
+                {!hideTopNav && topNav}
                 {children}
             </div>
 

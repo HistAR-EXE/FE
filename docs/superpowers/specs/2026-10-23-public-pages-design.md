@@ -1,0 +1,8 @@
+# HistAR public pages — continuation of approved exhibition design
+
+User explicitly requests /about and /pricing to match the approved landing and retained original footer. Reuse existing blue/yellow palette, typography, navigation and actual public assets; no new brand/design direction needs choosing.
+
+About: editorial team hero, mission/values, development stages (no invented milestone dates), six real members/roles, capability/technology ecosystem with links and accurate AR/AI limitations, Cu Chi pilot and contact CTA.
+Pricing: user-facing Solutions & Experience Packages; segment navigation for individuals/organizations/heritage operators; all prices/limits from billing public API, explicit load/error/retry rather than fabricated fallback. Free/Journey72h/Premium cards and comparison; live organization cards, existing classroom trial behavior with pending/error/organization protections; B2B2C proposal link and actual business model/service workflow. No fabricated testimonials/metrics, ROI/profit promises, universal AI accuracy or unlimited future content.
+Shared LandingHeader uses cross-route homepage anchors and aria-current for about/pricing, same account/mobile navigation. Original PublicFooter unchanged on all pages. Scoped styles, scroll reveals, reduced-motion, no new heavyweight libraries. Existing checkout routes and site/next/plan context preserved.
+Acceptance: full lint/build and browser desktop/mobile/keyboard navigation, original footer, API variable pricing/error/retry, checkout href context, trial unauthenticated/failure/mock success/duplicate-click protection. No real payment or trial mutation in tests. Local only.

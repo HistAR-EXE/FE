@@ -85,7 +85,7 @@ export function questStepAction(
         default:
             return {
                 kind: 'link',
-                href: `/explore/${ctx.locationId}?questRecord=${encodeURIComponent(step.key)}`,
+                href: `/explore?${new URLSearchParams({ locationId: ctx.locationId, questRecord: step.key })}`,
                 label: label('Mở'),
                 icon,
             }

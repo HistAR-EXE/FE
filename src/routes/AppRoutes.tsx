@@ -1,6 +1,6 @@
 // src/routes/AppRoutes.tsx
 import { lazy, Suspense } from 'react'
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom'
 import { AppErrorBoundary, SectionErrorBoundary } from '../components/ui/ErrorBoundary'
 import { LoadingOverlay } from '../components/ui/Spinner'
 import { CharacterExplorePage } from '../pages/CharacterExplorePage'
@@ -13,7 +13,6 @@ import { PhotoFramePage } from '../pages/PhotoFramePage'
 import { ProfilePage } from '../pages/ProfilePage'
 import { SettingsPage } from '../pages/SettingsPage'
 import { ScanPage } from '../pages/ScanPage'
-import { SecretStoryPage } from '../pages/SecretStoryPage'
 import { SharePage } from '../pages/SharePage'
 import { JoinPage } from '../pages/JoinPage'
 import { VerifyEmailPage } from '../pages/VerifyEmailPage'
@@ -49,7 +48,6 @@ const TeacherAssignmentsPage = lazy(() => import('../pages/TeacherAssignmentsPag
 const TeacherLiveBoardPage = lazy(() => import('../pages/TeacherLiveBoardPage').then((module) => ({ default: module.TeacherLiveBoardPage })))
 const ChatPage = lazy(() => import('../pages/ChatPage').then((module) => ({ default: module.ChatPage })))
 const ExplorePage = lazy(() => import('../pages/ExplorePage').then((module) => ({ default: module.ExplorePage })))
-const HeritageDetailPage = lazy(() => import('../pages/HeritageDetailPage').then((module) => ({ default: module.HeritageDetailPage })))
 const LeaderboardPage = lazy(() => import('../pages/LeaderboardPage').then((module) => ({ default: module.LeaderboardPage })))
 const QuestDetailPage = lazy(() => import('../pages/QuestDetailPage').then((module) => ({ default: module.QuestDetailPage })))
 const QuestsPage = lazy(() => import('../pages/QuestsPage').then((module) => ({ default: module.QuestsPage })))
@@ -82,6 +80,20 @@ function RouteLoadingFallback() {
 
 function LegacyTimePortalArRedirect() {
     return <Navigate replace to="/ar-experience" />
+}
+
+function RetiredHeritageRedirect() {
+    const { locationId } = useParams<{ locationId: string }>()
+    const { search } = useLocation()
+    const params = new URLSearchParams(search)
+    if (locationId) params.set('locationId', locationId)
+    return <Navigate to={`/explore?${params}`} replace />
+}
+
+function RetiredSecretRedirect() {
+    const { locationId } = useParams<{ locationId: string }>()
+    const query = new URLSearchParams({ ...(locationId ? { locationId } : {}), track: 'onsite' })
+    return <Navigate to={`/quests?${query}`} replace />
 }
 
 export function AppRoutes() {
@@ -137,7 +149,7 @@ export function AppRoutes() {
 
                                 <Route path="/pricing" element={<PricingPage />} />
                                 <Route path="/explore" element={<SectionErrorBoundary label="Khám phá"><ProductTourWrapper><ExplorePage /></ProductTourWrapper></SectionErrorBoundary>} />
-                                <Route path="/explore/:locationId" element={<HeritageDetailPage />} />
+                                <Route path="/explore/:locationId" element={<RetiredHeritageRedirect />} />
                                 <Route path="/diorama/:locationId?" element={<SectionErrorBoundary label="Diorama"><BattleDioramaPage /></SectionErrorBoundary>} />
                                 <Route path="/time-portal/:locationId" element={<SectionErrorBoundary label="Cổng thời gian"><TimePortalPage /></SectionErrorBoundary>} />
                                 <Route path="/tour/360/:locationId?" element={<SectionErrorBoundary label="Tour 360"><Tour360Page /></SectionErrorBoundary>} />
@@ -181,7 +193,7 @@ export function AppRoutes() {
                                 <Route path="/scan" element={<ScanPage />} />
                                 <Route path="/chat" element={<SectionErrorBoundary label="Chat AI"><ChatPage /></SectionErrorBoundary>} />
                                 <Route path="/chat/:characterId" element={<SectionErrorBoundary label="Chat AI"><ChatPage /></SectionErrorBoundary>} />
-                                <Route path="/secret/:locationId" element={<SecretStoryPage />} />
+                                <Route path="/secret/:locationId" element={<RetiredSecretRedirect />} />
                             </Route>
                         </Route>
 

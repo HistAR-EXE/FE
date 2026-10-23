@@ -50,7 +50,7 @@ export function BattleDioramaPage() {
     return (
         <AppLayout
             activeBorder="left"
-            mobileBackTo={locationId ? `/explore/${locationId}` : '/explore'}
+            mobileBackTo={'/explore'}
             mobileTitle="Tái hiện lịch sử"
             showCta={false}
         >

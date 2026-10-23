@@ -42,7 +42,7 @@ export function TimeWarp({ from, to, toLabel, chapter, accent, onDone }: Props) 
   return (
     <div
       className={`absolute inset-0 z-50 flex flex-col items-center justify-center overflow-hidden transition-opacity duration-300 ${leaving ? 'opacity-0' : 'opacity-100'}`}
-      style={{ background: 'radial-gradient(circle at center, rgba(24,16,8,0.86) 0%, rgba(0,0,0,0.97) 70%)', animation: 'tp-fade-in 160ms ease-out' }}
+      style={{ background: 'radial-gradient(circle at center, rgba(255,255,255,0.98) 0%, rgba(232,242,255,0.99) 70%)', animation: 'tp-fade-in 160ms ease-out' }}
       aria-live="polite"
     >
       {[0, 1, 2, 3].map((i) => (
@@ -52,11 +52,11 @@ export function TimeWarp({ from, to, toLabel, chapter, accent, onDone }: Props) 
           style={{ borderColor: accent, animation: `tp-ring 1.25s ${i * 0.16}s ease-out both` }}
         />
       ))}
-      <p className="text-[11px] font-semibold uppercase tracking-[0.42em] text-white/55">Du hành thời gian</p>
+      <p className="text-[11px] font-semibold uppercase tracking-[0.42em] text-blue-600">Du hành thời gian</p>
       <p className="mt-2 text-7xl font-black tabular-nums sm:text-8xl" style={{ color: accent, textShadow: `0 0 48px ${accent}80` }}>
         {val >= 2026 ? toLabel : val}
       </p>
-      <p className="mt-3 text-sm font-medium text-white/80">{chapter}</p>
+      <p className="mt-3 text-sm font-medium text-blue-900">{chapter}</p>
     </div>
   )
 }

@@ -40,6 +40,9 @@ export async function restoreFilm(file, expected, url, fetchImpl = fetch) {
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const films = [
+    ['cu-chi-introduction-v1.mp4', 167668195, '7c9e1e8a5227c60ed289b1e2cc2934ffb576f526b1691893d056da008f1b62a5'],
+    ['timelens-tvc-1080-v1.mp4', 75070076, '768121dbccb9331bc0a3f91426ff84c1f1f57e6f9844f49629551a73c40d174e'],
+    ['timelens-tvc-1440-v1.mp4', 162173395, 'd985daa75f8a20fd5d729f967a5eab59b74bd31e0e0bb92fc09adb8018e174fb'],
     ['cu-chi-1080p-v3.mp4', 327231485, 'e2deb168530b90f8af87f863f2b7fcf0f05b2f5357e602dd9f2117186a4f6d35'],
     ['cu-chi-v2.mp4', 64691040, 'c7de7db8e5bee59063e852961df4d88fdc8c10a2615777a20f70e2acf0a315bf'],
   ];

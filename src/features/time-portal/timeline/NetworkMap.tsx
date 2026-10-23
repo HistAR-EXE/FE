@@ -50,13 +50,13 @@ function draw(i: number) {
 export function NetworkMap({ era, accent }: { era: EraValue; accent: string }) {
   const showNetwork = era !== 1948
   const dim = era === 2026
-  const lineColor = dim ? 'rgba(255,255,255,0.32)' : accent
+  const lineColor = dim ? '#7191b8' : accent
 
   return (
     <svg key={era} viewBox="0 0 320 232" className="h-auto w-full" role="img" aria-label="Sơ đồ mạng lưới địa đạo Củ Chi theo thời kỳ">
-      <path d={DISTRICT} fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.22)" strokeWidth="1.2" strokeDasharray="4 3" />
+      <path d={DISTRICT} fill="#eff6ff" stroke="#b4c9e4" strokeWidth="1.2" strokeDasharray="4 3" />
       <path d={RIVER} fill="none" stroke="#38bdf8" strokeOpacity="0.55" strokeWidth="5" strokeLinecap="round" />
-      <text x="300" y="20" textAnchor="end" fontSize="9" fill="#7dd3fc" fillOpacity="0.85">
+      <text x="300" y="20" textAnchor="end" fontSize="9" fill="#0369a1" fillOpacity="0.85">
         Sông Sài Gòn
       </text>
 
@@ -65,14 +65,14 @@ export function NetworkMap({ era, accent }: { era: EraValue; accent: string }) {
         <path
           d="M232 204 L 296 224"
           fill="none"
-          stroke={era === 1975 ? accent : 'rgba(255,255,255,0.45)'}
+          stroke={era === 1975 ? accent : '#64748b'}
           strokeWidth={era === 1975 ? 3 : 1.5}
           strokeDasharray="5 4"
           className="tp-anim"
           style={era === 1975 ? { animation: 'tp-dash 1s linear infinite' } : undefined}
         />
-        <path d="M296 224 l -9 -7 l -1 9 z" fill={era === 1975 ? accent : 'rgba(255,255,255,0.45)'} />
-        <text x="238" y="226" fontSize="9" fill="#fff" fillOpacity="0.75">
+        <path d="M296 224 l -9 -7 l -1 9 z" fill={era === 1975 ? accent : '#64748b'} />
+        <text x="238" y="226" fontSize="9" fill="#17406d" fillOpacity="0.75">
           Sài Gòn ~70 km
         </text>
       </g>
@@ -84,7 +84,7 @@ export function NetworkMap({ era, accent }: { era: EraValue; accent: string }) {
         ))}
       {era === 1948 && (
         <g>
-          <path d="M133 170 L 156 188" stroke="rgba(255,255,255,0.5)" strokeWidth="1.2" strokeDasharray="2 3" />
+          <path d="M133 170 L 156 188" stroke="#64748b" strokeWidth="1.2" strokeDasharray="2 3" />
           <path d="M141 175 l6 6 M147 175 l-6 6" stroke="#fecaca" strokeWidth="1.6" />
         </g>
       )}
@@ -109,7 +109,7 @@ export function NetworkMap({ era, accent }: { era: EraValue; accent: string }) {
       {showNetwork &&
         !dim &&
         JUNCTIONS.map(([x, y], i) => (
-          <circle key={`${x}-${y}`} cx={x} cy={y} r="2.6" fill="#fff" className="tp-anim" style={{ animation: `tp-fade-in 0.4s ${0.6 + i * 0.06}s both` }} />
+          <circle key={`${x}-${y}`} cx={x} cy={y} r="2.6" fill="#17406d" className="tp-anim" style={{ animation: `tp-fade-in 0.4s ${0.6 + i * 0.06}s both` }} />
         ))}
 
       {/* Địa danh */}
@@ -118,14 +118,14 @@ export function NetworkMap({ era, accent }: { era: EraValue; accent: string }) {
           {era === 2026 && (
             <circle cx={p.x} cy={p.y} r="6" fill={accent} opacity="0.6" className="tp-anim" style={{ transformOrigin: `${p.x}px ${p.y}px`, animation: 'tp-ping 1.8s ease-out infinite' }} />
           )}
-          <circle cx={p.x} cy={p.y} r="4.5" fill={era === 2026 ? accent : '#fff'} stroke="#000" strokeOpacity="0.5" />
+          <circle cx={p.x} cy={p.y} r="4.5" fill={era === 2026 ? accent : '#17406d'} stroke="#000" strokeOpacity="0.5" />
           <text
             x={p.x + (p === PLACES.benDuoc ? -8 : 8)}
             y={p.y + (p === PLACES.tpt ? 14 : p === PLACES.pva ? -9 : -9)}
             textAnchor={p === PLACES.benDuoc ? 'end' : 'start'}
             fontSize="10"
             fontWeight="600"
-            fill="#fff"
+            fill="#17406d"
           >
             {p.label}
           </text>

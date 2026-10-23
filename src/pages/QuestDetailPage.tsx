@@ -1,3 +1,4 @@
+import { QuestBackLink } from '../features/gamification/QuestBackLink'
 // src/pages/QuestDetailPage.tsx
 // Chi tiết một nhiệm vụ (API v2): điều kiện mở, tiến độ bước bắt buộc, danh sách bước theo trạng thái thật.
 // Hồ sơ điều tra (nếu có) chạy song song bên dưới, không quyết định việc hoàn thành.
@@ -5,7 +6,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
-import { SimpleTopNav } from '../components/layout/TopNav'
 import { EraLockedModal } from '../components/monetization/EraLockedModal'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { analyticsApi } from '../features/analytics/api'
@@ -229,8 +229,8 @@ export function QuestDetailPage() {
 
     if (questId && !isDevMinigameQuestVisible(questId)) {
         return (
-            <AppLayout activeBorder="left" mobileBackTo="/quests" mobileTitle="Nhiệm vụ">
-                <main className="p-8">Nhiệm vụ thử chỉ mở khi chạy web dev.</main>
+            <AppLayout hideTopNav mobileBackTo="/quests" mobileTitle="Nhiệm vụ">
+                <main className="p-8"><QuestBackLink to="/quests" label="Danh sách nhiệm vụ" />Nhiệm vụ thử chỉ mở khi chạy web dev.</main>
             </AppLayout>
         )
     }
@@ -244,15 +244,16 @@ export function QuestDetailPage() {
 
     return (
         <AppLayout
+            hideTopNav
             activeBorder="left"
-            topNav={<SimpleTopNav title="Nhiệm vụ" backTo={listHref} backLabel="Danh sách nhiệm vụ" />}
             mobileBackTo={listHref}
             mobileTitle="Nhiệm vụ"
             className="min-h-screen !bg-[#DCEBFF] text-[#0F1B33]"
         >
             <QuestBackdrop />
 
-            <div className="relative z-10 pt-14 md:pt-16">
+            <div className="relative z-10">
+                <div className="mx-auto w-full max-w-5xl px-4 md:px-8"><QuestBackLink to={listHref} label="Danh sách nhiệm vụ" /></div>
                 {notFound && (
                     <div className="mx-auto max-w-xl px-4 py-24 text-center">
                         <h1 className="text-2xl font-black">Không tìm thấy nhiệm vụ</h1>

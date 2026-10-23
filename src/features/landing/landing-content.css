@@ -1,0 +1,998 @@
+/* src/features/landing/landing-content.css */
+.tl-landing .tl-content-section {
+    padding: 100px 0;
+    scroll-margin-top: 90px;
+}
+
+.tl-landing .tl-content-heading {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 56px;
+    margin-bottom: 44px;
+}
+
+.tl-landing .tl-content-heading > p,
+.tl-landing .tl-content-heading > div:last-child:not(:first-child) {
+    max-width: 390px;
+}
+
+.tl-landing .tl-content-heading p:not(.tl-eyebrow),
+.tl-landing .tl-pilot-grid > div > p:not(.tl-eyebrow),
+.tl-landing .tl-faq-grid > div > p:not(.tl-eyebrow) {
+    color: #475569;
+    font-weight: 500;
+    line-height: 1.8;
+}
+
+.tl-landing .tl-section-title em {
+    font-style: normal;
+    color: #0275fb;
+}
+
+/* ========================================================================== */
+/* 1. SHOWCASE 6 TRẢI NGHIỆM (EXPERIENCE TABS & BENTO PANEL)                  */
+/* ========================================================================== */
+.tl-landing .tl-experiences {
+    background: #f2f7ff;
+}
+
+.tl-landing .tl-experience-tabs {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 8px;
+    padding: 10px;
+    background: #ffffff;
+    border: 2px solid rgba(2, 117, 251, 0.15);
+    border-radius: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 12px 32px rgba(2, 117, 251, 0.06);
+}
+
+.tl-landing .tl-experience-tabs button {
+    min-height: 82px;
+    padding: 12px 10px;
+    background: #f8fbff;
+    border: 1.5px solid transparent;
+    border-radius: 16px;
+    cursor: pointer;
+    display: flex;
+    gap: 8px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 800;
+    color: #475569;
+    transition: all 0.2s ease;
+}
+
+.tl-landing .tl-experience-tabs button > span {
+    font-size: 22px;
+    line-height: 1;
+    color: #0275fb;
+}
+
+.tl-landing .tl-experience-tabs button:hover {
+    color: #0275fb;
+    background: #eaf3ff;
+    border-color: rgba(2, 117, 251, 0.25);
+}
+
+.tl-landing .tl-experience-tabs button[aria-selected='true'] {
+    background: linear-gradient(135deg, #042a6b 0%, #0275fb 60%, #014296 100%);
+    color: #ffffff;
+    border-color: #fdc908;
+    box-shadow: 0 10px 24px rgba(2, 117, 251, 0.26);
+    transform: translateY(-1px);
+}
+
+.tl-landing .tl-experience-tabs button[aria-selected='true'] > span {
+    color: #fdc908;
+}
+
+.tl-landing .tl-experience-panel {
+    display: grid;
+    grid-template-columns: 1.14fr 1fr;
+    overflow: hidden;
+    border-radius: 32px;
+    background: #ffffff;
+    border: 2px solid rgba(2, 117, 251, 0.16);
+    box-shadow: 0 20px 50px rgba(2, 117, 251, 0.08);
+    min-height: 360px; /* Giảm mạnh từ 420px xuống 360px */
+    padding: 12px;
+    gap: 12px;
+}
+
+.tl-landing .tl-experience-visual {
+    margin: 0;
+    position: relative;
+    overflow: hidden;
+    min-height: 340px; /* Giảm từ 380px xuống 340px cho cân xứng với panel */
+    border-radius: 22px;
+    border: 2px solid rgba(253, 201, 8, 0.75);
+    background: #0f1b33;
+}
+
+.tl-landing .tl-experience-visual::after {
+    content: '';
+    position: absolute;
+    inset: 45% 0 0;
+    background: linear-gradient(transparent, rgba(7, 19, 44, 0.88));
+    pointer-events: none;
+}
+
+.tl-landing .tl-experience-visual img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    position: absolute;
+    inset: 0;
+    animation: tl-content-reveal 0.45s ease;
+}
+
+.tl-landing .tl-experience-visual figcaption {
+    position: absolute;
+    bottom: 20px;
+    left: 22px;
+    right: 22px;
+    color: #fff2c3;
+    font-size: 11.5px;
+    font-weight: 700;
+    z-index: 1;
+    line-height: 1.5;
+}
+
+.tl-landing .tl-visual-index {
+    position: absolute;
+    top: 18px;
+    left: 20px;
+    z-index: 2;
+    padding: 6px 14px;
+    border-radius: 14px;
+    background: rgba(15, 27, 51, 0.82);
+    border: 1.5px solid #fdc908;
+    backdrop-filter: blur(8px);
+    font-family: Montserrat, sans-serif;
+    font-size: 24px;
+    font-weight: 900;
+    color: #fdc908;
+}
+
+.tl-landing .tl-visual-index small {
+    font-size: 11px;
+    margin-left: 4px;
+    font-weight: 700;
+    color: #ffffff;
+}
+
+.tl-landing .tl-experience-copy {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 24px 30px; /* Thu gọn padding để cụm văn bản sát lại nhau */
+    border-radius: 22px;
+    background: linear-gradient(180deg, #f8fbff 0%, #ffffff 60%, #fffbeb 100%);
+    border: 1px solid rgba(2, 117, 251, 0.12);
+}
+
+.tl-landing .tl-experience-copy h3 {
+    font-family: Montserrat, sans-serif;
+    font-size: clamp(22px, 2.2vw, 32px); /* Tinh chỉnh nhỏ lại một chút */
+    line-height: 1.25;
+    letter-spacing: -0.03em;
+    font-weight: 900;
+    color: #0f1b33;
+    margin: 8px 0 12px; /* Rút ngắn margin trên dưới */
+}
+
+.tl-landing .tl-experience-copy > p:not(.tl-eyebrow) {
+    color: #334155;
+    font-size: 14.5px;
+    font-weight: 500;
+    line-height: 1.8;
+}
+
+.tl-landing .tl-feature-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 18px 0 24px; /* Thu hẹp khoảng cách giữa chữ và các thẻ chip */
+}
+
+.tl-landing .tl-feature-chips span {
+    background: #eaf3ff;
+    border: 1.5px solid rgba(2, 117, 251, 0.22);
+    color: #0275fb;
+    padding: 7px 14px;
+    font-size: 11px;
+    border-radius: 999px;
+    font-weight: 800;
+}
+
+.tl-landing .tl-experience-copy > small {
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.65;
+    color: #64748b;
+    margin-top: 16px;
+}
+
+.tl-landing .tl-experience-panel-3 .tl-experience-visual img,
+.tl-landing .tl-experience-panel-4 .tl-experience-visual img {
+    object-fit: contain;
+    padding: 36px;
+}
+
+.tl-landing .tl-experience-panel-3 .tl-experience-visual {
+    background: radial-gradient(ellipse at center, #fffbeb 0%, #fde68a 100%);
+}
+
+.tl-landing .tl-experience-panel-4 .tl-experience-visual {
+    background: radial-gradient(ellipse at center, #eef6ff 0%, #dbeafe 100%);
+}
+
+/* ========================================================================== */
+/* 2. HAI CÁCH KHÁM PHÁ (JOURNEY CARDS)                                       */
+/* ========================================================================== */
+.tl-landing .tl-journeys {
+    background: #ffffff;
+}
+
+.tl-landing .tl-journey-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 28px;
+    margin-top: 44px;
+}
+
+.tl-landing .tl-journey-grid article {
+    position: relative;
+    padding: 40px;
+    border: 2px solid rgba(2, 117, 251, 0.18);
+    border-radius: 28px;
+    background: linear-gradient(160deg, #f2f7ff 0%, #ffffff 100%);
+    box-shadow: 0 16px 40px rgba(2, 117, 251, 0.06);
+    overflow: hidden;
+}
+
+.tl-landing .tl-journey-grid article:nth-child(2) {
+    background: linear-gradient(160deg, #fffbeb 0%, #ffffff 100%);
+    border-color: #fdc908;
+    box-shadow: 0 16px 40px rgba(253, 201, 8, 0.12);
+}
+
+.tl-landing .tl-journey-symbol {
+    position: absolute;
+    right: 28px;
+    top: 16px;
+    font-size: 96px;
+    line-height: 1;
+    color: rgba(2, 117, 251, 0.08);
+    pointer-events: none;
+}
+
+.tl-landing .tl-journey-grid article:nth-child(2) .tl-journey-symbol {
+    color: rgba(253, 201, 8, 0.22);
+}
+
+.tl-landing .tl-mini-label {
+    font-size: 10.5px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: #0275fb;
+}
+
+.tl-landing .tl-journey-grid h3 {
+    font-family: Montserrat, sans-serif;
+    font-size: 26px;
+    max-width: none;
+    text-wrap: balance;
+    line-height: 1.3;
+    margin: 16px 0 14px;
+    font-weight: 900;
+    color: #0f1b33;
+}
+
+.tl-landing .tl-journey-grid article > p:not(.tl-mini-label) {
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.75;
+    max-width: none;
+    text-wrap: pretty;
+    color: #475569;
+}
+
+.tl-landing .tl-journey-grid ol {
+    list-style: none;
+    counter-reset: journey;
+    margin: 28px 0;
+    padding: 0;
+    display: grid;
+    gap: 14px;
+}
+
+.tl-landing .tl-journey-grid li {
+    counter-increment: journey;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #0f1b33;
+}
+
+.tl-landing .tl-journey-grid li::before {
+    content: counter(journey, decimal-leading-zero);
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    background: #0275fb;
+    color: #fdc908;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 900;
+    flex-shrink: 0;
+}
+
+.tl-landing .tl-journey-grid a,
+.tl-landing .tl-audience-grid a,
+.tl-landing .tl-inline-link {
+    color: #0275fb;
+    font-size: 13px;
+    font-weight: 900;
+    text-decoration: none;
+}
+
+.tl-landing .tl-journey-grid a {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-top: 1.5px solid rgba(15, 27, 51, 0.08);
+    padding-top: 20px;
+}
+
+/* ========================================================================== */
+/* 3. KHỐI CÔNG NGHỆ PHÍA SAU TRẢI NGHIỆM (TECHNOLOGY SECTION)                 */
+/* ========================================================================== */
+.tl-landing .tl-technology {
+    background: linear-gradient(135deg, #07132c 0%, #0e224d 55%, #033980 100%);
+    border-top: 4px solid #fdc908;
+    border-bottom: 4px solid #fdc908;
+    color: #ffffff;
+    position: relative;
+    overflow: hidden;
+}
+
+.tl-landing .tl-technology .tl-section-title {
+    color: #ffffff;
+}
+
+.tl-landing .tl-technology .tl-eyebrow,
+.tl-landing .tl-technology .tl-section-title em {
+    color: #fdc908;
+}
+
+.tl-landing .tl-technology .tl-content-heading > p {
+    color: #dbeafe;
+}
+
+.tl-landing .tl-tech-layout {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 36px;
+    position: relative;
+}
+
+.tl-landing .tl-tech-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.tl-landing .tl-tech-selector button {
+    border: 1.5px solid rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.05);
+    text-align: left;
+    padding: 20px 18px;
+    color: #cbd5e1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 14px;
+    font-weight: 800;
+    border-radius: 16px;
+    transition: all 0.2s ease;
+}
+
+.tl-landing .tl-tech-selector button > span:first-child {
+    font-family: Montserrat, sans-serif;
+    font-size: 12px;
+    font-weight: 900;
+    color: #fdc908;
+}
+
+.tl-landing .tl-tech-selector button > span:last-child {
+    margin-left: auto;
+    font-size: 18px;
+}
+
+.tl-landing .tl-tech-selector button[aria-pressed='true'] {
+    background: linear-gradient(135deg, #0275fb 0%, #015cc8 100%);
+    color: #ffffff;
+    border-color: #fdc908;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25);
+}
+
+.tl-landing .tl-tech-detail {
+    border: 2px solid #fdc908;
+    border-radius: 26px;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: 1fr 1.08fr;
+    background: rgba(15, 27, 51, 0.75);
+    backdrop-filter: blur(12px);
+    min-height: 360px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+}
+
+.tl-landing .tl-tech-detail figure {
+    position: relative;
+    margin: 0;
+    min-height: 320px;
+    background: #07132c;
+}
+
+.tl-landing .tl-tech-detail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    position: absolute;
+    inset: 0;
+}
+
+.tl-landing .tl-tech-detail figcaption {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 40px 20px 18px;
+    background: linear-gradient(transparent, rgba(7, 19, 44, 0.92));
+    color: #fff2c3;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.tl-landing .tl-tech-detail > div {
+    padding: 34px 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.tl-landing .tl-tech-detail h3 {
+    font-family: Montserrat, sans-serif;
+    font-size: 24px;
+    line-height: 1.35;
+    font-weight: 900;
+    color: #ffffff;
+    margin: 14px 0 16px;
+}
+
+.tl-landing .tl-tech-detail > div > p:not(.tl-mini-label) {
+    font-size: 13.5px;
+    line-height: 1.85;
+    color: #dbeafe;
+    margin-bottom: 24px;
+}
+
+.tl-landing .tl-tech-detail .tl-mini-label {
+    color: #fdc908;
+    font-size: 10px;
+}
+
+.tl-landing .tl-tech-tools {
+    margin-top: auto;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    color: #fff2c3;
+    border-top: 1px solid rgba(255, 255, 255, 0.16);
+    padding-top: 16px;
+    width: 100%;
+}
+
+/* ========================================================================== */
+/* 4. ĐIỂM ĐẾN PILOT CỦ CHI, ĐỐI TƯỢNG, ĐỘI NGŨ, FAQ & FINAL CTA             */
+/* ========================================================================== */
+.tl-landing .tl-pilot-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 68px;
+    align-items: center;
+}
+
+.tl-landing .tl-pilot-grid > figure {
+    position: relative;
+    margin: 0;
+    height: 560px;
+    border-radius: 130px 24px 24px 24px;
+    border: 3px solid #fdc908;
+    box-shadow: 0 24px 55px rgba(15, 27, 51, 0.16);
+    overflow: hidden;
+}
+
+.tl-landing .tl-pilot-grid > figure::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(transparent 45%, rgba(7, 19, 44, 0.82));
+}
+
+.tl-landing .tl-pilot-grid > figure > img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.tl-landing .tl-pilot-grid > figure > figcaption {
+    position: absolute;
+    bottom: 28px;
+    left: 28px;
+    z-index: 1;
+    color: #fff2c3;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 0.14em;
+}
+
+.tl-landing .tl-pilot-coordinate {
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    z-index: 1;
+    padding: 8px 14px;
+    border-radius: 14px;
+    background: rgba(15, 27, 51, 0.8);
+    border: 1px solid rgba(253, 201, 8, 0.6);
+    color: #fff2c3;
+    font-size: 10px;
+    font-weight: 800;
+    text-align: right;
+    line-height: 1.6;
+    letter-spacing: 1px;
+}
+
+.tl-landing .tl-pilot-facts {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    padding: 20px 0;
+    margin: 26px 0;
+    border-top: 1.5px solid #dbeafe;
+    border-bottom: 1.5px solid #dbeafe;
+}
+
+.tl-landing .tl-pilot-facts span {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #475569;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.tl-landing .tl-pilot-facts strong {
+    font-family: Montserrat, sans-serif;
+    color: #0275fb;
+    font-size: 34px;
+    font-weight: 900;
+}
+
+.tl-landing .tl-pilot-grid .tl-inline-link {
+    display: inline-block;
+    margin-top: 20px;
+    margin-left: 18px;
+}
+
+.tl-landing .tl-pilot-grid small {
+    display: block;
+    font-size: 11px;
+    color: #64748b;
+    line-height: 1.75;
+    margin-top: 16px;
+    max-width: 400px;
+}
+
+/* Đối tượng sử dụng */
+.tl-landing .tl-audiences {
+    background: #ffffff;
+}
+
+.tl-landing .tl-audience-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    margin-top: 40px;
+}
+
+.tl-landing .tl-audience-grid article {
+    background: #f8fbff;
+    border: 2px solid rgba(2, 117, 251, 0.14);
+    border-radius: 26px;
+    padding: 32px 28px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    transition: all 0.22s ease;
+}
+
+.tl-landing .tl-audience-grid article:hover {
+    border-color: #0275fb;
+    background: #ffffff;
+    transform: translateY(-4px);
+    box-shadow: 0 18px 40px rgba(2, 117, 251, 0.08);
+}
+
+.tl-landing .tl-audience-grid article > span {
+    font-family: Montserrat, sans-serif;
+    font-size: 32px;
+    font-weight: 900;
+    color: #0275fb;
+    background: #eaf3ff;
+    border: 1.5px solid rgba(2, 117, 251, 0.2);
+    padding: 6px 16px;
+    border-radius: 14px;
+    margin-bottom: 22px;
+}
+
+.tl-landing .tl-audience-grid h3 {
+    font-family: Montserrat, sans-serif;
+    font-size: 21px;
+    font-weight: 900;
+    color: #0f1b33;
+    line-height: 1.35;
+    margin-bottom: 12px;
+}
+
+.tl-landing .tl-audience-grid p {
+    font-size: 13.5px;
+    line-height: 1.8;
+    color: #475569;
+    margin-bottom: 24px;
+}
+
+.tl-landing .tl-audience-grid a {
+    margin-top: auto;
+}
+
+/* Đội ngũ HistAR Team */
+.tl-landing .tl-team-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 20px;
+    margin-top: 42px;
+}
+
+.tl-landing .tl-team-grid article {
+    background: #ffffff;
+    border: 1.5px solid rgba(2, 117, 251, 0.14);
+    border-radius: 22px;
+    padding: 12px 12px 18px;
+    text-align: center;
+    box-shadow: 0 10px 25px rgba(15, 27, 51, 0.04);
+    transition: all 0.25s ease;
+}
+
+.tl-landing .tl-team-grid article:hover {
+    border-color: #fdc908;
+    transform: translateY(-5px);
+    box-shadow: 0 16px 35px rgba(2, 117, 251, 0.12);
+}
+
+.tl-landing .tl-team-grid img {
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    object-fit: cover;
+    object-position: top;
+    border-radius: 14px;
+    background: #e9edf3;
+    transition: transform 0.3s ease;
+}
+
+.tl-landing .tl-team-grid h3 {
+    font-size: 13.5px;
+    font-weight: 900;
+    color: #0f1b33;
+    margin: 14px 0 4px;
+    line-height: 1.4;
+}
+
+.tl-landing .tl-team-grid p {
+    font-size: 11px;
+    font-weight: 700;
+    color: #0275fb;
+    line-height: 1.5;
+}
+
+/* Giải đáp thắc mắc (FAQ) */
+.tl-landing .tl-faq {
+    background: #ffffff;
+    border-top: 1px solid #e2e8f0;
+}
+
+.tl-landing .tl-faq-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.7fr;
+    gap: 72px;
+}
+
+.tl-landing .tl-faq details {
+    border-bottom: 1.5px solid #e2e8f0;
+}
+
+.tl-landing .tl-faq summary {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    list-style: none;
+    font-size: 14.5px;
+    font-weight: 800;
+    color: #0f1b33;
+    cursor: pointer;
+    line-height: 1.65;
+    padding: 22px 0;
+}
+
+.tl-landing .tl-faq summary::-webkit-details-marker {
+    display: none;
+}
+
+.tl-landing .tl-faq-number {
+    padding: 3px 9px;
+    border-radius: 8px;
+    background: #f2f7ff;
+    color: #0275fb;
+    font-size: 11px;
+    font-weight: 900;
+}
+
+.tl-landing .tl-faq-plus {
+    margin-left: auto;
+    font-size: 22px;
+    font-weight: 700;
+    color: #0275fb;
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+}
+
+.tl-landing .tl-faq details[open] .tl-faq-plus {
+    transform: rotate(45deg);
+    color: #f59e0b;
+}
+
+.tl-landing .tl-faq details > p {
+    padding: 0 32px 24px 44px;
+    font-size: 13.5px;
+    line-height: 1.85;
+    color: #475569;
+}
+
+/* Final CTA Banner */
+.tl-landing .tl-final-cta {
+    position: relative;
+    overflow: hidden;
+    background: radial-gradient(ellipse at 50% 20%, #fff1a8 0%, transparent 65%), linear-gradient(135deg, #fffdf3 0%, #fff8da 55%, #edf5ff 100%);
+    border-top: 1px solid #f0dc91;
+    color: #0f1b33;
+    text-align: center;
+    padding: 100px 0;
+}
+
+.tl-landing .tl-final-cta > .tl-container {
+    position: relative;
+    z-index: 1;
+}
+
+.tl-landing .tl-final-cta .tl-eyebrow {
+    color: #175aad;
+    justify-content: center;
+}
+
+.tl-landing .tl-final-cta h2 {
+    font-family: Montserrat, sans-serif;
+    font-size: clamp(34px, 4.8vw, 62px);
+    font-weight: 900;
+    line-height: 1.15;
+    letter-spacing: -0.04em;
+    margin: 22px 0 34px;
+}
+
+.tl-landing .tl-final-cta h2 em {
+    font-style: normal;
+    color: #0275fb;
+}
+
+.tl-landing .tl-final-cta .tl-container > div {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.tl-landing .tl-final-cta .tl-button {
+    background: linear-gradient(135deg, #fff2c3 0%, #fdc908 60%, #fdb900 100%);
+    color: #0f1b33;
+    border-color: #0f1b33;
+}
+
+.tl-landing .tl-final-cta .tl-button-secondary {
+    color: #0f1b33;
+    border-color: #b5cff3;
+    background: #ffffff;
+}
+
+.tl-landing .tl-final-note {
+    font-size: 12px;
+    font-weight: 700;
+    color: #475569;
+    margin-top: 26px;
+}
+
+.tl-landing .tl-final-orbit {
+    position: absolute;
+    inset: -180px auto auto 50%;
+    transform: translateX(-50%);
+    width: 1100px;
+    height: 1100px;
+    border: 1px dashed rgba(2, 117, 251, 0.16);
+    border-radius: 50%;
+    box-shadow: 0 0 0 90px rgba(253, 201, 8, 0.08), 0 0 0 180px rgba(253, 201, 8, 0.04);
+    pointer-events: none;
+}
+
+@keyframes tl-content-reveal {
+    from {
+        opacity: 0.4;
+        transform: scale(1.025);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@media (max-width: 1050px) {
+    .tl-landing .tl-experience-tabs button {
+        font-size: 10.5px;
+    }
+    .tl-landing .tl-experience-copy {
+        padding: 28px;
+    }
+    .tl-landing .tl-tech-layout {
+        grid-template-columns: 230px 1fr;
+        gap: 24px;
+    }
+    .tl-landing .tl-tech-detail {
+        grid-template-columns: 1fr;
+    }
+    .tl-landing .tl-tech-detail figure {
+        min-height: 230px;
+    }
+    .tl-landing .tl-pilot-grid {
+        gap: 40px;
+    }
+    .tl-landing .tl-team-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 24px;
+    }
+}
+
+@media (max-width: 760px) {
+    .tl-landing .tl-content-section {
+        padding: 68px 0;
+    }
+    .tl-landing .tl-content-heading {
+        display: block;
+        margin-bottom: 28px;
+    }
+    .tl-landing .tl-content-heading > p,
+    .tl-landing .tl-content-heading > div:last-child:not(:first-child) {
+        margin-top: 16px;
+        max-width: 100%;
+    }
+    .tl-landing .tl-experience-tabs {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+    }
+    .tl-landing .tl-experience-panel {
+        grid-template-columns: 1fr;
+    }
+    .tl-landing .tl-experience-visual {
+        min-height: 300px;
+    }
+    .tl-landing .tl-journey-grid,
+    .tl-landing .tl-tech-layout,
+    .tl-landing .tl-pilot-grid,
+    .tl-landing .tl-audience-grid,
+    .tl-landing .tl-faq-grid {
+        grid-template-columns: 1fr;
+        gap: 24px;
+    }
+    .tl-landing .tl-tech-selector {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+    .tl-landing .tl-team-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+    }
+}/* Supplied feature artwork includes its own captions: preserve the complete square. */
+.tl-landing .tl-experience-visual.tl-feature-poster{aspect-ratio:1;min-height:0;align-self:center;background:#0758cf}
+.tl-landing .tl-experience-visual.tl-feature-poster::after{display:none}
+.tl-landing .tl-experience-visual.tl-feature-poster img{position:static;display:block;width:100%;height:auto;aspect-ratio:1;object-fit:contain;padding:0;transform:none}
+.tl-landing .tl-feature-image-switch{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 24px}
+.tl-landing .tl-feature-image-switch button{border:1px solid #bdd6fb;border-radius:999px;padding:10px 16px;background:#fff;color:#18519a;font-size:12px;font-weight:750}
+.tl-landing .tl-feature-image-switch button[aria-pressed='true']{background:#0275fb;color:#fff;border-color:#0275fb}
+.tl-landing .tl-feature-image-switch button:focus-visible{outline:3px solid #fdc908;outline-offset:3px}
+/* Balance square feature artwork with the adjacent text instead of stretching it. */
+.tl-landing .tl-experience-panel{min-height:0;align-items:center}
+.tl-landing .tl-experience-copy{align-self:center;justify-content:flex-start;padding:30px}
+@media(min-width:901px){
+    .tl-landing .tl-experience-panel{grid-template-columns:minmax(0, min(42%, 520px)) minmax(0,1fr);gap:24px}
+}
+@media(max-width:900px){
+    .tl-landing .tl-experience-visual.tl-feature-poster{width:min(100%,480px);justify-self:center}
+    .tl-landing .tl-experience-copy{padding:24px;width:100%}
+}
+/* The requested headings stay on one line, sized to the available section width. */
+.tl-landing .tl-content-heading:has(.tl-single-line-title){display:block}
+.tl-landing .tl-content-heading:has(.tl-single-line-title)>p{margin-top:18px;max-width:720px}
+.tl-landing .tl-single-line-title{white-space:nowrap;font-size:clamp(10px,2.7vw,44px)!important;max-width:none;letter-spacing:-.04em}
+/* Readable FAQ typography with a complete, single-line heading. */
+.tl-landing .tl-faq-grid{grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);gap:48px}
+.tl-landing .tl-faq-grid>div:first-child{container-type:inline-size}
+.tl-landing .tl-faq-grid .tl-section-title{white-space:nowrap;font-size:clamp(24px,8cqi,54px);letter-spacing:-.04em}
+.tl-landing .tl-faq-grid>div>p:not(.tl-eyebrow){font-size:17px}
+.tl-landing .tl-faq summary{font-size:18px}
+.tl-landing .tl-faq details>p{font-size:16px}
+.tl-landing .tl-faq-number{font-size:13px;flex-shrink:0}
+@media(max-width:900px){.tl-landing .tl-faq-grid{grid-template-columns:1fr;gap:24px}}
+@media(max-width:600px){.tl-landing .tl-faq summary{font-size:16px;gap:10px}.tl-landing .tl-faq details>p{padding-left:0}.tl-landing .tl-faq-grid>div>p:not(.tl-eyebrow){font-size:16px}}
+/* Bright TimeLens audience cards with clear, readable benefits. */
+.tl-landing .tl-audience-grid article{background:linear-gradient(145deg,#fff 20%,#edf5ff);border-color:#bad7ff;border-top:4px solid #0275fb;box-shadow:0 12px 30px #0275fb08}
+.tl-landing .tl-audience-grid article:nth-child(2){background:linear-gradient(145deg,#fff 20%,#fff8db);border-color:#ead485;border-top-color:#fdc908}
+.tl-landing .tl-audience-grid article:nth-child(3){background:linear-gradient(145deg,#fff 20%,#edf8ff);border-top-color:#0275fb}
+.tl-landing .tl-audience-grid article>span{background:#0275fb;color:#fff;border-color:#0275fb;font-size:30px}
+.tl-landing .tl-audience-grid article:nth-child(2)>span{background:#fdc908;color:#0f1b33;border-color:#ebbd00}
+.tl-landing .tl-audience-grid h3{color:#104d98;font-size:clamp(20px,1.5vw,24px);text-wrap:balance}
+.tl-landing .tl-audience-grid p{font-size:16px;line-height:1.85;color:#334155}
+.tl-landing .tl-audience-grid a{font-size:15px;color:#075bbf;border-bottom:2px solid #fdc908;padding-bottom:5px}
+@media(prefers-reduced-motion:reduce){.tl-landing .tl-audience-grid article{transition:none}.tl-landing .tl-audience-grid article:hover{transform:none}}
+.tl-landing .tl-pilot-grid{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:40px}
+.tl-landing .tl-pilot-grid>div>p:not(.tl-eyebrow){font-size:18px;line-height:1.85;color:#334155}
+.tl-landing .tl-pilot-facts span{font-size:16px}
+.tl-landing .tl-pilot-grid>div>small{font-size:14px;line-height:1.8}
+.tl-landing .tl-pilot-model{border:2px solid #fdc908;border-radius:28px;overflow:hidden;min-width:0;background:#fff;box-shadow:0 20px 50px #0275fb18}
+.tl-landing .tl-pilot-model-heading{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:16px 20px;background:#fff9df;color:#124d8e;font-size:11px;letter-spacing:.06em;font-weight:850}
+.tl-landing .tl-pilot-model-heading>span:last-child{color:#075abb}
+.tl-landing .tl-pilot-model-view{height:500px;background:linear-gradient(#075c85,#155a81 60%,#725044);position:relative}
+.tl-landing .tl-pilot-tunnel{height:100%}
+.tl-landing .tl-pilot-tunnel>div.pointer-events-none{top:14px}
+.tl-landing .tl-pilot-tunnel>div.right-4{top:14px}
+.tl-landing .tl-pilot-tunnel>p{bottom:16px}
+.tl-landing .tl-pilot-tunnel>[role=dialog]{bottom:16px}
+.tl-landing .tl-pilot-model-loading{position:absolute;inset:0;display:grid;place-items:center;color:white;font-size:15px}
+.tl-landing .tl-pilot-model-caption{padding:18px 20px;font-size:13px;color:#405b7c;line-height:1.8}
+.tl-landing .tl-pilot-model-caption p{margin:0 0 4px;font-weight:750;color:#124d8e}
+.tl-landing .tl-pilot-model-caption>span{display:block;font-size:12px}
+.tl-landing .tl-pilot-model-caption a{display:inline-block;color:#075bbf;font-weight:800;margin-top:8px}
+@media(max-width:1000px){.tl-landing .tl-pilot-grid{grid-template-columns:1fr}.tl-landing .tl-pilot-model-view{height:460px}}
+@media(max-width:600px){.tl-landing .tl-pilot-model-view{height:380px}.tl-landing .tl-pilot-grid>div>p:not(.tl-eyebrow){font-size:16px}.tl-landing .tl-pilot-model-heading{padding:14px;font-size:10px}.tl-landing .tl-pilot-model-caption{padding:14px}}
+/* The landing preview keeps its own heading; hide the duplicate scene summary. */
+.tl-landing .tl-pilot-tunnel > div.pointer-events-none { display: none; }

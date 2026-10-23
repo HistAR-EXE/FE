@@ -986,7 +986,7 @@ export function ChatPage() {
     return (
         <AppLayout
             activeBorder="left"
-            mobileBackTo={stationReturnHref ?? (locationId ? `/explore/${locationId}` : '/explore')}
+            mobileBackTo={stationReturnHref ?? ('/explore')}
             mobileTitle={stationCode ? `Chat · ${stationCode}` : 'Trò chuyện AI'}
             className="h-screen max-h-screen overflow-hidden !bg-[#DCEBFF]"
         >

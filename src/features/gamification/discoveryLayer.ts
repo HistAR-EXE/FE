@@ -64,7 +64,7 @@ function timePortalHref(locationId: string, params: Record<string, string>): str
 
 function hrefFromTemplate(template: string | undefined, locationId: string, unlockKey: string): string {
   if (!template) {
-    return `/explore/${locationId}`
+    return '/explore'
   }
   return template
     .replace('{locationId}', locationId)
@@ -141,7 +141,7 @@ function bindingForUnlockKey(unlockKey: string, locationId?: string): DiscoveryB
     unlockKey,
     recordKey: unlockKey,
     engagement: 'time_portal',
-    buildHref: (locId) => `/explore/${locId}`,
+    buildHref: () => '/explore',
   }
 }
 

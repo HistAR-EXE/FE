@@ -1,3 +1,4 @@
+import { QuestBackLink } from '../features/gamification/QuestBackLink'
 // src/pages/MinigamePage.tsx
 // Trang chơi mini game của bước nhiệm vụ: giới thiệu → chơi → kết quả (sao + dữ kiện có nguồn).
 // BE chấm mọi lượt; lượt chưa xong (pending) trả gợi ý để engine phản hồi ngay.
@@ -5,7 +6,6 @@
 import { useCallback, useEffect, useRef, useState, type ComponentType } from 'react'
 import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
-import { SimpleTopNav } from '../components/layout/TopNav'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { analyticsApi } from '../features/analytics/api'
 import { gamificationApi } from '../features/gamification/api'
@@ -161,8 +161,8 @@ export function MinigamePage() {
 
     if (questId && !isDevMinigameQuestVisible(questId)) {
         return (
-            <AppLayout activeBorder="left" mobileBackTo="/quests" mobileTitle="Mini game">
-                <main className="p-8">Mật lệnh thử chỉ mở khi chạy web dev.</main>
+            <AppLayout hideTopNav activeBorder="left">
+                <main className="p-8"><QuestBackLink to={questHref} label="Về nhiệm vụ" />Mật lệnh thử chỉ mở khi chạy web dev.</main>
             </AppLayout>
         )
     }
@@ -170,14 +170,15 @@ export function MinigamePage() {
     return (
         <AppLayout
             activeBorder="left"
-            topNav={<SimpleTopNav title="Mini game" backTo={questHref} backLabel="Về nhiệm vụ" />}
+            hideTopNav
             mobileBackTo={questHref}
             mobileTitle={game?.title ?? 'Mini game'}
             className="min-h-screen !bg-[#DCEBFF] text-[#0F1B33]"
         >
             <QuestBackdrop />
-            <div className="relative z-10 pt-14 md:pt-16">
+            <div className="relative z-10">
                 <main className="mx-auto w-full max-w-3xl space-y-4 px-4 pb-24 pt-4 md:px-6 md:pt-8" data-testid="minigame-page">
+                    <QuestBackLink to={narrativeHref ?? questHref} label="Về nhiệm vụ" />
                     <div className="flex items-center justify-between gap-3">
                         <div className="flex min-w-0 items-center gap-3">
                             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#0275FB] text-white shadow-[0_4px_0_#0159C2]">

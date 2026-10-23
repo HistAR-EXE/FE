@@ -1,0 +1,10 @@
+.portal-experience { --portal-blue: #0866d9; --portal-ink: #142646; }
+.portal-experience button { cursor: pointer; }
+.portal-experience button:focus-visible, .portal-experience input:focus-visible, .portal-experience summary:focus-visible { outline: 3px solid #0866d9; outline-offset: 3px; }
+.portal-experience button:disabled { cursor: default; opacity: .5; }
+.portal-experience .tp-scroll { scrollbar-width: thin; scrollbar-color: #b7cfee transparent; }
+@media (prefers-reduced-motion: reduce) { .portal-experience .tp-anim { animation-duration: .01ms !important; } }
+.xua-nay-view button { cursor: pointer; }
+.xua-nay-view button:focus-visible { outline: 3px solid #0866d9; outline-offset: 3px; }
+.xua-nay-view .tp-scroll { scrollbar-color: #b7cfee transparent; }
+.xua-nay-view .tp-scroll::-webkit-scrollbar-thumb { background: #b7cfee; }

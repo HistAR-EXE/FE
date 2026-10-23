@@ -130,7 +130,7 @@ export function ExploreMapPanel({
         if (onPinClickRef.current) {
             onPinClickRef.current(marker.location)
         } else {
-            navigateRef.current(`/explore/${marker.location.id}`)
+            navigateRef.current('/explore')
         }
     }, [digitizationLock])
 

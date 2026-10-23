@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AppLayout } from '../components/layout/AppLayout'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { type ProfileMe } from '../features/profile/api'
+import { questRecordFromSearch, recordQuestStepEngagement } from '../features/gamification/questEngagement'
 import { DISCOVERY_RECORDED_EVENT } from '../features/gamification/discoveryRouting'
 import { CU_CHI_LOCATION_ID } from '../shared/config/constants'
 import { resolveMediaUrl } from '../shared/config/env'
@@ -637,6 +638,21 @@ export function ExplorePage() {
     const appliedHonorsLink = useRef<string | null>(null)
     const { user } = useAuth()
     const userId = user?.id
+    const legacyQuestRecord = questRecordFromSearch(honorsParams)
+    const legacyLocationId = honorsParams.get('locationId')
+    useEffect(() => {
+        if (!userId || !legacyQuestRecord || !legacyLocationId) return
+        let timer: ReturnType<typeof setTimeout> | undefined
+        const schedule = () => {
+            if (timer) clearTimeout(timer)
+            if (!document.hidden) timer = setTimeout(() => {
+                void recordQuestStepEngagement(legacyQuestRecord, legacyLocationId, 'map').catch(() => {})
+            }, 5000)
+        }
+        schedule()
+        document.addEventListener('visibilitychange', schedule)
+        return () => { if (timer) clearTimeout(timer); document.removeEventListener('visibilitychange', schedule) }
+    }, [userId, legacyQuestRecord, legacyLocationId])
     const navigate = useNavigate()
     const { mode, setMode } = useAppMode()
     useEffect(() => {

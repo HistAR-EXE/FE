@@ -56,7 +56,7 @@ export function QuestCompleteOverlay({
               type="button"
               onClick={() => {
                 onClose()
-                navigate(`/explore/${unlocked.id}`)
+                navigate('/explore')
               }}
               className="w-full px-4 py-2 rounded-full bg-secondary text-on-secondary font-title-sm inline-flex items-center justify-center gap-1"
             >

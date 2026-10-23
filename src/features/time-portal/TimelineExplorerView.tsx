@@ -9,9 +9,9 @@
 //   • 1024–1279px: [tiêu đề + thẻ] [ảnh] — số liệu mở bằng nút
 //   • <1024px: tiêu đề / ảnh / thẻ xếp dọc
 
+import './portalExperience.css'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { MaterialIcon } from '../../components/ui/MaterialIcon'
-import { eraBadgeClass } from '../../shared/ui/eraBadge'
 import { getEraData } from './cuChiEraData'
 import { ERA_VALUES, eraTimelineLabel, type EraValue } from './eraLabels'
 import { ChapterRail } from './timeline/ChapterRail'
@@ -21,10 +21,13 @@ import { StoryBackdrop } from './timeline/StoryBackdrop'
 import { StoryCard } from './timeline/StoryCard'
 import { TimeWarp } from './timeline/TimeWarp'
 import { ERA_STORIES, type StoryVisual } from './timeline/storyData'
-import { useNarration } from './timeline/useNarration'
+import type { usePortalAudio } from './timeline/usePortalAudio'
+import { PortalAudioControls } from './timeline/PortalAudioControls'
 import { XUA_NAY_SPOTS, type XuaNaySpotId } from './xuaNay/xuaNayData'
 
 type Props = {
+  audio: ReturnType<typeof usePortalAudio>
+  suspended?: boolean
   initialEra?: EraValue
   isPremium?: boolean
   onPremiumRequired?: (era: EraValue) => void
@@ -83,9 +86,11 @@ function readingMs(text: string) {
 }
 
 const TOOL_BTN =
-  'flex h-11 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-white/20 bg-black/55 px-3 text-xs text-white/85 backdrop-blur-sm transition-colors hover:bg-black/75'
+  'flex h-10 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-blue-200 bg-white px-3 text-xs font-semibold text-blue-700 shadow-sm transition-colors hover:bg-blue-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600'
 
 export function TimelineExplorerView({
+  audio,
+  suspended = false,
   initialEra,
   isPremium = true,
   onPremiumRequired,
@@ -95,12 +100,11 @@ export function TimelineExplorerView({
   onEraChange,
   onChapterFinished,
 }: Props) {
-  const [era, setEra] = useState<EraValue>(initialEra ?? 2026)
+  const [era, setEra] = useState<EraValue>(initialEra ?? 1948)
   const [index, setIndex] = useState(() => {
-    const i = initialMomentId ? ERA_STORIES[initialEra ?? 2026].moments.findIndex((m) => m.id === initialMomentId) : -1
+    const i = initialMomentId ? ERA_STORIES[initialEra ?? 1948].moments.findIndex((m) => m.id === initialMomentId) : -1
     return Math.max(0, i)
   })
-  const [playing, setPlaying] = useState(true)
   const [hover, setHover] = useState(false)
   const [hold, setHold] = useState(false)
   const [pageHidden, setPageHidden] = useState(false)
@@ -109,11 +113,10 @@ export function TimelineExplorerView({
   const [lightbox, setLightbox] = useState<Photo | null>(null)
   const [warp, setWarp] = useState<{ from: EraValue; to: EraValue } | null>(null)
   const [answers, setAnswers] = useState<Answers>(loadAnswers)
-  const [narrate, setNarrate] = useState(false)
   const isDesktop = useMediaQuery('(min-width: 1024px)')
   const isWide = useMediaQuery('(min-width: 1280px)')
 
-  const story = ERA_STORIES[era]
+  const story = useMemo(() => ({ ...ERA_STORIES[era], accent: '#0866d9' }), [era])
   const eraData = getEraData(era)
   const isQuiz = index >= story.moments.length
   const moment = isQuiz ? null : story.moments[index]
@@ -124,9 +127,9 @@ export function TimelineExplorerView({
   const visual = moment?.visual ?? lastMoment.visual
   const visualKey = `${era}-${(moment ?? lastMoment).id}`
 
-  const narration = useNarration()
-  const stopNarration = narration.stop
   const pendingAdvance = useRef(false)
+  const eraTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => () => { if (eraTimer.current) clearTimeout(eraTimer.current) }, [])
 
   const isLocked = useCallback((e: EraValue) => !isPremium && e !== 2026, [isPremium])
 
@@ -147,13 +150,23 @@ export function TimelineExplorerView({
     setIndex(i)
   }, [])
 
+  const audioPaused = suspended || hold || pageHidden || !!warp || insightsOpen || !panelsVisible || !!lightbox
+  const narrationText = moment
+    ? `${story.chapter}. ${moment.date}. ${moment.title}. ${moment.body}${moment.dyk ? ` Bạn có biết? ${moment.dyk}` : ''}`
+    : `Thử thách. ${story.quiz.question}`
+  useEffect(() => { if (audio.ready) audio.setPaused(audioPaused) }, [audio.ready, audio.setPaused, audioPaused])
+  useEffect(() => { if (audio.ready) audio.segment(`${era}-${index}`, narrationText) }, [audio.ready, audio.segment, era, index, narrationText])
   const onSegmentEnd = useCallback(() => {
-    if (narrate && narration.speakingRef.current) {
+    if (audio.waitingForNarration) {
       pendingAdvance.current = true
       return
     }
     goNext()
-  }, [goNext, narrate, narration.speakingRef])
+  }, [goNext, audio.waitingForNarration])
+
+  useEffect(() => {
+    if (pendingAdvance.current && !audio.waitingForNarration && !audioPaused && !hover) goNext()
+  }, [audio.waitingForNarration, audioPaused, hover, goNext])
 
   /* ---------------- Chuyển chương ---------------- */
 
@@ -161,7 +174,6 @@ export function TimelineExplorerView({
     (next: EraValue) => {
       setEra(next)
       setIndex(0)
-      setPlaying(true)
       setInsightsOpen(false)
       onEraChange?.(next)
     },
@@ -175,41 +187,16 @@ export function TimelineExplorerView({
         onPremiumRequired?.(next)
         return
       }
-      stopNarration()
       if (prefersReducedMotion()) {
         commitEra(next)
         return
       }
       setWarp({ from: era, to: next })
-      window.setTimeout(() => commitEra(next), 450)
+      pendingAdvance.current = false
+      eraTimer.current = setTimeout(() => commitEra(next), 450)
     },
-    [commitEra, era, isLocked, onPremiumRequired, stopNarration, warp],
+    [commitEra, era, isLocked, onPremiumRequired, warp],
   )
-
-  /* ---------------- Thuyết minh ---------------- */
-
-  const speakCurrent = useCallback(() => {
-    const text = moment ? `${moment.title}. ${moment.body}` : `Thử thách. ${story.quiz.question}`
-    narration.speak(text, () => {
-      if (pendingAdvance.current) goNext()
-    })
-  }, [goNext, moment, narration, story.quiz.question])
-
-  useEffect(() => {
-    if (narrate && !warp) speakCurrent()
-    // chỉ đọc lại khi đổi khoảnh khắc / chương
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [narrate, era, index, warp])
-
-  const toggleNarration = () => {
-    if (narrate) {
-      stopNarration()
-      setNarrate(false)
-    } else {
-      setNarrate(true)
-      setPlaying(true)
-    }
-  }
 
   /* ---------------- Xem hết chương ---------------- */
 
@@ -252,19 +239,16 @@ export function TimelineExplorerView({
     const onKey = (e: KeyboardEvent) => {
       if (lightbox) return
       const t = e.target as HTMLElement | null
-      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return
       if (e.key === 'ArrowRight') goNext()
       else if (e.key === 'ArrowLeft') goPrev()
-      else if (e.key === ' ' && t?.tagName !== 'BUTTON') {
-        e.preventDefault()
-        setPlaying((p) => !p)
-      }
+
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [goNext, goPrev, lightbox])
 
-  const paused = !playing || hover || hold || pageHidden || !!warp || insightsOpen || !panelsVisible || !!lightbox
+  const paused = audioPaused || hover
   const openPhoto = (p: Photo) => setLightbox(p)
 
   /* Lối vào "Xưa & Nay" ở bảng số liệu: ưu tiên điểm của khoảnh khắc đang xem, rồi điểm đầu tiên của chương. */
@@ -273,26 +257,39 @@ export function TimelineExplorerView({
     ? {
         spot: panelSpot,
         onOpen: () => {
-          stopNarration()
           onOpenXuaNay(panelSpot, (moment ?? lastMoment).id)
         },
       }
     : undefined
 
   return (
-    <div className="relative flex h-full w-full flex-col bg-black">
-      <div className="relative min-h-0 flex-1 overflow-hidden">
+    <div className="portal-experience relative flex h-full min-h-0 w-full flex-col bg-[#f2f7ff] text-[#142646]">
+      <div className="z-20 shrink-0 border-b border-blue-100 bg-white/95 px-4 py-3 sm:px-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#ffce22] text-blue-800 shadow-sm"><MaterialIcon name="history" className="text-2xl" /></span>
+            <div><h1 className="text-lg font-black tracking-tight text-blue-700 sm:text-xl">Cổng Thời Gian</h1><p className="text-xs font-medium text-slate-500">Địa đạo Củ Chi · Hành trình qua 4 chương lịch sử</p></div>
+          </div>
+          <div className="flex items-center gap-2">
+            {!isWide && <button type="button" onClick={() => setInsightsOpen(true)} className={TOOL_BTN}><MaterialIcon name="insights" className="text-lg" />Số liệu</button>}
+            {onSwitchTo3D && <button type="button" onClick={onSwitchTo3D} className={TOOL_BTN} aria-label="Xem 3D"><MaterialIcon name="view_in_ar" className="text-lg" />Xem 3D</button>}
+            <button type="button" onClick={() => setPanelsVisible((v) => !v)} className={TOOL_BTN} aria-label={panelsVisible ? 'Ẩn chữ, chỉ xem ảnh' : 'Hiện nội dung'} aria-pressed={!panelsVisible}><MaterialIcon name={panelsVisible ? 'visibility_off' : 'visibility'} className="text-lg" /></button>
+          </div>
+        </div>
+        <PortalAudioControls audio={audio} className="mt-3" />
+      </div>
+      <div className="relative min-h-0 flex-1 overflow-y-auto">
         <StoryBackdrop story={story} visual={visual} visualKey={visualKey} durationMs={durationMs || 12000} />
 
         <div
-          className={`relative z-10 grid h-full min-h-0 grid-cols-1 grid-rows-[auto_minmax(0,1fr)_auto] gap-2 p-3 sm:gap-3 sm:p-4 lg:grid-cols-[minmax(360px,440px)_minmax(0,1fr)] lg:grid-rows-[auto_minmax(0,1fr)] lg:gap-x-6 lg:gap-y-4 lg:p-6 xl:grid-cols-[minmax(380px,480px)_minmax(0,1fr)_300px] ${
+          className={`relative z-10 grid min-h-full grid-cols-1 gap-4 p-4 sm:gap-5 sm:p-5 lg:h-full lg:min-h-[520px] lg:grid-cols-[minmax(300px,360px)_minmax(0,1fr)] lg:grid-rows-[auto_minmax(0,1fr)] lg:gap-x-5 lg:gap-y-3 lg:p-5 xl:grid-cols-[minmax(300px,360px)_minmax(0,1fr)_260px] 2xl:gap-x-7 2xl:p-7 ${
             panelsVisible ? '' : '[&>.tp-panel]:pointer-events-none [&>.tp-panel]:opacity-0'
           }`}
         >
           {/* Tiêu đề chương */}
           <header className="tp-panel min-w-0 transition-opacity duration-500 lg:col-start-1 lg:row-start-1">
             <div className="flex min-h-[44px] items-center gap-2">
-              <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${eraBadgeClass(era)}`}>
+              <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold border-blue-200 bg-white text-blue-700`}>
                 {eraTimelineLabel(era)}
               </span>
               <span className="hidden text-[11px] font-semibold uppercase tracking-[0.18em] sm:inline" style={{ color: story.accent }}>
@@ -302,15 +299,8 @@ export function TimelineExplorerView({
             <div className="flex items-end gap-3 lg:block">
               <p
                 key={era}
-                className="tp-anim shrink-0 font-black leading-none tracking-tight tabular-nums text-[40px] sm:text-[56px] lg:mt-1 lg:text-[clamp(48px,8.5vh,76px)]"
-                style={{
-                  backgroundImage: `linear-gradient(180deg, #ffffff 35%, ${story.accent})`,
-                  WebkitBackgroundClip: 'text',
-                  backgroundClip: 'text',
-                  color: 'transparent',
-                  filter: 'drop-shadow(0 4px 18px rgba(0,0,0,0.55))',
-                  animation: 'tp-enter 600ms ease-out both',
-                }}
+                className="tp-anim shrink-0 font-black leading-none tracking-tight tabular-nums text-[40px] sm:text-[52px] lg:mt-1 lg:text-[clamp(44px,7vh,68px)]"
+                style={{ color: '#0866d9', animation: 'tp-enter 600ms ease-out both' }}
               >
                 {era === 2026 ? 'Hiện nay' : era}
               </p>
@@ -318,13 +308,13 @@ export function TimelineExplorerView({
                 <span className="block text-[10px] font-semibold uppercase tracking-[0.16em] sm:hidden" style={{ color: story.accent }}>
                   {story.chapter}
                 </span>
-                <h2 className="truncate text-base font-bold text-white drop-shadow-lg sm:text-xl lg:mt-1 lg:text-2xl">{eraData.title}</h2>
+                <h2 className="text-base font-black text-[#142646] sm:text-xl lg:mt-1 lg:text-2xl">{eraData.title}</h2>
               </div>
             </div>
-            <p className="mt-0.5 hidden text-sm text-white/75 drop-shadow sm:block">{story.tagline}</p>
-            <p className="mt-0.5 hidden text-xs text-white/50 lg:block">{eraData.subtitle}</p>
+            <p className="mt-0.5 hidden text-sm text-slate-600 sm:block">{story.tagline}</p>
+            <p className="mt-0.5 hidden text-xs text-slate-500 lg:block">{eraData.subtitle}</p>
             {score.correct > 0 && (
-              <p className="mt-2 hidden items-center gap-1 rounded-full bg-black/45 px-2.5 py-1 text-[11px] font-medium text-white/85 backdrop-blur-sm lg:inline-flex">
+              <p className="mt-2 hidden items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-medium text-amber-800 lg:inline-flex">
                 <MaterialIcon name="emoji_events" className="text-sm text-amber-300" />
                 Thử thách {score.correct}/{score.total}
               </p>
@@ -332,12 +322,12 @@ export function TimelineExplorerView({
           </header>
 
           {/* Ảnh tư liệu — hiển thị trọn vẹn */}
-          <div className="min-h-0 min-w-0 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:pt-14">
+          <div className="relative min-h-[280px] min-w-0 rounded-[28px] bg-white/25 sm:min-h-[340px] lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:min-h-0">
             <PhotoStage
               visual={visual}
               visualKey={visualKey}
               durationMs={durationMs || 12000}
-              filter={story.photoFilter}
+              filter="none"
               dim={isQuiz}
               onOpen={openPhoto}
               tap={isDesktop ? undefined : { onPrev: goPrev, onNext: goNext, onHold: setHold }}
@@ -346,7 +336,7 @@ export function TimelineExplorerView({
 
           {/* Thẻ kể chuyện */}
           <div
-            className="tp-panel tp-scroll min-h-0 max-h-[58vh] overflow-y-auto transition-opacity duration-500 lg:col-start-1 lg:row-start-2 lg:max-h-full lg:self-end"
+            className="tp-panel tp-scroll min-h-0 max-h-[58vh] overflow-y-auto transition-opacity duration-500 lg:col-start-1 lg:row-start-2 lg:max-h-full lg:self-start"
             onMouseEnter={() => setHover(true)}
             onMouseLeave={() => setHover(false)}
           >
@@ -355,27 +345,22 @@ export function TimelineExplorerView({
               index={index}
               durationMs={durationMs}
               paused={paused}
-              playing={playing}
-              narration={{ supported: narration.supported, active: narrate, onToggle: toggleNarration }}
               quizAnswer={answers[era]}
               score={score}
               nextChapterLabel={nextEra ? eraTimelineLabel(nextEra) : null}
               onJump={jump}
               onPrev={goPrev}
               onNext={goNext}
-              onTogglePlay={() => setPlaying((p) => !p)}
               onSegmentEnd={onSegmentEnd}
               onAnswer={answer}
               onRetry={retry}
               onNextChapter={() => nextEra && requestEra(nextEra)}
               onRestart={() => requestEra(ERA_VALUES[0])}
               onOpen3D={onSwitchTo3D}
-              onHoverChange={() => undefined}
               onOpenPhoto={visual.kind === 'photo' ? () => openPhoto(visual) : undefined}
               onOpenXuaNay={
                 onOpenXuaNay && moment
                   ? (spot) => {
-                      stopNarration()
                       onOpenXuaNay(spot, moment.id)
                     }
                   : undefined
@@ -386,7 +371,7 @@ export function TimelineExplorerView({
           {/* Số liệu + sơ đồ (màn hình rất rộng) */}
           {isWide && (
             <aside
-              className="tp-panel tp-scroll min-h-0 overflow-y-auto pt-14 transition-opacity duration-500 xl:col-start-3 xl:row-span-2 xl:row-start-1"
+              className="tp-panel tp-scroll min-h-0 overflow-y-auto transition-opacity duration-500 xl:col-start-3 xl:row-span-2 xl:row-start-1"
               onMouseEnter={() => setHover(true)}
               onMouseLeave={() => setHover(false)}
             >
@@ -395,44 +380,20 @@ export function TimelineExplorerView({
           )}
         </div>
 
-        {/* Nút công cụ */}
-        <div className="absolute right-0 top-0 z-30 flex flex-nowrap items-center gap-2 p-3 sm:p-4">
-          {!isWide && (
-            <button type="button" onClick={() => setInsightsOpen(true)} className={TOOL_BTN} title="Số liệu & bản đồ">
-              <MaterialIcon name="insights" className="text-base" />
-              <span className="hidden sm:inline">Số liệu</span>
-            </button>
-          )}
-          {onSwitchTo3D && (
-            <button type="button" onClick={onSwitchTo3D} className={TOOL_BTN} title="Xem mô hình 3D địa đạo">
-              <MaterialIcon name="view_in_ar" className="text-base" />
-              <span className="hidden sm:inline">3D</span>
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={() => setPanelsVisible((v) => !v)}
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/20 bg-black/55 text-white/85 backdrop-blur-sm transition-colors hover:bg-black/75"
-            title={panelsVisible ? 'Ẩn chữ, chỉ xem ảnh' : 'Hiện nội dung'}
-          >
-            <MaterialIcon name={panelsVisible ? 'visibility_off' : 'visibility'} className="text-lg" />
-          </button>
-        </div>
-
         {/* Bảng số liệu (màn hình nhỏ hơn 1280px) */}
         {insightsOpen && !isWide && (
           <div className="absolute inset-0 z-40 flex flex-col justify-end bg-black/60 backdrop-blur-sm lg:items-end lg:justify-stretch" onClick={() => setInsightsOpen(false)}>
             <div
-              className="tp-scroll max-h-[85%] overflow-y-auto rounded-t-3xl border-t border-white/10 bg-neutral-950/95 p-4 pb-6 lg:h-full lg:max-h-none lg:w-[340px] lg:rounded-none lg:border-l lg:border-t-0"
+              className="tp-scroll max-h-[85%] overflow-y-auto rounded-t-3xl border-t border-blue-100 bg-white p-4 pb-6 lg:h-full lg:max-h-none lg:w-[340px] lg:rounded-none lg:border-l lg:border-t-0"
               style={{ animation: 'tp-enter 300ms ease-out both' }}
               onClick={(e) => e.stopPropagation()}
             >
               <div className="mb-3 flex items-center justify-between">
-                <p className="text-sm font-semibold text-white">{story.chapter}</p>
+                <p className="text-sm font-semibold text-blue-900">{story.chapter}</p>
                 <button
                   type="button"
                   onClick={() => setInsightsOpen(false)}
-                  className="flex h-10 w-10 items-center justify-center rounded-full text-white/70 hover:bg-white/10"
+                  className="flex h-10 w-10 items-center justify-center rounded-full text-slate-600 hover:bg-blue-50"
                   aria-label="Đóng"
                 >
                   <MaterialIcon name="close" className="text-xl" />
@@ -457,7 +418,7 @@ export function TimelineExplorerView({
 
       <ChapterRail current={era} onSelect={requestEra} isLocked={isLocked} isSolved={isSolved} />
 
-      {lightbox && <PhotoLightbox photo={lightbox} filter={story.photoFilter} onClose={() => setLightbox(null)} />}
+      {lightbox && <PhotoLightbox photo={lightbox} filter="none" onClose={() => setLightbox(null)} />}
     </div>
   )
 }

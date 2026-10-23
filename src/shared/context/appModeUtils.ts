@@ -2,7 +2,7 @@
 import type { AppMode } from './modeContext'
 
 export const ONLINE_ROUTES = ['/explore', '/tour/360', '/chat', '/time-portal'] as const
-export const OFFLINE_ROUTES = ['/scan', '/quests', '/secret', '/photo-frame', '/share'] as const
+export const OFFLINE_ROUTES = ['/scan', '/quests', '/photo-frame', '/share'] as const
 
 export function isOnlinePriorityRoute(pathname: string): boolean {
   return ONLINE_ROUTES.some((p) => pathname === p || pathname.startsWith(`${p}/`))

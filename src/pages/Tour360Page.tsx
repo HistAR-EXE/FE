@@ -49,7 +49,7 @@ export function Tour360Page() {
             activeBorder="left"
             hideSideNav={immersive}
             hideMobileChrome={immersive}
-            mobileBackTo={locationId ? `/explore/${locationId}` : '/explore'}
+            mobileBackTo={'/explore'}
             mobileTitle="Tour 360°"
             className={immersive ? 'tour360-layout tour360-layout--immersive' : 'tour360-layout'}
         >
@@ -91,7 +91,7 @@ export function Tour360Page() {
                         immersive={immersive}
                         onSelectPanorama={() => {}}
                         onInfoHotspot={() => {}}
-                        onOpenMap={() => navigate(`/explore/${activeLocationId}`)}
+                        onOpenMap={() => navigate('/explore')}
                         onToggleImmersive={handleToggleImmersive}
                         menuOpen={menuOpen}
                         onToggleMenu={() => setMenuOpen((v) => !v)}

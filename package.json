@@ -27,7 +27,14 @@
     "test:ar": "node --test scripts/ar-experience.test.mjs scripts/ar-viewer-math.test.mjs scripts/ar-runtime.test.mjs && playwright test -c playwright.ar.config.ts",
     "test:all": "powershell -ExecutionPolicy Bypass -File ../scripts/run-all-tests.ps1",
     "test:history": "node --experimental-strip-types --test scripts/history-film.test.mjs scripts/verify-film-assets.test.mjs",
-    "test:history:browser": "node scripts/history-smoke.mjs"
+    "test:history:browser": "node scripts/history-smoke.mjs",
+    "test:portal": "node --experimental-strip-types --test scripts/portal-audio.test.mjs scripts/portal-defaults.test.mjs",
+    "test:portal:browser": "node scripts/portal-smoke.mjs",
+    "test:xua-nay:browser": "node scripts/xua-nay-smoke.mjs",
+    "test:landing:browser": "node scripts/landing-smoke.mjs && node scripts/landing-edge-cases.mjs",
+    "test:public-pages:browser": "node scripts/public-pages-smoke.mjs",
+    "test:quest-navigation:browser": "node scripts/quest-navigation-smoke.mjs",
+    "test:about-products:browser": "node scripts/about-products-smoke.mjs"
   },
   "dependencies": {
     "@photo-sphere-viewer/core": "^5.14.1",

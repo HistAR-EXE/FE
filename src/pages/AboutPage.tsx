@@ -1,270 +1,494 @@
 // src/pages/AboutPage.tsx
-import React, { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
-import { resolveMediaUrl } from '../shared/config/env'
-import { PublicHeader } from '../components/layout/PublicHeader'
-import { PublicFooter } from '../components/layout/PublicFooter'
+import { ABOUT_PRODUCT_FEATURES as CAPABILITIES } from '../features/public-site/about-product-data'
+import { CuChiIntroVideo } from '../features/public-site/CuChiIntroVideo'
+import { PublicPageShell } from '../features/public-site/PublicPageShell'
+import '../features/public-site/about.css'
+import '../features/public-site/about-refresh.css'
 
-const EXECUTIVE_TEAM = [
-    { name: 'Nguyễn Thái Quân', title: 'Chief Executive Officer (CEO)', role: 'Project Manager', image: '/brand/team/quan-ceo.jpg' },
-    { name: 'Đặng Thuận Phát', title: 'Chief Technology Officer (CTO)', role: 'Full-stack Developer', image: '/brand/team/phat-cto.jpg' },
-    { name: 'Trần Ngọc Thảo My', title: 'Chief Financial Officer (CFO)', role: 'Finance Analyst', image: '/brand/team/my-cfo.jpg' },
-    { name: 'Nguyễn Quốc Huy', title: 'Chief Operating Officer (COO)', role: 'Full-stack Developer', image: '/brand/team/huy-coo.jpg' },
-    { name: 'Nguyễn Kỳ Vỹ', title: 'Chief Product Officer (CPO)', role: 'UI/UX & Graphic Designer', image: '/brand/team/vy-cpo.jpg' },
-    { name: 'Lê Vĩnh Hảo', title: 'Chief Marketing Officer (CMO)', role: 'Marketing Manager', image: '/brand/team/hao-cmo.jpg' },
+const TEAM = [
+    {
+        name: 'Nguyễn Thái Quân',
+        title: 'Chief Executive Officer (CEO)',
+        short: 'CEO',
+        role: 'Project Manager',
+        image: '/brand/team/quan-ceo.jpg',
+    },
+    {
+        name: 'Đặng Thuận Phát',
+        title: 'Chief Technology Officer (CTO)',
+        short: 'CTO',
+        role: 'Full-stack Developer',
+        image: '/brand/team/phat-cto.jpg',
+    },
+    {
+        name: 'Trần Ngọc Thảo My',
+        title: 'Chief Financial Officer (CFO)',
+        short: 'CFO',
+        role: 'Finance Analyst',
+        image: '/brand/team/my-cfo.jpg',
+    },
+    {
+        name: 'Nguyễn Quốc Huy',
+        title: 'Chief Operating Officer (COO)',
+        short: 'COO',
+        role: 'Full-stack Developer',
+        image: '/brand/team/huy-coo.jpg',
+    },
+    {
+        name: 'Nguyễn Kỳ Vỹ',
+        title: 'Chief Product Officer (CPO)',
+        short: 'CPO',
+        role: 'UI/UX & Graphic Designer',
+        image: '/brand/team/vy-cpo.jpg',
+    },
+    {
+        name: 'Lê Vĩnh Hảo',
+        title: 'Chief Marketing Officer (CMO)',
+        short: 'CMO',
+        role: 'Marketing Manager',
+        image: '/brand/team/hao-cmo.jpg',
+    },
 ]
 
-const ECOSYSTEM = [
-    { title: 'PHÒNG TRẢI NGHIỆM THỰC TẾ ẢO (WEBAR 3D)', desc: 'Trải nghiệm không gian di tích được phục dựng bằng công nghệ Parallax 2.5D và WebAR 3D. Hệ thống định vị GPS tự động kích hoạt mô hình tại không gian thực, mang đến cảm giác nhập vai chân thực nhất cho học sinh và du khách mà không cần cài đặt ứng dụng phức tạp.' },
-    { title: 'TRỢ LÝ AI CHRONO XUYÊN KHÔNG', desc: 'Được huấn luyện trên kiến trúc RAG với kho tàng sử liệu chính thống, Chrono có khả năng giải đáp mọi thắc mắc lịch sử, cung cấp trích dẫn nguồn tài liệu chuẩn xác, loại bỏ hoàn toàn vấn nạn ảo giác AI (Hallucination).' },
-    { title: 'HỆ THỐNG GAMIFICATION & O2O', desc: 'Biến chuyến tham quan thành cuộc truy tìm kho báu thực tế. Thu thập thẻ cổ vật (Pokédex), giải mã mật lệnh lịch sử tại điểm đến và nâng cấp thẻ định danh Digital Passport cá nhân.' },
-    { title: 'BẢNG ĐIỀU KHIỂN QUẢN TRỊ (B2B DASHBOARD)', desc: 'Giải pháp toàn diện dành cho Ban giám hiệu nhà trường và Ban quản lý di tích. Hệ thống cung cấp bản đồ nhiệt (Heatmap) về hành vi tương tác, hỗ trợ giao bài tập và chấm điểm tự động.' },
+const STAGES = [
+    {
+        title: 'Bắt đầu từ câu hỏi',
+        text: 'Làm thế nào để một câu chuyện lịch sử trở nên gần gũi hơn với người trẻ? Từ đó, HistAR xác định hướng đi kết hợp giáo dục, di sản và công nghệ.',
+    },
+    {
+        title: 'Biến ý tưởng thành trải nghiệm',
+        text: 'Xây dựng TimeLens, kết nối giao diện khám phá, nội dung tương tác, mô hình 3D và trợ lý AI trong một hành trình trên nền tảng web.',
+    },
+    {
+        title: 'Tập trung vào Củ Chi',
+        text: 'Lấy Địa đạo Củ Chi làm điểm đến pilot để hoàn thiện cách kể chuyện, rà soát nội dung và tiếp tục cải tiến trải nghiệm.',
+    },
 ]
 
-export const AboutPage: React.FC = () => {
-    // Đã thay đổi thành -1 để đóng tab Hệ sinh thái mặc định khi load trang
-    const [activeEcosystem, setActiveEcosystem] = useState<number>(-1)
-
-    // Đảm bảo trang luôn hiển thị từ trên cùng khi mới truy cập
-    useEffect(() => {
-        window.scrollTo(0, 0)
-    }, [])
+export const AboutPage = () => {
+    const [activeCapability, setActiveCapability] = useState(0)
+    const capability = CAPABILITIES[activeCapability]
 
     return (
-        <div className="bg-[#FAF8F3] text-[#1E293B] min-h-screen flex flex-col font-sans select-none overflow-x-hidden selection:bg-[#0275FB] selection:text-white">
-
-            {/* SỬ DỤNG COMPONENT HEADER CHUẨN */}
-            <PublicHeader />
-
-            {/* SECTION 1: HERO GIỚI THIỆU */}
-            <section className="relative pt-40 pb-20 overflow-hidden min-h-[60vh] flex items-center justify-center">
-                <img
-                    src={resolveMediaUrl('/media/about-hero-bg.png')}
-                    alt="HistAR Hero Background"
-                    className="absolute inset-0 w-full h-full object-cover object-center opacity-40 mix-blend-multiply"
-                    onError={(e) => { e.currentTarget.style.display = 'none' }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-b from-[#FFF2C3]/80 via-[#FAF8F3]/90 to-[#FAF8F3] backdrop-blur-[2px]"></div>
-                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#0275FB]/15 rounded-full blur-[120px] pointer-events-none"></div>
-                <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-[#FDC908]/15 rounded-full blur-[120px] pointer-events-none"></div>
-
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-8 relative z-10 w-full mt-8">
-                    <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight leading-tight whitespace-nowrap text-transparent bg-clip-text bg-gradient-to-r from-[#0275FB] via-[#1d4ed8] to-[#FDC908] drop-shadow-sm">
-                        Tự Hào - Trách Nhiệm - Sẵn Sàng Bứt Phá
-                    </h1>
-
-                    <div className="mt-12 flex flex-col items-center justify-center space-y-4 w-full">
-                        <div className="w-full max-w-7xl border-t-2 border-[#0275FB]/20 pt-8">
-                            <ul className="flex flex-row justify-center items-center gap-3 md:gap-6 lg:gap-10 text-[11px] sm:text-xs md:text-sm lg:text-base font-black text-[#1E293B] w-full px-2">
-                                <li>
-                                    <a href="#mission" className="hover:text-[#0275FB] transition-colors flex items-center gap-1.5 lg:gap-3 whitespace-nowrap">
-                                        <span className="w-2 h-2 lg:w-3.5 lg:h-3.5 rounded-full bg-[#0275FB] shadow-[0_0_10px_#0275FB] animate-pulse shrink-0"></span>
-                                        <span className="text-[#0275FB]">01</span> Tầm nhìn - Sứ mệnh - Giá trị cốt lõi
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="#timeline" className="hover:text-[#0275FB] transition-colors flex items-center gap-1.5 lg:gap-3 whitespace-nowrap">
-                                        <span className="w-2 h-2 lg:w-3.5 lg:h-3.5 rounded-full bg-[#FDC908] shadow-[0_0_10px_#FDC908] animate-pulse shrink-0"></span>
-                                        <span className="text-[#0275FB]">02</span> Hành trình phát triển
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="#team" className="hover:text-[#0275FB] transition-colors flex items-center gap-1.5 lg:gap-3 whitespace-nowrap">
-                                        <span className="w-2 h-2 lg:w-3.5 lg:h-3.5 rounded-full bg-[#0275FB] shadow-[0_0_10px_#0275FB] animate-pulse shrink-0"></span>
-                                        <span className="text-[#0275FB]">03</span> Đội ngũ sáng lập
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="#ecosystem" className="hover:text-[#0275FB] transition-colors flex items-center gap-1.5 lg:gap-3 whitespace-nowrap">
-                                        <span className="w-2 h-2 lg:w-3.5 lg:h-3.5 rounded-full bg-[#FDC908] shadow-[0_0_10px_#FDC908] animate-pulse shrink-0"></span>
-                                        <span className="text-[#0275FB]">04</span> Hệ sinh thái Timelens
-                                    </a>
-                                </li>
-                            </ul>
+        <PublicPageShell title="Về HistAR Team — TimeLens">
+            <div className="about-page">
+            {/* =================================================================== */}
+            {/* HERO: GIỚI THIỆU HISTAR TEAM & BỨC TƯỜNG 6 NHÀ SÁNG LẬP              */}
+            {/* =================================================================== */}
+            <section className="about-hero pub-hero" aria-labelledby="about-title">
+                <div className="tl-container about-hero-grid">
+                    <div className="about-hero-copy">
+                        <p className="tl-eyebrow">
+                            <span className="tl-live-dot" /> HistAR Team · Những người đứng sau TimeLens
+                        </p>
+                        <h1 id="about-title">
+                            Chúng tôi kể lại
+                            <br />
+                            lịch sử bằng
+                            <br />
+                            <span>những kết nối mới.</span>
+                        </h1>
+                        <p className="pub-lead">
+                            HistAR Team kết hợp phát triển phần mềm, thiết kế và nội dung để xây dựng TimeLens — nền tảng khám phá di sản qua không gian 360°, mô hình 3D, câu chuyện lịch sử và tương tác AI.
+                        </p>
+                        <div className="about-hero-actions">
+                            <a href="#team" className="tl-button">Gặp gỡ HistAR Team <MaterialIcon name="south_east" /></a>
+                            <Link to="/explore" className="tl-button-secondary">Khám phá sản phẩm <MaterialIcon name="north_east" /></Link>
                         </div>
+                        <div className="about-signature">
+                            <img className="about-signature-logo" src="/brand/histar-about-v1.png" alt="HistAR" width="1920" height="1920" />
+                            <p>
+                                <strong>HistAR là đội ngũ.</strong>
+                                <br />
+                                TimeLens là sản phẩm chúng tôi đang xây dựng.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div
+                        className="about-collage"
+                        aria-label="Sáu thành viên sáng lập HistAR Team"
+                    >
+                        <div className="about-collage-grid" aria-hidden="true" />
+                        <div className="about-collage-orbit" aria-hidden="true" />
+                        <span className="about-collage-label">THE PEOPLE / HISTAR</span>
+                        {TEAM.map((member, index) => (
+                            <figure
+                                className={`about-portrait about-portrait-${index + 1}`}
+                                key={member.short}
+                            >
+                                <img
+                                    src={`/brand/team/des-v1/${member.short.toLowerCase()}.webp`}
+                                    alt={`Poster ${member.name} — ${member.short}`}
+                                    width="1200"
+                                    height="1200"
+                                    fetchPriority={index < 2 ? 'high' : 'auto'}
+                                />
+                                <figcaption>
+                                    <span>{String(index + 1).padStart(2, '0')}</span>
+                                    {member.short}
+                                </figcaption>
+                            </figure>
+                        ))}
+                        <div className="about-collage-stamp">
+                            <span>06</span>
+                            <p>
+                                con người
+                                <br />
+                                cùng một hướng đi
+                            </p>
+                        </div>
+                        <span className="about-collage-bottom">
+              HISTORY MEETS POSSIBILITY <span aria-hidden="true">↗</span>
+            </span>
                     </div>
                 </div>
             </section>
 
-            {/* SECTION 2: TẦM NHÌN - SỨ MỆNH - GIÁ TRỊ CỐT LÕI */}
-            <section id="mission" className="py-20 bg-white scroll-mt-24">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
+            {/* =================================================================== */}
+            {/* 01 / NIỀM TIN: TẦM NHÌN, SỨ MỆNH & GIÁ TRỊ CỐT LÕI                  */}
+            {/* =================================================================== */}
+            <nav className="about-chapter-nav" aria-label="Khám phá về HistAR">
+                <div className="tl-container">{[['01','Tầm nhìn & giá trị','mission'],['02','Hành trình phát triển','journey'],['03','Đội ngũ sáng lập','team'],['04','Hệ sinh thái TimeLens','ecosystem']].map(([number,label,id]) => <a href={`#${id}`} key={id}><span>{number}</span>{label}<MaterialIcon name="arrow_downward" /></a>)}</div>
+            </nav>
 
-                    <div className="mb-10 text-center lg:text-left">
-                        <span className="text-sm sm:text-base font-black text-[#d97706] tracking-widest uppercase inline-block bg-[#FFF2C3] py-2 px-6 rounded-full border border-[#FDC908] shadow-md">
-                            01 / Tầm Nhìn - Sứ Mệnh - Giá Trị Cốt Lõi
-                        </span>
-                    </div>
-
-                    <div className="flex flex-col lg:flex-row items-center gap-16">
-                        <div className="lg:w-1/2 space-y-8">
-                            <h2 className="text-4xl sm:text-5xl font-black text-[#1E293B] leading-tight">
-                                Xóa bỏ khoảng cách giữa <span className="bg-[#0275FB] text-white px-2 rounded-lg leading-relaxed inline-block mt-1 transform -rotate-1 shadow-md">lịch sử khô khan</span> và thế hệ trẻ.
-                            </h2>
-
-                            <div className="space-y-6">
-                                <div>
-                                    <h3 className="text-xl font-bold text-[#D97706] mb-2 flex items-center gap-2"><MaterialIcon name="visibility" /> Tầm Nhìn</h3>
-                                    <p className="text-base font-medium text-[#475569] leading-relaxed">
-                                        Trở thành nền tảng EdTech tiên phong tại Việt Nam và khu vực trong việc số hóa di sản văn hóa, ứng dụng công nghệ thực tế ảo và AI để định hình lại phương pháp giáo dục lịch sử.
-                                    </p>
-                                </div>
-                                <div>
-                                    <h3 className="text-xl font-bold text-[#0275FB] mb-2 flex items-center gap-2"><MaterialIcon name="rocket_launch" /> Sứ Mệnh</h3>
-                                    <p className="text-base font-medium text-[#475569] leading-relaxed">
-                                        Với sức mạnh của Trí tuệ nhân tạo (AI RAG) kết hợp cùng công nghệ Đồ họa Không gian (WebAR 3D), HistAR Team mang đến một trải nghiệm "xuyên không" hoàn toàn mới, biến mỗi di tích thành một bảo tàng sống động, dễ tiếp cận cho mọi lứa tuổi.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="lg:w-1/2 relative mt-10 lg:mt-0">
-                            <div className="absolute inset-0 bg-[#FDC908]/20 rounded-3xl transform rotate-3 scale-105 transition-transform duration-500 hover:rotate-6"></div>
-                            {/* Gọi trực tiếp đường dẫn tĩnh, bỏ resolveMediaUrl */}
-                            <img
-                                src="/huy/vision-edtech-ar.png"
-                                alt="Học sinh tương tác với Di sản AR"
-                                className="relative z-10 rounded-3xl shadow-2xl object-cover w-full h-[400px] sm:h-[450px] hover:-translate-y-2 transition-transform duration-500"
-                                onError={(e) => {
-                                    // Thay vì ẩn đi, tạm thời đổi sang ảnh placeholder để dễ debug
-                                    e.currentTarget.src = 'https://images.unsplash.com/photo-1577896851231-70ef18881754?q=80&w=1000&auto=format&fit=crop'
-                                }}
-                            />
-                            <div className="absolute -bottom-6 -left-4 sm:-left-6 bg-white/95 backdrop-blur-sm p-4 sm:p-5 rounded-2xl shadow-2xl z-20 border-2 border-[#0275FB]/20 flex items-center gap-4 hover:scale-105 transition-transform cursor-pointer">
-                                <div className="w-12 h-12 bg-gradient-to-br from-[#0275FB] to-[#1d4ed8] rounded-xl flex items-center justify-center text-white shadow-md">
-                                    <MaterialIcon name="school" className="text-2xl"/>
-                                </div>
-                                <div>
-                                    <p className="text-[11px] sm:text-xs font-bold text-[#64748B] uppercase tracking-wider mb-0.5">Mô hình giáo dục</p>
-                                    <p className="text-sm sm:text-base font-black text-[#1E293B]">EdTech <span className="text-[#FDC908]">x</span> Heritage</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="pt-12 mt-4 border-t border-[#0275FB]/15">
-                        <div className="mb-8">
-                            <h3 className="text-xl font-bold text-emerald-600 flex items-center gap-2">
-                                <MaterialIcon name="diamond" /> Giá Trị Cốt Lõi
-                            </h3>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-                            <div className="space-y-4 border-t-4 border-[#0275FB] pt-6">
-                                <MaterialIcon name="biotech" className="text-4xl text-[#0275FB]" />
-                                <h3 className="text-xl font-black text-[#1E293B] uppercase">Công Nghệ Tiên Phong</h3>
-                                <p className="text-sm font-medium text-[#475569] leading-relaxed">Ứng dụng AI RAG đột phá để giải quyết ảo giác mô hình ngôn ngữ lớn, kết hợp WebAR định vị GPS tạo ra tương tác trực quan ngay tại thực địa.</p>
-                            </div>
-                            <div className="space-y-4 border-t-4 border-[#FDC908] pt-6">
-                                <MaterialIcon name="verified_user" className="text-4xl text-[#D97706]" />
-                                <h3 className="text-xl font-black text-[#1E293B] uppercase">Tôn Trọng Di Sản</h3>
-                                <p className="text-sm font-medium text-[#475569] leading-relaxed">Mọi dữ liệu phục dựng không gian và nội dung truyền tải đều được số hóa chặt chẽ, đề cao tính chính xác và tôn trọng cội nguồn văn hóa.</p>
-                            </div>
-                            <div className="space-y-4 border-t-4 border-emerald-500 pt-6">
-                                <MaterialIcon name="diversity_3" className="text-4xl text-emerald-600" />
-                                <h3 className="text-xl font-black text-[#1E293B] uppercase">Gamification Tích Cực</h3>
-                                <p className="text-sm font-medium text-[#475569] leading-relaxed">Biến hành trình khám phá thành trò chơi giải đố, khuyến khích giới trẻ chủ động vận động, tương tác và học hỏi liên tục.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* SECTION 3: HÀNH TRÌNH PHÁT TRIỂN */}
-            <section id="timeline" className="py-24 bg-[#0275FB] text-white scroll-mt-24">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
-                    <div className="mb-10 text-center lg:text-left">
-                        <span className="text-sm sm:text-base font-black text-[#d97706] tracking-widest uppercase inline-block bg-[#FFF2C3] py-2 px-6 rounded-full border border-[#FDC908] shadow-md">
-                            02 / Hành trình phát triển
-                        </span>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-                        <div className="space-y-4">
-                            <h3 className="text-5xl font-black text-white">04/2026</h3>
-                            <p className="text-sm font-medium text-blue-100 leading-relaxed pr-6">Nhen nhóm ý tưởng số hóa văn hóa tại Đại học FPT. Bắt đầu nghiên cứu giải pháp và thiết kế hệ thống Core RAG AI.</p>
-                        </div>
-                        <div className="space-y-4">
-                            <h3 className="text-5xl font-black text-white">07/2026</h3>
-                            <p className="text-sm font-medium text-blue-100 leading-relaxed pr-6">Chính thức bắt tay xây dựng mã nguồn (Front-end & Back-end). Áp dụng mô hình thiết kế WebAR và Parallax 2.5D.</p>
-                        </div>
-                        <div className="space-y-4">
-                            <h3 className="text-5xl font-black text-white">09/2026</h3>
-                            <p className="text-sm font-medium text-blue-100 leading-relaxed pr-6">Triển khai & nghiên cứu phát triển dự án. Ra mắt bản Pilot thử nghiệm thực tế với điểm đến hạt nhân là Địa đạo Củ Chi.</p>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* SECTION 4: ĐỘI NGŨ SÁNG LẬP */}
-            <section id="team" className="py-24 bg-white scroll-mt-24">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
-                    <div className="text-center max-w-3xl mx-auto space-y-4">
-                        <span className="text-sm sm:text-base font-black text-[#d97706] tracking-widest uppercase inline-block bg-[#FFF2C3] py-2 px-6 rounded-full border border-[#FDC908] shadow-md">
-                            03 / ĐỘI NGŨ SÁNG LẬP
-                        </span>
-                        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#1E293B] tracking-tight whitespace-nowrap">
-                            Ban Lãnh Đạo HistAR Team
+            <section
+                id="mission"
+                className="pub-section about-mission pub-reveal"
+                aria-labelledby="mission-title"
+            >
+                <div className="tl-container">
+                    <div className="about-mission-heading">
+                        <p className="tl-eyebrow">
+                            <span className="tl-live-dot" /> 01 / Điều chúng tôi tin
+                        </p>
+                        <h2 id="mission-title" className="tl-section-title">
+                            Gìn giữ giá trị di sản.
+                            <br />
+                            <span>Khơi mở cảm hứng hôm nay.</span>
                         </h2>
                     </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 lg:gap-5">
-                        {EXECUTIVE_TEAM.map((exec, idx) => (
-                            <div key={idx} className="group cursor-pointer flex flex-col items-center text-center w-full">
-                                <div className="bg-[#FAF8F3] rounded-2xl overflow-hidden aspect-[3/4] w-full relative mb-3 border-2 border-transparent group-hover:border-[#0275FB]/30 transition-all shadow-sm group-hover:shadow-md">
-                                    <div className="absolute inset-0 bg-[#0275FB]/5 group-hover:bg-transparent transition-colors z-10"></div>
-                                    <img src={exec.image} alt={exec.name} className="w-full h-full object-cover object-top group-hover:scale-110 transition-transform duration-700" onError={(e) => { e.currentTarget.src = 'https://ui-avatars.com/api/?name=' + exec.name + '&background=0275FB&color=fff&size=512' }} />
-                                </div>
+                    <div className="about-mission-grid">
+                        <figure className="about-vision-image">
+                            <img
+                                src="/huy/vision-edtech-ar.png"
+                                alt="Minh họa ý tưởng kết nối giáo dục, di sản và công nghệ AR"
+                                loading="lazy"
+                                width="640"
+                                height="520"
+                            />
+                        </figure>
 
-                                <h3 className="text-xs sm:text-sm font-black text-[#1E293B] group-hover:text-[#0275FB] transition-colors leading-tight whitespace-nowrap">
-                                    {exec.name}
-                                </h3>
-
-                                <p className="text-[8.5px] lg:text-[9px] xl:text-[10px] font-black text-[#D97706] mt-1.5 uppercase tracking-tighter whitespace-nowrap">
-                                    {exec.title}
+                        <div className="about-mission-copy">
+                            <article>
+                                <span>01.1 / Tầm nhìn</span>
+                                <h3>Đưa di sản đến gần hơn.</h3>
+                                <p>
+                                    Hướng tới một nền tảng giáo dục di sản dễ tiếp cận, nơi công
+                                    nghệ giúp người học tìm thấy sự gắn kết với lịch sử và văn hóa
+                                    Việt Nam.
                                 </p>
-
-                                <p className="text-[8.5px] lg:text-[9px] xl:text-[10px] font-bold text-[#64748B] mt-0.5 uppercase tracking-tighter whitespace-nowrap">
-                                    {exec.role}
+                            </article>
+                            <article>
+                                <span>01.2 / Sứ mệnh</span>
+                                <h3>Mở thêm cách để hiểu lịch sử.</h3>
+                                <p>
+                                    HistAR xây dựng TimeLens để kết nối tư liệu, hình ảnh và trải
+                                    nghiệm tương tác; khơi gợi sự tò mò trước, rồi khuyến khích
+                                    mỗi người tự tìm hiểu sâu hơn.
                                 </p>
-                            </div>
+                            </article>
+                        </div>
+                    </div>
+
+                    <div className="about-philosophy">
+                        <div className="about-philosophy-brand"><img src="/brand/histar-about-v1.png" alt="HistAR Team" width="1920" height="1920" loading="lazy" /><span>DI SẢN · GIÁO DỤC · CÔNG NGHỆ</span></div>
+                        <div><p className="tl-eyebrow">TRIẾT LÝ SÁNG LẬP</p><h3>Công nghệ mở lối.<br /><em>Sự thấu hiểu tạo giá trị.</em></h3><p>TimeLens không chỉ trình bày thông tin lịch sử. Chúng tôi muốn biến việc tìm hiểu di sản thành một trải nghiệm có thể quan sát, đặt câu hỏi và chủ động khám phá — từ lớp học đến điểm tham quan.</p><p>Mỗi lựa chọn về nội dung, thiết kế và kỹ thuật cần giúp người dùng hiểu câu chuyện rõ hơn, đồng thời phù hợp với điều kiện sử dụng và vận hành thực tế.</p></div>
+                    </div>
+                    <div className="about-values-heading"><p className="tl-eyebrow">GIÁ TRỊ CỐT LÕI</p><h3>Những nguyên tắc dẫn dắt cách chúng tôi xây dựng.</h3></div>
+                    <div className="about-values">
+                        {[
+                            {
+                                icon: 'auto_stories',
+                                title: 'Tôn trọng di sản',
+                                text: 'Đặt bối cảnh và tư liệu ở trung tâm. Phân biệt rõ nội dung minh họa với thông tin lịch sử.',
+                            },
+                            {
+                                icon: 'lightbulb',
+                                title: 'Công nghệ có mục đích',
+                                text: 'Chọn công nghệ vì giá trị trải nghiệm: dễ tiếp cận, có hướng dẫn và giúp câu chuyện trở nên rõ ràng.',
+                            },
+                            {
+                                icon: 'explore',
+                                title: 'Tò mò & chủ động',
+                                text: 'Khuyến khích đặt câu hỏi, khám phá và học qua tương tác thay vì chỉ tiếp nhận một chiều.',
+                            },
+                            {
+                                icon: 'verified',
+                                title: 'Minh bạch & trách nhiệm',
+                                text: 'Nói rõ phạm vi tính năng, nguồn tham khảo và giới hạn của AI. Tránh để hình ảnh tái hiện bị hiểu nhầm là tư liệu gốc.',
+                            },
+                            {
+                                icon: 'accessibility_new',
+                                title: 'Lấy người dùng làm trung tâm',
+                                text: 'Ưu tiên nội dung dễ hiểu, chữ dễ đọc và thao tác có hướng dẫn. Cải tiến trải nghiệm theo thiết bị và bối cảnh sử dụng.',
+                            },
+                            {
+                                icon: 'handshake',
+                                title: 'Kết nối & cùng phát triển',
+                                text: 'Kết hợp góc nhìn của người học, giáo viên và đơn vị quản lý di tích để nội dung số gắn với nhu cầu thực tế.',
+                            },
+                        ].map((value) => (
+                            <article key={value.title}>
+                                <MaterialIcon name={value.icon} />
+                                <h3>{value.title}</h3>
+                                <p>{value.text}</p>
+                            </article>
                         ))}
                     </div>
                 </div>
             </section>
 
-            {/* SECTION 5: HỆ SINH THÁI TIMELENS */}
-            <section id="ecosystem" className="py-24 bg-[#FAF8F3] border-t border-[#0275FB]/15 scroll-mt-24">
-                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-                    <div className="mb-8 text-center sm:text-left">
-                        <span className="text-sm sm:text-base font-black text-[#d97706] tracking-widest uppercase inline-block bg-[#FFF2C3] py-2 px-6 rounded-full border border-[#FDC908] shadow-md">
-                            04 / HỆ SINH THÁI TIMELENS
-                        </span>
+            {/* =================================================================== */}
+            {/* 02 / HÀNH TRÌNH PHÁT TRIỂN                                          */}
+            {/* =================================================================== */}
+            <section
+                id="journey"
+                className="pub-section about-journey pub-reveal"
+                aria-labelledby="journey-title"
+            >
+                <div className="tl-container">
+                    <div className="about-section-top">
+                        <div>
+                            <p className="tl-eyebrow">
+                                <span className="tl-live-dot" /> 02 / Hành trình phát triển
+                            </p>
+                            <h2 id="journey-title" className="tl-section-title">
+                                Từ một câu hỏi
+                                <br />
+                                Đến một hướng đi
+                            </h2>
+                        </div>
+                        <p>
+                            Mỗi bước phát triển là một lần chúng tôi học cách kể chuyện tốt
+                            hơn, cùng với công nghệ phù hợp hơn.
+                        </p>
                     </div>
-                    <div className="space-y-2">
-                        {ECOSYSTEM.map((item, idx) => (
-                            <div key={idx} className="border-b-2 border-[#0275FB]/20 overflow-hidden">
+
+                    <ol className="about-stages">
+                        {STAGES.map((stage, index) => (
+                            <li key={stage.title}>
+                                <span className="about-stage-number">0{index + 1}</span>
+                                <div>
+                                    <h3>{stage.title}</h3>
+                                    <p>{stage.text}</p>
+                                </div>
+                                <MaterialIcon name={index === 2 ? 'flag' : 'east'} />
+                            </li>
+                        ))}
+                    </ol>
+                </div>
+            </section>
+
+            {/* =================================================================== */}
+            {/* 03 / ĐỘI NGŨ SÁNG LẬP HISTAR TEAM                                   */}
+            {/* =================================================================== */}
+            <section
+                id="team"
+                className="pub-section about-team pub-reveal"
+                aria-labelledby="team-title"
+            >
+                <div className="tl-container">
+                    <div className="about-section-top">
+                        <div>
+                            <p className="tl-eyebrow">
+                                <span className="tl-live-dot" /> 03 / Đội ngũ sáng lập
+                            </p>
+                            <h2 id="team-title" className="tl-section-title">
+                                Những con người
+                                <br />
+                                đằng sau lăng kính
+                            </h2>
+                        </div>
+                        <p>
+                            Từ phát triển sản phẩm đến thiết kế và vận hành, mỗi thành viên
+                            mang một góc nhìn riêng vào câu chuyện chung của HistAR.
+                        </p>
+                    </div>
+
+                    <div className="about-team-grid">
+                        {TEAM.map((member, index) => (
+                            <article className="about-member" key={member.short}>
+                                <div className="about-member-photo">
+                                    <img
+                                        src={`/brand/team/des-v1/${member.short.toLowerCase()}.webp`}
+                                        alt={`Poster ${member.name} — ${member.short}`}
+                                        loading="lazy"
+                                        width="1200"
+                                        height="1200"
+                                    />
+                                    <span className="about-member-index">0{index + 1}</span>
+                                    <span className="about-member-tag">{member.short}</span>
+                                </div>
+                                <h3>{member.name}</h3>
+                                <p className="about-member-title">{member.title}</p>
+                                <p className="about-member-role">{member.role}</p>
+                            </article>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* =================================================================== */}
+            {/* 04 / HỆ SINH THÁI SẢN PHẨM TIMELENS                                 */}
+            {/* =================================================================== */}
+            <section
+                id="ecosystem"
+                className="pub-section about-ecosystem pub-reveal"
+                aria-labelledby="ecosystem-title"
+            >
+                <div className="tl-container">
+                    <p className="tl-eyebrow">
+                        <span className="tl-live-dot" /> 04 / Sản phẩm của HistAR
+                    </p>
+                    <div className="about-section-top">
+                        <h2 id="ecosystem-title" className="tl-section-title">
+                            TimeLens
+                            <br />
+                            Nhiều cách chạm vào lịch sử
+                        </h2>
+                        <p>
+                            Một nền tảng web kết nối khám phá di sản, kể chuyện tương tác và
+                            học tập qua trải nghiệm.
+                        </p>
+                    </div>
+
+                    <div className="about-capability-layout">
+                        <div
+                            className="about-capability-selector"
+                            role="group"
+                            aria-label="Chọn trải nghiệm TimeLens"
+                        >
+                            {CAPABILITIES.map((item, index) => (
                                 <button
-                                    onClick={() => setActiveEcosystem(activeEcosystem === idx ? -1 : idx)}
-                                    className="w-full py-6 flex items-center justify-between text-left group"
+                                    key={item.label}
+                                    type="button"
+                                    aria-label={item.label}
+                                    aria-pressed={activeCapability === index}
+                                    aria-controls="about-capability-panel"
+                                    onClick={() => setActiveCapability(index)}
                                 >
-                                    <h3 className={`text-xl sm:text-2xl font-black uppercase tracking-tight transition-colors ${activeEcosystem === idx ? 'text-[#0275FB]' : 'text-[#1E293B] group-hover:text-[#0275FB]'}`}>
-                                        {item.title}
-                                    </h3>
-                                    <MaterialIcon name={activeEcosystem === idx ? "expand_less" : "expand_more"} className={`text-3xl transition-transform ${activeEcosystem === idx ? 'text-[#0275FB]' : 'text-[#64748B]'}`} />
+                                    <span className="about-capability-number">0{index + 1}</span>
+                                    <MaterialIcon name={item.icon} />
+                                    <span>{item.label}</span>
+                                    <MaterialIcon name="north_east" />
                                 </button>
-                                <div className={`transition-all duration-300 ease-in-out ${activeEcosystem === idx ? 'max-h-60 pb-8 opacity-100' : 'max-h-0 opacity-0'}`}>
-                                    <p className="text-base text-[#475569] font-medium leading-relaxed pr-8">
-                                        {item.desc}
-                                    </p>
-                                </div>
+                            ))}
+                        </div>
+
+                        <div
+                            id="about-capability-panel"
+                            className="about-capability-panel"
+                            aria-live="polite"
+                            aria-atomic="true"
+                        >
+                            <div className="about-capability-image">
+                                <img
+                                    key={capability.image}
+                                    src={capability.image}
+                                    alt={capability.alt}
+                                    loading="lazy"
+                                    width="1000"
+                                    height="1000"
+                                />
+                                <span>{capability.label}</span>
                             </div>
-                        ))}
+                            <div className="about-capability-copy">
+                                <h3>{capability.title.match(/[^.!?]+[.!?]?/g)?.map(sentence => <span className="about-product-title-line" key={sentence}>{sentence.trim()}</span>)}</h3>
+                                <p>{capability.description}</p>
+                                <ul className="about-product-highlights">{capability.highlights.map(highlight => <li key={highlight}><MaterialIcon name="check_circle" />{highlight}</li>)}</ul>
+                                <p className="about-capability-note">{capability.note}</p>
+                                <Link to={capability.href} className="about-text-link">
+                                    {capability.cta}
+                                    <MaterialIcon name="east" />
+                                </Link>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
 
-            {/* SỬ DỤNG COMPONENT FOOTER CHUẨN (KHÔNG TRUYỀN PROPS ĐỂ MỞ PAGE RIÊNG) */}
-            <PublicFooter />
-        </div>
+            {/* =================================================================== */}
+            {/* ĐIỂM ĐẾN PILOT ĐỊA ĐẠO CỦ CHI                                       */}
+            {/* =================================================================== */}
+            <section
+                className="pub-section about-pilot pub-reveal"
+                aria-labelledby="pilot-title"
+            >
+                <div className="tl-container about-pilot-grid">
+                    <figure className="about-pilot-video-frame">
+                        <CuChiIntroVideo />
+                        <span className="about-pilot-photo-tag"><MaterialIcon name="location_on" /> TP. HỒ CHÍ MINH</span>
+                        <figcaption className="sr-only">Video giới thiệu Địa đạo Củ Chi — tự phát tắt tiếng khi xuất hiện trong vùng xem.</figcaption>
+                    </figure>
+                    <div>
+                        <p className="tl-eyebrow">
+                            <span className="tl-live-dot" /> Bắt đầu từ một nơi chốn
+                        </p>
+                        <h2 id="pilot-title" className="tl-section-title">
+                            Đất Thép Củ Chi
+                            <br />
+                            <em>Câu chuyện đầu tiên.</em>
+                        </h2>
+                        <p className="pub-lead">
+                            Từ không gian dưới lòng đất đến những câu chuyện về cuộc sống và ý
+                            chí con người, Củ Chi là điểm đến pilot của TimeLens.
+                        </p>
+                        <p>Theo dấu bốn thời kỳ, đối chiếu hình ảnh Xưa & Nay và khám phá hiện vật qua mô hình 3D. Mỗi trải nghiệm mở thêm một cách tìm hiểu câu chuyện của vùng đất này.</p>
+                        <dl className="about-pilot-metrics">{[['04','Thời kỳ lịch sử'],['05','Điểm Xưa & Nay'],['10','Mô hình AR chính thức']].map(([value,label]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>
+                        <div className="about-pilot-actions"><Link to="/tour/360/11111111-1111-1111-1111-111111111111" className="tl-button">Khám phá Củ Chi <MaterialIcon name="north_east" /></Link><Link to="/pricing#services" className="tl-button-secondary">Giải pháp số hóa <MaterialIcon name="east" /></Link></div>
+                        <p className="about-pilot-scope">Củ Chi là điểm đến pilot trọng tâm. Nội dung và tính năng tại các điểm đến khác có thể khác nhau.</p>
+                    </div>
+                </div>
+            </section>
+
+            {/* =================================================================== */}
+            {/* TUYÊN NGÔN KẾT NỐI (MANIFESTO BANNER)                               */}
+            {/* =================================================================== */}
+            <section
+                className="about-manifesto pub-reveal"
+                aria-labelledby="manifesto-title"
+            >
+                <div className="tl-container">
+                    <p className="tl-eyebrow">
+                        <span className="tl-live-dot" /> Lời nhắn từ HistAR Team
+                    </p>
+                    <h2 id="manifesto-title">
+                        Không chỉ nhớ một dấu mốc
+                        <br />
+                        <span>Hãy hiểu một câu chuyện</span>
+                    </h2>
+                    <p>Đó là điều chúng tôi muốn cùng bạn làm nên</p>
+                    <div className="about-contact-actions">
+                        <a href="mailto:histar.timelens@gmail.com" className="tl-button">
+                            Kết nối với HistAR
+                            <MaterialIcon name="north_east" />
+                        </a>
+                        <Link to="/ar-experience" className="about-text-link">
+                            Trải nghiệm TimeLens
+                            <MaterialIcon name="east" />
+                        </Link>
+                    </div>
+                </div>
+                <span className="about-manifesto-mark" aria-hidden="true">
+          H.
+        </span>
+            </section>
+            </div>
+        </PublicPageShell>
     )
 }

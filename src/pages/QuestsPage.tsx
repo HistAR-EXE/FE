@@ -1,3 +1,4 @@
+import { QuestBackLink } from '../features/gamification/QuestBackLink'
 // src/pages/QuestsPage.tsx
 // Trang Nhiệm vụ của một di tích: 2 nhóm Online (làm từ xa) và Tại di tích (cần có mặt).
 // Trạng thái, khóa và tiến độ do BE tính (API v2); trang chỉ hiển thị.
@@ -5,7 +6,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
-import { SimpleTopNav } from '../components/layout/TopNav'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { analyticsApi } from '../features/analytics/api'
 import { isLocationLocked } from '../features/explore/locationUnlock'
@@ -148,14 +148,13 @@ export function QuestsPage() {
     return (
         <AppLayout
             activeBorder="left"
-            mobileBackTo={`/explore/${locationId}`}
-            mobileTitle="Nhiệm vụ"
-            topNav={<SimpleTopNav title="Nhiệm vụ" backTo={`/explore/${locationId}`} backLabel="Quay lại di tích" />}
+            hideTopNav
             className="min-h-screen !bg-[#DCEBFF] text-[#0F1B33]"
         >
             <QuestBackdrop />
 
-            <div className="relative z-10 pt-14 md:pt-16">
+            <div className="relative z-10">
+                <div className="mx-auto w-full max-w-7xl px-4 md:px-8"><QuestBackLink to="/explore" label="Quay lại Khám phá" /></div>
                 <section className="relative h-[240px] w-full overflow-hidden rounded-b-[2.5rem] shadow-[0_24px_60px_-18px_rgba(2,117,251,0.55)] md:h-[300px]">
                     <SmartImage src={locationInfo?.coverImage || '/media/banner-main.jpg'} fallback="/media/banner-main.jpg" alt="" fill className="object-cover" />
                     <div className="absolute inset-0 bg-gradient-to-r from-[#0275FB] via-[#0275FB]/85 to-[#0275FB]/30" />

@@ -1,11 +1,13 @@
-import { lazy, Suspense, useCallback, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { Navigate, useLocation, useParams, useSearchParams } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { EraLockedModal } from '../components/monetization/EraLockedModal'
+import { usePortalAudio } from '../features/time-portal/timeline/usePortalAudio'
+import { PortalAudioControls } from '../features/time-portal/timeline/PortalAudioControls'
 import { TimelineExplorerView } from '../features/time-portal/TimelineExplorerView'
 import { XuaNayView } from '../features/time-portal/xuaNay/XuaNayView'
 import { isXuaNaySpot, type XuaNaySpotId } from '../features/time-portal/xuaNay/xuaNayData'
-import { ERA_VALUES, type EraValue } from '../features/time-portal/eraLabels'
+import { ERA_VALUES, resolvePortalEra, type EraValue } from '../features/time-portal/eraLabels'
 import { hasTimePortalContent } from '../features/time-portal/availability'
 import { TimePortalComingSoon } from '../features/time-portal/TimePortalComingSoon'
 const TunnelScene3D = lazy(() =>
@@ -20,11 +22,6 @@ import { useUserProgress } from '../shared/context/UserProgressProvider'
 import { useToast } from '../shared/ui/toast/useToast'
 import { CU_CHI_LOCATION_ID } from '../shared/config/constants'
 import { resolveLocationParam, shouldCanonicalizeLocationParam, timePortalPath } from '../shared/config/locationSlug'
-
-function parseEra(raw: string | null): EraValue {
-  const value = Number(raw)
-  return ERA_VALUES.includes(value as EraValue) ? (value as EraValue) : 2026
-}
 
 function isPremiumEra(era: EraValue): boolean {
   return era === 1948 || era === 1968 || era === 1975
@@ -41,7 +38,7 @@ export function TimePortalPage() {
   const locationId = locationParam ? resolveLocationParam(locationParam) : CU_CHI_LOCATION_ID
   const { user, isAuthenticated } = useAuth()
   const premium = hasPremiumAccess(user)
-  const requestedEra = parseEra(params.get('era'))
+  const requestedEra = resolvePortalEra(params.get('era'))
   const initialView = params.get('view')
   const initialSpot = params.get('spot')
 
@@ -55,6 +52,23 @@ export function TimePortalPage() {
   const { showToast } = useToast()
   const { applyEngagement } = useUserProgress()
   const recordedKeys = useRef(new Set<string>())
+  const ready = hasTimePortalContent(locationId)
+  const audio = usePortalAudio(ready)
+  const [pageHidden, setPageHidden] = useState(() => document.visibilityState === 'hidden')
+  useEffect(() => {
+    const onVisibility = () => setPageHidden(document.visibilityState === 'hidden')
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => document.removeEventListener('visibilitychange', onVisibility)
+  }, [])
+  useEffect(() => {
+    if (!audio.ready) return
+    if (mode !== 'timeline') {
+      audio.segment(`portal-${mode}`, '')
+      audio.setPaused(pageHidden || paywallOpen)
+    } else if (paywallOpen) {
+      audio.setPaused(true)
+    }
+  }, [audio.ready, audio.segment, audio.setPaused, mode, pageHidden, paywallOpen])
 
   /**
    * Ghi nhận bước nhiệm vụ khi người dùng thật sự xem nội dung:
@@ -105,19 +119,19 @@ export function TimePortalPage() {
     return <Navigate replace to={timePortalPath(locationId, routerLocation.search)} />
   }
 
-  const ready = hasTimePortalContent(locationId)
-
   return (
     <AppLayout
       activeBorder="left"
-      mobileBackTo={locationId ? `/explore/${locationId}` : '/explore'}
+      mobileBackTo={'/explore'}
       mobileTitle="Cổng thời gian"
     >
-      <main className="mt-14 flex h-[calc(100dvh-3.5rem)] flex-col md:mt-0 md:h-screen">
+      <main className="mt-14 flex h-[calc(100dvh-7.5rem)] flex-col md:mt-0 md:h-screen">
         {!ready ? (
           <TimePortalComingSoon locationId={locationId} />
         ) : mode === 'timeline' ? (
           <TimelineExplorerView
+            audio={audio}
+            suspended={paywallOpen || pageHidden}
             initialEra={era}
             initialMomentId={returnMoment}
             isPremium={premium}
@@ -193,6 +207,7 @@ export function TimePortalPage() {
               spot={spot}
               onSpotChange={setSpot}
               onBack={() => setMode('timeline')}
+              audioNotice={audio.blocked ? <PortalAudioControls audio={audio} className="w-full" /> : undefined}
               onSpotViewed={(viewed) => recordViewed(`xuanay:${viewed}`)}
             />
           </div>

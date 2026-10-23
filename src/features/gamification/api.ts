@@ -120,14 +120,6 @@ export type CheckinRequestBody = {
     clientUuid?: string
 }
 
-export type SecretStory = {
-    locked: boolean
-    title: string
-    story: string | null
-    lockReason: string | null
-    unlockCondition: string | null
-}
-
 export type CheckinHistoryItem = {
     id: string
     locationId: string
@@ -193,8 +185,6 @@ export const gamificationApi = {
         getData<CheckinResult>(httpClient.post('/api/checkins', body)),
     checkinHistory: (locationId: string) =>
         getListData<CheckinHistoryItem>(httpClient.get('/api/checkins/history', { params: { locationId } })),
-    secretStory: (locationId: string) =>
-        getData<SecretStory>(httpClient.get(`/api/locations/${locationId}/secret-story`)),
 }
 
 export const discoveriesApi = {

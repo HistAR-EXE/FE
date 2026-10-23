@@ -131,7 +131,7 @@ export function CheckoutB2B2CPage() {
                                     <p className="text-sm text-gray-200">Triển khai & vận hành kèm đội HistAR — báo giá theo quy mô site.</p>
                                 </div>
                                 <Link
-                                    to={`/explore/${CU_CHI_LOCATION_ID}`}
+                                    to={`/tour/360/${CU_CHI_LOCATION_ID}`}
                                     className="inline-flex items-center gap-2 text-sm text-emerald-400 font-bold underline mt-2"
                                 >
                                     <MaterialIcon name="map" className="text-base" />

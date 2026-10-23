@@ -1,0 +1,1174 @@
+/* src/features/public-site/about.css */
+
+/* ========================================================================== */
+/* CẤU HÌNH CHUNG & HEADER ĐIỀU HƯỚNG PHỤ                                     */
+/* ========================================================================== */
+.pub-section {
+    padding: 96px 0;
+    scroll-margin-top: 92px;
+}
+
+.pub-kicker-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: #ffffff;
+    border: 1.5px solid rgba(2, 117, 251, 0.2);
+    color: #475569;
+    font-size: 12px;
+    font-weight: 800;
+    margin-bottom: 14px;
+    box-shadow: 0 4px 12px rgba(15, 27, 51, 0.04);
+    transition: all 0.2s ease;
+}
+
+.pub-kicker-link:hover {
+    border-color: #0275fb;
+    color: #0275fb;
+    transform: translateX(-2px);
+}
+
+.pub-kicker-link span {
+    color: #fdc908;
+    font-weight: 900;
+}
+
+.pub-lead {
+    font-size: clamp(16px, 1.35vw, 19px);
+    font-weight: 700;
+    color: #1e293b;
+    line-height: 1.7;
+    max-width: 540px;
+}
+
+.about-section-top {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 48px;
+    margin-bottom: 44px;
+}
+
+.about-section-top > p {
+    max-width: 400px;
+    font-size: 14.5px;
+    font-weight: 500;
+    color: #475569;
+    line-height: 1.8;
+    margin: 0 0 6px;
+}
+
+.about-section-top .tl-section-title {
+    margin-bottom: 0;
+}
+
+.about-section-title span,
+.tl-section-title span {
+    color: #0275fb;
+}
+
+/* ========================================================================== */
+/* 1. HERO SECTION & COLLAGE 6 NHÀ SÁNG LẬP                                   */
+/* ========================================================================== */
+.about-hero {
+    position: relative;
+    padding: 48px 0 40px;
+    background:
+            radial-gradient(ellipse at 85% 20%, rgba(2, 117, 251, 0.16) 0%, transparent 55%),
+            radial-gradient(ellipse at 12% 10%, rgba(253, 201, 8, 0.24) 0%, transparent 48%),
+            linear-gradient(180deg, #f8fbff 0%, #f2f7ff 100%);
+    border-bottom: 3px solid rgba(2, 117, 251, 0.12);
+    overflow: hidden;
+}
+
+.about-hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+            linear-gradient(to right, rgba(2, 117, 251, 0.04) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(2, 117, 251, 0.04) 1px, transparent 1px);
+    background-size: 44px 44px;
+    pointer-events: none;
+}
+
+.about-hero-grid {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    grid-template-columns: 1fr 1.12fr;
+    align-items: center;
+    gap: 52px;
+}
+
+.about-hero-copy {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.about-hero-copy .tl-eyebrow {
+    padding: 7px 15px;
+    border-radius: 999px;
+    background: #ffffff;
+    border: 1.5px solid rgba(2, 117, 251, 0.22);
+    box-shadow: 0 6px 18px rgba(2, 117, 251, 0.07);
+}
+
+.about-hero-copy h1 {
+    font-family: Montserrat, 'Be Vietnam Pro', sans-serif;
+    font-size: clamp(38px, 4.1vw, 64px);
+    font-weight: 900;
+    line-height: 1.08;
+    letter-spacing: -0.05em;
+    color: #0f1b33;
+    margin: 20px 0 22px;
+}
+
+.about-hero-copy h1 span {
+    color: #0275fb;
+    position: relative;
+    display: inline-block;
+}
+
+.about-hero-copy h1 span::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 2px;
+    height: 10px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #fdc908 0%, #ffe066 100%);
+    transform: rotate(-1.2deg);
+    z-index: -1;
+}
+
+.about-hero-copy .pub-lead {
+    margin: 0 0 28px;
+}
+
+.about-signature {
+    margin-top: 32px;
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 20px 12px 12px;
+    border-radius: 20px;
+    background: #ffffff;
+    border: 2px solid rgba(2, 117, 251, 0.16);
+    box-shadow: 0 12px 28px rgba(2, 117, 251, 0.07);
+}
+
+.about-signature > span {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #0353b8 0%, #0275fb 100%);
+    border: 2px solid #fdc908;
+    color: #fdc908;
+    font-family: Montserrat, sans-serif;
+    font-size: 20px;
+    font-weight: 900;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+}
+
+.about-signature p {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+    line-height: 1.5;
+}
+
+.about-signature strong {
+    color: #0f1b33;
+    font-weight: 900;
+}
+
+/* Sân khấu Collage 6 Thành Viên Sáng Lập */
+.about-collage {
+    position: relative;
+    padding: 58px 22px 68px;
+    border-radius: 32px;
+    background: linear-gradient(145deg, #07132c 0%, #0e224d 55%, #033980 100%);
+    border: 3px solid #fdc908;
+    box-shadow:
+            0 0 0 6px #ffffff,
+            0 28px 65px -16px rgba(15, 27, 51, 0.4);
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    overflow: hidden;
+    isolation: isolate;
+}
+
+.about-collage-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+            linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+    background-size: 36px 36px;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.about-collage-orbit {
+    position: absolute;
+    width: 440px;
+    height: 440px;
+    top: -120px;
+    right: -120px;
+    border-radius: 50%;
+    border: 1.5px dashed rgba(253, 201, 8, 0.35);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.about-collage-label {
+    position: absolute;
+    top: 16px;
+    left: 22px;
+    z-index: 3;
+    padding: 5px 14px;
+    border-radius: 999px;
+    background: rgba(15, 27, 51, 0.85);
+    border: 1px solid rgba(253, 201, 8, 0.65);
+    color: #fff2c3;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 0.2em;
+}
+
+.about-portrait {
+    position: relative;
+    z-index: 2;
+    margin: 0;
+    aspect-ratio: 1 / 1;
+    border-radius: 20px;
+    overflow: hidden;
+    background: #0f1b33;
+    border: 2px solid rgba(255, 255, 255, 0.25);
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.35);
+    transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.3s ease;
+}
+
+.about-portrait-2,
+.about-portrait-5 {
+    transform: translateY(8px);
+}
+
+.about-portrait:hover {
+    transform: translateY(-4px) scale(1.02);
+    border-color: #fdc908;
+    z-index: 4;
+}
+
+.about-portrait img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top center;
+    display: block;
+    transition: transform 0.5s ease;
+}
+
+.about-portrait:hover img {
+    transform: scale(1.06);
+}
+
+.about-portrait figcaption {
+    position: absolute;
+    inset: auto 8px 8px 8px;
+    padding: 5px 10px;
+    border-radius: 12px;
+    background: rgba(15, 27, 51, 0.86);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 900;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    letter-spacing: 0.06em;
+}
+
+.about-portrait figcaption span {
+    color: #fdc908;
+    font-family: Montserrat, sans-serif;
+    font-size: 10px;
+}
+
+.about-collage-stamp {
+    position: absolute;
+    bottom: 12px;
+    left: 22px;
+    z-index: 3;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 16px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #fff2c3 0%, #fdc908 100%);
+    border: 2px solid #ffffff;
+    color: #0f1b33;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+}
+
+.about-collage-stamp span {
+    font-family: Montserrat, sans-serif;
+    font-size: 24px;
+    font-weight: 900;
+    color: #0275fb;
+    line-height: 1;
+}
+
+.about-collage-stamp p {
+    margin: 0;
+    font-size: 10px;
+    font-weight: 800;
+    line-height: 1.25;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.about-collage-bottom {
+    position: absolute;
+    bottom: 20px;
+    right: 22px;
+    z-index: 3;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 0.18em;
+    color: #fff2c3;
+}
+
+.about-collage-bottom span {
+    color: #fdc908;
+    margin-left: 4px;
+}
+
+/* Thanh Điều Hướng Nhanh 4 Phần (Bento Section Nav) */
+.about-section-nav {
+    position: relative;
+    z-index: 3;
+    margin-top: 36px;
+    padding: 10px;
+    border-radius: 24px;
+    background: #ffffff;
+    border: 2px solid rgba(2, 117, 251, 0.16);
+    box-shadow: 0 16px 40px rgba(2, 117, 251, 0.08);
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+}
+
+.about-section-nav a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 14px 16px;
+    border-radius: 16px;
+    background: #f8fbff;
+    border: 1.5px solid transparent;
+    color: #0f1b33;
+    font-size: 13.5px;
+    font-weight: 900;
+    transition: all 0.2s ease;
+}
+
+.about-section-nav a span {
+    padding: 3px 9px;
+    border-radius: 8px;
+    background: #eaf3ff;
+    color: #0275fb;
+    font-family: Montserrat, sans-serif;
+    font-size: 11px;
+    font-weight: 900;
+}
+
+.about-section-nav a:hover {
+    background: linear-gradient(135deg, #0353b8 0%, #0275fb 100%);
+    color: #ffffff;
+    border-color: #fdc908;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px rgba(2, 117, 251, 0.22);
+}
+
+.about-section-nav a:hover span {
+    background: #fdc908;
+    color: #0f1b33;
+}
+
+/* ========================================================================== */
+/* 2. MISSION SECTION: TẦM NHÌN, SỨ MỆNH & 3 GIÁ TRỊ CỐT LÕI                  */
+/* ========================================================================== */
+.about-mission-heading > p {
+    padding: 7px 15px;
+    border-radius: 999px;
+    background: #ffffff;
+    border: 1.5px solid rgba(2, 117, 251, 0.22);
+    box-shadow: 0 6px 18px rgba(2, 117, 251, 0.07);
+}
+
+.about-mission {
+    background: #ffffff;
+}
+
+.about-mission-heading {
+    margin-bottom: 40px;
+}
+
+.about-mission-grid {
+    display: grid;
+    grid-template-columns: 1.05fr 1fr;
+    gap: 40px;
+    align-items: stretch;
+}
+
+.about-vision-image {
+    margin: 0;
+    position: relative;
+    border-radius: 30px;
+    overflow: hidden;
+    border: 3px solid #fdc908;
+    background: #07132c;
+    box-shadow: 0 22px 50px rgba(15, 27, 51, 0.14);
+    min-height: 400px;
+}
+
+.about-vision-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.about-vision-image figcaption {
+    position: absolute;
+    bottom: 18px;
+    left: 18px;
+    right: 18px;
+    padding: 10px 16px;
+    border-radius: 14px;
+    background: rgba(15, 27, 51, 0.86);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(253, 201, 8, 0.55);
+    color: #fff2c3;
+    font-size: 12px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.about-vision-image figcaption span {
+    color: #fdc908;
+    font-size: 15px;
+}
+
+.about-mission-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.about-mission-copy article {
+    flex: 1;
+    padding: 32px;
+    border-radius: 26px;
+    background: linear-gradient(155deg, #f2f7ff 0%, #ffffff 100%);
+    border: 2px solid rgba(2, 117, 251, 0.16);
+    box-shadow: 0 14px 34px rgba(2, 117, 251, 0.06);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.about-mission-copy article:nth-child(2) {
+    background: linear-gradient(155deg, #fffbeb 0%, #ffffff 100%);
+    border-color: #fdc908;
+    box-shadow: 0 14px 34px rgba(253, 201, 8, 0.12);
+}
+
+.about-mission-copy article > span {
+    display: inline-block;
+    width: fit-content;
+    padding: 4px 12px;
+    border-radius: 999px;
+    background: #eaf3ff;
+    color: #0275fb;
+    font-size: 11px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    margin-bottom: 12px;
+}
+
+.about-mission-copy article:nth-child(2) > span {
+    background: #fef3c7;
+    color: #b45309;
+}
+
+.about-mission-copy h3 {
+    font-family: Montserrat, sans-serif;
+    font-size: 24px;
+    font-weight: 900;
+    color: #0f1b33;
+    margin: 0 0 10px;
+}
+
+.about-mission-copy p {
+    margin: 0;
+    font-size: 14.5px;
+    font-weight: 500;
+    color: #475569;
+    line-height: 1.75;
+}
+
+/* 3 Thẻ Giá Trị Cốt Lõi */
+.about-values {
+    margin-top: 32px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+}
+
+.about-values article {
+    padding: 30px 28px;
+    border-radius: 26px;
+    background: #f8fbff;
+    border: 2px solid rgba(2, 117, 251, 0.14);
+    transition: all 0.22s ease;
+}
+
+.about-values article:hover {
+    background: #ffffff;
+    border-color: #0275fb;
+    transform: translateY(-4px);
+    box-shadow: 0 18px 40px rgba(2, 117, 251, 0.08);
+}
+
+.about-values article .material-symbols-outlined {
+    display: inline-flex; /* Dùng inline-flex thay vì inline-grid */
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    min-width: 48px; /* Ép cứng chiều rộng tối thiểu */
+    flex-shrink: 0; /* Ngăn chặn thẻ bị co bóp */
+    border-radius: 16px;
+    background: linear-gradient(135deg, #0353b8 0%, #0275fb 100%);
+    border: 2px solid #fdc908;
+    color: #fdc908;
+    font-size: 24px;
+    margin-bottom: 18px;
+    box-shadow: 0 8px 18px rgba(2, 117, 251, 0.2);
+}
+
+.about-values h3 {
+    font-family: Montserrat, sans-serif;
+    font-size: 20px;
+    font-weight: 900;
+    color: #0f1b33;
+    margin: 0 0 10px;
+}
+
+.about-values p {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 500;
+    color: #475569;
+    line-height: 1.75;
+}
+
+/* ========================================================================== */
+/* 3. JOURNEY SECTION: 3 CHẶNG HÀNH TRÌNH PHÁT TRIỂN                          */
+/* ========================================================================== */
+.about-journey {
+    background: linear-gradient(180deg, #f2f7ff 0%, #ffffff 100%);
+    border-top: 1px solid rgba(2, 117, 251, 0.1);
+}
+
+.about-stages {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+}
+
+.about-stages li {
+    position: relative;
+    padding: 34px 30px;
+    border-radius: 28px;
+    background: #ffffff;
+    border: 2px solid rgba(2, 117, 251, 0.16);
+    box-shadow: 0 16px 38px rgba(2, 117, 251, 0.06);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 20px;
+    transition: all 0.25s ease;
+}
+
+.about-stages li:nth-child(3) {
+    background: linear-gradient(160deg, #fffbeb 0%, #ffffff 100%);
+    border-color: #fdc908;
+    box-shadow: 0 18px 42px rgba(253, 201, 8, 0.16);
+}
+
+.about-stages li:hover {
+    transform: translateY(-5px);
+    border-color: #0275fb;
+}
+
+.about-stage-number {
+    width: 52px;
+    height: 52px;
+    border-radius: 16px;
+    background: #eaf3ff;
+    border: 1.5px solid rgba(2, 117, 251, 0.22);
+    color: #0275fb;
+    font-family: Montserrat, sans-serif;
+    font-size: 20px;
+    font-weight: 900;
+    display: grid;
+    place-items: center;
+}
+
+.about-stages li:nth-child(3) .about-stage-number {
+    background: #fdc908;
+    border-color: #f59e0b;
+    color: #0f1b33;
+}
+
+.about-stages h3 {
+    font-family: Montserrat, sans-serif;
+    font-size: 21px;
+    font-weight: 900;
+    color: #0f1b33;
+    margin: 0 0 10px;
+}
+
+.about-stages p {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 500;
+    color: #475569;
+    line-height: 1.75;
+}
+
+.about-stages li .material-symbols-outlined {
+    align-self: flex-end;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: #f2f7ff;
+    color: #0275fb;
+    font-size: 18px;
+    display: grid;
+    place-items: center;
+}
+
+/* ========================================================================== */
+/* 4. TEAM SECTION: 6 THÀNH VIÊN SÁNG LẬP HISTAR TEAM                         */
+/* ========================================================================== */
+.about-team {
+    background: #f2f7ff;
+}
+
+.about-team-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 28px;
+}
+
+.about-member {
+    background: #ffffff;
+    border: 2px solid rgba(2, 117, 251, 0.15);
+    border-radius: 28px;
+    padding: 16px 16px 24px;
+    box-shadow: 0 16px 40px rgba(15, 27, 51, 0.06);
+    transition: all 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.about-member:hover {
+    transform: translateY(-6px);
+    border-color: #fdc908;
+    box-shadow: 0 22px 50px rgba(2, 117, 251, 0.14);
+}
+
+.about-member-photo {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    border-radius: 20px;
+    overflow: hidden;
+    background: #0f1b33;
+    margin-bottom: 18px;
+    border: 1.5px solid rgba(2, 117, 251, 0.12);
+}
+
+.about-member-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top center;
+    display: block;
+    transition: transform 0.5s ease;
+}
+
+.about-member:hover .about-member-photo img {
+    transform: scale(1.04);
+}
+
+.about-member-index {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    padding: 4px 11px;
+    border-radius: 999px;
+    background: rgba(15, 27, 51, 0.82);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: #fff2c3;
+    font-family: Montserrat, sans-serif;
+    font-size: 11px;
+    font-weight: 900;
+}
+
+.about-member-tag {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    padding: 5px 14px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #fff2c3 0%, #fdc908 100%);
+    border: 1.5px solid #ffffff;
+    color: #0f1b33;
+    font-family: Montserrat, sans-serif;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+}
+
+.about-member h3 {
+    font-family: Montserrat, sans-serif;
+    font-size: 20px;
+    font-weight: 900;
+    color: #0f1b33;
+    margin: 0 8px 4px;
+}
+
+.about-member-title {
+    font-size: 12.5px;
+    font-weight: 800;
+    color: #0275fb;
+    margin: 0 8px 4px;
+}
+
+.about-member-role {
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    margin: 0 8px;
+}
+
+/* ========================================================================== */
+/* 5. ECOSYSTEM SECTION: SẢN PHẨM TIMELENS (ROYAL NAVY STAGE)                 */
+/* ========================================================================== */
+.about-ecosystem {
+    background: linear-gradient(135deg, #07132c 0%, #0e224d 55%, #033980 100%);
+    border-top: 4px solid #fdc908;
+    border-bottom: 4px solid #fdc908;
+    color: #ffffff;
+}
+
+.about-ecosystem .tl-eyebrow {
+    color: #fdc908;
+}
+
+.about-ecosystem .tl-section-title {
+    color: #ffffff;
+}
+
+.about-ecosystem .about-section-top > p {
+    color: #dbeafe;
+}
+
+.about-capability-layout {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 32px;
+    align-items: stretch;
+}
+
+.about-capability-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.about-capability-selector button {
+    padding: 20px 18px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1.5px solid rgba(255, 255, 255, 0.16);
+    color: #dbeafe;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-size: 14px;
+    font-weight: 800;
+    text-align: left;
+    transition: all 0.2s ease;
+}
+
+.about-capability-selector button:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(253, 201, 8, 0.6);
+    color: #ffffff;
+}
+
+.about-capability-number {
+    font-family: Montserrat, sans-serif;
+    font-size: 12px;
+    font-weight: 900;
+    color: #fdc908;
+}
+
+.about-capability-selector button .material-symbols-outlined:last-child {
+    margin-left: auto;
+    font-size: 18px;
+    opacity: 0.75;
+}
+
+.about-capability-selector button[aria-pressed='true'] {
+    background: linear-gradient(135deg, #0275fb 0%, #015cc8 100%);
+    border-color: #fdc908;
+    color: #ffffff;
+    box-shadow: 0 14px 32px rgba(0, 0, 0, 0.3);
+}
+
+.about-capability-selector button[aria-pressed='true'] .material-symbols-outlined {
+    color: #fdc908;
+    opacity: 1;
+}
+
+.about-capability-panel {
+    border-radius: 28px;
+    border: 2.5px solid #fdc908;
+    background: rgba(15, 27, 51, 0.78);
+    backdrop-filter: blur(14px);
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: 1.08fr 1fr;
+    box-shadow: 0 24px 55px rgba(0, 0, 0, 0.35);
+}
+
+.about-capability-image {
+    position: relative;
+    min-height: 360px;
+    background: #07132c;
+}
+
+.about-capability-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    position: absolute;
+    inset: 0;
+}
+
+.about-capability-image span {
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: rgba(15, 27, 51, 0.88);
+    border: 1px solid rgba(253, 201, 8, 0.6);
+    color: #fff2c3;
+    font-size: 10.5px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.about-capability-copy {
+    padding: 36px 34px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+.about-capability-copy h3 {
+    font-family: Montserrat, sans-serif;
+    font-size: clamp(22px, 2.2vw, 28px);
+    font-weight: 900;
+    color: #ffffff;
+    line-height: 1.3;
+    margin: 0 0 14px;
+}
+
+.about-capability-copy p {
+    font-size: 14px;
+    line-height: 1.8;
+    color: #dbeafe;
+    margin: 0 0 16px;
+}
+
+.about-capability-note {
+    padding: 10px 14px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.07);
+    border-left: 3px solid #fdc908;
+    font-size: 12px !important;
+    font-weight: 600;
+    color: #fff2c3 !important;
+}
+
+.about-text-link {
+    margin-top: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 11px 20px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #fff2c3 0%, #fdc908 100%);
+    color: #0f1b33;
+    font-size: 13px;
+    font-weight: 900;
+    transition: all 0.2s ease;
+}
+
+.about-text-link:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.05);
+}
+
+/* ========================================================================== */
+/* 6. PILOT SECTION & MANIFESTO BANNER                                        */
+/* ========================================================================== */
+.about-pilot {
+    background: #ffffff;
+}
+
+.about-pilot-grid {
+    display: grid;
+    grid-template-columns: 1.05fr 1fr;
+    gap: 56px;
+    align-items: center;
+}
+
+.about-pilot-grid figure {
+    margin: 0;
+    position: relative;
+    height: 480px;
+    border-radius: 120px 28px 28px 28px;
+    overflow: hidden;
+    border: 3px solid #fdc908;
+    box-shadow: 0 24px 55px rgba(15, 27, 51, 0.16);
+}
+
+.about-pilot-grid figure::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(transparent 50%, rgba(7, 19, 44, 0.85));
+}
+
+.about-pilot-grid figure img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.about-pilot-grid figcaption {
+    position: absolute;
+    bottom: 24px;
+    left: 26px;
+    z-index: 2;
+    color: #fff2c3;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 0.16em;
+}
+
+.about-pilot-grid p {
+    font-size: 14.5px;
+    color: #475569;
+    line-height: 1.8;
+    margin: 0 0 22px;
+}
+
+/* Manifesto Banner cuối trang */
+.about-manifesto {
+    position: relative;
+    overflow: hidden;
+    padding: 96px 0;
+    background: linear-gradient(135deg, #0353b8 0%, #0275fb 52%, #014296 100%);
+    border-top: 4px solid #fdc908;
+    color: #ffffff;
+    text-align: center;
+}
+
+.about-manifesto .tl-container {
+    position: relative;
+    z-index: 2;
+}
+
+.about-manifesto .tl-eyebrow {
+    color: #fff2c3;
+    justify-content: center;
+}
+
+.about-manifesto h2 {
+    font-family: Montserrat, sans-serif;
+    font-size: clamp(32px, 4.4vw, 58px);
+    font-weight: 900;
+    line-height: 1.15;
+    letter-spacing: -0.04em;
+    margin: 18px 0 16px;
+}
+
+.about-manifesto h2 span {
+    color: #fdc908;
+}
+
+.about-manifesto > .tl-container > p {
+    font-size: 16px;
+    font-weight: 600;
+    color: #dbeafe;
+    margin: 0 0 32px;
+}
+
+.about-contact-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.about-manifesto .tl-button {
+    background: linear-gradient(135deg, #fff2c3 0%, #fdc908 60%, #fdb900 100%);
+    color: #0f1b33;
+    border-color: #ffffff;
+}
+
+.about-manifesto .about-text-link {
+    margin-top: 0;
+    padding: 15px 24px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.14);
+    border: 2px solid rgba(255, 255, 255, 0.45);
+    color: #ffffff;
+}
+
+.about-manifesto .about-text-link:hover {
+    background: #ffffff;
+    color: #0275fb;
+}
+
+.about-manifesto-mark {
+    position: absolute;
+    right: 4%;
+    bottom: -45px;
+    font-family: Montserrat, sans-serif;
+    font-size: clamp(180px, 22vw, 310px);
+    font-weight: 900;
+    line-height: 1;
+    color: rgba(255, 255, 255, 0.06);
+    pointer-events: none;
+    user-select: none;
+}
+
+/* ========================================================================== */
+/* RESPONSIVE BREAKPOINTS                                                     */
+/* ========================================================================== */
+@media (max-width: 1100px) {
+    .about-hero-grid,
+    .about-mission-grid,
+    .about-pilot-grid {
+        grid-template-columns: 1fr;
+        gap: 36px;
+    }
+
+    .about-capability-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .about-capability-selector {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .about-stages {
+        grid-template-columns: 1fr;
+    }
+
+    .about-values {
+        grid-template-columns: 1fr;
+    }
+
+    .about-team-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 760px) {
+    .pub-section {
+        padding: 68px 0;
+    }
+
+    .about-section-top {
+        display: block;
+        margin-bottom: 28px;
+    }
+
+    .about-section-top > p {
+        margin-top: 14px;
+        max-width: 100%;
+    }
+
+    .about-section-nav {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .about-collage {
+        grid-template-columns: repeat(2, 1fr);
+        padding: 52px 14px 64px;
+    }
+
+    .about-capability-selector {
+        grid-template-columns: 1fr;
+    }
+
+    .about-capability-panel {
+        grid-template-columns: 1fr;
+    }
+
+    .about-capability-image {
+        min-height: 260px;
+    }
+
+    .about-team-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .about-pilot-grid figure {
+        height: 340px;
+        border-radius: 72px 20px 20px 20px;
+    }
+}

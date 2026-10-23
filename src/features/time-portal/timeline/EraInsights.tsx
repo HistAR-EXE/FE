@@ -40,13 +40,13 @@ function StatTile({ stat, accent, runKey }: { stat: EraStat; accent: string; run
     display = new Intl.NumberFormat('vi-VN', { minimumFractionDigits: d, maximumFractionDigits: d }).format(d ? v : Math.round(v))
   }
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.04] px-2.5 py-2">
+    <div className="rounded-xl border border-blue-100 bg-blue-50/70 px-2.5 py-2">
       <p className="text-lg font-black leading-tight tabular-nums" style={{ color: accent }}>
         {numeric && stat.prefix}
         {display}
         {numeric && <span className="text-sm font-bold">{stat.suffix}</span>}
       </p>
-      <p className="mt-0.5 text-[10.5px] leading-snug text-white/65">{stat.label}</p>
+      <p className="mt-0.5 text-[10.5px] leading-snug text-slate-600">{stat.label}</p>
     </div>
   )
 }
@@ -62,8 +62,8 @@ export function EraInsights({ story, onOpen3D, xuaNay }: Props) {
   const xn = xuaNay ? XUA_NAY[xuaNay.spot] : null
   return (
     <div className="flex flex-col gap-2.5">
-      <section className="rounded-2xl border border-white/10 bg-black/55 p-3 backdrop-blur-xl">
-        <h3 className="mb-2.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/60">
+      <section className="rounded-2xl border border-blue-100 bg-white p-3 backdrop-blur-xl">
+        <h3 className="mb-2.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
           <MaterialIcon name="query_stats" className="text-base" style={{ color: story.accent }} />
           Con số
         </h3>
@@ -74,23 +74,23 @@ export function EraInsights({ story, onOpen3D, xuaNay }: Props) {
         </div>
       </section>
 
-      <section className="rounded-2xl border border-white/10 bg-black/55 p-3 backdrop-blur-xl">
-        <h3 className="mb-1 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/60">
+      <section className="rounded-2xl border border-blue-100 bg-white p-3 backdrop-blur-xl">
+        <h3 className="mb-1 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
           <MaterialIcon name="hub" className="text-base" style={{ color: story.accent }} />
           Mạng lưới địa đạo
         </h3>
-        <p className="mb-1 text-xs font-medium text-white/85">{story.networkNote}</p>
+        <p className="mb-1 text-xs font-medium text-slate-700">{story.networkNote}</p>
         <div className="mx-auto max-w-[300px]">
           <NetworkMap era={story.era} accent={story.accent} />
         </div>
-        <p className="mt-1 text-[10px] text-white/40">Sơ đồ minh hoạ — không theo tỉ lệ</p>
+        <p className="mt-1 text-[10px] text-slate-500">Sơ đồ minh hoạ — không theo tỉ lệ</p>
       </section>
 
       {onOpen3D && (
         <button
           type="button"
           onClick={onOpen3D}
-          className="flex min-h-[44px] items-center justify-center gap-2 rounded-2xl border px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white/10"
+          className="flex min-h-[44px] items-center justify-center gap-2 rounded-2xl border px-4 py-2.5 text-sm font-semibold text-[#142646] transition-colors hover:bg-blue-50"
           style={{ borderColor: `${story.accent}80`, background: `${story.accent}1f` }}
         >
           <MaterialIcon name="view_in_ar" className="text-lg" style={{ color: story.accent }} />
@@ -102,7 +102,7 @@ export function EraInsights({ story, onOpen3D, xuaNay }: Props) {
         <button
           type="button"
           onClick={xuaNay.onOpen}
-          className="group flex items-center gap-3 rounded-2xl border border-white/15 bg-black/55 p-2 text-left backdrop-blur-xl transition-colors hover:bg-white/10"
+          className="group flex items-center gap-3 rounded-2xl border border-blue-100 bg-white p-2 text-left backdrop-blur-xl transition-colors hover:bg-blue-50"
         >
           <span className="relative block aspect-[4/3] w-20 shrink-0 overflow-hidden rounded-xl ring-1 ring-white/10">
             <img src={xn.nay.src} alt="" className="h-full w-full object-cover" loading="lazy" draggable={false} />
@@ -110,22 +110,22 @@ export function EraInsights({ story, onOpen3D, xuaNay }: Props) {
             <span className="absolute inset-y-0 left-1/2 w-px bg-white/80" />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="flex items-center gap-1 text-sm font-semibold text-white">
+            <span className="flex items-center gap-1 text-sm font-semibold text-[#142646]">
               <MaterialIcon name="compare" className="text-base" style={{ color: story.accent }} />
               Xưa &amp; Nay tại di tích
             </span>
-            <span className="mt-0.5 block text-[11px] leading-snug text-white/60">5 điểm · tranh tái hiện 1968 và ảnh hôm nay, cùng góc nhìn</span>
+            <span className="mt-0.5 block text-[11px] leading-snug text-slate-500">5 điểm · tranh tái hiện 1968 và ảnh hôm nay, cùng góc nhìn</span>
           </span>
-          <MaterialIcon name="chevron_right" className="text-xl text-white/50 transition-transform group-hover:translate-x-0.5" />
+          <MaterialIcon name="chevron_right" className="text-xl text-slate-500 transition-transform group-hover:translate-x-0.5" />
         </button>
       )}
 
-      <details className="rounded-2xl border border-white/10 bg-black/45 px-3.5 py-2.5 text-xs text-white/70 backdrop-blur-xl">
-        <summary className="cursor-pointer select-none font-medium text-white/80">Nguồn tư liệu</summary>
+      <details className="rounded-2xl border border-blue-100 bg-white px-3.5 py-2.5 text-xs text-slate-600 backdrop-blur-xl">
+        <summary className="cursor-pointer select-none font-medium text-slate-600">Nguồn tư liệu</summary>
         <ul className="mt-2 space-y-1">
           {story.sources.map((s) => (
             <li key={s.url}>
-              <a href={s.url} target="_blank" rel="noopener noreferrer" className="underline decoration-white/30 underline-offset-2 hover:text-white">
+              <a href={s.url} target="_blank" rel="noopener noreferrer" className="underline decoration-blue-200 underline-offset-2 hover:text-[#142646]">
                 {s.label}
               </a>
             </li>

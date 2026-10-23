@@ -1,0 +1,165 @@
+/* src/features/landing/landing-spatial.css */
+.tl-landing .tl-spatial-scene {
+    position: relative;
+    width: 100%;
+    border: 2px solid #fdc908;
+    border-radius: 24px;
+    overflow: hidden;
+    background: radial-gradient(ellipse at 50% 40%, #163a70 0%, #07132c 75%);
+    color: #ffffff;
+    box-shadow: 0 25px 70px rgba(7, 16, 32, 0.55);
+}
+
+.tl-landing .tl-spatial-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px 22px;
+    background: rgba(15, 27, 51, 0.65);
+    border-bottom: 1px solid rgba(253, 201, 8, 0.3);
+}
+
+.tl-landing .tl-spatial-header > span {
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    font-weight: 900;
+    color: #fdc908;
+}
+
+.tl-landing .tl-spatial-header button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-size: 11px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.tl-landing .tl-spatial-header button:hover {
+    background: #fdc908;
+    color: #0f1b33;
+    border-color: #fdc908;
+}
+
+.tl-landing .tl-spatial-stage {
+    height: 350px;
+    position: relative;
+    background-image:
+            linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+    background-size: 40px 40px;
+}
+
+.tl-landing .tl-spatial-canvas {
+    position: absolute;
+    inset: 0;
+}
+
+.tl-landing .tl-spatial-canvas canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    cursor: grab;
+    touch-action: none;
+}
+
+.tl-landing .tl-spatial-canvas canvas:active {
+    cursor: grabbing;
+}
+
+.tl-landing .tl-spatial-fallback {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    padding: 20px;
+}
+
+.tl-landing .tl-spatial-fallback img {
+    width: 180px;
+    height: 180px;
+    object-fit: contain;
+}
+
+.tl-landing .tl-spatial-fallback p {
+    font-size: 12px;
+    font-weight: 700;
+    color: #dbeafe;
+    text-align: center;
+}
+
+.tl-landing .tl-spatial-fallback button {
+    padding: 8px 18px;
+    border: 0;
+    border-radius: 999px;
+    background: #fdc908;
+    color: #0f1b33;
+    font-size: 11px;
+    font-weight: 900;
+    cursor: pointer;
+}
+
+.tl-landing .tl-spatial-caption {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 14px 22px;
+    border-top: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.tl-landing .tl-spatial-caption > div {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.tl-landing .tl-spatial-caption strong {
+    font-family: Montserrat, sans-serif;
+    font-size: 17px;
+    font-weight: 900;
+    color: #fff2c3;
+}
+
+.tl-landing .tl-spatial-caption span {
+    font-size: 10px;
+    font-weight: 600;
+    color: #93c5fd;
+}
+
+.tl-landing .tl-spatial-caption > p {
+    font-size: 10px;
+    font-weight: 600;
+    color: #dbeafe;
+    text-align: right;
+    max-width: 190px;
+    line-height: 1.65;
+}
+
+.tl-landing .tl-spatial-credit {
+    padding: 0 22px 16px;
+    font-size: 9px;
+    line-height: 1.7;
+    color: #94a3b8;
+}
+
+.tl-landing .tl-spatial-credit a {
+    color: #fdc908;
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.tl-landing .tl-spatial-scene :is(button, canvas, a):focus-visible {
+    outline: 3px solid #fdc908;
+    outline-offset: 3px;
+}

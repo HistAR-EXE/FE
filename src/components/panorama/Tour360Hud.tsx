@@ -69,7 +69,7 @@ export function Tour360Hud({
       <div className={`tour360-hud-top ${immersive ? 'tour360-hud-top--immersive' : ''}`}>
         {immersive ? (
           <Link
-            to={locationId ? `/explore/${locationId}` : '/explore'}
+            to={'/explore'}
             className="tour360-hud-btn"
             aria-label="Quay lại"
           >

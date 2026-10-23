@@ -2,328 +2,489 @@
 // "Xưa & Nay" — kéo thanh trượt trên một cặp ảnh cùng góc chụp:
 // trái là tranh tái hiện 1968, phải là ảnh hiện trạng tại di tích.
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
+import {
+    useCallback,
+    useEffect,
+    useRef,
+    useState,
+    type KeyboardEvent,
+    type PointerEvent,
+    type ReactNode,
+} from 'react'
 import { MaterialIcon } from '../../../components/ui/MaterialIcon'
-import { XUA_NAY, XUA_NAY_ART_NOTE, XUA_NAY_PHOTO_CREDIT, XUA_NAY_SPOTS, type XuaNaySpotId } from './xuaNayData'
+import {
+    XUA_NAY,
+    XUA_NAY_ART_NOTE,
+    XUA_NAY_PHOTO_CREDIT,
+    XUA_NAY_SPOTS,
+    type XuaNaySpotId,
+} from './xuaNayData'
 
 type Props = {
-  spot: XuaNaySpotId
-  onSpotChange: (spot: XuaNaySpotId) => void
-  onBack: () => void
-  /** Người dùng đã tự kéo so sánh tại điểm này và ở lại đủ lâu (ghi nhận bước nhiệm vụ). */
-  onSpotViewed?: (spot: XuaNaySpotId) => void
+    audioNotice?: ReactNode
+    spot: XuaNaySpotId
+    onSpotChange: (spot: XuaNaySpotId) => void
+    onBack: () => void
+    /** Người dùng đã tự kéo so sánh tại điểm này và ở lại đủ lâu (ghi nhận bước nhiệm vụ). */
+    onSpotViewed?: (spot: XuaNaySpotId) => void
 }
 
-const RATIO = 4 / 3
-/** Chiều cao hàng nút dưới khung (px). */
-const CTRL_H = 52
 /** Thời gian ở lại một điểm sau khi tự kéo, để tính là đã xem (ms). */
 const VIEWED_AFTER_MS = 4000
-const XUA = '#fbbf24'
-const NAY = '#2dd4bf'
+const XUA = '#FDC908'
+const XUA_INK = '#8a5700'
+const NAY = '#0275FB'
 
 function reducedMotion() {
-  return typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    return (
+        typeof window !== 'undefined' &&
+        window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    )
 }
 
-export function XuaNayView({ spot, onSpotChange, onBack, onSpotViewed }: Props) {
-  const data = XUA_NAY[spot]
-  const stageRef = useRef<HTMLDivElement>(null)
-  const frameRef = useRef<HTMLDivElement>(null)
-  const [box, setBox] = useState({ w: 0, h: 0 })
-  const [pos, setPos] = useState(50)
-  const [dragging, setDragging] = useState(false)
-  /** Người xem đã tự kéo — không chạy gợi ý nữa. */
-  const touched = useRef(false)
-  const anim = useRef(0)
-  /** Điểm mà người xem đã tự tương tác (kéo / phím / nút). */
-  const [engagedSpot, setEngagedSpot] = useState<XuaNaySpotId | null>(null)
-  const reportedSpots = useRef(new Set<XuaNaySpotId>())
-  const onSpotViewedRef = useRef(onSpotViewed)
-  useEffect(() => {
-    onSpotViewedRef.current = onSpotViewed
-  }, [onSpotViewed])
+export function XuaNayView({ audioNotice, spot, onSpotChange, onBack, onSpotViewed }: Props) {
+    const data = XUA_NAY[spot]
+    const stageRef = useRef<HTMLDivElement>(null)
+    const frameRef = useRef<HTMLDivElement>(null)
+    const [pos, setPos] = useState(50)
+    const [dragging, setDragging] = useState(false)
+    /** Người xem đã tự kéo — không chạy gợi ý nữa. */
+    const touched = useRef(false)
+    const anim = useRef(0)
+    /** Điểm mà người xem đã tự tương tác (kéo / phím / nút). */
+    const [engagedSpot, setEngagedSpot] = useState<XuaNaySpotId | null>(null)
+    const reportedSpots = useRef(new Set<XuaNaySpotId>())
+    const onSpotViewedRef = useRef(onSpotViewed)
 
-  // Đã tự tương tác và ở lại điểm đó ≥ VIEWED_AFTER_MS → báo đã xem (mỗi điểm một lần).
-  useEffect(() => {
-    if (engagedSpot !== spot || reportedSpots.current.has(spot)) return
-    const t = window.setTimeout(() => {
-      reportedSpots.current.add(spot)
-      onSpotViewedRef.current?.(spot)
-    }, VIEWED_AFTER_MS)
-    return () => window.clearTimeout(t)
-  }, [engagedSpot, spot])
+    useEffect(() => {
+        onSpotViewedRef.current = onSpotViewed
+    }, [onSpotViewed])
 
-  // Khung 4:3 vừa khít vùng hiển thị
-  useLayoutEffect(() => {
-    const el = stageRef.current
-    if (!el) return
-    const update = () => {
-      const w = el.clientWidth
-      if (!w) return
-      // Màn rộng: khung lấp cột (trừ hàng nút). Di động: theo bề ngang, tối đa ~62% chiều cao màn hình.
-      const wide = window.matchMedia('(min-width: 1024px)').matches
-      const h = wide ? el.clientHeight - CTRL_H : window.innerHeight * 0.62
-      if (h <= 0) return
-      const fw = Math.min(w, h * RATIO)
-      setBox({ w: Math.round(fw), h: Math.round(fw / RATIO) })
+    // Đã tự tương tác và ở lại điểm đó ≥ VIEWED_AFTER_MS → báo đã xem (mỗi điểm một lần).
+    useEffect(() => {
+        if (engagedSpot !== spot || reportedSpots.current.has(spot)) return
+        const t = window.setTimeout(() => {
+            reportedSpots.current.add(spot)
+            onSpotViewedRef.current?.(spot)
+        }, VIEWED_AFTER_MS)
+        return () => window.clearTimeout(t)
+    }, [engagedSpot, spot])
+
+    const stopHint = useCallback(() => {
+        cancelAnimationFrame(anim.current)
+        anim.current = 0
+    }, [])
+
+    // Gợi ý thao tác: thanh trượt lướt qua lại một lần khi mở điểm mới
+    useEffect(() => {
+        setPos(50)
+        if (reducedMotion() || touched.current) return
+        const keys = [50, 74, 26, 50]
+        const seg = 650
+        let start = 0
+        const tick = (t: number) => {
+            if (!start) start = t + 500
+            const e = Math.max(0, t - start)
+            const i = Math.min(keys.length - 2, Math.floor(e / seg))
+            const u = Math.min(1, (e - i * seg) / seg)
+            const k = u < 0.5 ? 2 * u * u : 1 - (-2 * u + 2) ** 2 / 2
+            setPos(keys[i] + (keys[i + 1] - keys[i]) * k)
+            if (e < seg * (keys.length - 1)) anim.current = requestAnimationFrame(tick)
+        }
+        anim.current = requestAnimationFrame(tick)
+        return stopHint
+    }, [spot, stopHint])
+
+    // Tải trước ảnh các điểm khác
+    useEffect(() => {
+        XUA_NAY_SPOTS.forEach((id) => {
+            const s = XUA_NAY[id]
+            ;[s.xua.src, s.nay.src].forEach((src) => {
+                const img = new Image()
+                img.src = src
+            })
+        })
+    }, [])
+
+    const posFromEvent = (clientX: number) => {
+        const r = frameRef.current?.getBoundingClientRect()
+        if (!r || !r.width) return pos
+        return Math.max(0, Math.min(100, ((clientX - r.left) / r.width) * 100))
     }
-    update()
-    const ro = new ResizeObserver(update)
-    ro.observe(el)
-    return () => ro.disconnect()
-  }, [])
 
-  const stopHint = useCallback(() => {
-    cancelAnimationFrame(anim.current)
-    anim.current = 0
-  }, [])
-
-  // Gợi ý thao tác: thanh trượt lướt qua lại một lần khi mở điểm mới
-  useEffect(() => {
-    setPos(50)
-    if (reducedMotion() || touched.current) return
-    const keys = [50, 74, 26, 50]
-    const seg = 650
-    let start = 0
-    const tick = (t: number) => {
-      if (!start) start = t + 500
-      const e = Math.max(0, t - start)
-      const i = Math.min(keys.length - 2, Math.floor(e / seg))
-      const u = Math.min(1, (e - i * seg) / seg)
-      const k = u < 0.5 ? 2 * u * u : 1 - (-2 * u + 2) ** 2 / 2
-      setPos(keys[i] + (keys[i + 1] - keys[i]) * k)
-      if (e < seg * (keys.length - 1)) anim.current = requestAnimationFrame(tick)
+    const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
+        stopHint()
+        touched.current = true
+        setEngagedSpot(spot)
+        setDragging(true)
+        e.currentTarget.setPointerCapture(e.pointerId)
+        setPos(posFromEvent(e.clientX))
     }
-    anim.current = requestAnimationFrame(tick)
-    return stopHint
-  }, [spot, stopHint])
+    const onPointerMove = (e: PointerEvent<HTMLDivElement>) => {
+        if (dragging) setPos(posFromEvent(e.clientX))
+    }
+    const endDrag = () => setDragging(false)
 
-  // Tải trước ảnh các điểm khác
-  useEffect(() => {
-    XUA_NAY_SPOTS.forEach((id) => {
-      const s = XUA_NAY[id]
-      ;[s.xua.src, s.nay.src].forEach((src) => {
-        const img = new Image()
-        img.src = src
-      })
-    })
-  }, [])
+    const onKey = (e: KeyboardEvent<HTMLDivElement>) => {
+        const step = e.shiftKey ? 20 : 5
+        let next: number | null = null
+        if (e.key === 'ArrowLeft') next = pos - step
+        else if (e.key === 'ArrowRight') next = pos + step
+        else if (e.key === 'Home') next = 0
+        else if (e.key === 'End') next = 100
+        if (next === null) return
+        e.preventDefault()
+        stopHint()
+        touched.current = true
+        setEngagedSpot(spot)
+        setPos(Math.max(0, Math.min(100, next)))
+    }
 
-  const posFromEvent = (clientX: number) => {
-    const r = frameRef.current?.getBoundingClientRect()
-    if (!r || !r.width) return pos
-    return Math.max(0, Math.min(100, ((clientX - r.left) / r.width) * 100))
-  }
+    const snap = (v: number) => {
+        stopHint()
+        touched.current = true
+        setEngagedSpot(spot)
+        setPos(v)
+    }
 
-  const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
-    stopHint()
-    touched.current = true
-    setEngagedSpot(spot)
-    setDragging(true)
-    e.currentTarget.setPointerCapture(e.pointerId)
-    setPos(posFromEvent(e.clientX))
-  }
-  const onPointerMove = (e: PointerEvent<HTMLDivElement>) => {
-    if (dragging) setPos(posFromEvent(e.clientX))
-  }
-  const endDrag = () => setDragging(false)
+    const idx = XUA_NAY_SPOTS.indexOf(spot)
+    const go = (d: number) =>
+        onSpotChange(XUA_NAY_SPOTS[(idx + d + XUA_NAY_SPOTS.length) % XUA_NAY_SPOTS.length])
 
-  const onKey = (e: KeyboardEvent<HTMLDivElement>) => {
-    const step = e.shiftKey ? 20 : 5
-    let next: number | null = null
-    if (e.key === 'ArrowLeft') next = pos - step
-    else if (e.key === 'ArrowRight') next = pos + step
-    else if (e.key === 'Home') next = 0
-    else if (e.key === 'End') next = 100
-    if (next === null) return
-    e.preventDefault()
-    stopHint()
-    touched.current = true
-    setEngagedSpot(spot)
-    setPos(Math.max(0, Math.min(100, next)))
-  }
+    return (
+        <div className="xua-nay-view flex h-full min-h-0 w-full flex-col bg-[#f2f7ff] text-[#0F1B33] font-sans selection:bg-[#FDC908] selection:text-[#0F1B33]">
+            <style>
+                {`
+        .xua-nay-view .tp-scroll::-webkit-scrollbar {
+          width: 5px;
+          height: 5px;
+        }
+        .xua-nay-view .tp-scroll::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .xua-nay-view .tp-scroll::-webkit-scrollbar-thumb {
+          background: rgba(2, 117, 251, 0.22);
+          border-radius: 999px;
+        }
+        .xua-nay-view .tp-scroll::-webkit-scrollbar-button {
+          display: none;
+        }
+        `}
+            </style>
 
-  const snap = (v: number) => {
-    stopHint()
-    touched.current = true
-    setEngagedSpot(spot)
-    setPos(v)
-  }
+            {/* =================================================================== */}
+            {/* THANH TIÊU ĐỀ HOÀNG GIA (ROYAL COMMAND HEADER)                      */}
+            {/* =================================================================== */}
+            <header className="relative flex shrink-0 flex-wrap items-center gap-3 border-b-[3px] border-[#FDC908] bg-gradient-to-r from-[#0353B8] via-[#0275FB] to-[#014296] px-4 py-3 text-white shadow-[0_10px_28px_rgba(2,117,251,0.22)] sm:px-6">
+                <button
+                    type="button"
+                    onClick={onBack}
+                    aria-label="Quay lại Dòng thời gian"
+                    title="Quay lại Dòng thời gian"
+                    className="flex min-h-[42px] shrink-0 items-center gap-1.5 rounded-xl border border-white/30 bg-white/15 px-3.5 text-xs font-black uppercase tracking-wider text-white backdrop-blur-md transition-all hover:bg-white hover:text-[#0275FB] cursor-pointer"
+                >
+                    <MaterialIcon name="arrow_back" className="text-base text-[#FDC908]" />
+                    <span className="hidden sm:inline">Dòng thời gian</span>
+                </button>
 
-  const idx = XUA_NAY_SPOTS.indexOf(spot)
-  const go = (d: number) => onSpotChange(XUA_NAY_SPOTS[(idx + d + XUA_NAY_SPOTS.length) % XUA_NAY_SPOTS.length])
+                <span
+                    className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-2xl border-2 border-white bg-gradient-to-br from-[#FFF2C3] via-[#FDC908] to-[#FDB900] text-[#0F1B33] shadow-md sm:flex"
+                    aria-hidden="true"
+                >
+          <MaterialIcon name="compare" className="text-2xl text-[#0275FB]" />
+        </span>
 
-  return (
-    <div className="flex h-full min-h-0 w-full flex-col bg-neutral-950 text-white">
-      {/* Thanh tiêu đề */}
-      <header className="flex shrink-0 items-center gap-2 border-b border-white/10 px-3 py-2 sm:px-4">
-        <button
-          type="button"
-          onClick={onBack}
-          aria-label="Quay lại Dòng thời gian"
-          title="Quay lại Dòng thời gian"
-          className="flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 text-xs text-white/85 hover:bg-white/10"
-        >
-          <MaterialIcon name="arrow_back" className="text-base" />
-          <span className="hidden sm:inline">Dòng thời gian</span>
-        </button>
-        <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/50">Xưa &amp; Nay</p>
-          <h1 className="truncate text-base font-bold leading-tight sm:text-lg">{data.name}</h1>
-        </div>
-        <div className="flex shrink-0 items-center gap-1">
-          <button type="button" onClick={() => go(-1)} className="flex h-11 w-11 items-center justify-center rounded-full text-white/75 hover:bg-white/10" aria-label="Điểm trước">
-            <MaterialIcon name="chevron_left" className="text-xl" />
-          </button>
-          <span className="w-8 text-center text-[11px] tabular-nums text-white/50">
+                <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#FFF2C3]">
+                        Cổng Thời Gian · Xưa &amp; Nay
+                    </p>
+                    <h1 className="truncate text-base font-black leading-tight text-white sm:text-xl">
+                        {data.name}
+                    </h1>
+                </div>
+
+                <div className="flex shrink-0 items-center gap-1 rounded-full border border-white/25 bg-[#0F1B33]/35 p-1 backdrop-blur-md">
+                    <button
+                        type="button"
+                        onClick={() => go(-1)}
+                        className="flex h-9 w-9 items-center justify-center rounded-full text-white transition-colors hover:bg-white/20 cursor-pointer"
+                        aria-label="Điểm trước"
+                    >
+                        <MaterialIcon name="chevron_left" className="text-xl text-[#FDC908]" />
+                    </button>
+                    <span className="w-9 text-center text-xs tabular-nums font-black text-[#FFF2C3]">
             {idx + 1}/{XUA_NAY_SPOTS.length}
           </span>
-          <button type="button" onClick={() => go(1)} className="flex h-11 w-11 items-center justify-center rounded-full text-white/75 hover:bg-white/10" aria-label="Điểm sau">
-            <MaterialIcon name="chevron_right" className="text-xl" />
-          </button>
-        </div>
+                    <button
+                        type="button"
+                        onClick={() => go(1)}
+                        className="flex h-9 w-9 items-center justify-center rounded-full text-white transition-colors hover:bg-white/20 cursor-pointer"
+                        aria-label="Điểm sau"
+                    >
+                        <MaterialIcon name="chevron_right" className="text-xl text-[#FDC908]" />
+                    </button>
+                </div>
+              {audioNotice}
       </header>
 
-      <div className="tp-scroll grid min-h-0 flex-1 grid-cols-1 content-start gap-3 overflow-y-auto p-3 sm:p-4 lg:grid-cols-[minmax(0,1fr)_340px] lg:grid-rows-1 lg:content-stretch lg:gap-5 lg:overflow-hidden lg:p-5">
-        {/* Khung so sánh — di động: cao theo tỉ lệ 4:3; màn rộng: lấp đầy cột */}
-        <section className="flex min-w-0 flex-col lg:min-h-0">
-          <div ref={stageRef} className="relative flex w-full flex-col items-center justify-center lg:min-h-0 lg:flex-1">
-            <div
-              ref={frameRef}
-              key={spot}
-              className="relative touch-none select-none overflow-hidden rounded-xl bg-black shadow-[0_24px_60px_-20px_rgba(0,0,0,0.9)] ring-1 ring-white/10"
-              style={{ width: box.w || '100%', height: box.h || undefined, aspectRatio: box.w ? undefined : '4 / 3', animation: 'tp-fade-in 450ms ease-out both', cursor: dragging ? 'grabbing' : 'ew-resize' }}
-              onPointerDown={onPointerDown}
-              onPointerMove={onPointerMove}
-              onPointerUp={endDrag}
-              onPointerCancel={endDrag}
-            >
-              <img src={data.nay.src} alt={`${data.name} hiện nay`} className="absolute inset-0 h-full w-full object-cover" draggable={false} />
-              <img
-                src={data.xua.src}
-                alt={`${data.name} năm 1968 — tranh tái hiện`}
-                className="absolute inset-0 h-full w-full object-cover"
-                style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }}
-                draggable={false}
-              />
+            {/* =================================================================== */}
+            {/* BỐ CỤC CHÍNH: KHUNG ẢNH TRÀN VIỀN (TRÁI) & THÔNG TIN ĐIỂM (PHẢI)    */}
+            {/* =================================================================== */}
+            <div className="tp-scroll grid min-h-0 flex-1 grid-cols-1 content-start gap-4 overflow-y-auto p-3 sm:p-4 lg:grid-cols-[minmax(0,1fr)_350px] xl:grid-cols-[minmax(0,1fr)_380px] lg:grid-rows-1 lg:content-stretch lg:gap-5 lg:overflow-hidden lg:p-5">
+                {/* CỘT TRÁI: KHUNG SO SÁNH MỞ RỘNG TOÀN DIỆN TÍCH (KHÔNG CÒN KHOẢNG TRỐNG) */}
+                <section className="flex min-w-0 flex-col rounded-[26px] border-2 border-[#0275FB]/15 bg-white p-2.5 sm:p-3.5 shadow-[0_16px_42px_rgba(2,117,251,0.08)] lg:min-h-0">
+                    {/* Thanh tiêu đề nhỏ gọn kết hợp nút chuyển nhanh */}
+                    <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2 px-1">
+                        <div className="flex items-center gap-2">
+                            <span className="h-2.5 w-2.5 rounded-full bg-[#FDC908] ring-4 ring-[#FFF2C3]" />
+                            <p className="text-xs sm:text-sm font-black text-[#0F1B33]">
+                                Một góc nhìn, hai thời kỳ
+                            </p>
+                            <span className="hidden md:inline-flex items-center gap-1 rounded-full bg-[#F2F7FF] border border-[#0275FB]/15 px-2.5 py-0.5 text-[11px] font-bold text-[#0275FB]">
+                <MaterialIcon name="swipe" className="text-sm" />
+                Kéo thanh chia để khám phá
+              </span>
+                        </div>
 
-              {/* Nhãn hai bên */}
-              <span
-                className="pointer-events-none absolute left-2 top-2 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-black shadow transition-opacity sm:left-3 sm:top-3 sm:text-[11px]"
-                style={{ background: XUA, opacity: pos > 14 ? 1 : 0 }}
-              >
+                        {/* 3 Nút chuyển nhanh bố trí ngay trên thanh điều khiển để nhường 100% chiều cao cho ảnh */}
+                        <div className="flex shrink-0 flex-wrap items-center gap-1.5">
+                            <button
+                                type="button"
+                                onClick={() => snap(100)}
+                                aria-label="Xem 1968"
+                                aria-pressed={pos >= 99}
+                                className="flex min-h-[34px] items-center gap-1.5 rounded-full border px-3 text-xs font-black transition-all cursor-pointer"
+                                style={
+                                    pos >= 99
+                                        ? { background: XUA, borderColor: XUA, color: '#0F1B33' }
+                                        : { borderColor: '#f1d680', color: XUA_INK, background: '#fffaf0' }
+                                }
+                            >
+                                <MaterialIcon name="history" className="text-sm" />
+                                <span className="sm:hidden">1968</span>
+                                <span className="hidden sm:inline">Xem 1968</span>
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => snap(50)}
+                                aria-label="Chia đôi ảnh"
+                                aria-pressed={Math.abs(pos - 50) < 1}
+                                className={`flex min-h-[34px] items-center gap-1 rounded-full border px-3 text-xs font-black transition-all cursor-pointer ${
+                                    Math.abs(pos - 50) < 1
+                                        ? 'border-[#0275FB] bg-[#EAF3FF] text-[#0275FB]'
+                                        : 'border-slate-200 bg-white text-slate-700 hover:bg-[#F2F7FF]'
+                                }`}
+                            >
+                                <MaterialIcon name="compare" className="text-sm text-[#0275FB]" />
+                                <span>Chia đôi</span>
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => snap(0)}
+                                aria-label="Xem hiện nay"
+                                aria-pressed={pos <= 1}
+                                className="flex min-h-[34px] items-center gap-1.5 rounded-full border px-3 text-xs font-black transition-all cursor-pointer"
+                                style={
+                                    pos <= 1
+                                        ? { background: NAY, borderColor: NAY, color: '#fff' }
+                                        : { borderColor: '#b6d2f5', color: NAY, background: '#f2f7ff' }
+                                }
+                            >
+                                <MaterialIcon name="photo_camera" className="text-sm" />
+                                <span className="sm:hidden">Hiện nay</span>
+                                <span className="hidden sm:inline">Xem hiện nay</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Vùng hiển thị ảnh tràn 100% chiều rộng và chiều cao khung */}
+                    <div
+                        ref={stageRef}
+                        className="relative flex w-full flex-1 flex-col items-stretch justify-center min-h-[320px] sm:min-h-[440px] lg:min-h-0"
+                    >
+                        <div
+                            ref={frameRef}
+                            key={spot}
+                            className="relative w-full h-full flex-1 min-h-[320px] sm:min-h-[440px] lg:min-h-0 touch-none select-none overflow-hidden rounded-[20px] bg-[#07132C] shadow-[0_14px_35px_rgba(15,27,51,0.2)] border-2 border-[#FDC908]/85"
+                            style={{
+                                animation: 'tp-fade-in 450ms ease-out both',
+                                cursor: dragging ? 'grabbing' : 'ew-resize',
+                            }}
+                            onPointerDown={onPointerDown}
+                            onPointerMove={onPointerMove}
+                            onPointerUp={endDrag}
+                            onPointerCancel={endDrag}
+                        >
+                            <img
+                                src={data.nay.src}
+                                alt={`${data.name} hiện nay`}
+                                className="absolute inset-0 h-full w-full object-cover object-center"
+                                draggable={false}
+                            />
+                            <img
+                                src={data.xua.src}
+                                alt={`${data.name} năm 1968 — tranh tái hiện`}
+                                className="absolute inset-0 h-full w-full object-cover object-center"
+                                style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }}
+                                draggable={false}
+                            />
+
+                            {/* Nhãn hai bên */}
+                            <span
+                                className="pointer-events-none absolute left-3 top-3 rounded-full border border-white/60 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-[#0F1B33] shadow-md transition-opacity sm:left-4 sm:top-4 sm:text-xs"
+                                style={{ background: XUA, opacity: pos > 12 ? 1 : 0 }}
+                            >
                 1968 · Tái hiện
               </span>
-              <span
-                className="pointer-events-none absolute right-2 top-2 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-black shadow transition-opacity sm:right-3 sm:top-3 sm:text-[11px]"
-                style={{ background: NAY, opacity: pos < 86 ? 1 : 0 }}
-              >
+                            <span
+                                className="pointer-events-none absolute right-3 top-3 rounded-full border border-white/40 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-white shadow-md transition-opacity sm:right-4 sm:top-4 sm:text-xs"
+                                style={{ background: NAY, opacity: pos < 88 ? 1 : 0 }}
+                            >
                 Hiện nay
               </span>
 
-              {/* Tay kéo */}
-              <div className="pointer-events-none absolute inset-y-0 -ml-px w-0.5 bg-white/90 shadow-[0_0_10px_rgba(0,0,0,0.6)]" style={{ left: `${pos}%` }} />
-              <div className="pointer-events-none absolute inset-y-0" style={{ left: `${Math.min(96, Math.max(4, pos))}%` }}>
-                <div
-                  role="slider"
-                  tabIndex={0}
-                  aria-label="Kéo để so sánh xưa và nay"
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                  aria-valuenow={Math.round(pos)}
-                  aria-valuetext={`${Math.round(pos)}% tranh 1968`}
-                  onKeyDown={onKey}
-                  className="pointer-events-auto absolute left-0 top-1/2 flex h-11 w-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white bg-black/60 text-white shadow-lg outline-none backdrop-blur-sm focus-visible:ring-4 focus-visible:ring-amber-300/60"
-                >
-                  <MaterialIcon name="compare_arrows" className="text-xl" />
-                </div>
-              </div>
-            </div>
+                            {/* Đường kẻ dọc & Tay kéo trung tâm */}
+                            <div
+                                className="pointer-events-none absolute inset-y-0 -ml-px w-[3px] bg-gradient-to-b from-[#FDC908] via-white to-[#FDC908] shadow-[0_0_14px_rgba(0,0,0,0.75)]"
+                                style={{ left: `${pos}%` }}
+                            />
+                            <div
+                                className="pointer-events-none absolute inset-y-0"
+                                style={{ left: `${Math.min(96, Math.max(4, pos))}%` }}
+                            >
+                                <div
+                                    role="slider"
+                                    tabIndex={0}
+                                    aria-label="Kéo để so sánh xưa và nay"
+                                    aria-valuemin={0}
+                                    aria-valuemax={100}
+                                    aria-valuenow={Math.round(pos)}
+                                    aria-valuetext={`${Math.round(pos)}% tranh 1968`}
+                                    onKeyDown={onKey}
+                                    className="pointer-events-auto absolute left-0 top-1/2 flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-[3px] border-[#FDC908] bg-[#0275FB] text-white shadow-[0_4px_18px_rgba(15,27,51,0.5)] outline-none transition-transform hover:scale-110 focus-visible:ring-4 focus-visible:ring-[#FDC908]"
+                                >
+                                    <MaterialIcon name="compare_arrows" className="text-2xl text-[#FDC908]" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
 
-            {/* Nút nhanh */}
-            <div className="flex shrink-0 items-end justify-center gap-2" style={{ height: CTRL_H }}>
-            <button
-              type="button"
-              onClick={() => snap(100)}
-              className="flex min-h-[40px] items-center gap-1.5 rounded-full border px-3.5 text-xs font-semibold transition-colors"
-              style={pos >= 99 ? { background: XUA, borderColor: XUA, color: '#000' } : { borderColor: `${XUA}66`, color: XUA }}
-            >
-              <MaterialIcon name="history" className="text-base" />
-              Xem 1968
-            </button>
-            <button
-              type="button"
-              onClick={() => snap(50)}
-              className="flex min-h-[40px] items-center gap-1 rounded-full border border-white/15 px-3 text-xs text-white/70 hover:bg-white/10"
-            >
-              <MaterialIcon name="compare" className="text-base" />
-              <span className="hidden sm:inline">Chia đôi</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => snap(0)}
-              className="flex min-h-[40px] items-center gap-1.5 rounded-full border px-3.5 text-xs font-semibold transition-colors"
-              style={pos <= 1 ? { background: NAY, borderColor: NAY, color: '#000' } : { borderColor: `${NAY}66`, color: NAY }}
-            >
-              <MaterialIcon name="photo_camera" className="text-base" />
-              Xem hiện nay
-            </button>
-            </div>
-          </div>
-        </section>
+                {/* CỘT PHẢI: THUYẾT MINH ĐỐI CHIẾU & DANH SÁCH 5 ĐIỂM DI TÍCH */}
+                <aside className="tp-scroll flex min-w-0 flex-col gap-3.5 lg:min-h-0 lg:overflow-y-auto pr-0.5">
+                    {/* Thẻ thuyết minh 2 thời kỳ */}
+                    <div
+                        key={spot}
+                        className="rounded-[24px] border-2 border-[#0275FB]/15 bg-white p-4 sm:p-5 shadow-[0_12px_30px_rgba(2,117,251,0.07)] space-y-3.5"
+                        style={{ animation: 'tp-enter 380ms ease-out both' }}
+                    >
+                        <div className="rounded-2xl bg-[#FFFBEB] border border-[#FDC908]/70 border-l-4 border-l-[#FDC908] p-3.5">
+                            <p
+                                className="text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5"
+                                style={{ color: XUA_INK }}
+                            >
+                                <MaterialIcon name="history_edu" className="text-sm text-[#0275FB]" />
+                                <span>1968 · Tranh tái hiện</span>
+                            </p>
+                            <p className="mt-1 text-xs sm:text-sm font-medium leading-relaxed text-[#0F1B33]">
+                                {data.xua.text}
+                            </p>
+                        </div>
 
-        {/* Thông tin + chọn điểm */}
-        <aside className="tp-scroll flex min-w-0 flex-col gap-3 lg:min-h-0 lg:overflow-y-auto">
-          <div key={spot} className="rounded-2xl border border-white/10 bg-white/[0.04] p-4" style={{ animation: 'tp-enter 380ms ease-out both' }}>
-            <div className="border-l-2 pl-3" style={{ borderColor: XUA }}>
-              <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: XUA }}>
-                1968 · Tranh tái hiện
-              </p>
-              <p className="mt-1 text-sm leading-relaxed text-white/85">{data.xua.text}</p>
-            </div>
-            <div className="mt-3 border-l-2 pl-3" style={{ borderColor: NAY }}>
-              <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: NAY }}>
-                Hiện nay
-              </p>
-              <p className="mt-1 text-sm leading-relaxed text-white/85">{data.nay.text}</p>
-            </div>
-            <p className="mt-3 flex gap-1.5 text-[11px] leading-snug text-white/45">
-              <MaterialIcon name="info" className="mt-px text-sm" />
-              <span>
+                        <div className="rounded-2xl bg-[#F2F7FF] border border-[#0275FB]/20 border-l-4 border-l-[#0275FB] p-3.5">
+                            <p
+                                className="text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5"
+                                style={{ color: NAY }}
+                            >
+                                <MaterialIcon name="photo_camera" className="text-sm text-[#0275FB]" />
+                                <span>Hiện nay</span>
+                            </p>
+                            <p className="mt-1 text-xs sm:text-sm font-medium leading-relaxed text-[#0F1B33]">
+                                {data.nay.text}
+                            </p>
+                        </div>
+
+                        <p className="flex items-start gap-1.5 text-[11px] font-medium leading-snug text-slate-500 pt-1">
+                            <MaterialIcon name="info" className="mt-0.5 text-sm text-[#0275FB] shrink-0" />
+                            <span>
                 {XUA_NAY_ART_NOTE} {XUA_NAY_PHOTO_CREDIT}.
               </span>
-            </p>
-          </div>
+                        </p>
+                    </div>
 
-          <nav aria-label="Các điểm Xưa & Nay" className="grid grid-cols-5 gap-1.5 lg:grid-cols-1 lg:gap-2">
-            {XUA_NAY_SPOTS.map((id) => {
-              const s = XUA_NAY[id]
-              const active = id === spot
-              return (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => onSpotChange(id)}
-                  aria-current={active ? 'true' : undefined}
-                  className={`group flex min-w-0 flex-col items-center gap-1 rounded-xl border p-1 text-center transition-colors lg:flex-row lg:gap-3 lg:p-1.5 lg:text-left ${
-                    active ? 'border-amber-300/70 bg-amber-300/10' : 'border-white/10 bg-white/[0.03] hover:bg-white/[0.08]'
-                  }`}
-                >
-                  <span className="relative block aspect-[4/3] w-full shrink-0 overflow-hidden rounded-lg lg:w-20">
-                    <img src={s.nay.src} alt="" className="h-full w-full object-cover" loading="lazy" draggable={false} />
-                    <img src={s.xua.src} alt="" className="absolute inset-0 h-full w-full object-cover" style={{ clipPath: 'inset(0 50% 0 0)' }} loading="lazy" draggable={false} />
-                  </span>
-                  <span className={`w-full truncate text-[10px] leading-tight sm:text-[11px] lg:text-sm ${active ? 'font-semibold text-white' : 'text-white/70'}`}>
-                    <span className="hidden lg:inline">{s.name}</span>
-                    <span className="lg:hidden">{s.short}</span>
-                  </span>
-                </button>
-              )
-            })}
-          </nav>
-        </aside>
-      </div>
-    </div>
-  )
+                    {/* Danh sách 5 điểm Xưa & Nay */}
+                    <nav
+                        aria-label="Các điểm Xưa & Nay"
+                        className="order-first rounded-[24px] border-2 border-[#0275FB]/15 bg-white p-4 shadow-[0_12px_30px_rgba(2,117,251,0.06)] lg:order-none"
+                    >
+                        <h2 className="mb-3 flex items-center gap-2 text-xs font-black uppercase tracking-wider text-[#0F1B33]">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#EAF3FF] text-[#0275FB]">
+                <MaterialIcon name="location_on" className="text-base" />
+              </span>
+                            <span>Khám phá 5 điểm tại di tích</span>
+                        </h2>
+
+                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-1">
+                            {XUA_NAY_SPOTS.map((id) => {
+                                const s = XUA_NAY[id]
+                                const active = id === spot
+                                return (
+                                    <button
+                                        key={id}
+                                        type="button"
+                                        onClick={() => onSpotChange(id)}
+                                        aria-label={s.name}
+                                        aria-current={active ? 'true' : undefined}
+                                        className={`group flex min-w-0 items-center gap-2.5 rounded-2xl border-2 p-2 text-left transition-all cursor-pointer lg:gap-3 ${
+                                            active
+                                                ? 'border-[#FDC908] bg-gradient-to-r from-[#FFFBEB] via-white to-[#F2F7FF] shadow-sm'
+                                                : 'border-slate-100 bg-[#F8FAFC] hover:border-[#0275FB]/40 hover:bg-white'
+                                        }`}
+                                    >
+                    <span className="relative block aspect-[4/3] w-12 shrink-0 overflow-hidden rounded-xl border border-slate-200 sm:w-14 lg:w-20">
+                      <img
+                          src={s.nay.src}
+                          alt=""
+                          className="h-full w-full object-cover"
+                          loading="lazy"
+                          draggable={false}
+                      />
+                      <img
+                          src={s.xua.src}
+                          alt=""
+                          className="absolute inset-0 h-full w-full object-cover"
+                          style={{ clipPath: 'inset(0 50% 0 0)' }}
+                          loading="lazy"
+                          draggable={false}
+                      />
+                    </span>
+
+                                        <span
+                                            className={`min-w-0 flex-1 text-xs leading-snug sm:text-[13px] lg:text-sm ${
+                                                active
+                                                    ? 'font-black text-[#0F1B33]'
+                                                    : 'font-bold text-slate-600 group-hover:text-[#0275FB]'
+                                            }`}
+                                        >
+                      <span className="hidden lg:inline">{s.name}</span>
+                      <span className="lg:hidden">{s.short}</span>
+                    </span>
+
+                                        <MaterialIcon
+                                            name={active ? 'check_circle' : 'chevron_right'}
+                                            className={`hidden lg:inline text-lg shrink-0 ${
+                                                active ? 'text-[#0275FB]' : 'text-slate-300 group-hover:text-[#0275FB]'
+                                            }`}
+                                        />
+                                    </button>
+                                )
+                            })}
+                        </div>
+                    </nav>
+                </aside>
+            </div>
+        </div>
+    )
 }
