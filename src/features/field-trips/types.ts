@@ -136,3 +136,13 @@ export function canCancelTrip(status: FieldTripStatus): boolean {
 export function canCreateGroup(status: FieldTripStatus): boolean {
   return NOT_STARTED.includes(status)
 }
+
+export function joinBlockReason(
+  preview: Pick<TripJoinPreview, 'status' | 'visitEnd'>,
+  now = Date.now(),
+): string | null {
+  if (preview.status === 'CANCELLED') return 'Chuyến đi đã bị hủy'
+  if (preview.status === 'COMPLETED') return 'Chuyến đi đã kết thúc'
+  if (preview.visitEnd && new Date(preview.visitEnd).getTime() < now) return 'Chuyến đi đã hết hạn'
+  return null
+}

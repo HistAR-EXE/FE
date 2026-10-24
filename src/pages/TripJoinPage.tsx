@@ -4,7 +4,7 @@ import { AppLayout } from '../components/layout/AppLayout'
 import { SimpleTopNav } from '../components/layout/TopNav'
 import { Button } from '../components/ui/Button'
 import { fieldTripApi } from '../features/field-trips/api'
-import { formatVisit, participationLabel, type TripJoinPreview } from '../features/field-trips/types'
+import { formatVisit, joinBlockReason, participationLabel, type TripJoinPreview } from '../features/field-trips/types'
 import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
 import { useToast } from '../shared/ui/toast/useToast'
 
@@ -44,7 +44,7 @@ export function TripJoinPage() {
 
   const onJoin = async (event: FormEvent) => {
     event.preventDefault()
-    if (!groupId || error) return
+    if (!preview || !groupId || error || joinBlockReason(preview)) return
     try {
       setSaving(true)
       await fieldTripApi.join({ code, groupId })
@@ -58,14 +58,17 @@ export function TripJoinPage() {
     }
   }
 
+  const blocked = preview ? joinBlockReason(preview) : null
+  const alert = error ?? blocked
+
   return (
     <AppLayout activeBorder="left" topNav={<SimpleTopNav title="Tham gia chuyến đi" />}>
       <main className="mt-14 md:mt-16 p-md md:p-lg max-w-3xl mx-auto w-full space-y-md">
         {loading && <p className="text-sm text-on-surface-variant">Đang tải chuyến đi...</p>}
-        {error && (
-          <p role="alert" className="rounded-lg border border-error/40 bg-error/10 px-md py-sm text-sm">{error}</p>
+        {alert && (
+          <p role="alert" className="rounded-lg border border-error/40 bg-error/10 px-md py-sm text-sm">{alert}</p>
         )}
-        {preview && !error && (
+        {preview && !alert && (
           <form onSubmit={(event) => void onJoin(event)} className="bg-surface-container border border-outline-variant rounded-xl p-md space-y-sm">
             <h1 className="font-display-md text-on-surface">{preview.title}</h1>
             <p className="text-sm text-on-surface-variant">Di tích: {preview.siteCode}</p>

@@ -260,6 +260,11 @@ async function mockFieldTrips(page: Page, options: MockOptions = {}) {
       const body = request.postDataJSON() as { code?: string; groupId?: string }
       const message = body.code ? options.joinErrors?.[body.code] : undefined
       if (message) return fail(422, message)
+      const current = state.trips.find((item) => item.joinCode === body.code)
+      if (!current) return fail(422, 'Mã chuyến không hợp lệ')
+      if (current.status === 'CANCELLED') return fail(422, 'Chuyến đi đã bị hủy')
+      if (current.status === 'COMPLETED') return fail(422, 'Chuyến đi đã kết thúc')
+      if (new Date(current.visitEnd).getTime() < Date.now()) return fail(422, 'Chuyến đi đã hết hạn')
       const group = state.groups.find((item) => item.id === body.groupId) ?? state.groups[0]
       return ok({ ...(group ?? { id: body.groupId, name: 'Nhóm', participationMode: 'INDIVIDUAL', declaredSize: null, memberCount: 1 }), memberCount: 1 })
     }
@@ -392,15 +397,31 @@ test('student previews groups and joins with code plus groupId', async ({ page }
 
 test('invalid, cancelled, completed, and expired codes show the backend message', async ({ page }) => {
   const calls: Calls = { groupMine: 0, joinPosts: 0 }
-  const joinErrors = {
-    BADCODE1: 'Mã chuyến không hợp lệ',
-    CANCEL01: 'Chuyến đi đã bị hủy',
-    DONECODE: 'Chuyến đi đã kết thúc',
-    EXPIRED1: 'Chuyến đi đã hết hạn',
-  }
   await seed(page, 'USER')
-  await mockFieldTrips(page, { role: 'USER', calls, joinErrors })
-  for (const [code, message] of Object.entries(joinErrors)) {
+  await mockFieldTrips(page, {
+    role: 'USER',
+    calls,
+    joinErrors: { BADCODE1: 'Mã chuyến không hợp lệ' },
+    trips: [
+      trip({ id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', title: 'Đã hủy', status: 'CANCELLED', joinCode: 'CANCEL01' }),
+      trip({ id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', title: 'Đã xong', status: 'COMPLETED', joinCode: 'DONECODE' }),
+      trip({
+        id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+        title: 'Hết hạn',
+        status: 'ACTIVE',
+        joinCode: 'EXPIRED1',
+        visitStart: '2020-01-01T01:00:00.000Z',
+        visitEnd: '2020-01-01T04:00:00.000Z',
+      }),
+    ],
+    groups: [{ id: GROUP_A, name: 'Tổ 1', participationMode: 'INDIVIDUAL', declaredSize: null, memberCount: 0 }],
+  })
+  for (const [code, message] of [
+    ['BADCODE1', 'Mã chuyến không hợp lệ'],
+    ['CANCEL01', 'Chuyến đi đã bị hủy'],
+    ['DONECODE', 'Chuyến đi đã kết thúc'],
+    ['EXPIRED1', 'Chuyến đi đã hết hạn'],
+  ] as const) {
     await page.goto(`/trip/join/${code}`)
     await expect(page.getByRole('alert')).toContainText(message)
     await expect(page.getByRole('button', { name: 'Tham gia nhóm' })).toHaveCount(0)
