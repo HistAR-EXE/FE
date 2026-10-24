@@ -14,6 +14,7 @@ export type BuiltScene = {
   root: THREE.Group
   animators: Animator[]
   pickables: THREE.Object3D[]
+  semanticTargets: ReadonlyMap<string, { info: InfoItem; focus: THREE.Vector3 }>
   labelLayer: THREE.Group
   /** Khung nội dung (đơn vị cục bộ) để viewer canh camera. */
   bounds: { minX: number; maxX: number; minY: number; maxY: number; minZ: number; maxZ: number }
@@ -678,7 +679,12 @@ function makeChamber(ch: Chamber, s: EraScene, kit: Kit, animators: Animator[]):
   props.position.set(ch.x, ch.y, cz)
   g.add(props)
 
-  room.userData.info = { title: ch.title, desc: ch.desc } satisfies InfoItem
+  room.userData.info = {
+    title: ch.title,
+    desc: ch.desc,
+    heritageRoleId: ch.heritageRoleId,
+    stationCode: ch.stationCode,
+  } satisfies InfoItem
   room.userData.focus = new THREE.Vector3(ch.x, ch.y + ch.h / 2, zf)
   return { group: g, hit: room }
 }
@@ -1564,10 +1570,20 @@ export function buildScene(s: EraScene): BuiltScene {
   labelLayer.add(buildDepthScale(s, kit, ext))
   root.add(labelLayer)
 
+  const semanticTargets = new Map<string, { info: InfoItem; focus: THREE.Vector3 }>()
+  for (const pickable of pickables) {
+    const info = pickable.userData.info as InfoItem | undefined
+    const focus = pickable.userData.focus as THREE.Vector3 | undefined
+    if (info?.heritageRoleId && focus && !semanticTargets.has(info.heritageRoleId)) {
+      semanticTargets.set(info.heritageRoleId, { info, focus: focus.clone() })
+    }
+  }
+
   return {
     root,
     animators,
     pickables,
+    semanticTargets,
     labelLayer,
     bounds: { ...ext, minZ: -s.blockD / 2, maxZ: zf + 0.45 },
     blockBounds: { minX: -s.blockW / 2, maxX: s.blockW / 2, minY: -s.blockH, maxY: Math.min(s.skyRoom, 2.4), minZ: -s.blockD / 2, maxZ: zf },

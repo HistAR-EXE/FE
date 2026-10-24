@@ -8,13 +8,17 @@ import { MaterialIcon } from '../../components/ui/MaterialIcon'
 import type { EraValue } from './eraLabels'
 import { ERA_SCENES, type InfoItem } from './tunnel3d/scenes'
 import { createTunnelViewer, type TunnelViewer } from './tunnel3d/viewer'
+import { getHeritageSemanticTarget } from '../heritage-studio/heritageRoleSources'
 
 type Props = {
   era: EraValue
+  focusTarget?: string
+  locationId: string
+  onHeritageRoleOpen?: (stationCode: string) => void
   className?: string
 }
 
-export function TunnelScene3D({ era, className = '' }: Props) {
+export function TunnelScene3D({ era, focusTarget, locationId, onHeritageRoleOpen, className = '' }: Props) {
   const hostRef = useRef<HTMLDivElement>(null)
   const viewerRef = useRef<TunnelViewer | null>(null)
   const initialEra = useRef(era)
@@ -48,7 +52,13 @@ export function TunnelScene3D({ era, className = '' }: Props) {
     viewerRef.current?.setLabelsVisible(labels)
   }, [labels])
 
+  useEffect(() => {
+    if (focusTarget) viewerRef.current?.focusSemanticTarget(focusTarget)
+  }, [focusTarget])
+
   const scene = ERA_SCENES[era]
+  const heritageTarget = getHeritageSemanticTarget(info?.heritageRoleId)
+  const publishedTarget = era === 1968 && heritageTarget?.publishedRole ? heritageTarget : null
 
   if (failed) {
     return (
@@ -59,7 +69,7 @@ export function TunnelScene3D({ era, className = '' }: Props) {
   }
 
   return (
-    <div className={`relative w-full overflow-hidden ${className}`}>
+    <div className={`relative w-full overflow-hidden ${className}`} data-location-id={locationId}>
       <div ref={hostRef} className="absolute inset-0" />
 
       {/* Tiêu đề thời kỳ */}
@@ -104,6 +114,16 @@ export function TunnelScene3D({ era, className = '' }: Props) {
             <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold text-white">{info.title}</p>
               <p className="mt-1 text-[13px] leading-relaxed text-white/80">{info.desc}</p>
+              {publishedTarget && publishedTarget.stationCode === info.stationCode && onHeritageRoleOpen ? (
+                <button
+                  type="button"
+                  onClick={() => onHeritageRoleOpen(publishedTarget.stationCode)}
+                  className="mt-3 rounded-full border px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-white/10"
+                  style={{ borderColor: `${scene.accent}99` }}
+                >
+                  Hóa thân tại {publishedTarget.stationCode}
+                </button>
+              ) : null}
             </div>
             <button
               type="button"

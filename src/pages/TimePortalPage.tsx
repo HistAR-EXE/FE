@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
-import { Navigate, useLocation, useParams, useSearchParams } from 'react-router-dom'
+import { Navigate, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { EraLockedModal } from '../components/monetization/EraLockedModal'
 import { usePortalAudio } from '../features/time-portal/timeline/usePortalAudio'
@@ -22,18 +22,19 @@ import { useUserProgress } from '../shared/context/UserProgressProvider'
 import { useToast } from '../shared/ui/toast/useToast'
 import { CU_CHI_LOCATION_ID } from '../shared/config/constants'
 import { resolveLocationParam, shouldCanonicalizeLocationParam, timePortalPath } from '../shared/config/locationSlug'
+import { resolveInitialPortalMode, type PortalMode } from '../features/time-portal/portalNavigation'
+import { buildHeritageRolePhotoFramePath } from '../features/heritage-studio/heritageRoleSources'
+import type { HeritageStationCode } from '../features/heritage-studio/types'
 
 function isPremiumEra(era: EraValue): boolean {
   return era === 1948 || era === 1968 || era === 1975
 }
 
-/** 'xua-nay' = chế độ "Xưa & Nay" (trước đây là "So sánh"; ?view=compare vẫn mở được). */
-type PortalMode = 'timeline' | 'xua-nay' | '3d'
-
 export function TimePortalPage() {
   const { locationId: locationParam } = useParams<{ locationId?: string }>()
   const [params] = useSearchParams()
   const routerLocation = useLocation()
+  const navigate = useNavigate()
   // Nhận cả slug (/time-portal/dia-dao-cu-chi) lẫn UUID (link cũ); không có tham số thì mặc định Củ Chi.
   const locationId = locationParam ? resolveLocationParam(locationParam) : CU_CHI_LOCATION_ID
   const { user, isAuthenticated } = useAuth()
@@ -41,8 +42,9 @@ export function TimePortalPage() {
   const requestedEra = resolvePortalEra(params.get('era'))
   const initialView = params.get('view')
   const initialSpot = params.get('spot')
+  const focusTarget = requestedEra === 1968 ? params.get('focus') ?? undefined : undefined
 
-  const [mode, setMode] = useState<PortalMode>(initialView === 'compare' || initialView === 'xua-nay' ? 'xua-nay' : 'timeline')
+  const [mode, setMode] = useState<PortalMode>(() => resolveInitialPortalMode(initialView))
   const [spot, setSpot] = useState<XuaNaySpotId>(isXuaNaySpot(initialSpot) ? initialSpot : 'bep-hoang-cam')
   /** Khoảnh khắc đang xem khi rời Dòng thời gian — để quay lại đúng chỗ. */
   const [returnMoment, setReturnMoment] = useState<string | undefined>(undefined)
@@ -157,7 +159,20 @@ export function TimePortalPage() {
                 </div>
               }
             >
-              <TunnelScene3D era={era} className="h-full" />
+              <TunnelScene3D
+                era={era}
+                focusTarget={focusTarget}
+                locationId={locationId ?? CU_CHI_LOCATION_ID}
+                onHeritageRoleOpen={(stationCode) => {
+                  navigate(
+                    buildHeritageRolePhotoFramePath(
+                      stationCode as HeritageStationCode,
+                      locationId ?? CU_CHI_LOCATION_ID,
+                    ),
+                  )
+                }}
+                className="h-full"
+              />
             </Suspense>
 
             {/* Era selector for 3D mode */}
