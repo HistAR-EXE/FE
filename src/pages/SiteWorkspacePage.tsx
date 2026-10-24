@@ -12,6 +12,7 @@ import {
   type SiteMembership,
   type SiteOperationsSummary,
   type SiteRole,
+  type SiteWorkspaceSummary,
   type StationSummary,
 } from '../features/site-workspace/api'
 
@@ -45,6 +46,7 @@ export function SiteWorkspacePage({ memberships }: SiteWorkspacePageProps) {
   const [versions, setVersions] = useState<ContentVersion[]>([])
   const [stations, setStations] = useState<StationSummary[]>([])
   const [members, setMembers] = useState<SiteMember[]>([])
+  const [summary, setSummary] = useState<SiteWorkspaceSummary | null>(null)
   const [requiresTripConfirmation, setRequiresTripConfirmation] = useState(membership?.requiresTripConfirmation ?? false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -60,13 +62,14 @@ export function SiteWorkspacePage({ memberships }: SiteWorkspacePageProps) {
       siteWorkspaceApi.listVersions(siteCode),
       siteWorkspaceApi.stations(siteCode),
     ])
-      .then(async ([summary, nextVersions, nextStations]) => {
+      .then(async ([nextSummary, nextVersions, nextStations]) => {
         if (cancelled) return
-        const nextMembers = canManage ? await siteWorkspaceApi.members(siteCode) : summary.members ?? []
+        const nextMembers = canManage ? await siteWorkspaceApi.members(siteCode) : nextSummary.members ?? []
         if (cancelled) return
-        setRole(summary.callerRole ?? membership?.role ?? 'CONTENT_EDITOR')
-        setLocationName(summary.locationName ?? membership?.locationName ?? siteCode)
-        setRequiresTripConfirmation(summary.requiresTripConfirmation)
+        setRole(nextSummary.callerRole ?? membership?.role ?? 'CONTENT_EDITOR')
+        setLocationName(nextSummary.locationName ?? membership?.locationName ?? siteCode)
+        setRequiresTripConfirmation(nextSummary.requiresTripConfirmation)
+        setSummary(nextSummary)
         setVersions(nextVersions)
         setStations(nextStations)
         setMembers(nextMembers)
@@ -74,6 +77,7 @@ export function SiteWorkspacePage({ memberships }: SiteWorkspacePageProps) {
       .catch((cause: unknown) => {
         if (cancelled) return
         setError(workspaceErrorMessage(cause))
+        setSummary(null)
         setVersions([])
         setStations([])
         setMembers([])
@@ -145,8 +149,8 @@ export function SiteWorkspacePage({ memberships }: SiteWorkspacePageProps) {
                 </button>
               ))}
             </div>
-            {tab === 'profile' && (
-              <SiteProfileDraftEditor siteCode={siteCode} role={role} versions={versions} onSaved={upsertVersion} />
+            {tab === 'profile' && summary && (
+              <SiteProfileDraftEditor siteCode={siteCode} role={role} versions={versions} summary={summary} onSaved={upsertVersion} />
             )}
             {tab === 'stations' && (
               <StationDraftEditor siteCode={siteCode} role={role} stations={stations} versions={versions} onSaved={upsertVersion} />
@@ -198,8 +202,8 @@ function OperationsPanel({ siteCode }: { siteCode: string }) {
   useEffect(() => {
     if (!from || !to) return
     let cancelled = false
-    const fromInstant = new Date(`${from}T00:00:00.000Z`).toISOString()
-    const toInstant = new Date(`${to}T23:59:59.999Z`).toISOString()
+    const fromInstant = localDateStartIso(from)
+    const toInstant = localDateEndIso(to)
     siteWorkspaceApi
       .operations(siteCode, fromInstant, toInstant)
       .then((data) => {
@@ -299,6 +303,16 @@ function addDays(date: Date, days: number): Date {
   const next = new Date(date)
   next.setDate(next.getDate() + days)
   return next
+}
+
+function localDateStartIso(value: string): string {
+  const [year, month, day] = value.split('-').map(Number)
+  return new Date(year, month - 1, day, 0, 0, 0, 0).toISOString()
+}
+
+function localDateEndIso(value: string): string {
+  const [year, month, day] = value.split('-').map(Number)
+  return new Date(year, month - 1, day, 23, 59, 59, 999).toISOString()
 }
 
 function formatDateInput(date: Date): string {

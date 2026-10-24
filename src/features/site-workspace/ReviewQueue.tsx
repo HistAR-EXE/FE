@@ -79,9 +79,7 @@ export function ReviewQueue({ siteCode, role, versions, onUpdated }: ReviewQueue
             <p className="mt-1 text-sm text-slate-600">
               Phiên bản {version.version} · {version.status === 'APPROVED' ? 'Đã duyệt' : 'Chờ duyệt'}
             </p>
-            {snapshotName(version.snapshotJson) && (
-              <p className="mt-2 text-sm text-slate-800">{snapshotName(version.snapshotJson)}</p>
-            )}
+            <SnapshotFields snapshotJson={version.snapshotJson} />
             {canReview && version.status === 'IN_REVIEW' && (
               <label className="mt-3 block text-sm font-semibold text-slate-800">
                 Ghi chú duyệt
@@ -122,13 +120,92 @@ function versionTitle(version: ContentVersion): string {
   return `Trạm ${version.resourceKey} · phiên bản ${version.version}`
 }
 
-function snapshotName(snapshotJson: string): string | null {
+const BLOCK_LABEL: Record<string, string> = {
+  TEXT: 'Văn bản',
+  IMAGE: 'Hình ảnh',
+  AUDIO: 'Âm thanh',
+  VIDEO: 'Video',
+  HOTSPOT: 'Điểm nóng',
+}
+
+type SubmittedBlock = {
+  blockType: string
+  title: string
+  body: string
+  mediaUrl: string
+}
+
+type SubmittedSnapshot = {
+  name: string
+  description: string
+  formattedAddress: string
+  blocks: SubmittedBlock[]
+}
+
+function readText(value: unknown): string {
+  return typeof value === 'string' ? value.trim() : ''
+}
+
+function readSnapshot(snapshotJson: string): SubmittedSnapshot | null {
   try {
-    const parsed = JSON.parse(snapshotJson) as { name?: unknown }
-    return typeof parsed.name === 'string' && parsed.name.trim() ? parsed.name.trim() : null
+    const parsed = JSON.parse(snapshotJson) as {
+      name?: unknown
+      description?: unknown
+      formattedAddress?: unknown
+      blocks?: unknown
+    }
+    const blocks = Array.isArray(parsed.blocks)
+      ? parsed.blocks.map((block) => {
+          const row = block as { blockType?: unknown; title?: unknown; body?: unknown; mediaUrl?: unknown }
+          return {
+            blockType: readText(row.blockType),
+            title: readText(row.title),
+            body: readText(row.body),
+            mediaUrl: readText(row.mediaUrl),
+          }
+        })
+      : []
+    return {
+      name: readText(parsed.name),
+      description: readText(parsed.description),
+      formattedAddress: readText(parsed.formattedAddress),
+      blocks,
+    }
   } catch {
     return null
   }
+}
+
+function SnapshotFields({ snapshotJson }: { snapshotJson: string }) {
+  const snapshot = readSnapshot(snapshotJson)
+  if (!snapshot) return <p className="mt-2 text-sm text-slate-600">Không đọc được nội dung đã gửi.</p>
+  return (
+    <div className="mt-3 space-y-3">
+      <dl className="space-y-2 text-sm">
+        <SnapshotField term="Tên" value={snapshot.name} />
+        <SnapshotField term="Mô tả" value={snapshot.description} />
+        <SnapshotField term="Địa chỉ" value={snapshot.formattedAddress} />
+      </dl>
+      {snapshot.blocks.map((block, index) => (
+        <div key={`${block.blockType}-${index}`} className="rounded-lg bg-slate-50 p-3">
+          <dl className="space-y-2 text-sm">
+            <SnapshotField term="Block" value={[BLOCK_LABEL[block.blockType] ?? block.blockType, block.title, block.body].filter(Boolean).join(' · ')} />
+            <SnapshotField term="Phương tiện" value={block.mediaUrl} />
+          </dl>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function SnapshotField({ term, value }: { term: string; value: string }) {
+  if (!value) return null
+  return (
+    <div>
+      <dt className="font-semibold text-slate-600">{term}</dt>
+      <dd className="whitespace-pre-wrap text-slate-900">{value}</dd>
+    </div>
+  )
 }
 
 const primaryButton =

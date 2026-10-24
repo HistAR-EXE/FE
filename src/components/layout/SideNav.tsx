@@ -254,7 +254,11 @@ export function SideNavMobile() {
     const { user } = useAuth()
     const t = TONES.light
     const chatPath = useMemo(() => buildChatPath(), [])
-    const items = withChatPath(filterNavItems(mobileNavItems, mode, user?.role, { excludeDesktopOnly: true }), chatPath)
+    const showSiteWorkspace = useSiteWorkspaceNavVisible()
+    const items = withSiteWorkspaceItem(
+      withChatPath(filterNavItems(mobileNavItems, mode, user?.role, { excludeDesktopOnly: true }), chatPath),
+      showSiteWorkspace,
+    )
 
     return (
         <nav className={`md:hidden fixed bottom-0 left-0 right-0 z-50 border-t backdrop-blur-2xl pb-safe ${t.shellMobile}`}>

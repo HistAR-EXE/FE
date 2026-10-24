@@ -26,6 +26,12 @@ export type SiteWorkspaceSummary = {
   callerRole: SiteRole | null
   requiresTripConfirmation: boolean
   members: SiteMember[] | null
+  /** Present only when the workspace payload already includes the live profile. */
+  name?: string | null
+  description?: string | null
+  formattedAddress?: string | null
+  coverImage?: string | null
+  sources?: string | null
 }
 
 export type SiteProfileSnapshot = {
@@ -42,6 +48,7 @@ export type StationBlockDraft = {
   body: string
   mediaUrl: string
   sortOrder: number
+  metaJson?: string | null
 }
 
 export type StationSnapshot = {
@@ -78,6 +85,7 @@ export type StationBlock = {
   body: string | null
   mediaUrl: string | null
   sortOrder: number
+  metaJson?: string | null
 }
 
 export type StationSummary = {

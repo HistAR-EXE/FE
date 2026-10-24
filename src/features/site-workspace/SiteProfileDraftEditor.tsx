@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { locationsApi, type Location } from '../locations/api'
 import {
   errorNamesBlock,
   siteWorkspaceApi,
@@ -6,6 +7,7 @@ import {
   type ContentVersion,
   type SiteProfileSnapshot,
   type SiteRole,
+  type SiteWorkspaceSummary,
 } from './api'
 
 const EMPTY_PROFILE: SiteProfileSnapshot = {
@@ -32,35 +34,96 @@ function readProfile(version: ContentVersion | undefined): SiteProfileSnapshot {
   }
 }
 
-function latestDraft(versions: ContentVersion[]): ContentVersion | undefined {
+function latestProfile(versions: ContentVersion[], status: ContentVersion['status']): ContentVersion | undefined {
   return versions
-    .filter((version) => version.contentKind === 'SITE_PROFILE' && version.resourceKey === 'profile' && version.status === 'DRAFT')
+    .filter((version) => version.contentKind === 'SITE_PROFILE' && version.resourceKey === 'profile' && version.status === status)
     .sort((left, right) => right.version - left.version)[0]
+}
+
+function text(value: unknown): string {
+  return typeof value === 'string' ? value.trim() : ''
+}
+
+function profileFromSummary(summary: SiteWorkspaceSummary): SiteProfileSnapshot | null {
+  const description = text(summary.description)
+  const formattedAddress = text(summary.formattedAddress)
+  const coverImage = text(summary.coverImage)
+  const sources = text(summary.sources)
+  if (!description && !formattedAddress && !coverImage && !sources) return null
+  return {
+    name: text(summary.name) || text(summary.locationName),
+    description,
+    formattedAddress,
+    coverImage,
+    sources,
+  }
+}
+
+function profileFromLocation(location: Location): SiteProfileSnapshot {
+  const sources = text((location as Location & { sources?: unknown }).sources)
+  return {
+    name: text(location.name),
+    description: text(location.description),
+    formattedAddress: text(location.formattedAddress),
+    coverImage: text(location.coverImage),
+    sources,
+  }
 }
 
 type SiteProfileDraftEditorProps = {
   siteCode: string
   role: SiteRole
   versions: ContentVersion[]
+  summary: SiteWorkspaceSummary
   onSaved: (version: ContentVersion) => void
 }
 
-export function SiteProfileDraftEditor({ siteCode, role, versions, onSaved }: SiteProfileDraftEditorProps) {
-  const draft = useMemo(() => latestDraft(versions), [versions])
-  const seedKey = draft ? `${draft.id}:${draft.revision}` : 'empty'
-  const [form, setForm] = useState<SiteProfileSnapshot>(() => readProfile(draft))
+export function SiteProfileDraftEditor({ siteCode, role, versions, summary, onSaved }: SiteProfileDraftEditorProps) {
+  const draft = useMemo(() => latestProfile(versions, 'DRAFT'), [versions])
+  const published = useMemo(() => latestProfile(versions, 'PUBLISHED'), [versions])
+  const seeded = draft ?? published
+  const seedKey = seeded ? `${seeded.status}:${seeded.id}:${seeded.revision}` : `live:${summary.siteCode}`
+  const [form, setForm] = useState<SiteProfileSnapshot>(() => readProfile(seeded))
   const [current, setCurrent] = useState<ContentVersion | undefined>(draft)
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const dirty = useRef(false)
   const canEdit = role === 'SITE_MANAGER' || role === 'CONTENT_EDITOR'
 
   useEffect(() => {
-    setForm(readProfile(draft))
-    setCurrent(draft)
-  }, [draft, seedKey])
+    if (draft || published) {
+      dirty.current = false
+      setForm(readProfile(draft ?? published))
+      setCurrent(draft)
+      return
+    }
+    setCurrent(undefined)
+    const fromSummary = profileFromSummary(summary)
+    if (fromSummary) {
+      dirty.current = false
+      setForm(fromSummary)
+      return
+    }
+    const query = text(summary.locationName)
+    if (!query) return
+    let cancelled = false
+    locationsApi
+      .list({ search: query, size: 50 })
+      .then((items) => {
+        if (cancelled || dirty.current) return
+        const wanted = query.toLowerCase()
+        const match = items.find((item) => item.name.trim().toLowerCase() === wanted)
+        if (match) setForm(profileFromLocation(match))
+      })
+      .catch(() => undefined)
+    return () => {
+      cancelled = true
+    }
+  }, [draft, published, seedKey, summary])
 
   const setField = (field: keyof SiteProfileSnapshot, value: string) => {
+    dirty.current = true
     setForm((prev) => ({ ...prev, [field]: value }))
   }
 

@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
+import { useAuth } from '../../shared/auth/useAuth'
 import { siteWorkspaceApi, workspaceErrorMessage, type SiteMember, type SiteRole } from './api'
+import { invalidateSiteWorkspaceNav } from './useSiteWorkspaceNav'
 
 const ROLE_OPTIONS: Array<{ value: SiteRole; label: string }> = [
   { value: 'CONTENT_EDITOR', label: 'Biên tập viên' },
@@ -30,7 +32,9 @@ export function MembersAndSettingsPanel({
   onMembers,
   onTripConfirmation,
 }: MembersAndSettingsPanelProps) {
+  const { user } = useAuth()
   const canManage = role === 'SITE_MANAGER'
+  const roleOptions = user?.role === 'ADMIN' ? ROLE_OPTIONS : ROLE_OPTIONS.filter((option) => option.value !== 'SITE_MANAGER')
   const [rows, setRows] = useState(members)
   const [trip, setTrip] = useState(requiresTripConfirmation)
   const [userId, setUserId] = useState('')
@@ -63,6 +67,7 @@ export function MembersAndSettingsPanel({
     setMessage(null)
     try {
       const saved = await siteWorkspaceApi.upsertMember(siteCode, { userId: trimmed, role: nextRole })
+      invalidateSiteWorkspaceNav()
       const next = [...rows.filter((member) => member.userId !== saved.userId), saved]
       setRows(next)
       onMembers(next)
@@ -81,6 +86,7 @@ export function MembersAndSettingsPanel({
     setMessage(null)
     try {
       await siteWorkspaceApi.revokeMember(siteCode, targetUserId)
+      invalidateSiteWorkspaceNav()
       const next = rows.filter((member) => member.userId !== targetUserId)
       setRows(next)
       onMembers(next)
@@ -154,7 +160,7 @@ export function MembersAndSettingsPanel({
         <label className="block text-sm font-semibold text-slate-800">
           Vai trò
           <select className={inputClass} value={nextRole} disabled={busy} onChange={(event) => setNextRole(event.target.value as SiteRole)}>
-            {ROLE_OPTIONS.map((option) => (
+            {roleOptions.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>

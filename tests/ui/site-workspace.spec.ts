@@ -30,12 +30,32 @@ type MockVersion = {
   reviewNote: string | null
 }
 
+type LiveLocation = {
+  name: string
+  description: string
+  formattedAddress: string
+  coverImage: string
+  sources?: string
+}
+
 type MockOptions = {
   memberships?: Membership[]
   versions?: MockVersion[]
   denySelfReview?: boolean
   crossSiteDenied?: boolean
   rejectInvalidBlock?: boolean
+  platformRole?: 'USER' | 'ADMIN'
+  failMine?: { current: boolean }
+  workspaceProfile?: Partial<LiveLocation>
+  liveLocation?: LiveLocation
+  stationBlocks?: Array<{
+    blockType: 'TEXT' | 'IMAGE' | 'AUDIO' | 'VIDEO' | 'HOTSPOT'
+    title: string
+    body: string
+    mediaUrl: string
+    sortOrder: number
+    metaJson?: string | null
+  }>
 }
 
 const editorMembership: Membership = {
@@ -231,6 +251,281 @@ test('operations tab renders aggregates only', async ({ page }) => {
   expect(text).not.toContain('score-secret-99')
 })
 
+const publishedProfile = {
+  name: 'Hoàng thành đã phát hành',
+  description: 'Mô tả đang sống',
+  formattedAddress: 'Đại Nội, Huế',
+  coverImage: 'https://cdn.example/live-cover.jpg',
+  sources: 'Đại Nam thực lục',
+}
+
+test('profile editor seeds fields from the latest published snapshot before save', async ({ page }) => {
+  await mockSiteApi(page, {
+    versions: [version({
+      contentKind: 'SITE_PROFILE',
+      resourceKey: 'profile',
+      status: 'PUBLISHED',
+      snapshotJson: JSON.stringify(publishedProfile),
+    })],
+  })
+  await page.goto('/site-workspace')
+  await expect(page.getByLabel('Tên di tích')).toHaveValue(publishedProfile.name)
+  await expect(page.getByLabel('Mô tả')).toHaveValue(publishedProfile.description)
+  await expect(page.getByLabel('Địa chỉ')).toHaveValue(publishedProfile.formattedAddress)
+  await expect(page.getByLabel('Ảnh bìa')).toHaveValue(publishedProfile.coverImage)
+  await expect(page.getByLabel('Nguồn')).toHaveValue(publishedProfile.sources)
+  const createProfile = page.waitForRequest((request) =>
+    request.method() === 'POST' && new URL(request.url()).pathname === `/api/site-workspaces/${SITE}/content/SITE_PROFILE/profile/versions`)
+  await page.getByRole('button', { name: 'Lưu nháp' }).click()
+  expect((await createProfile).postDataJSON()).toMatchObject({ snapshot: publishedProfile })
+})
+
+test('profile editor keeps a draft ahead of the published snapshot', async ({ page }) => {
+  await mockSiteApi(page, {
+    versions: [
+      version({
+        id: 'published-profile',
+        contentKind: 'SITE_PROFILE',
+        resourceKey: 'profile',
+        status: 'PUBLISHED',
+        version: 3,
+        snapshotJson: JSON.stringify(publishedProfile),
+      }),
+      version({
+        id: 'draft-profile',
+        contentKind: 'SITE_PROFILE',
+        resourceKey: 'profile',
+        status: 'DRAFT',
+        version: 4,
+        snapshotJson: JSON.stringify({ ...publishedProfile, name: 'Bản nháp mới' }),
+      }),
+    ],
+  })
+  await page.goto('/site-workspace')
+  await expect(page.getByLabel('Tên di tích')).toHaveValue('Bản nháp mới')
+})
+
+test('profile editor seeds from the workspace summary when nothing is published', async ({ page }) => {
+  await mockSiteApi(page, {
+    workspaceProfile: {
+      name: 'Tên từ workspace',
+      description: 'Mô tả từ workspace',
+      formattedAddress: 'Địa chỉ từ workspace',
+      coverImage: 'https://cdn.example/workspace.jpg',
+      sources: 'Nguồn workspace',
+    },
+    liveLocation: {
+      name: 'Hoàng thành Huế',
+      description: 'Không dùng locations',
+      formattedAddress: 'Sai địa chỉ',
+      coverImage: 'https://cdn.example/wrong.jpg',
+      sources: 'Sai nguồn',
+    },
+  })
+  await page.goto('/site-workspace')
+  await expect(page.getByLabel('Tên di tích')).toHaveValue('Tên từ workspace')
+  await expect(page.getByLabel('Mô tả')).toHaveValue('Mô tả từ workspace')
+  await expect(page.getByLabel('Địa chỉ')).toHaveValue('Địa chỉ từ workspace')
+  await expect(page.getByLabel('Ảnh bìa')).toHaveValue('https://cdn.example/workspace.jpg')
+  await expect(page.getByLabel('Nguồn')).toHaveValue('Nguồn workspace')
+})
+
+test('profile editor seeds from the public location when no snapshot or workspace profile exists', async ({ page }) => {
+  await mockSiteApi(page, {
+    liveLocation: {
+      name: 'Hoàng thành Huế',
+      description: 'Kinh thành nhà Nguyễn',
+      formattedAddress: 'Đại Nội, Huế',
+      coverImage: 'https://cdn.example/hue-live.jpg',
+      sources: 'Đại Nam thực lục',
+    },
+  })
+  await page.goto('/site-workspace')
+  await expect(page.getByLabel('Mô tả')).toHaveValue('Kinh thành nhà Nguyễn')
+  await expect(page.getByLabel('Địa chỉ')).toHaveValue('Đại Nội, Huế')
+  await expect(page.getByLabel('Ảnh bìa')).toHaveValue('https://cdn.example/hue-live.jpg')
+  await expect(page.getByLabel('Nguồn')).toHaveValue('Đại Nam thực lục')
+})
+
+test('review queue renders submitted profile and station fields', async ({ page }) => {
+  await mockSiteApi(page, {
+    memberships: [{ ...editorMembership, role: 'SITE_MANAGER' }],
+    versions: [
+      version({
+        id: 'profile-review',
+        contentKind: 'SITE_PROFILE',
+        resourceKey: 'profile',
+        status: 'IN_REVIEW',
+        snapshotJson: JSON.stringify({
+          name: 'Hồ sơ chờ duyệt',
+          description: 'Mô tả chờ duyệt',
+          formattedAddress: 'Địa chỉ chờ duyệt',
+        }),
+      }),
+      version({
+        id: 'station-review',
+        contentKind: 'STATION',
+        resourceKey: 'ST01',
+        status: 'IN_REVIEW',
+        version: 2,
+        snapshotJson: JSON.stringify({
+          name: 'Trạm chờ duyệt',
+          blocks: [{
+            blockType: 'VIDEO',
+            title: 'Clip cổng',
+            body: 'Lời dẫn trạm',
+            mediaUrl: 'https://cdn.example/clip.mp4',
+            sortOrder: 0,
+          }],
+        }),
+      }),
+    ],
+  })
+  await page.goto('/site-workspace')
+  await page.getByRole('tab', { name: 'Chờ duyệt' }).click()
+  await expect(page.getByText('Mô tả chờ duyệt')).toBeVisible()
+  await expect(page.getByText('Địa chỉ chờ duyệt')).toBeVisible()
+  await expect(page.getByText('Clip cổng')).toBeVisible()
+  await expect(page.getByText('Lời dẫn trạm')).toBeVisible()
+  await expect(page.getByText('https://cdn.example/clip.mp4')).toBeVisible()
+  const text = await page.locator('body').innerText()
+  expect(text).not.toContain('"formattedAddress"')
+  expect(text).not.toContain('"blockType"')
+  expect(text).not.toContain('"mediaUrl"')
+})
+
+test('member role select offers editor and reviewer unless the caller is a platform admin', async ({ page }) => {
+  await mockSiteApi(page, { memberships: [{ ...editorMembership, role: 'SITE_MANAGER' }] })
+  await page.goto('/site-workspace')
+  await page.getByRole('tab', { name: 'Thành viên' }).click()
+  await expect(page.getByLabel('Vai trò').locator('option')).toHaveText(['Biên tập viên', 'Người duyệt'])
+
+  await mockSiteApi(page, { memberships: [{ ...editorMembership, role: 'SITE_MANAGER' }], platformRole: 'ADMIN' })
+  await page.goto('/site-workspace')
+  await page.getByRole('tab', { name: 'Thành viên' }).click()
+  await expect(page.getByLabel('Vai trò').locator('option')).toHaveText(['Biên tập viên', 'Người duyệt', 'Quản lý di tích'])
+})
+
+test('mobile nav shows the workspace link for members only', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await mockSiteApi(page)
+  await page.goto('/site-workspace')
+  await expect(page.getByRole('link', { name: 'Quản lý di tích' })).toBeVisible()
+
+  await page.setViewportSize({ width: 390, height: 844 })
+  await mockSiteApi(page, { memberships: [] })
+  await page.goto('/site-workspace')
+  await expect(page.getByRole('link', { name: 'Quản lý di tích' })).toHaveCount(0)
+})
+
+test('a failed membership lookup is fetched again on the next visit', async ({ page }) => {
+  const failMine = { current: true }
+  await mockSiteApi(page, { failMine })
+  await page.goto('/site-workspace')
+  await expect(page.getByRole('alert')).toContainText('Không tải được quyền di tích')
+  await page.waitForLoadState('networkidle')
+  await expect(page.getByRole('link', { name: 'Quản lý di tích' })).toHaveCount(0)
+  failMine.current = false
+  await page.getByRole('link', { name: 'Khám phá di tích' }).click()
+  await expect(page).toHaveURL(/\/explore/)
+  await expect(page.getByRole('link', { name: 'Quản lý di tích' })).toBeVisible()
+})
+
+test('member changes refetch workspace membership', async ({ page }) => {
+  await mockSiteApi(page, { memberships: [{ ...editorMembership, role: 'SITE_MANAGER' }] })
+  let mineCount = 0
+  page.on('request', (request) => {
+    if (request.method() === 'GET' && new URL(request.url()).pathname === '/api/site-workspaces/mine') mineCount += 1
+  })
+  await page.goto('/site-workspace')
+  await expect(page.getByRole('heading', { name: 'Quản lý di tích', exact: true })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Quản lý di tích' })).toBeVisible()
+  const before = mineCount
+  await page.getByRole('tab', { name: 'Thành viên' }).click()
+  await page.getByLabel('Mã người dùng').fill(MEMBER_ID)
+  await page.getByRole('button', { name: 'Lưu thành viên' }).click()
+  await expect(page.getByText('Đã cập nhật thành viên')).toBeVisible()
+  await expect.poll(() => mineCount).toBeGreaterThan(before)
+})
+
+test('station save sends block metaJson without showing it', async ({ page }) => {
+  await mockSiteApi(page, {
+    stationBlocks: [{
+      blockType: 'TEXT',
+      title: 'Dẫn cũ',
+      body: 'Nội dung cũ',
+      mediaUrl: '',
+      sortOrder: 0,
+      metaJson: '{"hotspot":"gate"}',
+    }],
+  })
+  await page.goto('/site-workspace')
+  await page.getByRole('tab', { name: 'Trạm' }).click()
+  await expect(page.getByLabel('Tiêu đề block')).toHaveValue('Dẫn cũ')
+  await expect(page.getByText('hotspot')).toHaveCount(0)
+  await expect(page.getByText('metaJson')).toHaveCount(0)
+  const createStation = page.waitForRequest((request) =>
+    request.method() === 'POST' && new URL(request.url()).pathname === `/api/site-workspaces/${SITE}/content/STATION/ST01/versions`)
+  await page.getByRole('button', { name: 'Lưu nháp' }).click()
+  expect((await createStation).postDataJSON().snapshot.blocks[0].metaJson).toBe('{"hotspot":"gate"}')
+})
+
+test('blank station coordinates are not saved as zero', async ({ page }) => {
+  await mockSiteApi(page)
+  const posts: string[] = []
+  page.on('request', (request) => {
+    if (request.method() === 'POST' && new URL(request.url()).pathname.includes('/content/STATION/')) posts.push(request.url())
+  })
+  await page.goto('/site-workspace')
+  await page.getByRole('tab', { name: 'Trạm' }).click()
+  await page.getByLabel('Thứ tự').fill('')
+  await page.getByLabel('Vĩ độ').fill('')
+  await page.getByLabel('Kinh độ').fill('')
+  await page.getByRole('button', { name: 'Lưu nháp' }).click()
+  await expect(page.getByRole('alert')).toContainText('phải là số')
+  expect(posts).toEqual([])
+})
+
+test('station blocks can be removed', async ({ page }) => {
+  await mockSiteApi(page)
+  await page.goto('/site-workspace')
+  await page.getByRole('tab', { name: 'Trạm' }).click()
+  await page.getByRole('button', { name: 'Xóa block' }).click()
+  const createStation = page.waitForRequest((request) =>
+    request.method() === 'POST' && new URL(request.url()).pathname === `/api/site-workspaces/${SITE}/content/STATION/ST01/versions`)
+  await page.getByRole('button', { name: 'Lưu nháp' }).click()
+  expect((await createStation).postDataJSON().snapshot.blocks).toEqual([])
+})
+
+test.describe('operations local dates', () => {
+  test.use({ timezoneId: 'Asia/Ho_Chi_Minh' })
+
+  test('operations tab sends local-date bounds', async ({ page }) => {
+    await mockSiteApi(page, { memberships: [{ ...editorMembership, role: 'SITE_MANAGER' }] })
+    await page.goto('/site-workspace')
+    const ops = page.waitForRequest((request) => request.method() === 'GET' && new URL(request.url()).pathname.endsWith('/operations'))
+    await page.getByRole('tab', { name: 'Vận hành' }).click()
+    const url = new URL((await ops).url())
+    const fromInput = await page.getByLabel('Từ ngày').inputValue()
+    const toInput = await page.getByLabel('Đến ngày').inputValue()
+    const expected = await page.evaluate(({ from, to }) => {
+      const start = (value: string) => {
+        const [year, month, day] = value.split('-').map(Number)
+        return new Date(year, month - 1, day, 0, 0, 0, 0).toISOString()
+      }
+      const end = (value: string) => {
+        const [year, month, day] = value.split('-').map(Number)
+        return new Date(year, month - 1, day, 23, 59, 59, 999).toISOString()
+      }
+      return { from: start(from), to: end(to) }
+    }, { from: fromInput, to: toInput })
+    expect(url.searchParams.get('from')).toBe(expected.from)
+    expect(url.searchParams.get('to')).toBe(expected.to)
+    expect(url.searchParams.get('from')).not.toBe(`${fromInput}T00:00:00.000Z`)
+    expect(url.searchParams.get('to')).not.toBe(`${toInput}T23:59:59.999Z`)
+  })
+})
+
 test('site workspace nav stays hidden without a membership', async ({ page }) => {
   await mockSiteApi(page, { memberships: [] })
   await page.goto('/site-workspace')
@@ -267,7 +562,7 @@ async function mockSiteApi(page: Page, options: MockOptions = {}) {
         email: 'site-editor@example.invalid',
         displayName: 'Biên tập di tích',
         avatarUrl: null,
-        role: 'USER',
+        role: options.platformRole ?? 'USER',
         tier: 'PREMIUM',
         orgId: null,
         orgName: null,
@@ -282,7 +577,10 @@ async function mockSiteApi(page: Page, options: MockOptions = {}) {
     if (options.crossSiteDenied && path.includes('/other-site')) {
       return fail(403, 'Không có quyền truy cập site workspace này')
     }
-    if (path === '/api/site-workspaces/mine') return ok(memberships)
+    if (path === '/api/site-workspaces/mine') {
+      if (options.failMine?.current) return fail(503, 'Không tải được quyền di tích')
+      return ok(memberships)
+    }
 
     const workspace = path.match(/^\/api\/site-workspaces\/([^/]+)$/)
     if (workspace && method === 'GET') {
@@ -294,6 +592,7 @@ async function mockSiteApi(page: Page, options: MockOptions = {}) {
         callerRole: membership?.role ?? 'CONTENT_EDITOR',
         requiresTripConfirmation: state.requiresTripConfirmation,
         members: membership?.role === 'SITE_MANAGER' ? state.members : null,
+        ...(options.workspaceProfile ?? {}),
       })
     }
     if (/^\/api\/site-workspaces\/[^/]+\/members$/.test(path) && method === 'GET') return ok(state.members)
@@ -351,7 +650,7 @@ async function mockSiteApi(page: Page, options: MockOptions = {}) {
         lng: 107.579,
         questStepKey: 'gate',
         active: true,
-        blocks: [],
+        blocks: options.stationBlocks ?? [],
       }])
     }
 
@@ -368,6 +667,23 @@ async function mockSiteApi(page: Page, options: MockOptions = {}) {
         photoUrl: 'photo-secret.jpg',
         chat: 'chat-secret-transcript',
         scores: 'score-secret-99',
+      })
+    }
+
+    if (path === '/api/locations' && method === 'GET' && options.liveLocation) {
+      return ok({
+        items: [{
+          id: '22222222-2222-4222-8222-222222222299',
+          ...options.liveLocation,
+          latitude: 16.467,
+          longitude: 107.579,
+          city: 'Huế',
+          createdAt: '2020-01-01T00:00:00.000Z',
+        }],
+        page: 0,
+        size: 20,
+        totalItems: 1,
+        totalPages: 1,
       })
     }
 

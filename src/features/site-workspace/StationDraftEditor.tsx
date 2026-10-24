@@ -15,6 +15,7 @@ type BlockForm = {
   title: string
   body: string
   mediaUrl: string
+  metaJson: string | null
 }
 
 type StationForm = {
@@ -27,7 +28,7 @@ type StationForm = {
   blocks: BlockForm[]
 }
 
-const EMPTY_BLOCK: BlockForm = { blockType: 'TEXT', title: '', body: '', mediaUrl: '' }
+const EMPTY_BLOCK: BlockForm = { blockType: 'TEXT', title: '', body: '', mediaUrl: '', metaJson: null }
 
 function emptyForm(): StationForm {
   return {
@@ -51,12 +52,13 @@ function readForm(version: ContentVersion | undefined, station: StationSummary |
   if (version?.snapshotJson) {
     try {
       const parsed = JSON.parse(version.snapshotJson) as Partial<StationSnapshot>
-      const blocks = Array.isArray(parsed.blocks) && parsed.blocks.length > 0
+      const blocks = Array.isArray(parsed.blocks)
         ? parsed.blocks.map((block) => ({
             blockType: block.blockType ?? 'TEXT',
             title: block.title ?? '',
             body: block.body ?? '',
             mediaUrl: block.mediaUrl ?? '',
+            metaJson: block.metaJson ?? null,
           }))
         : [{ ...EMPTY_BLOCK }]
       return {
@@ -83,6 +85,7 @@ function fromStation(station: StationSummary | undefined): StationForm {
         title: block.title ?? '',
         body: block.body ?? '',
         mediaUrl: block.mediaUrl ?? '',
+        metaJson: block.metaJson ?? null,
       }))
     : [{ ...EMPTY_BLOCK }]
   return {
@@ -96,13 +99,24 @@ function fromStation(station: StationSummary | undefined): StationForm {
   }
 }
 
-function toSnapshot(stationCode: string, form: StationForm): StationSnapshot {
+function requireNumber(value: string): number | null {
+  const trimmed = value.trim()
+  if (!trimmed) return null
+  const parsed = Number(trimmed)
+  return Number.isFinite(parsed) ? parsed : null
+}
+
+function toSnapshot(stationCode: string, form: StationForm): StationSnapshot | null {
+  const sortOrder = requireNumber(form.sortOrder)
+  const lat = requireNumber(form.lat)
+  const lng = requireNumber(form.lng)
+  if (sortOrder == null || lat == null || lng == null) return null
   return {
     stationCode,
     name: form.name.trim(),
-    sortOrder: asNumber(form.sortOrder),
-    lat: asNumber(form.lat),
-    lng: asNumber(form.lng),
+    sortOrder,
+    lat,
+    lng,
     questStepKey: form.questStepKey.trim(),
     active: form.active,
     blocks: form.blocks.map((block, index) => ({
@@ -111,13 +125,9 @@ function toSnapshot(stationCode: string, form: StationForm): StationSnapshot {
       body: block.body.trim(),
       mediaUrl: block.mediaUrl.trim(),
       sortOrder: index,
+      metaJson: block.metaJson,
     })),
   }
-}
-
-function asNumber(value: string): number {
-  const parsed = Number(value)
-  return Number.isFinite(parsed) ? parsed : 0
 }
 
 function blockLabel(base: string, index: number, count: number): string {
@@ -157,8 +167,7 @@ export function StationDraftEditor({ siteCode, role, stations, versions, onSaved
     setQrPayload(null)
   }, [draft, seedKey, selectedCode, station])
 
-  const persist = async () => {
-    const snapshot = toSnapshot(selectedCode, form)
+  const persist = async (snapshot: StationSnapshot) => {
     const saved = current
       ? await siteWorkspaceApi.updateDraft(siteCode, 'STATION', selectedCode, current.version, snapshot, current.revision)
       : await siteWorkspaceApi.createDraft(siteCode, 'STATION', selectedCode, snapshot)
@@ -169,13 +178,19 @@ export function StationDraftEditor({ siteCode, role, stations, versions, onSaved
 
   const run = async (action: 'save' | 'submit') => {
     if (!selectedCode) return
+    const snapshot = toSnapshot(selectedCode, form)
+    if (!snapshot) {
+      setError('Thứ tự, vĩ độ và kinh độ phải là số.')
+      setMessage(null)
+      setFailedSnapshot(null)
+      return
+    }
     setBusy(true)
     setError(null)
     setMessage(null)
     setFailedSnapshot(null)
-    const snapshot = toSnapshot(selectedCode, form)
     try {
-      const saved = await persist()
+      const saved = await persist(snapshot)
       if (action === 'save') {
         setMessage(`Đã lưu bản nháp trạm ${selectedCode} phiên bản ${saved.version}`)
         return
@@ -288,6 +303,16 @@ export function StationDraftEditor({ siteCode, role, stations, versions, onSaved
             <TextField label={blockLabel('Tiêu đề block', index, form.blocks.length)} value={block.title} disabled={!canEdit || busy} onChange={(value) => updateBlock(index, { title: value })} />
             <TextField label={blockLabel('Nội dung block', index, form.blocks.length)} value={block.body} disabled={!canEdit || busy} multiline onChange={(value) => updateBlock(index, { body: value })} />
             <TextField label={blockLabel('URL phương tiện', index, form.blocks.length)} value={block.mediaUrl} disabled={!canEdit || busy} onChange={(value) => updateBlock(index, { mediaUrl: value })} />
+            {canEdit && (
+              <button
+                type="button"
+                className={secondaryButton}
+                disabled={busy}
+                onClick={() => setForm((prev) => ({ ...prev, blocks: prev.blocks.filter((_, blockIndex) => blockIndex !== index) }))}
+              >
+                {blockLabel('Xóa block', index, form.blocks.length)}
+              </button>
+            )}
           </div>
         ))}
         {canEdit && (
