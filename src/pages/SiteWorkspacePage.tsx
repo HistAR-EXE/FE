@@ -4,10 +4,12 @@ import { MembersAndSettingsPanel } from '../features/site-workspace/MembersAndSe
 import { ReviewQueue } from '../features/site-workspace/ReviewQueue'
 import { SiteProfileDraftEditor } from '../features/site-workspace/SiteProfileDraftEditor'
 import { StationDraftEditor } from '../features/site-workspace/StationDraftEditor'
+import { FIELD_TRIP_STATUS_LABEL, SITE_CONFIRMATION_LABEL, formatVisit } from '../features/field-trips/types'
 import {
   siteWorkspaceApi,
   workspaceErrorMessage,
   type ContentVersion,
+  type SiteFieldTripSchedule,
   type SiteMember,
   type SiteMembership,
   type SiteOperationsSummary,
@@ -190,7 +192,7 @@ export function SiteWorkspacePage({ memberships }: SiteWorkspacePageProps) {
                 onTripConfirmation={setRequiresTripConfirmation}
               />
             )}
-            {tab === 'operations' && <OperationsPanel siteCode={siteCode} />}
+            {tab === 'operations' && <OperationsPanel siteCode={siteCode} role={role} />}
           </>
         )}
       </main>
@@ -312,7 +314,7 @@ function rollbackLabel(version: ContentVersion): string {
   return version.contentKind === 'SITE_PROFILE' ? 'hồ sơ di tích' : `trạm ${version.resourceKey}`
 }
 
-function OperationsPanel({ siteCode }: { siteCode: string }) {
+function OperationsPanel({ siteCode, role }: { siteCode: string; role: SiteRole }) {
   const [from, setFrom] = useState(() => formatDateInput(addDays(new Date(), -30)))
   const [to, setTo] = useState(() => formatDateInput(new Date()))
   const [summary, setSummary] = useState<SiteOperationsSummary | null>(null)
@@ -396,6 +398,120 @@ function OperationsPanel({ siteCode }: { siteCode: string }) {
           </div>
         </dl>
       )}
+      {role === 'SITE_MANAGER' && <FieldTripSchedule siteCode={siteCode} />}
+    </section>
+  )
+}
+
+function FieldTripSchedule({ siteCode }: { siteCode: string }) {
+  const [trips, setTrips] = useState<SiteFieldTripSchedule[]>([])
+  const [notes, setNotes] = useState<Record<string, string>>({})
+  const [busyId, setBusyId] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    siteWorkspaceApi.listFieldTrips(siteCode)
+      .then((items) => {
+        if (cancelled) return
+        setTrips(Array.isArray(items) ? items : [])
+        setError(null)
+      })
+      .catch((cause: unknown) => {
+        if (cancelled) return
+        setTrips([])
+        setError(workspaceErrorMessage(cause))
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [siteCode])
+
+  const decide = async (trip: SiteFieldTripSchedule, action: 'confirm' | 'decline') => {
+    if (typeof trip.rowVersion !== 'number') return
+    const note = (notes[trip.id] ?? '').trim()
+    if (action === 'decline' && !note) {
+      setError('Ghi chú từ chối là bắt buộc')
+      return
+    }
+    setBusyId(trip.id)
+    setError(null)
+    try {
+      const updated = action === 'confirm'
+        ? await siteWorkspaceApi.confirmFieldTrip(siteCode, trip.id, trip.rowVersion)
+        : await siteWorkspaceApi.declineFieldTrip(siteCode, trip.id, trip.rowVersion, note)
+      setTrips((current) => current.map((item) => item.id === trip.id
+        ? { ...item, status: updated.status, siteConfirmationStatus: updated.siteConfirmationStatus, rowVersion: updated.rowVersion }
+        : item))
+    } catch (cause: unknown) {
+      setError(workspaceErrorMessage(cause))
+    } finally {
+      setBusyId(null)
+    }
+  }
+
+  return (
+    <section className="space-y-3" aria-label="Chuyến đi">
+      <h2 className="text-base font-bold text-slate-900">Chuyến đi</h2>
+      <p className="text-sm text-slate-600">Chỉ hiện tiêu đề, khung giờ, trạng thái và số nhóm.</p>
+      {loading && <p className="text-sm text-slate-600">Đang tải chuyến đi...</p>}
+      {error && (
+        <p role="alert" className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-900">
+          {error}
+        </p>
+      )}
+      {!loading && trips.length === 0 && <p className="text-sm text-slate-600">Chưa có chuyến tham quan.</p>}
+      <ul className="space-y-3">
+        {trips.map((trip) => {
+          const pending = trip.status === 'PENDING_SITE' && trip.siteConfirmationStatus === 'PENDING' && typeof trip.rowVersion === 'number'
+          return (
+            <li key={trip.id}>
+              <article aria-label={trip.title} className="rounded-xl border border-slate-200 bg-white p-4">
+                <h3 className="text-base font-bold text-slate-900">{trip.title}</h3>
+                <p className="mt-1 text-sm text-slate-600">{formatVisit(trip.visitStart)} – {formatVisit(trip.visitEnd)}</p>
+                <p className="mt-1 text-sm text-slate-800">{FIELD_TRIP_STATUS_LABEL[trip.status]}</p>
+                <p className="text-sm text-slate-600">{SITE_CONFIRMATION_LABEL[trip.siteConfirmationStatus]}</p>
+                <p className="text-sm text-slate-800">Số nhóm: {trip.groupCount}</p>
+                {pending && (
+                  <div className="mt-3 space-y-2">
+                    <button
+                      type="button"
+                      className="inline-flex items-center justify-center rounded-lg bg-[#014a9e] px-4 py-2 text-sm font-bold text-white hover:bg-[#013a7c] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#014a9e] disabled:cursor-not-allowed disabled:opacity-60"
+                      disabled={busyId === trip.id}
+                      onClick={() => void decide(trip, 'confirm')}
+                    >
+                      Xác nhận
+                    </button>
+                    <label className="block text-sm font-semibold text-slate-800">
+                      Ghi chú từ chối
+                      <textarea
+                        className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-normal"
+                        rows={2}
+                        value={notes[trip.id] ?? ''}
+                        disabled={busyId === trip.id}
+                        onChange={(event) => setNotes((current) => ({ ...current, [trip.id]: event.target.value }))}
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-800 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#014a9e] disabled:cursor-not-allowed disabled:opacity-60"
+                      disabled={busyId === trip.id || !(notes[trip.id] ?? '').trim()}
+                      onClick={() => void decide(trip, 'decline')}
+                    >
+                      Từ chối
+                    </button>
+                  </div>
+                )}
+              </article>
+            </li>
+          )
+        })}
+      </ul>
     </section>
   )
 }

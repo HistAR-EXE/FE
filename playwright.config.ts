@@ -111,11 +111,19 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'], baseURL: FE_URL },
     },
 
+    // FE-only field-trip journey: mocked /api, no backend health gate.
+    {
+      name: 'field-trip-e2e',
+      testDir: './tests/e2e',
+      testMatch: /field-trip-journey\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'], baseURL: FE_URL },
+    },
+
     // Tầng 3 — FE + BE E2E (luồng đầu-cuối thật)
     {
       name: '3-fullstack-e2e',
       testDir: './tests/e2e',
-      testIgnore: /(?:admin-(?:narrative-pilot|content-lifecycle)|site-content-lifecycle)\.spec\.ts/,
+      testIgnore: /(?:admin-(?:narrative-pilot|content-lifecycle)|site-content-lifecycle|field-trip-journey)\.spec\.ts/,
       dependencies: ['setup'],
       use: { ...devices['Desktop Chrome'], baseURL: FE_URL },
     },

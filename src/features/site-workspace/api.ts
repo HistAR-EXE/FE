@@ -1,3 +1,4 @@
+import type { FieldTripStatus, SiteConfirmationStatus } from '../field-trips/types'
 import { ApiError } from '../../shared/api/contracts'
 import { getData, httpClient } from '../../shared/api/httpClient'
 
@@ -126,6 +127,24 @@ export type SiteSettings = {
   requiresTripConfirmation: boolean
 }
 
+/** Schedule only. Student email, name, and photo never belong on this payload. */
+export type SiteFieldTripSchedule = {
+  id: string
+  title: string
+  visitStart: string
+  visitEnd: string
+  status: FieldTripStatus
+  siteConfirmationStatus: SiteConfirmationStatus
+  groupCount: number
+  rowVersion?: number
+}
+
+export type SiteFieldTripDecision = {
+  status: FieldTripStatus
+  siteConfirmationStatus: SiteConfirmationStatus
+  rowVersion: number
+}
+
 const workspace = (siteCode: string) => `/api/site-workspaces/${encodeURIComponent(siteCode)}`
 
 function versionsPath(siteCode: string, kind: ContentKind, resourceKey: string) {
@@ -198,4 +217,10 @@ export const siteWorkspaceApi = {
     ),
   operations: (siteCode: string, from: string, to: string) =>
     getData<SiteOperationsSummary>(httpClient.get(`${workspace(siteCode)}/operations`, { params: { from, to } })),
+  listFieldTrips: (siteCode: string) =>
+    getData<SiteFieldTripSchedule[]>(httpClient.get(`${workspace(siteCode)}/field-trips`)),
+  confirmFieldTrip: (siteCode: string, tripId: string, rowVersion: number) =>
+    getData<SiteFieldTripDecision>(httpClient.post(`${workspace(siteCode)}/field-trips/${tripId}/confirm`, { rowVersion })),
+  declineFieldTrip: (siteCode: string, tripId: string, rowVersion: number, note: string) =>
+    getData<SiteFieldTripDecision>(httpClient.post(`${workspace(siteCode)}/field-trips/${tripId}/decline`, { rowVersion, note })),
 }
