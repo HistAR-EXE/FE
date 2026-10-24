@@ -2,6 +2,8 @@ import { getData, getListData, httpClient } from '../../shared/api/httpClient'
 import type {
   CreateFieldTripRequest,
   CreateTripGroupRequest,
+  FieldTripLiveBoard,
+  FieldTripReport,
   FieldTripResponse,
   JoinFieldTripRequest,
   TripGroupPreview,
@@ -24,6 +26,12 @@ export const fieldTripApi = {
     getData<FieldTripResponse>(httpClient.post(`/api/teacher/field-trips/${tripId}/start`, { rowVersion })),
   cancel: (tripId: string, rowVersion: number) =>
     getData<FieldTripResponse>(httpClient.post(`/api/teacher/field-trips/${tripId}/cancel`, { rowVersion })),
+  complete: (tripId: string, rowVersion: number) =>
+    getData<FieldTripResponse>(httpClient.post(`/api/teacher/field-trips/${tripId}/complete`, { rowVersion })),
+  liveBoard: (tripId: string) =>
+    getData<FieldTripLiveBoard>(httpClient.get(`/api/teacher/field-trips/${tripId}/live-board`)),
+  report: (tripId: string) =>
+    getData<FieldTripReport>(httpClient.get(`/api/teacher/field-trips/${tripId}/report`)),
   preview: (code: string) =>
     getData<TripJoinPreview>(httpClient.get(`/api/field-trips/join/${encodeURIComponent(code)}`)),
   join: (body: JoinFieldTripRequest) =>

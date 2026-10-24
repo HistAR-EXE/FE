@@ -58,7 +58,7 @@ export default defineConfig({
     {
       name: '2-frontend-ui',
       testDir: './tests/ui',
-      testIgnore: /(?:site-workspace|field-trip-planning)\.spec\.ts/,
+      testIgnore: /(?:site-workspace|field-trip-planning|field-trip-report)\.spec\.ts/,
       dependencies: ['setup'],
       use: { ...devices['Desktop Chrome'], baseURL: FE_URL },
     },
@@ -84,6 +84,14 @@ export default defineConfig({
       name: 'field-trip-ui',
       testDir: './tests/ui',
       testMatch: /field-trip-planning\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'], baseURL: FE_URL },
+    },
+
+    // FE-only field-trip live board and report: mocked /api, no BE dependency.
+    {
+      name: 'field-trip-report-ui',
+      testDir: './tests/ui',
+      testMatch: /field-trip-report\.spec\.ts/,
       use: { ...devices['Desktop Chrome'], baseURL: FE_URL },
     },
 

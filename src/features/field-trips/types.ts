@@ -71,6 +71,44 @@ export type JoinFieldTripRequest = {
   groupId: string
 }
 
+export type FieldTripLiveBoardRow = {
+  groupId: string
+  groupName: string
+  participationMode: ParticipationMode
+  userId: string | null
+  displayName: string
+  headcount: number
+  stationsCompleted: number
+  points: number
+}
+
+export type FieldTripLiveBoard = {
+  tripId: string
+  status: FieldTripStatus
+  rows: FieldTripLiveBoardRow[]
+}
+
+export type FieldTripReportGroup = {
+  groupId: string
+  name: string
+  participationMode: ParticipationMode
+  headcount: number
+  stationsCompleted: number
+  questCompletions: number
+  points: number
+}
+
+export type FieldTripReport = {
+  tripId: string
+  title: string
+  siteCode: string
+  questId: string
+  campaignId: string
+  status: FieldTripStatus
+  generatedAt: string
+  groups: FieldTripReportGroup[]
+}
+
 export const FIELD_TRIP_STATUS_LABEL: Record<FieldTripStatus, string> = {
   DRAFT: 'Nháp',
   PENDING_SITE: 'Chờ di tích xác nhận',

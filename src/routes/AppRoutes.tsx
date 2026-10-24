@@ -47,6 +47,8 @@ const ArtifactDetailPage = lazy(() => import('../pages/ArtifactDetailPage').then
 const TeacherDashboardPage = lazy(() => import('../pages/TeacherDashboardPage').then((module) => ({ default: module.TeacherDashboardPage })))
 const TeacherAssignmentsPage = lazy(() => import('../pages/TeacherAssignmentsPage').then((module) => ({ default: module.TeacherAssignmentsPage })))
 const TeacherLiveBoardPage = lazy(() => import('../pages/TeacherLiveBoardPage').then((module) => ({ default: module.TeacherLiveBoardPage })))
+const TeacherTripLivePage = lazy(() => import('../pages/TeacherTripLivePage').then((module) => ({ default: module.TeacherTripLivePage })))
+const TeacherTripReportPage = lazy(() => import('../pages/TeacherTripReportPage').then((module) => ({ default: module.TeacherTripReportPage })))
 const TeacherTripsPage = lazy(() => import('../pages/TeacherTripsPage').then((module) => ({ default: module.TeacherTripsPage })))
 const TeacherTripDetailPage = lazy(() => import('../pages/TeacherTripDetailPage').then((module) => ({ default: module.TeacherTripDetailPage })))
 const TripJoinPage = lazy(() => import('../pages/TripJoinPage').then((module) => ({ default: module.TripJoinPage })))
@@ -182,6 +184,8 @@ export function AppRoutes() {
                                     <Route path="/teacher/assignments" element={<TeacherAssignmentsPage />} />
                                     <Route path="/teacher/live-board" element={<TeacherLiveBoardPage />} />
                                     <Route path="/teacher/trips" element={<TeacherTripsPage />} />
+                                    <Route path="/teacher/trips/:tripId/live" element={<TeacherTripLivePage />} />
+                                    <Route path="/teacher/trips/:tripId/report" element={<TeacherTripReportPage />} />
                                     <Route path="/teacher/trips/:tripId" element={<TeacherTripDetailPage />} />
                                 </Route>
                                 <Route path="/trip/join/:code" element={<TripJoinPage />} />

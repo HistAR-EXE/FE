@@ -149,7 +149,7 @@ export function TeacherTripDetailPage() {
     }
   }
 
-  const transition = async (action: 'request-confirmation' | 'start' | 'cancel') => {
+  const transition = async (action: 'request-confirmation' | 'start' | 'cancel' | 'complete') => {
     if (!trip) return
     try {
       setSaving(true)
@@ -157,10 +157,18 @@ export function TeacherTripDetailPage() {
         ? await fieldTripApi.requestConfirmation(trip.id, trip.rowVersion)
         : action === 'start'
           ? await fieldTripApi.start(trip.id, trip.rowVersion)
-          : await fieldTripApi.cancel(trip.id, trip.rowVersion)
+          : action === 'cancel'
+            ? await fieldTripApi.cancel(trip.id, trip.rowVersion)
+            : await fieldTripApi.complete(trip.id, trip.rowVersion)
       applyTrip(next)
       showToast({
-        message: action === 'start' ? 'Đã bắt đầu chuyến' : action === 'cancel' ? 'Đã hủy chuyến' : 'Đã gửi xác nhận tới di tích',
+        message: action === 'start'
+          ? 'Đã bắt đầu chuyến'
+          : action === 'cancel'
+            ? 'Đã hủy chuyến'
+            : action === 'complete'
+              ? 'Đã kết thúc chuyến'
+              : 'Đã gửi xác nhận tới di tích',
         type: 'success',
       })
     } catch (error) {
@@ -219,6 +227,17 @@ export function TeacherTripDetailPage() {
                   Hủy chuyến
                 </Button>
               )}
+              {trip.status === 'ACTIVE' && (
+                <Button type="button" disabled={saving} onClick={() => void transition('complete')}>
+                  Kết thúc chuyến
+                </Button>
+              )}
+              <Link to={`/teacher/trips/${trip.id}/live`} className="text-sm px-sm py-xs border border-outline-variant rounded-lg text-secondary">
+                Live board
+              </Link>
+              <Link to={`/teacher/trips/${trip.id}/report`} className="text-sm px-sm py-xs border border-outline-variant rounded-lg text-secondary">
+                Báo cáo
+              </Link>
               <Link to={`/quests/${trip.questId}`} className="text-sm px-sm py-xs border border-outline-variant rounded-lg text-secondary">
                 Mở nhiệm vụ
               </Link>

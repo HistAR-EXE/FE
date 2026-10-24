@@ -48,6 +48,7 @@ dist-ssr
 !/tests/ui/ar-experience.spec.ts
 !/tests/ui/site-workspace.spec.ts
 !/tests/ui/field-trip-planning.spec.ts
+!/tests/ui/field-trip-report.spec.ts
 
 # Editor directories and files
 .vscode/*
