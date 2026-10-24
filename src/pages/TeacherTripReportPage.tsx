@@ -20,9 +20,14 @@ export function TeacherTripReportPage() {
 
   useEffect(() => {
     let cancelled = false
+    setReport(null)
+    setError(null)
     fieldTripApi.report(tripId)
       .then((next) => {
-        if (!cancelled) setReport(next)
+        if (!cancelled) {
+          setReport(next)
+          setError(null)
+        }
       })
       .catch((err: unknown) => {
         if (!cancelled) setError(getFriendlyErrorMessage(err, 'quest'))
@@ -40,8 +45,13 @@ export function TeacherTripReportPage() {
     const anchor = document.createElement('a')
     anchor.href = url
     anchor.download = `bao-cao-${report.tripId}.csv`
+    anchor.rel = 'noopener'
+    document.body.appendChild(anchor)
     anchor.click()
-    URL.revokeObjectURL(url)
+    window.setTimeout(() => {
+      URL.revokeObjectURL(url)
+      anchor.remove()
+    }, 1000)
   }
 
   return (
@@ -49,7 +59,8 @@ export function TeacherTripReportPage() {
       <style>{`
         @media print {
           header, nav, aside, .no-print { display: none !important; }
-          main.field-trip-report-root { margin: 0 !important; max-width: none !important; }
+          .field-trip-report-root, main.field-trip-report-root { margin: 0 !important; max-width: none !important; }
+          [class*="ml-"], [class*="md:ml-"], [class*="lg:ml-"] { margin-left: 0 !important; }
         }
       `}</style>
       <main className="field-trip-report-root mt-14 md:mt-16 p-md md:p-lg max-w-5xl mx-auto w-full space-y-md">

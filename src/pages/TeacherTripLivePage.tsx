@@ -21,6 +21,8 @@ export function TeacherTripLivePage() {
 
   useEffect(() => {
     let cancelled = false
+    setTrip(null)
+    setError(null)
     fieldTripApi.get(tripId)
       .then((next) => {
         if (!cancelled) setTrip(next)
@@ -36,19 +38,26 @@ export function TeacherTripLivePage() {
   useEffect(() => {
     let cancelled = false
     let timer: number | undefined
+    setBoard(null)
+
+    const schedule = (status?: FieldTripLiveBoard['status']) => {
+      if (cancelled || status === 'COMPLETED') return
+      timer = window.setTimeout(() => {
+        void load()
+      }, POLL_MS)
+    }
 
     const load = async () => {
       try {
         const next = await fieldTripApi.liveBoard(tripId)
         if (cancelled) return
         setBoard(next)
-        if (next.status !== 'COMPLETED') {
-          timer = window.setTimeout(() => {
-            void load()
-          }, POLL_MS)
-        }
+        setError(null)
+        schedule(next.status)
       } catch (err: unknown) {
-        if (!cancelled) setError(getFriendlyErrorMessage(err, 'quest'))
+        if (cancelled) return
+        setError(getFriendlyErrorMessage(err, 'quest'))
+        schedule()
       }
     }
 

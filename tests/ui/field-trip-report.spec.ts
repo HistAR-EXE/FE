@@ -464,13 +464,54 @@ test('buildFieldTripCsv escapes commas and quotes and uses a Vietnamese header',
         questCompletions: 0,
         points: 10,
       },
+      {
+        groupId: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+        name: 'Dòng\nmới',
+        participationMode: 'INDIVIDUAL',
+        headcount: 2,
+        stationsCompleted: 0,
+        questCompletions: 0,
+        points: 0,
+      },
     ],
   })
   expect(csv).toBe([
     'Nhóm,Hình thức,Sĩ số,Trạm hoàn thành,Hoàn thành nhiệm vụ,Điểm',
     '"Com,ma",Một thiết bị,12,3,1,40',
     '"Say ""hi""",Cá nhân,1,2,0,10',
+    '"Dòng\nmới",Cá nhân,2,0,0,0',
   ].join('\n'))
+})
+
+test('report CSV download uses the escaped snapshot', async ({ page }) => {
+  await seed(page)
+  await mockFieldTrips(page, {
+    trips: [trip({ id: TRIP_A, title: 'Địa đạo buổi sáng', status: 'COMPLETED' })],
+    reports: {
+      [TRIP_A]: {
+        ...snapshotReport(TRIP_A, 'Địa đạo buổi sáng'),
+        groups: [{
+          groupId: GROUP_SHARED,
+          name: 'Com,ma',
+          participationMode: 'SHARED_DEVICE',
+          headcount: 12,
+          stationsCompleted: 3,
+          questCompletions: 1,
+          points: 40,
+        }],
+      },
+    },
+  })
+  await page.goto(`/teacher/trips/${TRIP_A}/report`)
+  const downloadPromise = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'Tải CSV' }).click()
+  const file = await downloadPromise
+  expect(file.suggestedFilename()).toBe(`bao-cao-${TRIP_A}.csv`)
+  const stream = await file.createReadStream()
+  expect(stream).toBeTruthy()
+  const chunks: Buffer[] = []
+  for await (const chunk of stream!) chunks.push(Buffer.from(chunk))
+  expect(Buffer.concat(chunks).toString('utf8')).toContain('"Com,ma",Một thiết bị,12,3,1,40')
 })
 
 test('trip live and report text omit email, photoUrl, and @', async ({ page }) => {
