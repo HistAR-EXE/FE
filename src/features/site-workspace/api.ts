@@ -136,7 +136,7 @@ export type SiteFieldTripSchedule = {
   status: FieldTripStatus
   siteConfirmationStatus: SiteConfirmationStatus
   groupCount: number
-  rowVersion?: number
+  rowVersion: number
 }
 
 export type SiteFieldTripDecision = {

@@ -39,7 +39,7 @@ Khối **Mã tham gia** hiện URL `/trip/join/{code}` và mã QR. **Sao chép l
 
 Quản lý di tích (`SITE_MANAGER`) mở `/site-workspace`, tab **Vận hành**, khối **Chuyến đi**.
 
-Danh sách là lịch: tiêu đề, khung giờ, trạng thái, trạng thái xác nhận, số nhóm, và `rowVersion` khi API trả về. Không có email, tên, hay ảnh học sinh.
+Danh sách là lịch: tiêu đề, khung giờ, trạng thái, trạng thái xác nhận, số nhóm, và `rowVersion` để xác nhận/từ chối. Không có email, tên, hay ảnh học sinh.
 
 - **Xác nhận** gọi `POST /api/site-workspaces/{siteCode}/field-trips/{tripId}/confirm` với `{ "rowVersion": <số trên dòng> }`.
 - **Từ chối** cần ghi chú, gọi `POST .../decline` với `{ "rowVersion": <số>, "note": "..." }`. Chuyến về nháp, xác nhận là **Di tích từ chối**, và **Bắt đầu chuyến** vẫn ẩn.
