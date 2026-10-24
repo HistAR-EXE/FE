@@ -14,4 +14,4 @@ interface Window {
   FaceDetector?: FaceDetectorConstructor
 }
 
-declare var FaceDetector: FaceDetectorConstructor | undefined
+declare const FaceDetector: FaceDetectorConstructor | undefined
