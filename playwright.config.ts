@@ -87,11 +87,19 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'], baseURL: FE_URL },
     },
 
+    // FE-only site content lifecycle: mocked /api, no setup or live BE.
+    {
+      name: 'site-workspace-e2e',
+      testDir: './tests/e2e',
+      testMatch: /site-content-lifecycle\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'], baseURL: FE_URL },
+    },
+
     // Tầng 3 — FE + BE E2E (luồng đầu-cuối thật)
     {
       name: '3-fullstack-e2e',
       testDir: './tests/e2e',
-      testIgnore: /admin-(narrative-pilot|content-lifecycle)\.spec\.ts/,
+      testIgnore: /(?:admin-(?:narrative-pilot|content-lifecycle)|site-content-lifecycle)\.spec\.ts/,
       dependencies: ['setup'],
       use: { ...devices['Desktop Chrome'], baseURL: FE_URL },
     },

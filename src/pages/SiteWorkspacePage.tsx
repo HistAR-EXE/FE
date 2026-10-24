@@ -100,6 +100,17 @@ export function SiteWorkspacePage({ memberships }: SiteWorkspacePageProps) {
     })
   }
 
+  const applyRollback = (previousLiveId: string, restored: ContentVersion) => {
+    setVersions((current) => {
+      const next = current.map((item) => (item.id === previousLiveId ? { ...item, status: 'ARCHIVED' as const } : item))
+      const index = next.findIndex((item) => item.id === restored.id)
+      if (index < 0) return [restored, ...next]
+      const copy = next.slice()
+      copy[index] = restored
+      return copy
+    })
+  }
+
   return (
     <AppLayout>
       <main className="px-4 py-6 md:px-8 md:py-8">
@@ -156,7 +167,9 @@ export function SiteWorkspacePage({ memberships }: SiteWorkspacePageProps) {
               <StationDraftEditor siteCode={siteCode} role={role} stations={stations} versions={versions} onSaved={upsertVersion} />
             )}
             {tab === 'review' && <ReviewQueue siteCode={siteCode} role={role} versions={versions} onUpdated={upsertVersion} />}
-            {tab === 'published' && <PublishedPanel versions={versions} />}
+            {tab === 'published' && (
+              <PublishedPanel siteCode={siteCode} role={role} versions={versions} onRolledBack={applyRollback} />
+            )}
             {tab === 'members' && (
               <MembersAndSettingsPanel
                 siteCode={siteCode}
@@ -175,22 +188,118 @@ export function SiteWorkspacePage({ memberships }: SiteWorkspacePageProps) {
   )
 }
 
-function PublishedPanel({ versions }: { versions: ContentVersion[] }) {
+function PublishedPanel({
+  siteCode,
+  role,
+  versions,
+  onRolledBack,
+}: {
+  siteCode: string
+  role: SiteRole
+  versions: ContentVersion[]
+  onRolledBack: (previousLiveId: string, restored: ContentVersion) => void
+}) {
   const published = versions.filter((version) => version.status === 'PUBLISHED')
+  const canRollback = role === 'SITE_MANAGER'
+  const [reasons, setReasons] = useState<Record<string, string>>({})
+  const [busyId, setBusyId] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [message, setMessage] = useState<string | null>(null)
+
+  const rollback = async (live: ContentVersion) => {
+    const prior = previousPublished(versions, live)
+    if (!prior) return
+    const reason = (reasons[live.id] ?? '').trim()
+    if (!reason) {
+      setError('Lý do thu hồi là bắt buộc')
+      setMessage(null)
+      return
+    }
+    setBusyId(live.id)
+    setError(null)
+    setMessage(null)
+    try {
+      const restored = await siteWorkspaceApi.rollback(siteCode, live.contentKind, live.resourceKey, prior.version, {
+        expectedRevision: live.revision,
+        reason,
+      })
+      onRolledBack(live.id, restored)
+      setMessage(`Đã thu hồi về phiên bản ${prior.version}`)
+    } catch (cause: unknown) {
+      setError(workspaceErrorMessage(cause))
+    } finally {
+      setBusyId(null)
+    }
+  }
+
   if (published.length === 0) return <p className="text-sm text-slate-600">Chưa có bản phát hành.</p>
   return (
-    <ul className="max-w-3xl space-y-3">
-      {published.map((version) => (
-        <li key={version.id} className="rounded-xl border border-slate-200 bg-white p-4">
-          <h2 className="text-base font-bold text-slate-900">
-            {version.contentKind === 'SITE_PROFILE' ? 'Hồ sơ di tích' : `Trạm ${version.resourceKey}`}
-          </h2>
-          <p className="mt-1 text-sm text-slate-600">Phiên bản {version.version} · Đã phát hành</p>
-          {snapshotName(version.snapshotJson) && <p className="mt-2 text-sm text-slate-800">{snapshotName(version.snapshotJson)}</p>}
-        </li>
-      ))}
-    </ul>
+    <section className="max-w-3xl space-y-3" aria-label="Đã phát hành">
+      {error && (
+        <p role="alert" className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-900">
+          {error}
+        </p>
+      )}
+      {message && (
+        <p role="status" className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
+          {message}
+        </p>
+      )}
+      <ul className="space-y-3">
+        {published.map((version) => {
+          const prior = previousPublished(versions, version)
+          const label = rollbackLabel(version)
+          return (
+            <li key={version.id} className="rounded-xl border border-slate-200 bg-white p-4">
+              <h2 className="text-base font-bold text-slate-900">
+                {version.contentKind === 'SITE_PROFILE' ? 'Hồ sơ di tích' : `Trạm ${version.resourceKey}`}
+              </h2>
+              <p className="mt-1 text-sm text-slate-600">Phiên bản {version.version} · Đã phát hành</p>
+              {snapshotName(version.snapshotJson) && <p className="mt-2 text-sm text-slate-800">{snapshotName(version.snapshotJson)}</p>}
+              {canRollback && prior && (
+                <div className="mt-3 space-y-2">
+                  <label className="block text-sm font-semibold text-slate-800">
+                    {`Lý do thu hồi ${label}`}
+                    <textarea
+                      className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                      rows={2}
+                      value={reasons[version.id] ?? ''}
+                      disabled={busyId === version.id}
+                      onChange={(event) => setReasons((current) => ({ ...current, [version.id]: event.target.value }))}
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-800 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#014a9e] disabled:cursor-not-allowed disabled:opacity-60"
+                    disabled={busyId === version.id}
+                    onClick={() => void rollback(version)}
+                  >
+                    {`Thu hồi ${label}`}
+                  </button>
+                </div>
+              )}
+            </li>
+          )
+        })}
+      </ul>
+    </section>
   )
+}
+
+function previousPublished(versions: ContentVersion[], live: ContentVersion): ContentVersion | undefined {
+  return versions
+    .filter(
+      (item) =>
+        item.id !== live.id &&
+        item.contentKind === live.contentKind &&
+        item.resourceKey === live.resourceKey &&
+        item.status === 'ARCHIVED',
+    )
+    .sort((left, right) => right.version - left.version)[0]
+}
+
+function rollbackLabel(version: ContentVersion): string {
+  return version.contentKind === 'SITE_PROFILE' ? 'hồ sơ di tích' : `trạm ${version.resourceKey}`
 }
 
 function OperationsPanel({ siteCode }: { siteCode: string }) {

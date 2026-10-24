@@ -37,6 +37,7 @@ dist-ssr
 /tests/e2e/*
 !/tests/e2e/admin-narrative-pilot.spec.ts
 !/tests/e2e/admin-content-lifecycle.spec.ts
+!/tests/e2e/site-content-lifecycle.spec.ts
 !/tests/helpers/
 /tests/helpers/*
 !/tests/helpers/admin-fixtures.ts
