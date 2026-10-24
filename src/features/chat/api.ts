@@ -3,6 +3,7 @@ import { getData, getListData, getPageData, httpClient } from '../../shared/api/
 import { ApiError, type ApiErrorPayload, type PageResponse } from '../../shared/api/contracts'
 import { getToken } from '../../shared/auth/session'
 import { appEnv } from '../../shared/config/env'
+import type { ChatPageContext } from './pageContext'
 
 export type ChatSource = {
     title: string
@@ -193,6 +194,7 @@ export const chatApi = {
         narrativeQuestId?: string | null
         narrativeNodeCode?: string | null
         narrativeVersion?: number | null
+        pageContext?: ChatPageContext | null
     }) =>
         getData<ChatReply>(
             httpClient.post('/api/chat/messages', {
@@ -204,6 +206,7 @@ export const chatApi = {
                 narrativeQuestId: payload.narrativeQuestId ?? undefined,
                 narrativeNodeCode: payload.narrativeNodeCode ?? undefined,
                 narrativeVersion: payload.narrativeVersion ?? undefined,
+                pageContext: payload.pageContext ?? undefined,
             }),
         ),
 
@@ -217,6 +220,7 @@ export const chatApi = {
         narrativeQuestId?: string | null
         narrativeNodeCode?: string | null
         narrativeVersion?: number | null
+        pageContext?: ChatPageContext | null
     }): Promise<ChatReply> {
         return chatApi.sendOrchestrated(payload)
     },
@@ -230,6 +234,7 @@ export const chatApi = {
         narrativeQuestId?: string | null
         narrativeNodeCode?: string | null
         narrativeVersion?: number | null
+        pageContext?: ChatPageContext | null
         mode?: 'LIGHT_HINT' | 'DEEP_EXPLAIN' | 'KNOWLEDGE_CHECK'
     }, onEvent?: (event: GuidedStreamEvent) => void, signal?: AbortSignal): Promise<GuidedChatReply> => {
         const token = getToken()

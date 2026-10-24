@@ -1,7 +1,7 @@
 // src/pages/ChatPage.tsx
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { Button } from '../components/ui/Button'
@@ -33,6 +33,7 @@ import { useToast } from '../shared/ui/toast/useToast'
 import { probeRagAiHealth } from '../shared/api/aiHealth'
 import { resolveChatLocationId, saveSelectedLocationId } from '../features/chat/chatRoute'
 import { normalizeChatPersona } from '../features/chat/chatPersona'
+import { buildChatPageContext, pageContextKey } from '../features/chat/pageContext'
 import { isPilotSiteCode, siteCodeFromLocationId } from '../shared/config/constants'
 import { stationsApi, type StationInfo } from '../features/stations/api'
 import { buildStationPagePath, normalizeStationRouteContext } from '../features/stations/stationRoutes'
@@ -103,6 +104,7 @@ export function ChatPage() {
     const voiceLocale = (['vi', 'en', 'ko', 'zh-CN'].includes(i18n.language) ? i18n.language : 'vi') as import('../shared/i18n').AppLocale
     const { characterId: routeCharacterId } = useParams<{ characterId?: string }>()
     const [params, setSearchParams] = useSearchParams()
+    const routerLocation = useLocation()
     const navigate = useNavigate()
     const locationId = resolveChatLocationId(params.get('locationId'))
     const personaParam = params.get('persona')
@@ -114,6 +116,15 @@ export function ChatPage() {
     const initialCharacterId = routeCharacterId ?? params.get('characterId') ?? ''
     const questRecordKey = questRecordFromSearch(params)
     const questPrompt = params.get('questPrompt') ?? params.get('prompt') ?? ''
+    const searchKey = params.toString()
+    const pageContext = useMemo(
+        () => buildChatPageContext(
+            { pathname: routerLocation.pathname, search: routerLocation.search },
+            new URLSearchParams(searchKey),
+        ),
+        [routerLocation.pathname, routerLocation.search, searchKey],
+    )
+    const currentPageContextKey = pageContextKey(pageContext)
 
     // Gộp logic từ đồng đội: Narrative Quests
     const narrativeQuestId = params.get('questId')
@@ -245,7 +256,7 @@ export function ChatPage() {
         : null
     const stationReturnHref = stationRouteContext ? buildStationPagePath(stationRouteContext) : null
     const stationContextKey = stationCode ? `${siteCode}:${stationCode}` : ''
-    chatScopeRef.current = stationContextKey || `location:${locationId ?? ''}`
+    chatScopeRef.current = `${stationContextKey || `location:${locationId ?? ''}`}|page:${currentPageContextKey}`
 
     // GIỮ NGUYÊN BẢN GIAO DIỆN HEAD CỦA BẠN (Fallback Persona chuẩn UI)
     const apiCharacter = useMemo(() => characters.find((c) => c.id === characterId), [characters, characterId])
@@ -474,7 +485,7 @@ export function ChatPage() {
         return () => {
             cancelled = true
         }
-    }, [resolvedCharacterId, loadLatestMessages, stationCode, stationContextKey])
+    }, [resolvedCharacterId, loadLatestMessages, stationCode, stationContextKey, currentPageContextKey])
 
     useEffect(() => {
         if (params.get('autoSend') === '1') return
@@ -656,6 +667,7 @@ export function ChatPage() {
                 conversationId,
                 stationCode,
                 siteCode,
+                pageContext,
                 ...({
                     narrativeQuestId,
                     narrativeNodeCode: narrativeNode,
@@ -891,6 +903,7 @@ export function ChatPage() {
                         conversationId: conversationIdRef.current,
                         stationCode,
                         siteCode,
+                        pageContext,
                     })
                     if (callRunRef.current !== runId) return
                     conversationIdRef.current = reply.conversationId

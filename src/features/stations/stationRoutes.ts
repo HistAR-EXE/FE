@@ -42,11 +42,13 @@ export function buildStationStoryPath(input: StationRouteContext): string {
 
 export function buildStationChatPath(input: StationRouteContext): string {
   const value = requiredContext(input)
+  const stationPath = buildStationPagePath(value)
   const params = new URLSearchParams({
     locationId: value.locationId,
     persona: 'chrono',
     site: value.siteCode,
     station: value.stationCode,
+    from: stationPath,
   })
   return `/chat?${params}`
 }
