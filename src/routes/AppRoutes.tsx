@@ -47,6 +47,9 @@ const ArtifactDetailPage = lazy(() => import('../pages/ArtifactDetailPage').then
 const TeacherDashboardPage = lazy(() => import('../pages/TeacherDashboardPage').then((module) => ({ default: module.TeacherDashboardPage })))
 const TeacherAssignmentsPage = lazy(() => import('../pages/TeacherAssignmentsPage').then((module) => ({ default: module.TeacherAssignmentsPage })))
 const TeacherLiveBoardPage = lazy(() => import('../pages/TeacherLiveBoardPage').then((module) => ({ default: module.TeacherLiveBoardPage })))
+const TeacherTripsPage = lazy(() => import('../pages/TeacherTripsPage').then((module) => ({ default: module.TeacherTripsPage })))
+const TeacherTripDetailPage = lazy(() => import('../pages/TeacherTripDetailPage').then((module) => ({ default: module.TeacherTripDetailPage })))
+const TripJoinPage = lazy(() => import('../pages/TripJoinPage').then((module) => ({ default: module.TripJoinPage })))
 const ChatPage = lazy(() => import('../pages/ChatPage').then((module) => ({ default: module.ChatPage })))
 const ExplorePage = lazy(() => import('../pages/ExplorePage').then((module) => ({ default: module.ExplorePage })))
 const LeaderboardPage = lazy(() => import('../pages/LeaderboardPage').then((module) => ({ default: module.LeaderboardPage })))
@@ -178,7 +181,10 @@ export function AppRoutes() {
                                     <Route path="/teacher" element={<TeacherDashboardPage />} />
                                     <Route path="/teacher/assignments" element={<TeacherAssignmentsPage />} />
                                     <Route path="/teacher/live-board" element={<TeacherLiveBoardPage />} />
+                                    <Route path="/teacher/trips" element={<TeacherTripsPage />} />
+                                    <Route path="/teacher/trips/:tripId" element={<TeacherTripDetailPage />} />
                                 </Route>
+                                <Route path="/trip/join/:code" element={<TripJoinPage />} />
 
                                 {/* Đưa các route chính ra ngoài ModeGuardRoute để không bị đá về /mode-select -> /explore khi xóa localStorage */}
                                 <Route path="/characters" element={<CharacterExplorePage />} />
