@@ -45,6 +45,7 @@ dist-ssr
 !/tests/ui/explore-integrity.spec.ts
 !/tests/ui/leaderboard-honors.spec.ts
 !/tests/ui/ar-experience.spec.ts
+!/tests/ui/site-workspace.spec.ts
 
 # Editor directories and files
 .vscode/*

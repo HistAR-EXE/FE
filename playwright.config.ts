@@ -58,6 +58,7 @@ export default defineConfig({
     {
       name: '2-frontend-ui',
       testDir: './tests/ui',
+      testIgnore: /site-workspace\.spec\.ts/,
       dependencies: ['setup'],
       use: { ...devices['Desktop Chrome'], baseURL: FE_URL },
     },
@@ -67,6 +68,14 @@ export default defineConfig({
       name: 'admin-ui',
       testDir: './tests/ui',
       testMatch: /admin-console\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'], baseURL: FE_URL },
+    },
+
+    // FE-only site workspace gate: mocked /api, no BE dependency.
+    {
+      name: 'site-workspace-ui',
+      testDir: './tests/ui',
+      testMatch: /site-workspace\.spec\.ts/,
       use: { ...devices['Desktop Chrome'], baseURL: FE_URL },
     },
 

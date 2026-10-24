@@ -11,6 +11,7 @@ import { CU_CHI_LOCATION_ID } from '../../shared/config/constants'
 import { timePortalPath } from '../../shared/config/locationSlug'
 import { SideNavAccount } from './SideNavAccount'
 import { buildChatPath } from '../../features/chat/chatRoute'
+import { useSiteWorkspaceNavVisible } from '../../features/site-workspace/useSiteWorkspaceNav'
 
 type NavItem = {
     modes: 'online' | 'offline' | 'both'
@@ -61,6 +62,21 @@ const mobileNavItems: readonly NavigationItem[] = [
 
 function withChatPath(items: readonly NavigationItem[], chatPath: string): NavigationItem[] {
     return items.map((item) => (item.to === '/chat' ? { ...item, to: chatPath } : item))
+}
+
+const siteWorkspaceNavItem: NavigationItem = {
+    to: '/site-workspace',
+    icon: 'museum',
+    label: 'Quản lý di tích',
+    prefixes: ['/site-workspace'],
+    modes: 'both',
+}
+
+function withSiteWorkspaceItem(items: NavigationItem[], visible: boolean): NavigationItem[] {
+    if (!visible || items.some((item) => item.to === siteWorkspaceNavItem.to)) return items
+    const adminIndex = items.findIndex((item) => item.to === '/admin/content')
+    if (adminIndex < 0) return [...items, siteWorkspaceNavItem]
+    return [...items.slice(0, adminIndex), siteWorkspaceNavItem, ...items.slice(adminIndex)]
 }
 
 function effectiveMode(mode: AppMode | null): AppMode {
@@ -128,8 +144,9 @@ export function SideNav({
     const t = TONES.light
 
     const chatPath = useMemo(() => buildChatPath(), [])
+    const showSiteWorkspace = useSiteWorkspaceNavVisible()
 
-    const items = withChatPath(filterNavItems(navItems, mode, user?.role), chatPath)
+    const items = withSiteWorkspaceItem(withChatPath(filterNavItems(navItems, mode, user?.role), chatPath), showSiteWorkspace)
 
     return (
         <aside aria-label="Thanh điều hướng"
@@ -205,7 +222,8 @@ export function SideNavTablet() {
     const { user } = useAuth()
     const t = TONES.light
     const chatPath = useMemo(() => buildChatPath(), [])
-    const items = withChatPath(filterNavItems(navItems, mode, user?.role), chatPath)
+    const showSiteWorkspace = useSiteWorkspaceNavVisible()
+    const items = withSiteWorkspaceItem(withChatPath(filterNavItems(navItems, mode, user?.role), chatPath), showSiteWorkspace)
 
     return (
         <nav className={`hidden md:flex lg:hidden h-dvh w-20 fixed left-0 top-0 border-r backdrop-blur-2xl flex-col py-3 px-2.5 z-40 items-center ${t.shellTablet}`}>

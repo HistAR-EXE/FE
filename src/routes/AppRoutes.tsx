@@ -29,6 +29,7 @@ import { CreatorLandingPage } from '../pages/CreatorLandingPage'
 import { CreatorStatsPage } from '../pages/CreatorStatsPage'
 import { PrivacyPage } from '../pages/PrivacyPage'
 import { TermsPage } from '../pages/TermsPage'
+import { SiteWorkspaceRoute } from '../features/site-workspace/SiteWorkspaceRoute'
 import { AdminRoute } from '../shared/router/AdminRoute'
 import { AuthRoute } from '../shared/router/AuthRoute'
 import { EmailVerifiedRoute } from '../shared/router/EmailVerifiedRoute'
@@ -157,6 +158,7 @@ export function AppRoutes() {
                                 <Route path="/quests/:questId/play/:minigameId" element={<MinigamePage />} />
                                 <Route path="/quests/:questId" element={<QuestDetailPage />} />
                                 <Route path="/leaderboard" element={<LeaderboardPage />} />
+                                <Route path="/site-workspace" element={<SiteWorkspaceRoute />} />
 
                                 <Route element={<AdminRoute />}>
                                     <Route path="/admin" element={<AdminConsoleLayout />}>
