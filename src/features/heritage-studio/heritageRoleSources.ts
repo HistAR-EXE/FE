@@ -60,6 +60,6 @@ export function buildHeritageRolePhotoFramePath(
     station: stationCode,
     locationId,
     era: '1968',
-    source: 'tunnel3d',
+    source: 'time-portal-3d',
   })}`
 }
