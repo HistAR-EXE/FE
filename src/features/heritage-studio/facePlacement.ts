@@ -89,21 +89,12 @@ export function initialPlacement(
   candidate: FaceCandidate | null,
   template: HeritageRoleTemplate,
 ): FacePlacement {
+  void candidate
   const anchor = template.calibration.faceAnchor
-  if (!candidate) {
-    return clampPlacement({
-      x: anchor.x,
-      y: anchor.y,
-      scale: 1,
-      rotationDeg: template.calibration.faceRotationDeg,
-    }, template)
-  }
-  const widthScale = anchor.width / candidate.width
-  const heightScale = anchor.height / candidate.height
   return clampPlacement({
-    x: anchor.x - candidate.x * Math.min(widthScale, heightScale),
-    y: anchor.y - candidate.y * Math.min(widthScale, heightScale),
-    scale: Math.min(widthScale, heightScale),
+    x: anchor.x,
+    y: anchor.y,
+    scale: 1,
     rotationDeg: template.calibration.faceRotationDeg,
   }, template)
 }

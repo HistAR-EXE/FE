@@ -31,7 +31,7 @@ export function buildPreviewFilter({ boost, tunnelGrade }: LowLightOptions): str
 export const TUNNEL_VIGNETTE_CSS =
   'radial-gradient(ellipse at center, rgba(255,170,80,0.10) 0%, rgba(0,0,0,0) 45%, rgba(20,8,0,0.62) 100%)'
 
-function applyGradeToCanvas(ctx: CanvasRenderingContext2D, w: number, h: number, opts: LowLightOptions) {
+export function applyGradeToCanvas(ctx: CanvasRenderingContext2D, w: number, h: number, opts: LowLightOptions) {
   if (opts.boost > 0 || opts.tunnelGrade) {
     const gamma = gammaFor(opts.boost)
     const lut = new Uint8ClampedArray(256)
@@ -71,7 +71,7 @@ function applyGradeToCanvas(ctx: CanvasRenderingContext2D, w: number, h: number,
   }
 }
 
-async function loadBitmap(source: Blob | string): Promise<ImageBitmap | HTMLImageElement> {
+export async function loadHeritageBitmap(source: Blob | string): Promise<ImageBitmap | HTMLImageElement> {
   if (source instanceof Blob && typeof createImageBitmap === 'function') return createImageBitmap(source)
   const url = typeof source === 'string' ? source : URL.createObjectURL(source)
   return new Promise((resolve, reject) => {
@@ -83,7 +83,7 @@ async function loadBitmap(source: Blob | string): Promise<ImageBitmap | HTMLImag
   })
 }
 
-function canvasToBlob(canvas: HTMLCanvasElement, type: string, quality: number): Promise<Blob> {
+export function heritageCanvasToBlob(canvas: HTMLCanvasElement, type: string, quality: number): Promise<Blob> {
   return new Promise((resolve, reject) => {
     canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Không thể xuất ảnh.'))), type, quality)
   })
@@ -92,7 +92,7 @@ function canvasToBlob(canvas: HTMLCanvasElement, type: string, quality: number):
 /** Apply low-light/tunnel grade to a captured photo before upload (keeps original size, max edge 1080). */
 export async function enhanceCapturedPhoto(file: File, opts: LowLightOptions, maxEdge = 1080): Promise<File> {
   if (!file.type.startsWith('image/') || (opts.boost <= 0 && !opts.tunnelGrade)) return file
-  const bmp = await loadBitmap(file)
+  const bmp = await loadHeritageBitmap(file)
   const srcW = 'naturalWidth' in bmp ? bmp.naturalWidth : bmp.width
   const srcH = 'naturalHeight' in bmp ? bmp.naturalHeight : bmp.height
   const scale = Math.min(1, maxEdge / Math.max(srcW, srcH))
@@ -107,13 +107,13 @@ export async function enhanceCapturedPhoto(file: File, opts: LowLightOptions, ma
   if ('close' in bmp) bmp.close()
   applyGradeToCanvas(ctx, w, h, opts)
   const type = file.type === 'image/png' ? 'image/png' : 'image/jpeg'
-  const blob = await canvasToBlob(canvas, type, 0.92)
+  const blob = await heritageCanvasToBlob(canvas, type, 0.92)
   return new File([blob], file.name, { type })
 }
 
 /** Render image onto a 1080x1920 (9:16) canvas with blurred backdrop + "timelens.asia" watermark. */
 export async function exportStoryImage(source: Blob | string, width = STORY_WIDTH, height = STORY_HEIGHT): Promise<Blob> {
-  const bmp = await loadBitmap(source)
+  const bmp = await loadHeritageBitmap(source)
   const srcW = 'naturalWidth' in bmp ? bmp.naturalWidth : bmp.width
   const srcH = 'naturalHeight' in bmp ? bmp.naturalHeight : bmp.height
 
@@ -157,7 +157,7 @@ export async function exportStoryImage(source: Blob | string, width = STORY_WIDT
   ctx.font = '400 28px system-ui, -apple-system, "Segoe UI", sans-serif'
   ctx.fillText('TimeLens · Hành trình di sản', width / 2, height - 44)
 
-  return canvasToBlob(canvas, 'image/jpeg', 0.92)
+  return heritageCanvasToBlob(canvas, 'image/jpeg', 0.92)
 }
 
 export function downloadBlob(blob: Blob, filename: string) {
