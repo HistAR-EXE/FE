@@ -92,9 +92,19 @@ export function SiteWorkspacePage({ memberships }: SiteWorkspacePageProps) {
 
   const upsertVersion = (version: ContentVersion) => {
     setVersions((current) => {
-      const index = current.findIndex((item) => item.id === version.id)
-      if (index < 0) return [version, ...current]
-      const copy = current.slice()
+      const next = version.status === 'PUBLISHED'
+        ? current.map((item) =>
+            item.id !== version.id &&
+            item.contentKind === version.contentKind &&
+            item.resourceKey === version.resourceKey &&
+            item.status === 'PUBLISHED'
+              ? { ...item, status: 'ARCHIVED' as const }
+              : item,
+          )
+        : current
+      const index = next.findIndex((item) => item.id === version.id)
+      if (index < 0) return [version, ...next]
+      const copy = next.slice()
       copy[index] = version
       return copy
     })
@@ -224,7 +234,7 @@ function PublishedPanel({
         reason,
       })
       onRolledBack(live.id, restored)
-      setMessage(`Đã thu hồi về phiên bản ${prior.version}`)
+      setMessage(`Đã thu hồi về phiên bản ${restored.version} (từ phiên bản ${prior.version})`)
     } catch (cause: unknown) {
       setError(workspaceErrorMessage(cause))
     } finally {

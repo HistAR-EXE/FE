@@ -139,6 +139,11 @@ test('site content moves from onboarding through publish and rollback', async ({
   await page.getByRole('button', { name: 'Phát hành' }).click()
   await expect(page.getByText(/Đã phát hành phiên bản 2/)).toBeVisible()
 
+  await page.getByRole('tab', { name: 'Đã phát hành' }).click()
+  await expect(page).toHaveURL(/\/site-workspace$/)
+  await expect(page.getByRole('button', { name: 'Thu hồi hồ sơ di tích' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Thu hồi trạm ST01' })).toBeVisible()
+
   await expectPublic(page, NEXT_PROFILE.name, NEXT_PROFILE.description, NEXT_STATION.name, NEXT_STATION.body)
 
   await signIn(page, MANAGER)
@@ -188,7 +193,7 @@ async function rollbackLive(page: Page, label: string, reason: string, pathSuffi
   await page.getByRole('button', { name: `Thu hồi ${label}` }).click()
   const request = await pending
   expect(request.postDataJSON()).toEqual({ reason, expectedRevision: 4 })
-  await expect(page.getByText('Đã thu hồi về phiên bản 1')).toBeVisible()
+  await expect(page.getByText('Đã thu hồi về phiên bản 3 (từ phiên bản 1)')).toBeVisible()
 }
 
 async function expectPublic(page: Page, profileName: string, description: string, stationName: string, stationBody: string) {
@@ -357,7 +362,10 @@ async function installLifecycleMock(page: Page) {
       return ok({ items, page: 0, size: 20, totalItems: items.length, totalPages: items.length ? 1 : 0 })
     }
 
-    return ok([])
+    return route.fulfill({
+      status: 404,
+      json: { success: false, code: 'NOT_FOUND', message: `No mock for ${method} ${path}` },
+    })
   })
 }
 
