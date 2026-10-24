@@ -48,6 +48,8 @@ type MockOptions = {
   failMine?: { current: boolean }
   workspaceProfile?: Partial<LiveLocation>
   liveLocation?: LiveLocation
+  locationResponse?: Record<string, unknown>
+  holdLocation?: Promise<void>
   stationBlocks?: Array<{
     blockType: 'TEXT' | 'IMAGE' | 'AUDIO' | 'VIDEO' | 'HOTSPOT'
     title: string
@@ -330,21 +332,91 @@ test('profile editor seeds from the workspace summary when nothing is published'
   await expect(page.getByLabel('Nguồn')).toHaveValue('Nguồn workspace')
 })
 
-test('profile editor seeds from the public location when no snapshot or workspace profile exists', async ({ page }) => {
+test('profile editor seeds a location payload without sources and keeps workspace sources', async ({ page }) => {
+  const locationResponse = {
+    id: '22222222-2222-4222-8222-222222222299',
+    name: 'Hoàng thành Huế',
+    description: 'Kinh thành nhà Nguyễn',
+    latitude: 16.467,
+    longitude: 107.579,
+    city: 'Huế',
+    formattedAddress: 'Đại Nội, Huế',
+    googleMapsUrl: 'https://maps.example/hue',
+    coverImage: 'https://cdn.example/hue-live.jpg',
+    rating: 4.5,
+    distanceKm: null,
+    isArAvailable: true,
+    unlockPrerequisiteQuestId: null,
+    unlockNarrative: null,
+    isUnlocked: true,
+    createdAt: '2020-01-01T00:00:00.000Z',
+  }
+  expect(locationResponse).not.toHaveProperty('sources')
   await mockSiteApi(page, {
-    liveLocation: {
-      name: 'Hoàng thành Huế',
-      description: 'Kinh thành nhà Nguyễn',
-      formattedAddress: 'Đại Nội, Huế',
-      coverImage: 'https://cdn.example/hue-live.jpg',
-      sources: 'Đại Nam thực lục',
-    },
+    workspaceProfile: { sources: 'Đại Nam thực lục' },
+    locationResponse,
   })
   await page.goto('/site-workspace')
   await expect(page.getByLabel('Mô tả')).toHaveValue('Kinh thành nhà Nguyễn')
   await expect(page.getByLabel('Địa chỉ')).toHaveValue('Đại Nội, Huế')
   await expect(page.getByLabel('Ảnh bìa')).toHaveValue('https://cdn.example/hue-live.jpg')
   await expect(page.getByLabel('Nguồn')).toHaveValue('Đại Nam thực lục')
+  const createProfile = page.waitForRequest((request) =>
+    request.method() === 'POST' && new URL(request.url()).pathname === `/api/site-workspaces/${SITE}/content/SITE_PROFILE/profile/versions`)
+  await page.getByRole('button', { name: 'Gửi duyệt' }).click()
+  expect((await createProfile).postDataJSON().snapshot.sources).toBe('Đại Nam thực lục')
+  await expect(page.getByText(/Đã gửi duyệt hồ sơ phiên bản/)).toBeVisible()
+  await expect(page.getByLabel('Nguồn')).toHaveValue('Đại Nam thực lục')
+  await expect(page.getByLabel('Mô tả')).toHaveValue('Kinh thành nhà Nguyễn')
+})
+
+test('profile editor applies an unseen location seed and blocks save until then', async ({ page }) => {
+  let release: () => void = () => {}
+  const holdLocation = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  await mockSiteApi(page, {
+    holdLocation,
+    liveLocation: {
+      name: 'Hoàng thành Huế',
+      description: 'Kinh thành nhà Nguyễn',
+      formattedAddress: 'Đại Nội, Huế',
+      coverImage: 'https://cdn.example/hue-live.jpg',
+    },
+  })
+  await page.goto('/site-workspace')
+  const save = page.getByRole('button', { name: 'Lưu nháp' })
+  await expect(save).toBeVisible()
+  await expect(save).toBeDisabled()
+  await expect(page.getByRole('button', { name: 'Gửi duyệt' })).toBeDisabled()
+  await page.getByLabel('Nguồn').fill('gõ khi form còn trống')
+  release()
+  await expect(page.getByLabel('Mô tả')).toHaveValue('Kinh thành nhà Nguyễn')
+  await expect(page.getByLabel('Nguồn')).toHaveValue('')
+  await expect(save).toBeEnabled()
+})
+
+test('profile editor keeps the submitted snapshot instead of an older published profile', async ({ page }) => {
+  await mockSiteApi(page, {
+    versions: [version({
+      id: 'published-old',
+      contentKind: 'SITE_PROFILE',
+      resourceKey: 'profile',
+      status: 'PUBLISHED',
+      version: 3,
+      snapshotJson: JSON.stringify({ ...publishedProfile, name: 'Bản đã phát hành cũ', sources: 'Nguồn cũ' }),
+    })],
+  })
+  await page.goto('/site-workspace')
+  await expect(page.getByLabel('Tên di tích')).toHaveValue('Bản đã phát hành cũ')
+  await expect(page.getByLabel('Nguồn')).toHaveValue('Nguồn cũ')
+  await page.getByLabel('Tên di tích').fill('Hồ sơ vừa gửi')
+  await page.getByLabel('Nguồn').fill('Nguồn vừa gửi')
+  await page.getByRole('button', { name: 'Gửi duyệt' }).click()
+  await expect(page.getByText(/Đã gửi duyệt hồ sơ phiên bản/)).toBeVisible()
+  await expect(page.getByLabel('Tên di tích')).toHaveValue('Hồ sơ vừa gửi')
+  await expect(page.getByLabel('Nguồn')).toHaveValue('Nguồn vừa gửi')
+  await expect(page.getByText('Phiên bản 4 · Chờ duyệt')).toBeVisible()
 })
 
 test('review queue renders submitted profile and station fields', async ({ page }) => {
@@ -670,16 +742,18 @@ async function mockSiteApi(page: Page, options: MockOptions = {}) {
       })
     }
 
-    if (path === '/api/locations' && method === 'GET' && options.liveLocation) {
+    if (path === '/api/locations' && method === 'GET' && (options.liveLocation || options.locationResponse || options.holdLocation)) {
+      if (options.holdLocation) await options.holdLocation
+      const item = options.locationResponse ?? {
+        id: '22222222-2222-4222-8222-222222222299',
+        latitude: 16.467,
+        longitude: 107.579,
+        city: 'Huế',
+        createdAt: '2020-01-01T00:00:00.000Z',
+        ...options.liveLocation,
+      }
       return ok({
-        items: [{
-          id: '22222222-2222-4222-8222-222222222299',
-          ...options.liveLocation,
-          latitude: 16.467,
-          longitude: 107.579,
-          city: 'Huế',
-          createdAt: '2020-01-01T00:00:00.000Z',
-        }],
+        items: [item],
         page: 0,
         size: 20,
         totalItems: 1,

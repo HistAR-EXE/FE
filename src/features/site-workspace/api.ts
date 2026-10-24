@@ -26,7 +26,7 @@ export type SiteWorkspaceSummary = {
   callerRole: SiteRole | null
   requiresTripConfirmation: boolean
   members: SiteMember[] | null
-  /** Present only when the workspace payload already includes the live profile. */
+  /** Live location profile copied onto the workspace summary. Prefer these over GET /api/locations. */
   name?: string | null
   description?: string | null
   formattedAddress?: string | null

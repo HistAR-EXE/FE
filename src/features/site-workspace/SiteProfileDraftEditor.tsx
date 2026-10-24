@@ -45,13 +45,14 @@ function text(value: unknown): string {
 }
 
 function profileFromSummary(summary: SiteWorkspaceSummary): SiteProfileSnapshot | null {
+  const name = text(summary.name)
   const description = text(summary.description)
   const formattedAddress = text(summary.formattedAddress)
   const coverImage = text(summary.coverImage)
   const sources = text(summary.sources)
-  if (!description && !formattedAddress && !coverImage && !sources) return null
+  if (!name && !description && !formattedAddress && !coverImage && !sources) return null
   return {
-    name: text(summary.name) || text(summary.locationName),
+    name: name || text(summary.locationName),
     description,
     formattedAddress,
     coverImage,
@@ -60,13 +61,25 @@ function profileFromSummary(summary: SiteWorkspaceSummary): SiteProfileSnapshot 
 }
 
 function profileFromLocation(location: Location): SiteProfileSnapshot {
-  const sources = text((location as Location & { sources?: unknown }).sources)
   return {
     name: text(location.name),
     description: text(location.description),
     formattedAddress: text(location.formattedAddress),
     coverImage: text(location.coverImage),
-    sources,
+    sources: '',
+  }
+}
+
+function mergeSeed(location: SiteProfileSnapshot | null, summary: SiteProfileSnapshot | null): SiteProfileSnapshot | null {
+  if (!location && !summary) return null
+  const base = location ?? EMPTY_PROFILE
+  if (!summary) return base
+  return {
+    name: summary.name || base.name,
+    description: summary.description || base.description,
+    formattedAddress: summary.formattedAddress || base.formattedAddress,
+    coverImage: summary.coverImage || base.coverImage,
+    sources: summary.sources || base.sources,
   }
 }
 
@@ -83,40 +96,102 @@ export function SiteProfileDraftEditor({ siteCode, role, versions, summary, onSa
   const published = useMemo(() => latestProfile(versions, 'PUBLISHED'), [versions])
   const seeded = draft ?? published
   const seedKey = seeded ? `${seeded.status}:${seeded.id}:${seeded.revision}` : `live:${summary.siteCode}`
-  const [form, setForm] = useState<SiteProfileSnapshot>(() => readProfile(seeded))
+  const summarySeed = !seeded ? profileFromSummary(summary) : null
+  const waitsForLocation = !seeded && Boolean(text(summary.locationName))
+  const [form, setForm] = useState<SiteProfileSnapshot>(() => (seeded ? readProfile(seeded) : summarySeed ?? EMPTY_PROFILE))
   const [current, setCurrent] = useState<ContentVersion | undefined>(draft)
+  const [pinned, setPinned] = useState<ContentVersion | null>(null)
+  const [seedReady, setSeedReady] = useState(!waitsForLocation)
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const dirty = useRef(false)
+  const seedSeen = useRef(Boolean(seeded || summarySeed))
+  const heldSubmission = useRef<ContentVersion | null>(null)
+  const seedSite = useRef(summary.siteCode)
   const canEdit = role === 'SITE_MANAGER' || role === 'CONTENT_EDITOR'
+  const shown = current ?? pinned
 
   useEffect(() => {
-    if (draft || published) {
+    if (seedSite.current !== summary.siteCode) {
+      seedSite.current = summary.siteCode
       dirty.current = false
-      setForm(readProfile(draft ?? published))
+      seedSeen.current = false
+      heldSubmission.current = null
+      setPinned(null)
+    }
+
+    const keepEdits = dirty.current && seedSeen.current
+
+    if (draft) {
+      if (!keepEdits) {
+        dirty.current = false
+        seedSeen.current = true
+        setForm(readProfile(draft))
+      }
       setCurrent(draft)
+      setPinned(null)
+      setSeedReady(true)
       return
     }
+
+    const held = heldSubmission.current
+    if (held && held.siteCode === summary.siteCode && (!published || held.version >= published.version)) {
+      if (!keepEdits) {
+        dirty.current = false
+        seedSeen.current = true
+        setForm(readProfile(held))
+      }
+      setCurrent(undefined)
+      setPinned(held)
+      setSeedReady(true)
+      return
+    }
+
+    if (published) {
+      if (!keepEdits) {
+        dirty.current = false
+        seedSeen.current = true
+        setForm(readProfile(published))
+      }
+      setCurrent(undefined)
+      setPinned(null)
+      setSeedReady(true)
+      return
+    }
+
     setCurrent(undefined)
     const fromSummary = profileFromSummary(summary)
-    if (fromSummary) {
-      dirty.current = false
-      setForm(fromSummary)
+    const query = text(summary.locationName)
+    if (!query) {
+      if (fromSummary && !keepEdits) {
+        dirty.current = false
+        seedSeen.current = true
+        setForm(fromSummary)
+      }
+      setSeedReady(true)
       return
     }
-    const query = text(summary.locationName)
-    if (!query) return
+
     let cancelled = false
     locationsApi
       .list({ search: query, size: 50 })
       .then((items) => {
-        if (cancelled || dirty.current) return
+        if (cancelled || (dirty.current && seedSeen.current)) return
         const wanted = query.toLowerCase()
-        const match = items.find((item) => item.name.trim().toLowerCase() === wanted)
-        if (match) setForm(profileFromLocation(match))
+        const match = items.find((item) => text(item.name).toLowerCase() === wanted) ?? null
+        const merged = mergeSeed(match ? profileFromLocation(match) : null, fromSummary)
+        if (!merged) return
+        dirty.current = false
+        seedSeen.current = true
+        setForm(merged)
       })
       .catch(() => undefined)
+      .finally(() => {
+        if (cancelled) return
+        seedSeen.current = true
+        setSeedReady(true)
+      })
     return () => {
       cancelled = true
     }
@@ -138,12 +213,15 @@ export function SiteProfileDraftEditor({ siteCode, role, versions, summary, onSa
     const saved = current
       ? await siteWorkspaceApi.updateDraft(siteCode, 'SITE_PROFILE', 'profile', current.version, snapshot, current.revision)
       : await siteWorkspaceApi.createDraft(siteCode, 'SITE_PROFILE', 'profile', snapshot)
+    heldSubmission.current = null
+    setPinned(null)
     setCurrent(saved)
     onSaved(saved)
     return saved
   }
 
   const save = async () => {
+    if (!seedReady) return
     setBusy(true)
     setError(null)
     setMessage(null)
@@ -158,13 +236,19 @@ export function SiteProfileDraftEditor({ siteCode, role, versions, summary, onSa
   }
 
   const submit = async () => {
+    if (!seedReady) return
     setBusy(true)
     setError(null)
     setMessage(null)
     try {
       const saved = await persist()
       const submitted = await siteWorkspaceApi.submit(siteCode, 'SITE_PROFILE', 'profile', saved.version, saved.revision)
-      setCurrent(submitted)
+      heldSubmission.current = submitted
+      dirty.current = false
+      seedSeen.current = true
+      setForm(readProfile(submitted))
+      setCurrent(undefined)
+      setPinned(submitted)
       onSaved(submitted)
       setMessage(`Đã gửi duyệt hồ sơ phiên bản ${submitted.version}`)
     } catch (cause: unknown) {
@@ -183,7 +267,7 @@ export function SiteProfileDraftEditor({ siteCode, role, versions, summary, onSa
       }}
     >
       <p className="text-sm text-slate-600">
-        {current ? `Phiên bản ${current.version} · ${statusLabel(current.status)}` : 'Chưa có bản nháp hồ sơ.'}
+        {shown ? `Phiên bản ${shown.version} · ${statusLabel(shown.status)}` : 'Chưa có bản nháp hồ sơ.'}
       </p>
       {error && (
         <p role="alert" className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-900">
@@ -207,10 +291,10 @@ export function SiteProfileDraftEditor({ siteCode, role, versions, summary, onSa
       )}
       {canEdit && (
         <div className="flex flex-wrap gap-2">
-          <button type="button" className={secondaryButton} disabled={busy} onClick={() => void save()}>
+          <button type="button" className={secondaryButton} disabled={busy || !seedReady} onClick={() => void save()}>
             Lưu nháp
           </button>
-          <button type="submit" className={primaryButton} disabled={busy}>
+          <button type="submit" className={primaryButton} disabled={busy || !seedReady}>
             Gửi duyệt
           </button>
         </div>
