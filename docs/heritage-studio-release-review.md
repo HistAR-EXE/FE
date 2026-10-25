@@ -54,4 +54,3 @@ ST06 phải kiểm tra riêng việc camera live vẫn bị khóa; chọn ảnh 
 7. Ghi thời gian dựng ảnh và mức dùng bộ nhớ bằng quan sát thực tế; không dùng ngưỡng CI dễ chập chờn.
 
 Nếu một biến thể không đạt, giữ nguyên toàn bộ gate ở trạng thái chưa phát hành. Không dùng asset tạm để “mở trước”.
-

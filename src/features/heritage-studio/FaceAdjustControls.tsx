@@ -28,4 +28,3 @@ export function FaceAdjustControls({ placement, template, onChange }: FaceAdjust
     </fieldset>
   )
 }
-

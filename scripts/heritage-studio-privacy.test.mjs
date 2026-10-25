@@ -39,4 +39,3 @@ test('share page exposes station return and Cedar Falls return only for that sou
   assert.match(source, /entrySource === 'battle-diorama'/)
   assert.match(source, /buildStationPagePath\(stationContext\)/)
 })
-

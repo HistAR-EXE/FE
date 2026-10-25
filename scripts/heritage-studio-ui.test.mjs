@@ -34,4 +34,3 @@ test('ST06 camera safety remains library-only', () => {
   assert.match(source, /capture=\{cameraLocked \? undefined : 'environment'\}/)
   assert.match(source, /Bạn vẫn có thể chọn ảnh từ thư viện/)
 })
-
