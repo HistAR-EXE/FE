@@ -29,6 +29,9 @@ import {
   buildStationPagePath,
   readStationRouteContext,
 } from '../features/stations/stationRoutes'
+import { HeritageStudio } from '../features/heritage-studio/HeritageStudio'
+import { getPublishedRoleTemplates } from '../features/heritage-studio/roleTemplates'
+import type { HeritageStationCode, PublishedHeritageRoleTemplate } from '../features/heritage-studio/types'
 
 export function PhotoFramePage() {
   const navigate = useNavigate()
@@ -43,6 +46,8 @@ export function PhotoFramePage() {
   const [frameId, setFrameId] = useState('')
   const [variant, setVariant] = useState<'square' | 'story'>('square')
   const [file, setFile] = useState<File | null>(null)
+  const [photoMode, setPhotoMode] = useState<'original' | 'heritage'>('original')
+  const [heritageComposite, setHeritageComposite] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
   const [framesLoading, setFramesLoading] = useState(true)
   const [stationName, setStationName] = useState<string | null>(null)
@@ -80,7 +85,13 @@ export function PhotoFramePage() {
 
   const selectedFrame = useMemo(() => frames.find((f) => f.id === frameId), [frames, frameId])
   const selectedLocked = selectedFrame?.requiresPremium && !premium
-  const previewUrl = useMemo(() => (file ? URL.createObjectURL(file) : null), [file])
+  const heritageStationCode = stationContext && /^ST0[1-6]$/.test(stationContext.stationCode)
+    ? stationContext.stationCode as HeritageStationCode
+    : undefined
+  const hasHeritageRoles = getPublishedRoleTemplates(stationContext?.siteCode ?? 'cu-chi', heritageStationCode).length > 0
+  const initialHeritageRoleId = searchParams.get('role')
+  const previewFile = photoMode === 'heritage' && heritageComposite ? heritageComposite : file
+  const previewUrl = useMemo(() => (previewFile ? URL.createObjectURL(previewFile) : null), [previewFile])
   const stationHero = stationContext
     ? stationMedia(stationContext.siteCode, stationContext.stationCode)?.hero
     : null
@@ -94,23 +105,39 @@ export function PhotoFramePage() {
     if (previewUrl) URL.revokeObjectURL(previewUrl)
   }, [previewUrl])
 
+  useEffect(() => {
+    if (initialHeritageRoleId && hasHeritageRoles) setPhotoMode('heritage')
+  }, [hasHeritageRoles, initialHeritageRoleId])
+
   const submit = async () => {
-    if (!file || selectedLocked) return
+    const uploadFile = photoMode === 'heritage' ? heritageComposite : file
+    if (!uploadFile || (photoMode === 'original' && selectedLocked)) {
+      if (photoMode === 'heritage' && file && !heritageComposite) {
+        showToast({ message: 'Hãy tạo ảnh hóa thân trước khi lưu.', type: 'info' })
+      }
+      return
+    }
     const maxBytes = 8 * 1024 * 1024
-    if (file.size > maxBytes) {
+    if (uploadFile.size > maxBytes) {
       showToast({ message: 'Ảnh vượt quá 8MB. Vui lòng chọn ảnh nhỏ hơn.', type: 'error' })
       return
     }
     const supportedTypes = ['image/jpeg', 'image/png', 'image/webp']
-    if (!supportedTypes.includes(file.type)) {
+    if (!supportedTypes.includes(uploadFile.type)) {
       showToast({ message: 'Chỉ hỗ trợ JPEG, PNG hoặc WebP.', type: 'error' })
       return
     }
     setUploading(true)
     try {
-      const enhanced = await enhanceCapturedPhoto(file, lowLight).catch(() => file)
+      const enhanced = photoMode === 'heritage'
+        ? uploadFile
+        : await enhanceCapturedPhoto(uploadFile, lowLight).catch(() => uploadFile)
       const resized = await resizeImageForUpload(enhanced)
-      const creation = await viralApi.uploadCreation({ file: resized, frameId: frameId || null, variant })
+      const creation = await viralApi.uploadCreation({
+        file: resized,
+        frameId: photoMode === 'heritage' ? null : frameId || null,
+        variant,
+      })
       const sharePath = `/share?creationId=${creation.id}&outputUrl=${encodeURIComponent(creation.outputUrl)}`
       navigate(stationContext ? appendStationContext(sharePath, stationContext) : sharePath)
       showToast({ message: 'Tạo ảnh thành công.', type: 'success' })
@@ -143,9 +170,9 @@ export function PhotoFramePage() {
                   src={previewUrl || stationHero || images.photoFrameCharacter}
                   crossOrigin="anonymous"
                   className="w-full h-full object-cover"
-                  style={previewUrl ? { filter: buildPreviewFilter(lowLight) } : undefined}
+                  style={previewUrl && !heritageComposite ? { filter: buildPreviewFilter(lowLight) } : undefined}
                 />
-                {previewUrl && lowLight.tunnelGrade && (
+                {previewUrl && !heritageComposite && lowLight.tunnelGrade && (
                   <div className="absolute inset-0 pointer-events-none" style={{ background: TUNNEL_VIGNETTE_CSS }} />
                 )}
               </div>
@@ -187,7 +214,10 @@ export function PhotoFramePage() {
                 type="file"
                 accept="image/*"
                 capture={cameraLocked ? undefined : 'environment'}
-                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                onChange={(e) => {
+                  setFile(e.target.files?.[0] ?? null)
+                  setHeritageComposite(null)
+                }}
                 className="w-full text-sm"
               />
               {!cameraLocked && (
@@ -200,6 +230,30 @@ export function PhotoFramePage() {
                 </div>
               )}
               <ReportContentButton stationCode={effectiveStation ?? undefined} context="photo_frame" />
+            </div>
+            <div className="flex flex-col gap-md">
+              <h3 className="font-title-md">Chế độ ảnh</h3>
+              <div className="grid grid-cols-2 gap-sm" role="group" aria-label="Chọn chế độ ảnh">
+                <button type="button" onClick={() => setPhotoMode('original')} className={`rounded-lg border p-sm ${photoMode === 'original' ? 'border-primary bg-primary/10 text-primary' : 'border-outline-variant'}`}>Ảnh gốc</button>
+                <button type="button" disabled={!hasHeritageRoles} onClick={() => setPhotoMode('heritage')} className={`rounded-lg border p-sm disabled:cursor-not-allowed disabled:opacity-50 ${photoMode === 'heritage' ? 'border-primary bg-primary/10 text-primary' : 'border-outline-variant'}`}>Hóa thân 1968</button>
+              </div>
+              {!hasHeritageRoles && (
+                <p className="text-xs text-on-surface-variant">Vai hóa thân của trạm đang được duyệt sử liệu. Ảnh gốc vẫn dùng bình thường.</p>
+              )}
+              {photoMode === 'heritage' && (
+                <HeritageStudio
+                  file={file}
+                  siteCode={stationContext?.siteCode ?? 'cu-chi'}
+                  stationCode={heritageStationCode}
+                  initialRoleId={initialHeritageRoleId}
+                  variant={variant}
+                  lowLight={lowLight}
+                  onComposite={(composite: File, _template: PublishedHeritageRoleTemplate) => {
+                    setHeritageComposite(composite)
+                    showToast({ message: 'Đã dựng ảnh hóa thân trên thiết bị.', type: 'success' })
+                  }}
+                />
+              )}
             </div>
             <div className="flex flex-col gap-md">
               <h3 className="font-title-md">Chế độ thiếu sáng</h3>
@@ -228,15 +282,15 @@ export function PhotoFramePage() {
             </div>
             <div className="flex flex-col gap-md">
               <h3 className="font-title-md">Khung</h3>
-              <select value={frameId} onChange={(e) => setFrameId(e.target.value)} className="bg-surface border border-outline-variant rounded-lg px-sm py-sm">
-                <option value="">Không dùng khung</option>
-                {frames.map((f) => (
-                  <option key={f.id} value={f.id}>
-                    {f.name} ({f.era}){f.requiresPremium ? ' · Premium' : ''}
-                  </option>
-                ))}
-              </select>
-              {selectedLocked && (
+              {photoMode === 'original' ? <select value={frameId} onChange={(e) => setFrameId(e.target.value)} className="bg-surface border border-outline-variant rounded-lg px-sm py-sm">
+                  <option value="">Không dùng khung</option>
+                  {frames.map((f) => (
+                    <option key={f.id} value={f.id}>
+                      {f.name} ({f.era}){f.requiresPremium ? ' · Premium' : ''}
+                    </option>
+                  ))}
+                </select> : <p className="text-sm text-on-surface-variant">Ảnh hóa thân dùng lớp bối cảnh lịch sử đã duyệt, không chồng thêm khung ảnh.</p>}
+              {photoMode === 'original' && selectedLocked && (
                 <UpgradePrompt
                   compact
                   message="Khung ảnh này dành cho gói Premium. Nâng cấp để sử dụng toàn bộ theme."
@@ -249,7 +303,7 @@ export function PhotoFramePage() {
             </div>
           </div>
           <div className="p-lg border-t border-surface-variant mt-auto">
-            <button onClick={submit} disabled={uploading || !file || selectedLocked} className="w-full bg-primary text-on-primary font-title-md py-4 rounded-lg disabled:opacity-60 flex items-center justify-center gap-2">
+            <button onClick={submit} disabled={uploading || !(photoMode === 'heritage' ? heritageComposite : file) || (photoMode === 'original' && selectedLocked)} className="w-full bg-primary text-on-primary font-title-md py-4 rounded-lg disabled:opacity-60 flex items-center justify-center gap-2">
               <MaterialIcon name="magic_button" />
               {uploading ? 'Đang upload...' : 'Tạo & Chia sẻ'}
             </button>
