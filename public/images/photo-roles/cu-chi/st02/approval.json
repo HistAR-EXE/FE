@@ -1,0 +1,16 @@
+{
+  "stationCode": "ST02",
+  "status": "pending_historical_review",
+  "templateIds": ["st02-can-bo-hau-can-nam", "st02-can-bo-hau-can-nu"],
+  "reviewer": null,
+  "reviewedAt": null,
+  "note": "Chờ 4 tài sản ảnh phân lớp thật được art-direct và phản biện lịch sử độc lập.",
+  "templates": [
+    { "id": "st02-can-bo-hau-can-nam", "published": false, "status": "pending_historical_review", "reviewer": null, "reviewedAt": null, "note": "Chờ tài sản thật và duyệt độc lập cho biến thể nam." },
+    { "id": "st02-can-bo-hau-can-nu", "published": false, "status": "pending_historical_review", "reviewer": null, "reviewedAt": null, "note": "Chờ tài sản thật và duyệt độc lập cho biến thể nữ." }
+  ],
+  "historicalCaveats": [
+    "Lương thực, vật dụng, trang phục và điều kiện kho ngầm năm 1968 chưa được duyệt.",
+    "Hai biến thể phải giữ cùng vai trò và mức độ chủ động."
+  ]
+}

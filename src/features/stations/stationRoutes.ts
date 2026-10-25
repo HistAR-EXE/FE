@@ -4,6 +4,24 @@ export type StationRouteContext = {
   locationId: string
 }
 
+export type HeritageEntrySource = 'station' | 'time-portal-3d' | 'battle-diorama'
+
+const HERITAGE_ENTRY_SOURCES = new Set<HeritageEntrySource>(['station', 'time-portal-3d', 'battle-diorama'])
+
+export function readHeritageEntrySource(value: string | null | undefined): HeritageEntrySource {
+  const normalized = value?.trim().toLowerCase() as HeritageEntrySource | undefined
+  return normalized && HERITAGE_ENTRY_SOURCES.has(normalized) ? normalized : 'station'
+}
+
+export function appendHeritageEntrySource(path: string, source: HeritageEntrySource): string {
+  const separator = path.includes('?') ? '&' : '?'
+  return `${path}${separator}${new URLSearchParams({ source })}`
+}
+
+export function buildDioramaReturnPath(locationId: string): string {
+  return UUID.test(locationId.trim()) ? `/diorama/${encodeURIComponent(locationId.trim())}` : '/diorama'
+}
+
 const SITE_CODE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 const STATION_CODE = /^ST\d{2}$/
 // Existing deterministic seed ids are UUID-shaped but do not all encode RFC version/variant bits.
@@ -42,11 +60,13 @@ export function buildStationStoryPath(input: StationRouteContext): string {
 
 export function buildStationChatPath(input: StationRouteContext): string {
   const value = requiredContext(input)
+  const stationPath = buildStationPagePath(value)
   const params = new URLSearchParams({
     locationId: value.locationId,
     persona: 'chrono',
     site: value.siteCode,
     station: value.stationCode,
+    from: stationPath,
   })
   return `/chat?${params}`
 }

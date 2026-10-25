@@ -56,7 +56,7 @@ const REVIVAL_STARS = Array.from({ length: 15 }, (_, index) => ({
     delay: (index % 5) * 0.4,
 }))
 
-export function BattleDioramaViewer({ onStart }: { onStart?: () => void } = {}) {
+export function BattleDioramaViewer({ onStart, onComplete }: { onStart?: () => void; onComplete?: () => void } = {}) {
     const [isIntro, setIsIntro] = useState(true);
     const [currentStep, setCurrentStep] = useState(0);
     const [isPlaying, setIsPlaying] = useState(false);
@@ -69,6 +69,7 @@ export function BattleDioramaViewer({ onStart }: { onStart?: () => void } = {}) 
     const voRef = useRef<HTMLAudioElement>(null);
     const introBgmRef = useRef<HTMLAudioElement>(null);
     const narrationRef = useRef<HTMLAudioElement>(null);
+    const completedRef = useRef(false);
 
     // NHẠC NỀN
     const bgmRef = useRef<HTMLAudioElement>(null);
@@ -106,6 +107,12 @@ export function BattleDioramaViewer({ onStart }: { onStart?: () => void } = {}) 
         introBgmRef.current?.pause();
         setIsPlaying(true);
     };
+
+    useEffect(() => {
+        if (isIntro || currentStep !== totalSteps - 1 || completedRef.current) return;
+        completedRef.current = true;
+        onComplete?.();
+    }, [currentStep, isIntro, onComplete, totalSteps]);
 
     // LOGIC INTRO
     useEffect(() => {

@@ -12,6 +12,7 @@ export type TunnelViewer = {
   setEra: (era: EraValue) => void
   setLabelsVisible: (visible: boolean) => void
   resetView: () => void
+  focusSemanticTarget: (targetId: string) => boolean
   dispose: () => void
 }
 
@@ -80,6 +81,7 @@ export function createTunnelViewer(host: HTMLElement, era: EraValue, opts: Viewe
   let userMoved = false
   let disposed = false
   let labelK = 1
+  let pendingSemanticTarget: string | null = null
 
   let last = performance.now()
   let elapsed = 0
@@ -203,6 +205,35 @@ export function createTunnelViewer(host: HTMLElement, era: EraValue, opts: Viewe
     if (first) snapHome()
     else flyTo(homeTarget, homeDist, VIEW_DIR, 0.6)
     opts.onSelect?.(null)
+    if (next === 1968 && pendingSemanticTarget) applySemanticTarget(pendingSemanticTarget)
+  }
+
+  function applySemanticTarget(targetId: string): boolean {
+    if (!built || currentEra !== 1968) return false
+    const target = built.semanticTargets.get(targetId)
+    if (!target) return false
+    pendingSemanticTarget = null
+    userMoved = true
+    const half = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2))
+    const distance = THREE.MathUtils.clamp(3.4 / (half * camera.aspect), controls.minDistance + 0.5, homeDist * 0.7)
+    flyTo(built.root.localToWorld(target.focus.clone()), distance, VIEW_DIR)
+    opts.onSelect?.(target.info)
+    return true
+  }
+
+  function focusSemanticTarget(targetId: string): boolean {
+    const known = ERA_SCENES[1968].chambers.some((item) => item.heritageRoleId === targetId) ||
+      ERA_SCENES[1968].callouts.some((item) => item.heritageRoleId === targetId)
+    if (!known) {
+      pendingSemanticTarget = null
+      userMoved = false
+      flyTo(homeTarget, homeDist, VIEW_DIR, 0.7)
+      opts.onSelect?.(null)
+      return false
+    }
+    pendingSemanticTarget = targetId
+    if (currentEra === 1968 && built) applySemanticTarget(targetId)
+    return true
   }
 
   // Kích thước
@@ -323,6 +354,7 @@ export function createTunnelViewer(host: HTMLElement, era: EraValue, opts: Viewe
 
   return {
     setEra,
+    focusSemanticTarget,
     setLabelsVisible(v) {
       labelsVisible = v
       labelK = -1

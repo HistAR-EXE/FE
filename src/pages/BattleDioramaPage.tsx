@@ -1,5 +1,5 @@
 // src/pages/BattleDioramaPage.tsx
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { lazy, Suspense, useCallback, useRef, useState } from 'react'
 import { AppLayout } from '../components/layout/AppLayout'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
@@ -9,6 +9,9 @@ import { CU_CHI_LOCATION_ID } from '../shared/config/constants'
 import { exploreApi } from '../features/explore/api'
 import { DISCOVERY_RECORDED_EVENT } from '../features/gamification/discoveryRouting'
 import mascotImg from '../assets/mascot.png'
+import { HeritageRolePicker } from '../features/heritage-studio/HeritageRolePicker'
+import type { HeritageRoleTemplate } from '../features/heritage-studio/types'
+import { appendHeritageEntrySource, buildStationCameraPath } from '../features/stations/stationRoutes'
 
 const BattleDioramaViewer = lazy(() =>
     import('../features/diorama/BattleDioramaViewer').then((module) => ({
@@ -18,7 +21,9 @@ const BattleDioramaViewer = lazy(() =>
 const HistoryFilm = lazy(() => import('../features/history/HistoryFilm'))
 
 export function BattleDioramaPage() {
+    const navigate = useNavigate()
     const [experience, setExperience] = useState<'diorama' | 'film' | null>(null)
+    const [dioramaComplete, setDioramaComplete] = useState(false)
     const { locationId } = useParams<{ locationId?: string }>()
     const activeLocationId = locationId ?? CU_CHI_LOCATION_ID
 
@@ -46,6 +51,16 @@ export function BattleDioramaPage() {
             saving.current = false
         }
     }, [activeLocationId, isAuthenticated])
+
+    const openHeritageRole = useCallback((role: HeritageRoleTemplate) => {
+        if (!role.published) return
+        const base = buildStationCameraPath({
+            siteCode: role.siteCode,
+            stationCode: role.stationCode,
+            locationId: activeLocationId,
+        })
+        navigate(`${appendHeritageEntrySource(base, 'battle-diorama')}&role=${encodeURIComponent(role.id)}`)
+    }, [activeLocationId, navigate])
 
     return (
         <AppLayout
@@ -387,7 +402,20 @@ export function BattleDioramaPage() {
                     >
                         {experience === 'diorama' && (
                             <div className="relative flex-1 h-[calc(100dvh-8.5rem)] min-h-[480px] bg-[#07132C]">
-                                <BattleDioramaViewer onStart={() => void recordExperience()} />
+                                <BattleDioramaViewer onStart={() => void recordExperience()} onComplete={() => setDioramaComplete(true)} />
+                                {dioramaComplete && (
+                                    <aside className="absolute inset-x-3 bottom-3 z-[220] mx-auto max-w-3xl rounded-2xl border-2 border-[#FDC908] bg-[#07132C]/95 p-4 text-white shadow-2xl backdrop-blur-md" data-testid="cedar-falls-heritage-entry">
+                                        <div className="mb-3 flex items-start justify-between gap-3">
+                                            <div>
+                                                <p className="text-xs font-black uppercase tracking-wider text-[#FDC908]">Tiếp nối đúng bối cảnh</p>
+                                                <h2 className="mt-1 text-lg font-black">Từ chiến dịch Cedar Falls 1967, tiếp tục khám phá đời sống dưới địa đạo năm 1968.</h2>
+                                                <p className="mt-1 text-xs text-blue-100">Chọn vai trước khi mở Khung di sản. Việc mở studio không tạo check-in hoặc cộng điểm.</p>
+                                            </div>
+                                            <button type="button" onClick={() => setDioramaComplete(false)} aria-label="Đóng chọn vai" className="rounded-full border border-white/30 px-2 py-1">×</button>
+                                        </div>
+                                        <HeritageRolePicker siteCode="cu-chi" onSelect={openHeritageRole} />
+                                    </aside>
+                                )}
                             </div>
                         )}
                         {experience === 'film' && <HistoryFilm />}

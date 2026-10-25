@@ -12,7 +12,12 @@ import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { images } from '../assets/images'
 import { emitEvent } from '../lib/pilotEvents'
 import { downloadBlob, exportStoryImage } from '../lib/heritageImage'
-import { buildStationPagePath, readStationRouteContext } from '../features/stations/stationRoutes'
+import {
+  buildDioramaReturnPath,
+  buildStationPagePath,
+  readHeritageEntrySource,
+  readStationRouteContext,
+} from '../features/stations/stationRoutes'
 import { stationsApi } from '../features/stations/api'
 
 const STORY_FILENAME = 'timelens-heritage-9x16.jpg'
@@ -22,6 +27,7 @@ export function SharePage() {
   const creationId = params.get('creationId') ?? ''
   const outputUrl = params.get('outputUrl') ? decodeURIComponent(params.get('outputUrl') as string) : ''
   const stationContext = useMemo(() => readStationRouteContext(params), [params])
+  const entrySource = readHeritageEntrySource(params.get('source'))
   const [stationName, setStationName] = useState<string | null>(null)
   const [caption, setCaption] = useState('Khám phá di sản Việt cùng TimeLens!')
   const { showToast } = useToast()
@@ -192,6 +198,14 @@ export function SharePage() {
                   className="w-full rounded-xl border border-primary px-md py-sm text-center font-bold text-primary"
                 >
                   Về {stationContext.stationCode}{stationName ? ` · ${stationName}` : ''}
+                </Link>
+              )}
+              {entrySource === 'battle-diorama' && (
+                <Link
+                  to={buildDioramaReturnPath(stationContext?.locationId ?? '')}
+                  className="w-full rounded-xl border border-secondary px-md py-sm text-center font-bold text-secondary"
+                >
+                  Về Sa bàn Cedar Falls
                 </Link>
               )}
               <button onClick={onShare} disabled={exporting} className="flex-1 min-w-[140px] bg-primary hover:bg-primary-container text-on-primary font-title-md py-md px-lg rounded-xl flex justify-center items-center gap-sm disabled:opacity-60">

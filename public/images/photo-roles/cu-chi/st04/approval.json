@@ -1,0 +1,16 @@
+{
+  "stationCode": "ST04",
+  "status": "pending_historical_review",
+  "templateIds": ["st04-can-bo-quan-y-nam", "st04-can-bo-quan-y-nu"],
+  "reviewer": null,
+  "reviewedAt": null,
+  "note": "Chờ 4 tài sản ảnh phân lớp thật được art-direct và phản biện lịch sử độc lập.",
+  "templates": [
+    { "id": "st04-can-bo-quan-y-nam", "published": false, "status": "pending_historical_review", "reviewer": null, "reviewedAt": null, "note": "Chờ tài sản thật và duyệt độc lập cho biến thể nam." },
+    { "id": "st04-can-bo-quan-y-nu", "published": false, "status": "pending_historical_review", "reviewer": null, "reviewedAt": null, "note": "Chờ tài sản thật và duyệt độc lập cho biến thể nữ." }
+  ],
+  "historicalCaveats": [
+    "Dụng cụ, kỹ thuật băng bó, trang phục và bố trí quân y năm 1968 chưa được duyệt.",
+    "Không được trình bày cảnh tái hiện như ảnh tư liệu thật."
+  ]
+}

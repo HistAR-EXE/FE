@@ -1,0 +1,16 @@
+{
+  "stationCode": "ST03",
+  "status": "pending_historical_review",
+  "templateIds": ["st03-bao-dam-nuoc-thong-khi-nam", "st03-bao-dam-nuoc-thong-khi-nu"],
+  "reviewer": null,
+  "reviewedAt": null,
+  "note": "Chờ 4 tài sản ảnh phân lớp thật được art-direct và phản biện lịch sử độc lập.",
+  "templates": [
+    { "id": "st03-bao-dam-nuoc-thong-khi-nam", "published": false, "status": "pending_historical_review", "reviewer": null, "reviewedAt": null, "note": "Chờ tài sản thật và duyệt độc lập cho biến thể nam." },
+    { "id": "st03-bao-dam-nuoc-thong-khi-nu", "published": false, "status": "pending_historical_review", "reviewer": null, "reviewedAt": null, "note": "Chờ tài sản thật và duyệt độc lập cho biến thể nữ." }
+  ],
+  "historicalCaveats": [
+    "Cách lấy nước, ngụy trang thông hơi và bối cảnh liên tầng năm 1968 chưa được duyệt.",
+    "Nguồn 3D chỉ định ngữ cảnh giếng nước và ống thông hơi, không phải bằng chứng lịch sử độc lập."
+  ]
+}

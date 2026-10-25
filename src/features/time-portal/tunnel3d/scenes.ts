@@ -5,10 +5,16 @@
 // sa bàn & lát cắt minh hoạ tại Khu di tích Bến Dược / Bến Đình.
 
 import type { EraValue } from '../eraLabels'
+import type { HeritageStationCode } from '../../heritage-studio/types'
 
 export type Vec2 = [number, number]
 
-export type InfoItem = { title: string; desc: string }
+export type InfoItem = {
+  title: string
+  desc: string
+  heritageRoleId?: string
+  stationCode?: HeritageStationCode
+}
 
 /** Các đường khoét vào mặt cắt. */
 export type CutKind = 'tunnel' | 'deep' | 'demo' | 'trap' | 'vent' | 'flue' | 'well'
@@ -410,6 +416,8 @@ const SCENE_1968: EraScene = {
   chambers: [
     {
       kind: 'firing',
+      heritageRoleId: 'ST06_FIRING',
+      stationCode: 'ST06',
       x: -7.6,
       y: -1.32,
       w: 1.7,
@@ -446,6 +454,8 @@ const SCENE_1968: EraScene = {
     },
     {
       kind: 'clinic',
+      heritageRoleId: 'ST04_CLINIC',
+      stationCode: 'ST04',
       x: -3.4,
       y: -4.18,
       w: 2.4,
@@ -455,6 +465,8 @@ const SCENE_1968: EraScene = {
     },
     {
       kind: 'meeting',
+      heritageRoleId: 'ST01_MEETING',
+      stationCode: 'ST01',
       x: 0.9,
       y: -4.12,
       w: 2.0,
@@ -464,6 +476,8 @@ const SCENE_1968: EraScene = {
     },
     {
       kind: 'factory',
+      heritageRoleId: 'ST05_FACTORY',
+      stationCode: 'ST05',
       x: 6.3,
       y: -4.12,
       w: 2.0,
@@ -473,6 +487,8 @@ const SCENE_1968: EraScene = {
     },
     {
       kind: 'store',
+      heritageRoleId: 'ST02_STORE',
+      stationCode: 'ST02',
       x: -4.6,
       y: -6.78,
       w: 2.0,
@@ -493,6 +509,8 @@ const SCENE_1968: EraScene = {
   callouts: [
     {
       at: [-2.88, -0.55],
+      heritageRoleId: 'ST03_WELL_VENT',
+      stationCode: 'ST03',
       title: 'Ống thông hơi',
       desc: 'Ống nhỏ đưa không khí xuống hầm, miệng ngụy trang thành ụ mối hoặc gốc cây.',
     },
@@ -503,6 +521,8 @@ const SCENE_1968: EraScene = {
     },
     {
       at: [8.86, -3.2],
+      heritageRoleId: 'ST03_WELL_VENT',
+      stationCode: 'ST03',
       place: 'right',
       title: 'Giếng nước',
       desc: 'Giếng đào sâu lấy nước sạch — nước bề mặt có thể bị địch rải chất độc hoá học.',

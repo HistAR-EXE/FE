@@ -53,6 +53,48 @@ test('complete with no sources is a successful answer', async ({ page }) => {
     .toMatchObject({ ok: true, reply: { sources: [], blocks: [{ content: 'Unfinished answer' }] } })
 })
 
+test('sends stable page context without claiming physical presence', async ({ page }) => {
+  const payload = await page.evaluate(async () => {
+    const modulePath = '/src/features/chat/api.ts'
+    const { chatApi } = await import(/* @vite-ignore */ modulePath)
+    let sent: Record<string, unknown> = {}
+    window.fetch = async (_url, init) => {
+      sent = JSON.parse(String(init?.body)) as Record<string, unknown>
+      const body = `event: complete\ndata: {}\n\n`
+      return new Response(new ReadableStream({
+        start(controller) {
+          controller.enqueue(new TextEncoder().encode(body))
+          controller.close()
+        },
+      }))
+    }
+    await chatApi.sendGuidedStream({
+      characterId: 'chrono',
+      message: 'Tính năng này dùng làm gì?',
+      stationCode: 'ST01',
+      siteCode: 'cu-chi',
+      pageContext: {
+        featureKey: 'STATION_MEDIA',
+        route: '/sites/cu-chi/stations/ST01/media',
+        siteCode: 'cu-chi',
+        stationCode: 'ST01',
+      },
+    })
+    return sent
+  })
+  expect(payload).toMatchObject({
+    stationCode: 'ST01',
+    siteCode: 'cu-chi',
+    pageContext: {
+      featureKey: 'STATION_MEDIA',
+      route: '/sites/cu-chi/stations/ST01/media',
+      siteCode: 'cu-chi',
+      stationCode: 'ST01',
+    },
+  })
+  expect(JSON.stringify(payload)).not.toContain('checkedIn')
+})
+
 test('structured errors survive CRLF split across network chunks', async ({ page }) => {
   expect(await runStream(page, frame('error', { code: 'RAG_TIMEOUT', status: 504, retryable: false, requestId: 'split-id' }), 200, true))
     .toMatchObject({ ok: false, code: 'RAG_TIMEOUT', status: 504, retryable: false, requestId: 'split-id' })
