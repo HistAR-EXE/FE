@@ -26,7 +26,9 @@ import { stationsApi } from '../features/stations/api'
 import { stationMedia } from '../features/stations/stationMedia'
 import {
   appendStationContext,
+  appendHeritageEntrySource,
   buildStationPagePath,
+  readHeritageEntrySource,
   readStationRouteContext,
 } from '../features/stations/stationRoutes'
 import { HeritageStudio } from '../features/heritage-studio/HeritageStudio'
@@ -37,6 +39,7 @@ export function PhotoFramePage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const stationContext = useMemo(() => readStationRouteContext(searchParams), [searchParams])
+  const entrySource = readHeritageEntrySource(searchParams.get('source'))
   const { user } = useAuth()
   const premium = hasPremiumAccess(user)
   const activeStation = getActiveStationCode()
@@ -139,7 +142,8 @@ export function PhotoFramePage() {
         variant,
       })
       const sharePath = `/share?creationId=${creation.id}&outputUrl=${encodeURIComponent(creation.outputUrl)}`
-      navigate(stationContext ? appendStationContext(sharePath, stationContext) : sharePath)
+      const contextualSharePath = stationContext ? appendStationContext(sharePath, stationContext) : sharePath
+      navigate(appendHeritageEntrySource(contextualSharePath, entrySource))
       showToast({ message: 'Tạo ảnh thành công.', type: 'success' })
     } catch (e) {
       showToast({ message: getFriendlyErrorMessage(e, 'upload'), type: 'error' })

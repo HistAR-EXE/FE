@@ -11,7 +11,7 @@ import { DISCOVERY_RECORDED_EVENT } from '../features/gamification/discoveryRout
 import mascotImg from '../assets/mascot.png'
 import { HeritageRolePicker } from '../features/heritage-studio/HeritageRolePicker'
 import type { HeritageRoleTemplate } from '../features/heritage-studio/types'
-import { buildStationCameraPath } from '../features/stations/stationRoutes'
+import { appendHeritageEntrySource, buildStationCameraPath } from '../features/stations/stationRoutes'
 
 const BattleDioramaViewer = lazy(() =>
     import('../features/diorama/BattleDioramaViewer').then((module) => ({
@@ -59,7 +59,7 @@ export function BattleDioramaPage() {
             stationCode: role.stationCode,
             locationId: activeLocationId,
         })
-        navigate(`${base}&source=battle-diorama&role=${encodeURIComponent(role.id)}`)
+        navigate(`${appendHeritageEntrySource(base, 'battle-diorama')}&role=${encodeURIComponent(role.id)}`)
     }, [activeLocationId, navigate])
 
     return (
