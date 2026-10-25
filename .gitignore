@@ -50,6 +50,18 @@ dist-ssr
 !/tests/ui/site-workspace.spec.ts
 !/tests/ui/field-trip-planning.spec.ts
 !/tests/ui/field-trip-report.spec.ts
+!/tests/ui/heritage-studio.spec.ts
+!/tests/e2e/heritage-studio-privacy.spec.ts
+!/tests/e2e/heritage-studio-mobile.spec.ts
+!/tests/fullstack/
+!/tests/fullstack/**
+!/tests/fixtures/
+/tests/fixtures/*
+!/tests/fixtures/generate-heritage-portraits.mjs
+!/tests/fixtures/heritage-studio-harness.html
+!/tests/fixtures/heritage-studio-harness.tsx
+!/tests/fixtures/portrait-single-face.jpg
+!/tests/fixtures/portrait-two-faces.jpg
 
 # Editor directories and files
 .vscode/*

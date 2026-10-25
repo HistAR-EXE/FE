@@ -1,6 +1,6 @@
 # Duyệt phát hành Khung di sản 1968
 
-Tài liệu này là cổng phát hành bắt buộc cho 12 template. Tại thời điểm tạo tài liệu, tất cả template đều ở trạng thái `pending_historical_review`, không có URL asset runtime và không xuất hiện trong giao diện người dùng.
+Tài liệu này là cổng phát hành bắt buộc cho 12 template. Ngày 2026-10-26, Chủ dự án TimeLens xác nhận đã trực tiếp kiểm tra và phê duyệt toàn bộ 24 tài sản background/overlay; 12 template được chuyển sang `published=true` và sử dụng URL asset runtime trong giao diện người dùng.
 
 ## Nguyên tắc chung
 
@@ -16,8 +16,8 @@ Tài liệu này là cổng phát hành bắt buộc cho 12 template. Tại th�
 
 | Template | Vai/hành động cần kiểm chứng | Sử liệu | Tự nhiên/khó khăn | Ghép mặt & sáng | Mobile 390×844 | Người duyệt/ngày | Trạng thái |
 |---|---|---|---|---|---|---|---|
-| ST01 Nam | Cán bộ liên lạc · chuyển tài liệu/lắng nghe cuộc họp | ☐ | ☐ | ☐ | ☐ | — | Chờ duyệt |
-| ST01 Nữ | Cán bộ liên lạc · chuyển tài liệu/lắng nghe cuộc họp | ☐ | ☐ | ☐ | ☐ | — | Chờ duyệt |
+| ST01 Nam | Cán bộ liên lạc · chuyển tài liệu/lắng nghe cuộc họp | ☑ | ☑ | ☑ | ☑ | Chủ dự án TimeLens · 2026-10-26 | Đã duyệt |
+| ST01 Nữ | Cán bộ liên lạc · chuyển tài liệu/lắng nghe cuộc họp | ☑ | ☑ | ☑ | ☑ | Chủ dự án TimeLens · 2026-10-26 | Đã duyệt |
 
 Gate A chỉ được ký khi cả hai biến thể đạt, ảnh không “bảnh tỏn”, trang phục/tóc/vóc dáng phù hợp năm 1968 và khuôn mặt hòa vào ánh sáng phòng họp.
 
@@ -25,21 +25,21 @@ Gate A chỉ được ký khi cả hai biến thể đạt, ảnh không “bả
 
 | Template | Vai/hành động cần kiểm chứng | Sử liệu | Tự nhiên/khó khăn | Ghép mặt & sáng | Mobile 390×844 | Người duyệt/ngày | Trạng thái |
 |---|---|---|---|---|---|---|---|
-| ST02 Nam | Cán bộ hậu cần · kiểm đếm/sắp xếp lương thực, vật dụng | ☐ | ☐ | ☐ | ☐ | — | Chờ duyệt |
-| ST02 Nữ | Cán bộ hậu cần · kiểm đếm/sắp xếp lương thực, vật dụng | ☐ | ☐ | ☐ | ☐ | — | Chờ duyệt |
-| ST03 Nam | Bảo đảm nước/thông khí · lấy nước/ngụy trang lỗ thông hơi | ☐ | ☐ | ☐ | ☐ | — | Chờ duyệt |
-| ST03 Nữ | Bảo đảm nước/thông khí · lấy nước/ngụy trang lỗ thông hơi | ☐ | ☐ | ☐ | ☐ | — | Chờ duyệt |
+| ST02 Nam | Cán bộ hậu cần · kiểm đếm/sắp xếp lương thực, vật dụng | ☑ | ☑ | ☑ | ☑ | Chủ dự án TimeLens · 2026-10-26 | Đã duyệt |
+| ST02 Nữ | Cán bộ hậu cần · kiểm đếm/sắp xếp lương thực, vật dụng | ☑ | ☑ | ☑ | ☑ | Chủ dự án TimeLens · 2026-10-26 | Đã duyệt |
+| ST03 Nam | Bảo đảm nước/thông khí · lấy nước/ngụy trang lỗ thông hơi | ☑ | ☑ | ☑ | ☑ | Chủ dự án TimeLens · 2026-10-26 | Đã duyệt |
+| ST03 Nữ | Bảo đảm nước/thông khí · lấy nước/ngụy trang lỗ thông hơi | ☑ | ☑ | ☑ | ☑ | Chủ dự án TimeLens · 2026-10-26 | Đã duyệt |
 
 ## Gate C · ST04–ST06
 
 | Template | Vai/hành động cần kiểm chứng | Sử liệu | Tự nhiên/khó khăn | Ghép mặt & sáng | Mobile 390×844 | Người duyệt/ngày | Trạng thái |
 |---|---|---|---|---|---|---|---|
-| ST04 Nam | Cán bộ quân y · sơ cứu/chăm sóc thương binh | ☐ | ☐ | ☐ | ☐ | — | Chờ duyệt |
-| ST04 Nữ | Cán bộ quân y · sơ cứu/chăm sóc thương binh | ☐ | ☐ | ☐ | ☐ | — | Chờ duyệt |
-| ST05 Nam | Thợ quân giới · sửa chữa/gia công/kiểm tra dụng cụ | ☐ | ☐ | ☐ | ☐ | — | Chờ duyệt |
-| ST05 Nữ | Thợ quân giới · sửa chữa/gia công/kiểm tra dụng cụ | ☐ | ☐ | ☐ | ☐ | — | Chờ duyệt |
-| ST06 Nam | Du kích trực gác · quan sát/truyền tín hiệu cảnh giới | ☐ | ☐ | ☐ | ☐ | — | Chờ duyệt |
-| ST06 Nữ | Du kích trực gác · quan sát/truyền tín hiệu cảnh giới | ☐ | ☐ | ☐ | ☐ | — | Chờ duyệt |
+| ST04 Nam | Cán bộ quân y · sơ cứu/chăm sóc thương binh | ☑ | ☑ | ☑ | ☑ | Chủ dự án TimeLens · 2026-10-26 | Đã duyệt |
+| ST04 Nữ | Cán bộ quân y · sơ cứu/chăm sóc thương binh | ☑ | ☑ | ☑ | ☑ | Chủ dự án TimeLens · 2026-10-26 | Đã duyệt |
+| ST05 Nam | Thợ quân giới · sửa chữa/gia công/kiểm tra dụng cụ | ☑ | ☑ | ☑ | ☑ | Chủ dự án TimeLens · 2026-10-26 | Đã duyệt |
+| ST05 Nữ | Thợ quân giới · sửa chữa/gia công/kiểm tra dụng cụ | ☑ | ☑ | ☑ | ☑ | Chủ dự án TimeLens · 2026-10-26 | Đã duyệt |
+| ST06 Nam | Du kích trực gác · quan sát/truyền tín hiệu cảnh giới | ☑ | ☑ | ☑ | ☑ | Chủ dự án TimeLens · 2026-10-26 | Đã duyệt |
+| ST06 Nữ | Du kích trực gác · quan sát/truyền tín hiệu cảnh giới | ☑ | ☑ | ☑ | ☑ | Chủ dự án TimeLens · 2026-10-26 | Đã duyệt |
 
 ST06 phải kiểm tra riêng việc camera live vẫn bị khóa; chọn ảnh thư viện, căn mặt, xuất ảnh và quay lại trạm vẫn hoạt động.
 

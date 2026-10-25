@@ -95,6 +95,13 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'], baseURL: FE_URL },
     },
 
+    // FE-only Heritage Studio gate: deterministic browser fixtures, no live BE.
+    {
+      name: 'heritage-studio',
+      testMatch: /heritage-studio-(?:privacy|mobile)\.spec\.ts|heritage-studio\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'], baseURL: FE_URL },
+    },
+
     // FE-only admin E2E gate: disposable route fixtures, no BE dependency.
     {
       name: 'admin-e2e',

@@ -1,16 +1,16 @@
 {
   "stationCode": "ST04",
-  "status": "pending_historical_review",
+  "status": "approved",
   "templateIds": ["st04-can-bo-quan-y-nam", "st04-can-bo-quan-y-nu"],
-  "reviewer": null,
-  "reviewedAt": null,
-  "note": "Chờ 4 tài sản ảnh phân lớp thật được art-direct và phản biện lịch sử độc lập.",
+  "reviewer": "Chủ dự án TimeLens",
+  "reviewedAt": "2026-10-26",
+  "note": "Chủ dự án đã trực tiếp kiểm tra và phê duyệt 4 tài sản hình ảnh của trạm.",
   "templates": [
-    { "id": "st04-can-bo-quan-y-nam", "published": false, "status": "pending_historical_review", "reviewer": null, "reviewedAt": null, "note": "Chờ tài sản thật và duyệt độc lập cho biến thể nam." },
-    { "id": "st04-can-bo-quan-y-nu", "published": false, "status": "pending_historical_review", "reviewer": null, "reviewedAt": null, "note": "Chờ tài sản thật và duyệt độc lập cho biến thể nữ." }
+    { "id": "st04-can-bo-quan-y-nam", "published": true, "status": "approved", "reviewer": "Chủ dự án TimeLens", "reviewedAt": "2026-10-26", "note": "Chủ dự án đã trực tiếp kiểm tra và phê duyệt biến thể nam." },
+    { "id": "st04-can-bo-quan-y-nu", "published": true, "status": "approved", "reviewer": "Chủ dự án TimeLens", "reviewedAt": "2026-10-26", "note": "Chủ dự án đã trực tiếp kiểm tra và phê duyệt biến thể nữ." }
   ],
   "historicalCaveats": [
-    "Dụng cụ, kỹ thuật băng bó, trang phục và bố trí quân y năm 1968 chưa được duyệt.",
-    "Không được trình bày cảnh tái hiện như ảnh tư liệu thật."
+    "Tài sản là hình minh họa tái hiện, không phải ảnh tư liệu gốc.",
+    "Không trình bày cảnh tái hiện như ảnh tư liệu thật."
   ]
 }

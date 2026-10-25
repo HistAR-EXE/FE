@@ -21,6 +21,9 @@
     "test:e2e:admin-ui": "playwright test --project=admin-ui",
     "test:e2e:admin": "playwright test --project=admin-ui --project=admin-e2e",
     "test:e2e:site-workspace": "playwright test --project=site-workspace-e2e",
+    "test:e2e:site-workspace-fullstack": "playwright test -c playwright.fullstack.config.ts --project=site-workspace-fullstack",
+    "test:e2e:field-trip-fullstack": "playwright test -c playwright.fullstack.config.ts --project=field-trip-fullstack",
+    "test:e2e:b2-fullstack": "playwright test -c playwright.fullstack.config.ts",
     "test:e2e:full": "playwright test --project=setup --project=3-fullstack-e2e",
     "test:e2e:report": "playwright show-report",
     "test:admin": "node --experimental-strip-types --test scripts/admin-state.test.mjs scripts/admin-foundation.test.mjs scripts/admin-pages.test.mjs",
@@ -29,7 +32,7 @@
     "test:all": "powershell -ExecutionPolicy Bypass -File ../scripts/run-all-tests.ps1",
     "test:history": "node --experimental-strip-types --test scripts/history-film.test.mjs scripts/verify-film-assets.test.mjs",
     "test:heritage": "tsx --test scripts/heritage-studio-assets.test.mjs",
-    "test:heritage-studio": "tsx --test scripts/heritage-studio-assets.test.mjs scripts/heritage-3d-bridge.test.mjs scripts/heritage-face-placement.test.mjs scripts/heritage-compositor.test.mjs scripts/heritage-studio-ui.test.mjs scripts/heritage-studio-privacy.test.mjs",
+    "test:heritage-studio": "tsx --test scripts/heritage-studio-assets.test.mjs scripts/heritage-catalog-validation.test.mjs scripts/heritage-3d-bridge.test.mjs scripts/heritage-face-placement.test.mjs scripts/heritage-compositor.test.mjs scripts/heritage-studio-ui.test.mjs scripts/heritage-studio-privacy.test.mjs",
     "test:history:browser": "node scripts/history-smoke.mjs",
     "test:portal": "node --experimental-strip-types --test scripts/portal-audio.test.mjs scripts/portal-defaults.test.mjs",
     "test:portal:browser": "node scripts/portal-smoke.mjs",
@@ -81,11 +84,15 @@
     "tsx": "^4.20.6",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.59.2",
-    "vite": "^8.0.12",
+    "vite": "^8.3.5",
     "vite-plugin-pwa": "^1.3.0"
   },
   "overrides": {
     "@grpc/grpc-js": "1.13.6",
-    "source-map-js": "1.2.2"
+    "fast-uri": "3.1.9",
+    "follow-redirects": "1.16.1",
+    "serialize-javascript": "7.1.4",
+    "source-map-js": "1.2.2",
+    "zod": "4.6.7"
   }
 }

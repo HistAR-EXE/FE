@@ -1,16 +1,16 @@
 {
   "stationCode": "ST05",
-  "status": "pending_historical_review",
+  "status": "approved",
   "templateIds": ["st05-tho-quan-gioi-nam", "st05-tho-quan-gioi-nu"],
-  "reviewer": null,
-  "reviewedAt": null,
-  "note": "Chờ 4 tài sản ảnh phân lớp thật được art-direct và phản biện lịch sử độc lập.",
+  "reviewer": "Chủ dự án TimeLens",
+  "reviewedAt": "2026-10-26",
+  "note": "Chủ dự án đã trực tiếp kiểm tra và phê duyệt 4 tài sản hình ảnh của trạm.",
   "templates": [
-    { "id": "st05-tho-quan-gioi-nam", "published": false, "status": "pending_historical_review", "reviewer": null, "reviewedAt": null, "note": "Chờ tài sản thật và duyệt độc lập cho biến thể nam." },
-    { "id": "st05-tho-quan-gioi-nu", "published": false, "status": "pending_historical_review", "reviewer": null, "reviewedAt": null, "note": "Chờ tài sản thật và duyệt độc lập cho biến thể nữ." }
+    { "id": "st05-tho-quan-gioi-nam", "published": true, "status": "approved", "reviewer": "Chủ dự án TimeLens", "reviewedAt": "2026-10-26", "note": "Chủ dự án đã trực tiếp kiểm tra và phê duyệt biến thể nam." },
+    { "id": "st05-tho-quan-gioi-nu", "published": true, "status": "approved", "reviewer": "Chủ dự án TimeLens", "reviewedAt": "2026-10-26", "note": "Chủ dự án đã trực tiếp kiểm tra và phê duyệt biến thể nữ." }
   ],
   "historicalCaveats": [
-    "Dụng cụ, thao tác gia công và điều kiện xưởng quân giới năm 1968 chưa được duyệt.",
-    "Tư thế lao động phải tự nhiên, không tạo dáng như studio."
+    "Tài sản là hình minh họa tái hiện, không phải ảnh tư liệu gốc.",
+    "Tư thế lao động giữ tự nhiên, không tạo dáng như studio."
   ]
 }

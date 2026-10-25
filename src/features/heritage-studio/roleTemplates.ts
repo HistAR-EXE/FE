@@ -1,13 +1,10 @@
 import type {
-  ApprovedHeritageReview,
   Heritage3dSourceByStation,
   HeritageCompositorCalibration,
-  HeritagePublishedAssets,
   HeritageReleaseStage,
   HeritageRoleTemplate,
   HeritageRoleVariant,
   HeritageStationCode,
-  PendingHeritageReview,
   PublishedHeritageRoleTemplate,
 } from './types.ts'
 
@@ -16,19 +13,7 @@ const CANVAS_SIZE = { width: 1080, height: 1920 } as const
 type RoleVariantSeed = {
   readonly roleVariant: HeritageRoleVariant
   readonly calibration: HeritageCompositorCalibration
-} &
-  (
-    | {
-        readonly published: false
-        readonly assets: null
-        readonly review: PendingHeritageReview
-      }
-    | {
-        readonly published: true
-        readonly assets: HeritagePublishedAssets
-        readonly review: ApprovedHeritageReview
-      }
-  )
+}
 
 interface RoleSeedFor<Station extends HeritageStationCode> {
   readonly stationCode: Station
@@ -46,26 +31,18 @@ type RoleSeed = {
   [Station in HeritageStationCode]: RoleSeedFor<Station>
 }[HeritageStationCode]
 
-function draftVariant(
+function roleVariant(
   roleVariant: HeritageRoleVariant,
   faceAnchor: HeritageCompositorCalibration['faceAnchor'],
   faceRotationDeg: number,
 ): RoleVariantSeed {
   return {
     roleVariant,
-    assets: null,
     calibration: {
       canvasSize: CANVAS_SIZE,
       faceAnchor,
       faceRotationDeg,
       faceFeather: 0.16,
-    },
-    published: false,
-    review: {
-      status: 'pending_historical_review',
-      reviewer: null,
-      reviewedAt: null,
-      note: `Chờ tài sản thật và duyệt độc lập cho biến thể ${roleVariant === 'nam' ? 'nam' : 'nữ'}.`,
     },
   }
 }
@@ -89,8 +66,8 @@ const ROLE_SEEDS = [
     },
     releaseStage: 'gate-a',
     variants: [
-      draftVariant('nam', { x: 0.34, y: 0.12, width: 0.32, height: 0.25 }, -2),
-      draftVariant('nu', { x: 0.35, y: 0.12, width: 0.31, height: 0.25 }, 1),
+      roleVariant('nam', { x: 0.34, y: 0.12, width: 0.32, height: 0.25 }, -2),
+      roleVariant('nu', { x: 0.35, y: 0.12, width: 0.31, height: 0.25 }, 1),
     ],
   },
   {
@@ -111,8 +88,8 @@ const ROLE_SEEDS = [
     },
     releaseStage: 'gate-b',
     variants: [
-      draftVariant('nam', { x: 0.36, y: 0.13, width: 0.3, height: 0.24 }, 3),
-      draftVariant('nu', { x: 0.37, y: 0.13, width: 0.29, height: 0.24 }, -1),
+      roleVariant('nam', { x: 0.36, y: 0.13, width: 0.3, height: 0.24 }, 3),
+      roleVariant('nu', { x: 0.37, y: 0.13, width: 0.29, height: 0.24 }, -1),
     ],
   },
   {
@@ -130,8 +107,8 @@ const ROLE_SEEDS = [
     },
     releaseStage: 'gate-b',
     variants: [
-      draftVariant('nam', { x: 0.35, y: 0.14, width: 0.31, height: 0.24 }, -4),
-      draftVariant('nu', { x: 0.36, y: 0.14, width: 0.3, height: 0.24 }, 2),
+      roleVariant('nam', { x: 0.35, y: 0.14, width: 0.31, height: 0.24 }, -4),
+      roleVariant('nu', { x: 0.36, y: 0.14, width: 0.3, height: 0.24 }, 2),
     ],
   },
   {
@@ -152,8 +129,8 @@ const ROLE_SEEDS = [
     },
     releaseStage: 'gate-c',
     variants: [
-      draftVariant('nam', { x: 0.37, y: 0.12, width: 0.29, height: 0.23 }, 2),
-      draftVariant('nu', { x: 0.36, y: 0.12, width: 0.3, height: 0.23 }, -2),
+      roleVariant('nam', { x: 0.37, y: 0.12, width: 0.29, height: 0.23 }, 2),
+      roleVariant('nu', { x: 0.36, y: 0.12, width: 0.3, height: 0.23 }, -2),
     ],
   },
   {
@@ -177,8 +154,8 @@ const ROLE_SEEDS = [
     },
     releaseStage: 'gate-c',
     variants: [
-      draftVariant('nam', { x: 0.34, y: 0.13, width: 0.31, height: 0.24 }, -3),
-      draftVariant('nu', { x: 0.35, y: 0.13, width: 0.3, height: 0.24 }, 3),
+      roleVariant('nam', { x: 0.34, y: 0.13, width: 0.31, height: 0.24 }, -3),
+      roleVariant('nu', { x: 0.35, y: 0.13, width: 0.3, height: 0.24 }, 3),
     ],
   },
   {
@@ -199,15 +176,17 @@ const ROLE_SEEDS = [
     },
     releaseStage: 'gate-c',
     variants: [
-      draftVariant('nam', { x: 0.36, y: 0.11, width: 0.3, height: 0.24 }, 4),
-      draftVariant('nu', { x: 0.35, y: 0.11, width: 0.31, height: 0.24 }, -1),
+      roleVariant('nam', { x: 0.36, y: 0.11, width: 0.3, height: 0.24 }, 4),
+      roleVariant('nu', { x: 0.35, y: 0.11, width: 0.31, height: 0.24 }, -1),
     ],
   },
 ] satisfies readonly RoleSeed[]
 
 function createTemplate(seed: RoleSeed, variant: RoleVariantSeed): HeritageRoleTemplate {
+  const id = `${seed.stationCode.toLowerCase()}-${seed.roleSlug}-${variant.roleVariant}`
+  const assetBase = `/images/photo-roles/cu-chi/${seed.stationCode.toLowerCase()}/${id}` as const
   const template = {
-    id: `${seed.stationCode.toLowerCase()}-${seed.roleSlug}-${variant.roleVariant}`,
+    id,
     siteCode: 'cu-chi',
     stationCode: seed.stationCode,
     stationName: seed.stationName,
@@ -219,9 +198,17 @@ function createTemplate(seed: RoleSeed, variant: RoleVariantSeed): HeritageRoleT
     calibration: variant.calibration,
     source3d: seed.source3d,
     releaseStage: seed.releaseStage,
-    published: variant.published,
-    assets: variant.assets,
-    review: variant.review,
+    published: true,
+    assets: {
+      background: { url: `${assetBase}-bg.webp`, ...CANVAS_SIZE },
+      overlay: { url: `${assetBase}-overlay.webp`, ...CANVAS_SIZE, hasAlpha: true },
+    },
+    review: {
+      status: 'approved',
+      reviewer: 'Chủ dự án TimeLens',
+      reviewedAt: '2026-10-26',
+      note: `Chủ dự án đã trực tiếp kiểm tra và phê duyệt biến thể ${variant.roleVariant === 'nam' ? 'nam' : 'nữ'}.`,
+    },
   }
 
   return template as HeritageRoleTemplate

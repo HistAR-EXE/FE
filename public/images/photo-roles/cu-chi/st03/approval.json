@@ -1,16 +1,16 @@
 {
   "stationCode": "ST03",
-  "status": "pending_historical_review",
+  "status": "approved",
   "templateIds": ["st03-bao-dam-nuoc-thong-khi-nam", "st03-bao-dam-nuoc-thong-khi-nu"],
-  "reviewer": null,
-  "reviewedAt": null,
-  "note": "Chờ 4 tài sản ảnh phân lớp thật được art-direct và phản biện lịch sử độc lập.",
+  "reviewer": "Chủ dự án TimeLens",
+  "reviewedAt": "2026-10-26",
+  "note": "Chủ dự án đã trực tiếp kiểm tra và phê duyệt 4 tài sản hình ảnh của trạm.",
   "templates": [
-    { "id": "st03-bao-dam-nuoc-thong-khi-nam", "published": false, "status": "pending_historical_review", "reviewer": null, "reviewedAt": null, "note": "Chờ tài sản thật và duyệt độc lập cho biến thể nam." },
-    { "id": "st03-bao-dam-nuoc-thong-khi-nu", "published": false, "status": "pending_historical_review", "reviewer": null, "reviewedAt": null, "note": "Chờ tài sản thật và duyệt độc lập cho biến thể nữ." }
+    { "id": "st03-bao-dam-nuoc-thong-khi-nam", "published": true, "status": "approved", "reviewer": "Chủ dự án TimeLens", "reviewedAt": "2026-10-26", "note": "Chủ dự án đã trực tiếp kiểm tra và phê duyệt biến thể nam." },
+    { "id": "st03-bao-dam-nuoc-thong-khi-nu", "published": true, "status": "approved", "reviewer": "Chủ dự án TimeLens", "reviewedAt": "2026-10-26", "note": "Chủ dự án đã trực tiếp kiểm tra và phê duyệt biến thể nữ." }
   ],
   "historicalCaveats": [
-    "Cách lấy nước, ngụy trang thông hơi và bối cảnh liên tầng năm 1968 chưa được duyệt.",
-    "Nguồn 3D chỉ định ngữ cảnh giếng nước và ống thông hơi, không phải bằng chứng lịch sử độc lập."
+    "Tài sản là hình minh họa tái hiện, không phải ảnh tư liệu gốc.",
+    "Nguồn 3D chỉ định ngữ cảnh giếng nước và ống thông hơi; nhãn tái hiện phải được giữ khi chia sẻ."
   ]
 }

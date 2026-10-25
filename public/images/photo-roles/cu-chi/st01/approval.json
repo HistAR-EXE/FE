@@ -1,16 +1,16 @@
 {
   "stationCode": "ST01",
-  "status": "pending_historical_review",
+  "status": "approved",
   "templateIds": ["st01-can-bo-lien-lac-nam", "st01-can-bo-lien-lac-nu"],
-  "reviewer": null,
-  "reviewedAt": null,
-  "note": "Chờ 4 tài sản ảnh phân lớp thật được art-direct và phản biện lịch sử độc lập.",
+  "reviewer": "Chủ dự án TimeLens",
+  "reviewedAt": "2026-10-26",
+  "note": "Chủ dự án đã trực tiếp kiểm tra và phê duyệt 4 tài sản hình ảnh của trạm.",
   "templates": [
-    { "id": "st01-can-bo-lien-lac-nam", "published": false, "status": "pending_historical_review", "reviewer": null, "reviewedAt": null, "note": "Chờ tài sản thật và duyệt độc lập cho biến thể nam." },
-    { "id": "st01-can-bo-lien-lac-nu", "published": false, "status": "pending_historical_review", "reviewer": null, "reviewedAt": null, "note": "Chờ tài sản thật và duyệt độc lập cho biến thể nữ." }
+    { "id": "st01-can-bo-lien-lac-nam", "published": true, "status": "approved", "reviewer": "Chủ dự án TimeLens", "reviewedAt": "2026-10-26", "note": "Chủ dự án đã trực tiếp kiểm tra và phê duyệt biến thể nam." },
+    { "id": "st01-can-bo-lien-lac-nu", "published": true, "status": "approved", "reviewer": "Chủ dự án TimeLens", "reviewedAt": "2026-10-26", "note": "Chủ dự án đã trực tiếp kiểm tra và phê duyệt biến thể nữ." }
   ],
   "historicalCaveats": [
-    "Trang phục, tài liệu, tư thế và ánh sáng phòng họp năm 1968 chưa được duyệt.",
-    "Không được phát hành chỉ dựa trên tham chiếu nhân vật low-poly trong Cổng thời gian 3D."
+    "Tài sản là hình minh họa tái hiện, không phải ảnh tư liệu gốc.",
+    "Giữ nhãn nội dung tái hiện khi xuất và chia sẻ ảnh."
   ]
 }

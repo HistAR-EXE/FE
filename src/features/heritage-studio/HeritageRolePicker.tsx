@@ -7,6 +7,7 @@ type HeritageRolePickerProps = {
   siteCode: string
   stationCode?: HeritageStationCode
   publishedOnly?: boolean
+  templates?: readonly HeritageRoleTemplate[]
   selectedId?: string | null
   onSelect: (template: HeritageRoleTemplate) => void
 }
@@ -15,14 +16,17 @@ export function HeritageRolePicker({
   siteCode,
   stationCode,
   publishedOnly = true,
+  templates,
   selectedId,
   onSelect,
 }: HeritageRolePickerProps) {
   const roles = useMemo(() => {
-    if (publishedOnly) return getPublishedRoleTemplates(siteCode, stationCode)
-    return heritageRoleTemplates.filter((role) =>
+    if (!templates && publishedOnly) return getPublishedRoleTemplates(siteCode, stationCode)
+    const source = templates ?? heritageRoleTemplates
+    return source.filter((role) =>
+      (!publishedOnly || role.published) &&
       role.siteCode === siteCode && (!stationCode || role.stationCode === stationCode))
-  }, [publishedOnly, siteCode, stationCode])
+  }, [publishedOnly, siteCode, stationCode, templates])
 
   if (roles.length === 0) {
     return (

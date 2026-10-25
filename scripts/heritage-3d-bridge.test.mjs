@@ -17,9 +17,9 @@ const EXPECTED_TARGETS = {
   ST06: { targetId: 'ST06_FIRING', kind: 'chamber', titles: ['Ụ chiến đấu'] },
 }
 
-test('all catalog roles resolve to matching 1968 semantic targets without publishing drafts', () => {
+test('all published catalog roles resolve to matching 1968 semantic targets', () => {
   assert.equal(heritageRoleTemplates.length, 12)
-  assert.equal(heritageRoleTemplates.some((role) => role.published), false)
+  assert.equal(heritageRoleTemplates.every((role) => role.published), true)
   assert.equal(heritageSemanticTargets.length, 6)
 
   for (const role of heritageRoleTemplates) {
@@ -29,7 +29,8 @@ test('all catalog roles resolve to matching 1968 semantic targets without publis
     assert.equal(target.targetId, expected.targetId)
     assert.equal(target.stationCode, role.stationCode)
     assert.equal(target.targetKind, expected.kind)
-    assert.equal(target.publishedRole, null, `${role.stationCode} must not expose an unpublished CTA`)
+    assert.ok(target.publishedRole, `${role.stationCode} must expose an approved role CTA`)
+    assert.equal(target.publishedRole.stationCode, role.stationCode)
 
     const sceneItems = [
       ...ERA_SCENES[1968].chambers,

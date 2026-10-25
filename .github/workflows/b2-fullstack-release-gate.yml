@@ -1,0 +1,97 @@
+name: B2G and B2B full-stack release gate
+
+on:
+  workflow_dispatch:
+    inputs:
+      backend_ref:
+        description: BE branch, tag, or commit to verify with this FE revision
+        required: true
+        default: master
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: b2-fullstack-release-gate
+  cancel-in-progress: false
+
+jobs:
+  postgres-fullstack:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out FE
+        uses: actions/checkout@v4
+        with:
+          path: workspace/FE
+          lfs: true
+
+      - name: Check out BE
+        uses: actions/checkout@v4
+        with:
+          repository: HistAR-EXE/BE
+          ref: ${{ inputs.backend_ref }}
+          path: workspace/BE
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: workspace/BE/pom.xml
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.14.0
+          cache: npm
+          cache-dependency-path: workspace/FE/package-lock.json
+
+      - name: Install FE and Chromium
+        working-directory: workspace/FE
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Start disposable pgvector
+        run: |
+          docker run --detach --name histar-postgres \
+            --publish 5432:5432 \
+            --env POSTGRES_USER=timelens \
+            --env POSTGRES_PASSWORD=timelens_secret \
+            --env POSTGRES_DB=postgres \
+            pgvector/pgvector:pg17
+          for i in {1..30}; do
+            if docker exec histar-postgres pg_isready -U timelens -d postgres; then exit 0; fi
+            sleep 2
+          done
+          docker logs histar-postgres
+          exit 1
+
+      - name: Bootstrap database through latest Flyway baseline
+        shell: pwsh
+        working-directory: workspace/BE
+        run: >-
+          ./docs/scripts/bootstrap-local-db.ps1
+          -Database timelens
+          -Container histar-postgres
+          -DbUser timelens
+          -Reset
+
+      - name: Run B2G and B2B against real BE and PostgreSQL
+        working-directory: workspace/FE
+        env:
+          HISTAR_FULLSTACK_EXTERNAL_DB: '1'
+          HISTAR_POSTGRES_CONTAINER: histar-postgres
+        run: npm run test:e2e:b2-fullstack
+
+      - name: Upload Playwright diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: b2-fullstack-playwright-diagnostics
+          path: |
+            workspace/FE/playwright-report/
+            workspace/FE/test-results/
+          if-no-files-found: ignore
+          retention-days: 14

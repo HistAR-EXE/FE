@@ -113,7 +113,7 @@ const expectedStations = {
 
 function expectedAssetPaths(stationCode, roleSlug, roleVariant) {
   const directory = `/images/photo-roles/cu-chi/${stationCode.toLowerCase()}`
-  const stem = `${roleSlug}-${roleVariant}-1968`
+  const stem = `${stationCode.toLowerCase()}-${roleSlug}-${roleVariant}`
   return {
     background: `${directory}/${stem}-bg.webp`,
     overlay: `${directory}/${stem}-overlay.webp`,
@@ -133,7 +133,7 @@ function assertDeepFrozen(value) {
   for (const nestedValue of Object.values(value)) assertDeepFrozen(nestedValue)
 }
 
-test('draft catalog exposes no runtime asset URLs and keeps variant calibration separate', () => {
+test('approved catalog exposes canonical runtime assets and keeps variant calibration separate', () => {
   assert.equal(heritageRoleTemplates.length, 12)
   assert.equal(new Set(heritageRoleTemplates.map(({ id }) => id)).size, 12)
 
@@ -151,8 +151,15 @@ test('draft catalog exposes no runtime asset URLs and keeps variant calibration 
       assert.equal(template.actionKey, expected.actionKey)
       assert.equal(template.actionLabel, expected.actionLabel)
       assert.deepEqual(template.source3d, expected.source3d)
-      assert.equal(template.published, false)
-      assert.equal(template.assets, null)
+      assert.equal(template.published, true)
+      const expectedPaths = expectedAssetPaths(stationCode, expected.roleSlug, template.roleVariant)
+      assert.equal(template.assets.background.url, expectedPaths.background)
+      assert.equal(template.assets.overlay.url, expectedPaths.overlay)
+      assert.equal(template.assets.overlay.hasAlpha, true)
+      assert.equal(template.review.status, 'approved')
+      assert.equal(template.review.reviewer, 'Chủ dự án TimeLens')
+      assert.equal(template.review.reviewedAt, '2026-10-26')
+      assert.ok(template.review.note.trim())
       assert.equal('backgroundUrl' in template, false)
       assert.equal('overlayUrl' in template, false)
       assert.deepEqual(template.calibration.canvasSize, { width: 1080, height: 1920 })
@@ -267,6 +274,7 @@ test('approval JSON agrees exactly with every template publication decision', as
     }
   }
 
-  assert.deepEqual(getPublishedRoleTemplates('cu-chi'), [])
-  assert.deepEqual(getPublishedRoleTemplates('cu-chi', 'ST01'), [])
+  assert.equal(getPublishedRoleTemplates('cu-chi').length, 12)
+  assert.equal(getPublishedRoleTemplates('cu-chi', 'ST01').length, 2)
+  assert.deepEqual(getPublishedRoleTemplates('unknown'), [])
 })

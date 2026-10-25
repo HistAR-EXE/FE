@@ -12,13 +12,19 @@ type HeritageStudioProps = {
   siteCode: string
   stationCode?: HeritageStationCode
   initialRoleId?: string | null
+  templates?: readonly HeritageRoleTemplate[]
   variant: HeritageOutputVariant
   lowLight: LowLightOptions
   onComposite: (file: File, template: PublishedHeritageRoleTemplate) => void
 }
 
-export function HeritageStudio({ file, siteCode, stationCode, initialRoleId, variant, lowLight, onComposite }: HeritageStudioProps) {
-  const published = useMemo(() => getPublishedRoleTemplates(siteCode, stationCode), [siteCode, stationCode])
+export function HeritageStudio({ file, siteCode, stationCode, initialRoleId, templates, variant, lowLight, onComposite }: HeritageStudioProps) {
+  const published = useMemo(
+    () => templates
+      ? templates.filter((role): role is PublishedHeritageRoleTemplate => role.published && role.siteCode === siteCode && (!stationCode || role.stationCode === stationCode))
+      : getPublishedRoleTemplates(siteCode, stationCode),
+    [siteCode, stationCode, templates],
+  )
   const initialRole = published.find((role) => role.id === initialRoleId) ?? published[0] ?? null
   const [selected, setSelected] = useState<PublishedHeritageRoleTemplate | null>(initialRole)
   const [candidates, setCandidates] = useState<FaceCandidate[]>([])
@@ -90,7 +96,7 @@ export function HeritageStudio({ file, siteCode, stationCode, initialRoleId, var
 
   return (
     <section className="grid gap-md" data-testid="heritage-studio">
-      <HeritageRolePicker siteCode={siteCode} stationCode={stationCode} selectedId={selected?.id} onSelect={selectRole} />
+      <HeritageRolePicker siteCode={siteCode} stationCode={stationCode} templates={published} selectedId={selected?.id} onSelect={selectRole} />
       {selected && placement && (
         <>
           {candidates.length > 1 && (

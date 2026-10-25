@@ -1,5 +1,8 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+import sharp from 'sharp'
 import {
   chooseFaceCandidate,
   clampPlacement,
@@ -9,6 +12,16 @@ import {
 import { heritageRoleTemplates } from '../src/features/heritage-studio/roleTemplates.ts'
 
 const template = heritageRoleTemplates.find((item) => item.stationCode === 'ST01' && item.roleVariant === 'nam')
+const fixtureRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../tests/fixtures')
+
+test('deterministic portrait fixtures cover one-face and two-face aspect ratios', async () => {
+  const [single, multiple] = await Promise.all([
+    sharp(path.join(fixtureRoot, 'portrait-single-face.jpg')).metadata(),
+    sharp(path.join(fixtureRoot, 'portrait-two-faces.jpg')).metadata(),
+  ])
+  assert.deepEqual({ width: single.width, height: single.height, format: single.format }, { width: 640, height: 800, format: 'jpeg' })
+  assert.deepEqual({ width: multiple.width, height: multiple.height, format: multiple.format }, { width: 800, height: 640, format: 'jpeg' })
+})
 
 test('placement is clamped to the approved template anchor area', () => {
   const placed = clampPlacement({ x: -4, y: 8, scale: 50, rotationDeg: 90 }, template)
