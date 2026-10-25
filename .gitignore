@@ -37,6 +37,8 @@ dist-ssr
 /tests/e2e/*
 !/tests/e2e/admin-narrative-pilot.spec.ts
 !/tests/e2e/admin-content-lifecycle.spec.ts
+!/tests/e2e/site-content-lifecycle.spec.ts
+!/tests/e2e/field-trip-journey.spec.ts
 !/tests/helpers/
 /tests/helpers/*
 !/tests/helpers/admin-fixtures.ts
@@ -45,6 +47,9 @@ dist-ssr
 !/tests/ui/explore-integrity.spec.ts
 !/tests/ui/leaderboard-honors.spec.ts
 !/tests/ui/ar-experience.spec.ts
+!/tests/ui/site-workspace.spec.ts
+!/tests/ui/field-trip-planning.spec.ts
+!/tests/ui/field-trip-report.spec.ts
 
 # Editor directories and files
 .vscode/*

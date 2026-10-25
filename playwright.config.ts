@@ -58,6 +58,7 @@ export default defineConfig({
     {
       name: '2-frontend-ui',
       testDir: './tests/ui',
+      testIgnore: /(?:site-workspace|field-trip-planning|field-trip-report)\.spec\.ts/,
       dependencies: ['setup'],
       use: { ...devices['Desktop Chrome'], baseURL: FE_URL },
     },
@@ -70,6 +71,30 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'], baseURL: FE_URL },
     },
 
+    // FE-only site workspace gate: mocked /api, no BE dependency.
+    {
+      name: 'site-workspace-ui',
+      testDir: './tests/ui',
+      testMatch: /site-workspace\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'], baseURL: FE_URL },
+    },
+
+    // FE-only field-trip planning: mocked /api, no BE dependency.
+    {
+      name: 'field-trip-ui',
+      testDir: './tests/ui',
+      testMatch: /field-trip-planning\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'], baseURL: FE_URL },
+    },
+
+    // FE-only field-trip live board and report: mocked /api, no BE dependency.
+    {
+      name: 'field-trip-report-ui',
+      testDir: './tests/ui',
+      testMatch: /field-trip-report\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'], baseURL: FE_URL },
+    },
+
     // FE-only admin E2E gate: disposable route fixtures, no BE dependency.
     {
       name: 'admin-e2e',
@@ -78,11 +103,27 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'], baseURL: FE_URL },
     },
 
+    // FE-only site content lifecycle: mocked /api, no setup or live BE.
+    {
+      name: 'site-workspace-e2e',
+      testDir: './tests/e2e',
+      testMatch: /site-content-lifecycle\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'], baseURL: FE_URL },
+    },
+
+    // FE-only field-trip journey: mocked /api, no backend health gate.
+    {
+      name: 'field-trip-e2e',
+      testDir: './tests/e2e',
+      testMatch: /field-trip-journey\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'], baseURL: FE_URL },
+    },
+
     // Tầng 3 — FE + BE E2E (luồng đầu-cuối thật)
     {
       name: '3-fullstack-e2e',
       testDir: './tests/e2e',
-      testIgnore: /admin-(narrative-pilot|content-lifecycle)\.spec\.ts/,
+      testIgnore: /(?:admin-(?:narrative-pilot|content-lifecycle)|site-content-lifecycle|field-trip-journey)\.spec\.ts/,
       dependencies: ['setup'],
       use: { ...devices['Desktop Chrome'], baseURL: FE_URL },
     },

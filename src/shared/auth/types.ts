@@ -68,6 +68,7 @@ const SAFE_REDIRECT_PREFIXES = [
   '/pricing',
   '/checkout',
   '/join',
+  '/trip',
   '/admin',
   '/characters',
   '/groups',

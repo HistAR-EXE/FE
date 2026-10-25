@@ -185,6 +185,9 @@ export function TeacherDashboardPage() {
               LMS Premium
             </Link>
           )}
+          <Link to="/teacher/trips" className="text-sm px-sm py-xs border border-secondary/40 rounded-lg text-secondary">
+            Chuyến tham quan
+          </Link>
           <Link to="/teacher/live-board" className="text-sm px-sm py-xs border border-secondary/40 rounded-lg text-secondary">
             Live Board
           </Link>

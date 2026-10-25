@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { SimpleTopNav } from '../components/layout/TopNav'
 import { Button } from '../components/ui/Button'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
+import { fieldTripApi } from '../features/field-trips/api'
+import type { FieldTripResponse } from '../features/field-trips/types'
 import { orgApi, type LiveBoardRally, type LiveBoardSnapshot, type OrgMembership } from '../features/org/api'
 import { ApiError } from '../shared/api/contracts'
 import { appEnv } from '../shared/config/env'
@@ -62,7 +64,9 @@ async function readSse(
 
 export function TeacherLiveBoardPage() {
   const { showToast } = useToast()
+  const navigate = useNavigate()
   const [memberships, setMemberships] = useState<OrgMembership[]>([])
+  const [trips, setTrips] = useState<FieldTripResponse[]>([])
   const [membershipsLoaded, setMembershipsLoaded] = useState(false)
   const [orgId, setOrgId] = useState('')
   const [snapshot, setSnapshot] = useState<LiveBoardSnapshot | null>(null)
@@ -96,6 +100,18 @@ export function TeacherLiveBoardPage() {
       .catch(() => showToast({ message: 'Không tải được tổ chức.', type: 'error' }))
       .finally(() => setMembershipsLoaded(true))
   }, [showToast])
+
+  useEffect(() => {
+    let cancelled = false
+    fieldTripApi.listMine()
+      .then((items) => {
+        if (!cancelled) setTrips(items)
+      })
+      .catch(() => undefined)
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   // Realtime: SSE via fetch; falls back to 5s polling and periodically retries the stream.
   useEffect(() => {
@@ -238,6 +254,26 @@ export function TeacherLiveBoardPage() {
             </Button>
           </div>
         </div>
+
+        <label className="flex items-center gap-sm text-sm" htmlFor="teacher-live-trip">
+          Chuyến đi
+          <select
+            id="teacher-live-trip"
+            aria-label="Chuyến đi"
+            defaultValue=""
+            onChange={(event) => {
+              if (event.target.value) navigate(`/teacher/trips/${event.target.value}/live`)
+            }}
+            className="bg-surface-container border border-outline-variant rounded-full px-md py-xs"
+          >
+            <option value="">Chọn chuyến</option>
+            {trips.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.title}
+              </option>
+            ))}
+          </select>
+        </label>
 
         {memberships.length > 1 && (
           <label className="flex items-center gap-sm text-sm">
