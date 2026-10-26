@@ -22,7 +22,7 @@ function role(roleVariant: 'nam' | 'nu'): PublishedHeritageRoleTemplate {
     actionKey: 'relay-documents',
     actionLabel: 'Chuyển tài liệu hoặc lắng nghe cuộc họp',
     era: 1968,
-    calibration: { canvasSize: { width: 1080, height: 1920 }, faceAnchor: { x: 0.34, y: 0.12, width: 0.32, height: 0.25 }, faceRotationDeg: 0, faceFeather: 0.16 },
+    calibration: { canvasSize: { width: 1080, height: 1920 }, faceAnchor: { x: 0.505, y: 0.056, width: 0.182, height: 0.132 }, faceRotationDeg: 0, faceFeather: 0.16 },
     source3d: { stationCode: 'ST01', targetKey: 'ST01_MEETING', targetKind: 'chamber', chamberKind: 'meeting', chamberTitle: 'Phòng họp chỉ huy', floorLabel: 'Tầng 2', figure: { outfit: 'guerrilla', pose: 'stand', prop: 'paper' } },
     releaseStage: 'gate-a',
     published: true,

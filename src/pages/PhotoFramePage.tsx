@@ -48,7 +48,7 @@ export function PhotoFramePage() {
   const cameraLocked = isCameraLockedForStation(effectiveStation)
   const [frames, setFrames] = useState<PhotoFrame[]>([])
   const [frameId, setFrameId] = useState('')
-  const [variant, setVariant] = useState<'square' | 'story'>('square')
+  const [variant, setVariant] = useState<'square' | 'story'>(() => searchParams.get('role') ? 'story' : 'square')
   const [file, setFile] = useState<File | null>(null)
   const [photoMode, setPhotoMode] = useState<'original' | 'heritage'>(() => searchParams.get('role') ? 'heritage' : 'original')
   const [heritageComposite, setHeritageComposite] = useState<File | null>(null)
@@ -208,7 +208,7 @@ export function PhotoFramePage() {
         <aside className="flex w-full min-w-0 flex-col overflow-hidden rounded-2xl border border-[#d3ab58]/25 bg-surface-container shadow-[0_20px_55px_rgba(0,0,0,0.22)] lg:sticky lg:top-20 lg:max-h-[calc(100dvh-6rem)]">
           <div className="p-lg border-b border-surface-variant">
             <h2 className="font-headline-lg text-headline-lg text-on-surface">{pageTitle}</h2>
-            <p className="font-body-md text-body-md text-on-surface-variant mt-2">{photoMode === 'heritage' ? 'Chọn ảnh chân dung để ghép khuôn mặt vào nhân vật lịch sử. Bản xem trước cập nhật tự động.' : 'Chụp hoặc chọn ảnh, điều chỉnh ánh sáng rồi lưu kỷ niệm tại trạm.'}</p>
+            <p className="font-body-md text-body-md text-on-surface-variant mt-2">{photoMode === 'heritage' ? 'Chọn ảnh → chọn vai → lưu.' : 'Chụp hoặc chọn ảnh, điều chỉnh ánh sáng rồi lưu kỷ niệm tại trạm.'}</p>
           </div>
           <div className="flex-1 overflow-y-auto p-lg flex flex-col gap-xl">
             {photoMode === 'original' && framesLoading && <p className="text-sm text-on-surface-variant">Đang tải khung ảnh...</p>}
@@ -229,12 +229,12 @@ export function PhotoFramePage() {
               </div>
             )}
             <div className="flex flex-col gap-md">
-              <h3 className="font-title-md">Nguồn ảnh</h3>
-              <p className="text-sm text-on-surface-variant">
+              <h3 className="font-title-md">1. Chọn ảnh chân dung</h3>
+              {photoMode === 'original' && <p className="text-sm text-on-surface-variant">
                 {cameraLocked
                   ? 'Camera live bị khóa — chọn ảnh từ thư viện nếu cần.'
                   : 'Không dùng được camera? Chọn từ thư viện ảnh bên dưới.'}
-              </p>
+              </p>}
               <input
                 type="file"
                 accept="image/*"
@@ -245,12 +245,10 @@ export function PhotoFramePage() {
                 }}
                 className="w-full text-sm"
               />
-              {photoMode === 'heritage' && file && (
-                <p className="rounded-lg border border-[#d9ae58]/30 bg-[#d9ae58]/10 px-3 py-2 text-xs leading-relaxed text-[#efd28f]">
-                  Đã nhận ảnh chân dung. TimeLens đang xử lý ngay trên thiết bị; ảnh gốc chưa được tải lên máy chủ.
-                </p>
+              {photoMode === 'heritage' && (
+                <p className="text-xs text-on-surface-variant">Xử lý riêng trên thiết bị · không tải ảnh gốc lên máy chủ.</p>
               )}
-              {!cameraLocked && (
+              {photoMode === 'original' && !cameraLocked && (
                 <div className="flex items-start gap-sm rounded-lg border border-outline-variant bg-surface p-sm text-sm text-on-surface-variant" role="note">
                   <MaterialIcon name="flashlight_on" className="text-base text-primary shrink-0" />
                   <p>
@@ -259,34 +257,19 @@ export function PhotoFramePage() {
                   </p>
                 </div>
               )}
-              <ReportContentButton stationCode={effectiveStation ?? undefined} context="photo_frame" />
+              {photoMode === 'original' && <ReportContentButton stationCode={effectiveStation ?? undefined} context="photo_frame" />}
             </div>
             <div className="flex flex-col gap-md">
               <h3 className="font-title-md">Chế độ ảnh</h3>
               <div className="grid grid-cols-2 gap-sm" role="group" aria-label="Chọn chế độ ảnh">
                 <button type="button" onClick={() => setPhotoMode('original')} className={`rounded-xl border p-sm font-bold ${photoMode === 'original' ? 'border-primary bg-primary/10 text-primary' : 'border-outline-variant'}`}>Ảnh gốc</button>
-                <button type="button" disabled={!hasHeritageRoles} onClick={() => setPhotoMode('heritage')} className={`rounded-xl border p-sm font-bold disabled:cursor-not-allowed disabled:opacity-50 ${photoMode === 'heritage' ? 'border-[#d9ae58] bg-[#d9ae58]/10 text-[#edc975]' : 'border-outline-variant'}`}>Hóa thân 1968</button>
+                <button type="button" disabled={!hasHeritageRoles} onClick={() => { setPhotoMode('heritage'); setVariant('story') }} className={`rounded-xl border p-sm font-bold disabled:cursor-not-allowed disabled:opacity-50 ${photoMode === 'heritage' ? 'border-[#d9ae58] bg-[#d9ae58]/10 text-[#edc975]' : 'border-outline-variant'}`}>Hóa thân 1968</button>
               </div>
               {!hasHeritageRoles && (
                 <p className="text-xs text-on-surface-variant">Vai hóa thân của trạm đang được duyệt sử liệu. Ảnh gốc vẫn dùng bình thường.</p>
               )}
               {photoMode === 'heritage' && (
                 <>
-                  <div className="rounded-xl border border-outline-variant bg-surface p-md">
-                    <h3 className="font-title-md">Ánh sáng khuôn mặt</h3>
-                    <p className="mt-1 text-xs text-on-surface-variant">Chỉ điều chỉnh khuôn mặt được ghép để hòa với ánh sáng trong hầm.</p>
-                    <label className="mt-3 flex flex-col gap-1 text-sm text-on-surface-variant">
-                      <span className="flex justify-between">
-                        <span>Tăng sáng</span>
-                        <span>{Math.round(lowLight.boost * 100)}%</span>
-                      </span>
-                      <input type="range" min={0} max={100} value={Math.round(lowLight.boost * 100)} onChange={(e) => setLowLight((s) => ({ ...s, boost: Number(e.target.value) / 100 }))} aria-label="Tăng sáng khuôn mặt" />
-                    </label>
-                    <label className="mt-3 flex items-center gap-sm text-sm text-on-surface">
-                      <input type="checkbox" checked={lowLight.tunnelGrade} onChange={(e) => setLowLight((s) => ({ ...s, tunnelGrade: e.target.checked }))} />
-                      Hòa màu ánh đèn hầm
-                    </label>
-                  </div>
                   <HeritageStudio
                     file={file}
                     siteCode={stationContext?.siteCode ?? 'cu-chi'}
@@ -302,6 +285,26 @@ export function PhotoFramePage() {
                       setHeritageComposite(null)
                     }}
                   />
+                  <details className="group rounded-xl border border-outline-variant bg-surface">
+                    <summary className="cursor-pointer list-none px-4 py-3 text-sm font-bold text-on-surface marker:content-none">
+                      Tùy chỉnh ảnh <span className="float-right text-on-surface-variant group-open:rotate-180">⌄</span>
+                    </summary>
+                    <div className="grid gap-4 border-t border-outline-variant p-4">
+                      <label className="flex flex-col gap-1 text-sm text-on-surface-variant">
+                        <span className="flex justify-between"><span>Độ sáng khuôn mặt</span><span>{Math.round(lowLight.boost * 100)}%</span></span>
+                        <input type="range" min={0} max={100} value={Math.round(lowLight.boost * 100)} onChange={(e) => setLowLight((s) => ({ ...s, boost: Number(e.target.value) / 100 }))} aria-label="Tăng sáng khuôn mặt" />
+                      </label>
+                      <label className="flex items-center gap-sm text-sm text-on-surface">
+                        <input type="checkbox" checked={lowLight.tunnelGrade} onChange={(e) => setLowLight((s) => ({ ...s, tunnelGrade: e.target.checked }))} />
+                        Hòa màu ánh đèn hầm
+                      </label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button type="button" className={`rounded-lg border p-2 text-sm ${variant === 'square' ? 'border-primary text-primary bg-surface-variant' : 'border-outline-variant text-on-surface-variant'}`} onClick={() => setVariant('square')}>Vuông</button>
+                        <button type="button" className={`rounded-lg border p-2 text-sm ${variant === 'story' ? 'border-primary text-primary bg-surface-variant' : 'border-outline-variant text-on-surface-variant'}`} onClick={() => setVariant('story')}>Dọc</button>
+                      </div>
+                      <ReportContentButton stationCode={effectiveStation ?? undefined} context="photo_frame" />
+                    </div>
+                  </details>
                 </>
               )}
             </div>
@@ -330,16 +333,16 @@ export function PhotoFramePage() {
                 Ánh sáng địa đạo (ấm, giảm bão hòa, tối viền)
               </label>
             </div>}
-            <div className="flex flex-col gap-md">
+            {photoMode === 'original' && <div className="flex flex-col gap-md">
               <h3 className="font-title-md">Khung</h3>
-              {photoMode === 'original' ? <select value={frameId} onChange={(e) => setFrameId(e.target.value)} className="bg-surface border border-outline-variant rounded-lg px-sm py-sm">
+              <select value={frameId} onChange={(e) => setFrameId(e.target.value)} className="bg-surface border border-outline-variant rounded-lg px-sm py-sm">
                   <option value="">Không dùng khung</option>
                   {frames.map((f) => (
                     <option key={f.id} value={f.id}>
                       {f.name} ({f.era}){f.requiresPremium ? ' · Premium' : ''}
                     </option>
                   ))}
-                </select> : <p className="text-sm text-on-surface-variant">Vai diễn đã gồm bối cảnh và trang phục lịch sử; khuôn mặt của bạn sẽ được ghép vào vùng trống trên nhân vật.</p>}
+                </select>
               {photoMode === 'original' && selectedLocked && (
                 <UpgradePrompt
                   compact
@@ -350,7 +353,7 @@ export function PhotoFramePage() {
                 <button type="button" className={`flex-1 border rounded-lg p-sm ${variant === 'square' ? 'border-primary text-primary bg-surface-variant' : 'border-outline-variant text-on-surface-variant'}`} onClick={() => setVariant('square')}>Vuông 1080×1080</button>
                 <button type="button" className={`flex-1 border rounded-lg p-sm ${variant === 'story' ? 'border-primary text-primary bg-surface-variant' : 'border-outline-variant text-on-surface-variant'}`} onClick={() => setVariant('story')}>Dọc 1080×1920</button>
               </div>
-            </div>
+            </div>}
           </div>
           <div className="p-lg border-t border-surface-variant mt-auto">
             <button onClick={submit} disabled={uploading || !(photoMode === 'heritage' ? heritageComposite : file) || (photoMode === 'original' && selectedLocked)} className="w-full bg-primary text-on-primary font-title-md py-4 rounded-lg disabled:opacity-60 flex items-center justify-center gap-2">

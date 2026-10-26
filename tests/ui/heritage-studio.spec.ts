@@ -9,7 +9,9 @@ async function mockFaceDetector(page: Page) {
       async detect(source: { width: number; height: number }) {
         const count = source.width > source.height ? 2 : 1
         return Array.from({ length: count }, (_, index) => ({
-          boundingBox: { x: 90 + index * 260, y: 90, width: 180, height: 240 },
+          boundingBox: count === 1
+            ? { x: 210, y: 125, width: 220, height: 270 }
+            : { x: 90 + index * 260, y: 90, width: 180, height: 240 },
         }))
       }
     }
@@ -30,7 +32,7 @@ test('role selection and explicit multi-face choice create a composite without p
   await page.getByTestId('raw-selfie').setInputFiles(path.join(fixtures, 'portrait-two-faces.jpg'))
   await expect(page.getByLabel('Chọn khuôn mặt cần dùng')).toBeVisible()
   await page.getByLabel('Chọn khuôn mặt cần dùng').selectOption('face-2')
-  await expect(page.getByText('Ảnh đã được ghép. Mọi điều chỉnh bên dưới sẽ tự cập nhật bản xem trước.')).toBeVisible()
+  await expect(page.getByText('Đã ghép tự động')).toBeVisible()
   await expect(page.getByRole('button', { name: 'Lưu và chia sẻ' })).toBeEnabled()
   expect(requestedProductionAssets).toEqual([])
 })
@@ -59,6 +61,7 @@ test('photo page automatically composites the selected portrait and reapplies li
   const preview = page.getByAltText('Ảnh kỷ niệm đang chỉnh')
   await expect(preview).toBeVisible()
   const firstPreview = await preview.getAttribute('src')
+  await page.getByText('Tùy chỉnh ảnh').click()
   await page.getByLabel('Tăng sáng khuôn mặt').fill('65')
   await expect.poll(async () => preview.getAttribute('src')).not.toBe(firstPreview)
   await expect(page.getByRole('button', { name: 'Lưu ảnh hóa thân & Chia sẻ' })).toBeEnabled()

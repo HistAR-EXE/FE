@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { LowLightOptions } from '../../lib/heritageImage'
-import { composeHeritagePortrait, HERITAGE_REENACTMENT_LABEL, type HeritageOutputVariant } from './compositor'
+import { composeHeritagePortrait, type HeritageOutputVariant } from './compositor'
 import { chooseFaceCandidate, detectFaceCandidates, initialPlacement, type FaceCandidate, type FacePlacement } from './facePlacement'
 import { FaceAdjustControls } from './FaceAdjustControls'
 import { HeritageRolePicker } from './HeritageRolePicker'
@@ -129,8 +129,8 @@ export function HeritageStudio({ file, siteCode, stationCode, initialRoleId, tem
       <div>
         <div className="mb-3 flex items-end justify-between gap-3">
           <div>
-            <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#d9ae58]">Vai diễn đã duyệt</p>
-            <h3 className="mt-1 text-base font-extrabold text-on-surface">Chọn nhân vật bạn muốn hóa thân</h3>
+            <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#d9ae58]">Bước 2</p>
+            <h3 className="mt-1 text-base font-extrabold text-on-surface">Chọn vai diễn</h3>
           </div>
           <span className="shrink-0 rounded-full border border-[#d9ae58]/35 bg-[#d9ae58]/10 px-2.5 py-1 text-[11px] font-bold text-[#e9c879]">{published.length} lựa chọn</span>
         </div>
@@ -139,16 +139,16 @@ export function HeritageStudio({ file, siteCode, stationCode, initialRoleId, tem
       {selected && placement && (
         <>
           {file && (
-            <div className={`rounded-xl border px-3 py-2 text-sm ${renderError ? 'border-red-400/40 bg-red-500/10 text-red-200' : 'border-[#d9ae58]/35 bg-[#d9ae58]/10 text-[#f3d38b]'}`} role={renderError ? 'alert' : 'status'} aria-live="polite">
+            <div className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-bold ${renderError ? 'border-red-400/40 bg-red-500/10 text-red-200' : 'w-fit border-[#d9ae58]/35 bg-[#d9ae58]/10 text-[#f3d38b]'}`} role={renderError ? 'alert' : 'status'} aria-live="polite">
               {renderError
                 ? renderError
                 : detecting
-                  ? 'Đang nhận diện khuôn mặt…'
+                  ? 'Đang nhận diện…'
                   : candidates.length > 1 && !selectedFaceId
-                    ? 'Ảnh có nhiều khuôn mặt — hãy chọn một khuôn mặt bên dưới.'
+                    ? 'Chọn khuôn mặt cần ghép'
                     : rendering
-                      ? 'Đang ghép khuôn mặt vào vai diễn…'
-                      : 'Ảnh đã được ghép. Mọi điều chỉnh bên dưới sẽ tự cập nhật bản xem trước.'}
+                      ? 'Đang ghép…'
+                      : 'Đã ghép tự động'}
             </div>
           )}
           {candidates.length > 1 && (
@@ -159,11 +159,14 @@ export function HeritageStudio({ file, siteCode, stationCode, initialRoleId, tem
               </select>
             </label>
           )}
-          <FaceAdjustControls placement={placement} template={selected} onChange={setPlacement} />
-          <p className="text-xs text-on-surface-variant">Ảnh chỉ được xử lý trong trình duyệt. {HERITAGE_REENACTMENT_LABEL}.</p>
-          <button type="button" disabled={!file || rendering || (candidates.length > 1 && !selectedFaceId)} onClick={() => void createComposite()} className="rounded-lg border border-[#d9ae58]/45 bg-[#d9ae58]/10 px-md py-sm font-bold text-[#f0cf83] disabled:opacity-50">
-            {rendering ? 'Đang ghép ảnh…' : 'Ghép lại ngay'}
-          </button>
+          <details className="group rounded-xl border border-outline-variant bg-surface">
+            <summary className="cursor-pointer list-none px-4 py-3 text-sm font-bold text-on-surface marker:content-none">
+              Tinh chỉnh khuôn mặt <span className="float-right text-on-surface-variant group-open:rotate-180">⌄</span>
+            </summary>
+            <div className="border-t border-outline-variant p-3">
+              <FaceAdjustControls placement={placement} template={selected} onChange={setPlacement} />
+            </div>
+          </details>
         </>
       )}
     </section>

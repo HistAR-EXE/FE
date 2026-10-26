@@ -24,3 +24,11 @@ test('compositor uses Canvas 2D and does not require WebGL', () => {
   assert.match(source, /getContext\('2d'\)/)
   assert.doesNotMatch(source, /webgl|WebGL/)
 })
+
+test('face photo is isolated with a soft oval mask instead of a rectangular background', () => {
+  const source = readFileSync(new URL('../src/features/heritage-studio/compositor.ts', import.meta.url), 'utf8')
+  assert.match(source, /maskCtx\.ellipse\(/)
+  assert.match(source, /maskCtx\.filter = `blur/)
+  assert.match(source, /globalCompositeOperation = 'destination-in'/)
+  assert.doesNotMatch(source, /createRadialGradient\(centerX, centerY/)
+})

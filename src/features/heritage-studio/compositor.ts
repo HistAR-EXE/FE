@@ -60,15 +60,38 @@ function drawCover(
 
 function faceCrop(candidate: FaceCandidate | null, width: number, height: number) {
   if (candidate) {
+    // Keep the crop tight. The overlay already provides hair/hat and shoulders, so
+    // including the surroundings here creates a visible rectangular "photo patch".
+    const insetX = candidate.width * 0.07
+    const insetTop = candidate.height * 0.02
+    const insetBottom = candidate.height * 0.04
     return {
-      x: candidate.x * width,
-      y: candidate.y * height,
-      width: candidate.width * width,
-      height: candidate.height * height,
+      x: (candidate.x + insetX) * width,
+      y: (candidate.y + insetTop) * height,
+      width: Math.max(1, (candidate.width - insetX * 2) * width),
+      height: Math.max(1, (candidate.height - insetTop - insetBottom) * height),
     }
   }
-  const size = Math.min(width, height)
-  return { x: (width - size) / 2, y: Math.max(0, (height - size) * 0.28), width: size, height: size }
+  // FaceDetector is not available in every browser. A portrait-friendly fallback
+  // is deliberately narrower than the full image to avoid carrying its background.
+  const cropWidth = Math.min(width, height * 0.76)
+  const cropHeight = Math.min(height, cropWidth * 1.28)
+  return {
+    x: (width - cropWidth) / 2,
+    y: Math.max(0, Math.min(height - cropHeight, height * 0.12)),
+    width: cropWidth,
+    height: cropHeight,
+  }
+}
+
+function coverCrop(crop: { x: number; y: number; width: number; height: number }, targetRatio: number) {
+  const sourceRatio = crop.width / crop.height
+  if (sourceRatio > targetRatio) {
+    const width = crop.height * targetRatio
+    return { ...crop, x: crop.x + (crop.width - width) / 2, width }
+  }
+  const height = crop.width / targetRatio
+  return { ...crop, y: crop.y + (crop.height - height) / 2, height }
 }
 
 function drawFeatheredFace(
@@ -85,8 +108,9 @@ function drawFeatheredFace(
   if (!layerCtx) throw new Error('Canvas 2D không khả dụng.')
 
   const source = bitmapSize(photo)
-  const crop = faceCrop(input.candidate, source.width, source.height)
   const anchor = input.template.calibration.faceAnchor
+  const targetRatio = (anchor.width * output.width) / (anchor.height * output.height)
+  const crop = coverCrop(faceCrop(input.candidate, source.width, source.height), targetRatio)
   const x = input.placement.x * output.width
   const y = input.placement.y * output.height
   const width = anchor.width * output.width * input.placement.scale
@@ -110,13 +134,26 @@ function drawFeatheredFace(
     layerCtx.globalCompositeOperation = 'source-over'
   }
 
+  // Cut the portrait with a soft oval instead of fading the entire rectangular
+  // crop. This removes the user's room/background while keeping natural skin edges.
+  const mask = document.createElement('canvas')
+  mask.width = output.width
+  mask.height = output.height
+  const maskCtx = mask.getContext('2d')
+  if (!maskCtx) throw new Error('Canvas 2D không khả dụng.')
+  const featherPx = Math.max(4, Math.min(width, height) * input.template.calibration.faceFeather * 0.45)
+  maskCtx.save()
+  maskCtx.translate(centerX, centerY)
+  maskCtx.rotate((input.placement.rotationDeg * Math.PI) / 180)
+  maskCtx.filter = `blur(${featherPx}px)`
+  maskCtx.fillStyle = '#000'
+  maskCtx.beginPath()
+  maskCtx.ellipse(0, 0, width * 0.43, height * 0.48, 0, 0, Math.PI * 2)
+  maskCtx.fill()
+  maskCtx.restore()
+
   layerCtx.globalCompositeOperation = 'destination-in'
-  const feather = layerCtx.createRadialGradient(centerX, centerY, 0, centerX, centerY, Math.max(width, height) / 2)
-  feather.addColorStop(0, 'rgba(0,0,0,1)')
-  feather.addColorStop(Math.max(0.55, 1 - input.template.calibration.faceFeather * 2), 'rgba(0,0,0,0.96)')
-  feather.addColorStop(1, 'rgba(0,0,0,0)')
-  layerCtx.fillStyle = feather
-  layerCtx.fillRect(0, 0, output.width, output.height)
+  layerCtx.drawImage(mask, 0, 0)
   layerCtx.globalCompositeOperation = 'source-over'
   ctx.drawImage(layer, 0, 0)
 }
@@ -134,7 +171,7 @@ function drawCaption(ctx: CanvasRenderingContext2D, input: ComposeHeritagePortra
   ctx.fillText(`${input.template.stationCode} · ${input.template.stationName}`, width * 0.06, height - barHeight * 0.54)
   ctx.fillStyle = '#ffffff'
   ctx.font = `600 ${Math.round(width * 0.031)}px system-ui, sans-serif`
-  ctx.fillText(`${input.template.title} · ${input.template.actionLabel}`, width * 0.06, height - barHeight * 0.31)
+  ctx.fillText(input.template.title, width * 0.06, height - barHeight * 0.31)
   ctx.fillStyle = 'rgba(255,255,255,0.78)'
   ctx.font = `400 ${Math.round(width * 0.023)}px system-ui, sans-serif`
   ctx.fillText(HERITAGE_REENACTMENT_LABEL, width * 0.06, height - barHeight * 0.12)

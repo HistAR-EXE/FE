@@ -164,6 +164,8 @@ test('approved catalog exposes canonical runtime assets and keeps variant calibr
       assert.equal('overlayUrl' in template, false)
       assert.deepEqual(template.calibration.canvasSize, { width: 1080, height: 1920 })
       assertNormalizedRect(template.calibration.faceAnchor)
+      assert.ok(template.calibration.faceAnchor.width <= 0.23, `${template.id} face window is too wide for its overlay`)
+      assert.ok(template.calibration.faceAnchor.height <= 0.18, `${template.id} face window is too tall for its overlay`)
       assert.ok(template.calibration.faceFeather >= 0 && template.calibration.faceFeather <= 1)
     }
   }
