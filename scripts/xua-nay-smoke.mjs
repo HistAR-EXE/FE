@@ -10,7 +10,7 @@ try {
  page=await browser.newPage({viewport:{width:1440,height:1000},reducedMotion:'reduce'});
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.addInitScript(()=>{
- const NativeAudio=window.Audio;window.Audio=function(...args){const a=new NativeAudio(...args);window.__portalMusic=a;return a;};
+ const NativeAudio=window.Audio;window.Audio=function(...args){const a=new NativeAudio(...args);if(String(args[0]).includes('war-epic'))window.__portalMusic=a;return a;};
  localStorage.setItem('histar_consent_v1',JSON.stringify({analytics:false,camera:false,gps:false}));
  for(const [k,v]of Object.entries({timelens_token:'compare-test',timelens_user_id:'compare-test',timelens_display_name:'TimeLens Demo',timelens_email_verified:'1'}))localStorage.setItem(k,v);
  });

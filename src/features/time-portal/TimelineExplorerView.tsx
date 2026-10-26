@@ -157,16 +157,16 @@ export function TimelineExplorerView({
   useEffect(() => { if (audio.ready) audio.setPaused(audioPaused) }, [audio.ready, audio.setPaused, audioPaused])
   useEffect(() => { if (audio.ready) audio.segment(`${era}-${index}`, narrationText) }, [audio.ready, audio.segment, era, index, narrationText])
   const onSegmentEnd = useCallback(() => {
-    if (audio.waitingForNarration) {
+    if (audio.waitingForNarration || audio.blocked) {
       pendingAdvance.current = true
       return
     }
     goNext()
-  }, [goNext, audio.waitingForNarration])
+  }, [goNext, audio.waitingForNarration, audio.blocked])
 
   useEffect(() => {
-    if (pendingAdvance.current && !audio.waitingForNarration && !audioPaused && !hover) goNext()
-  }, [audio.waitingForNarration, audioPaused, hover, goNext])
+    if (pendingAdvance.current && !audio.waitingForNarration && !audio.blocked && !audioPaused && !hover) goNext()
+  }, [audio.waitingForNarration, audio.blocked, audioPaused, hover, goNext])
 
   /* ---------------- Chuyển chương ---------------- */
 
@@ -248,7 +248,7 @@ export function TimelineExplorerView({
     return () => window.removeEventListener('keydown', onKey)
   }, [goNext, goPrev, lightbox])
 
-  const paused = audioPaused || hover
+  const paused = audioPaused || hover || audio.blocked
   const openPhoto = (p: Photo) => setLightbox(p)
 
   /* Lối vào "Xưa & Nay" ở bảng số liệu: ưu tiên điểm của khoảnh khắc đang xem, rồi điểm đầu tiên của chương. */

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortalAudio } from './portalAudioController'
+import { PORTAL_NARRATIONS } from './portalNarrationManifest'
 import type { PortalAudioState } from './portalAudioController'
 
 const initial: PortalAudioState = { narrationEnabled: true, musicEnabled: true, volume: .24, speaking: false, waitingForNarration: false, supported: false, blocked: false, status: '' }
@@ -11,7 +12,11 @@ export function usePortalAudio(enabled = true) {
   const [ready, setReady] = useState(false)
   useEffect(() => {
     if (!enabled) { setReady(false); return }
-    const c = createPortalAudio({ speech: window.speechSynthesis ?? null, audio: new Audio('/audio/time-portal/war-epic-v1.mp3'), utterance: value => new SpeechSynthesisUtterance(value) })
+    const c = createPortalAudio({ speech: window.speechSynthesis ?? null, audio: new Audio('/audio/time-portal/war-epic-v1.mp3'), utterance: value => new SpeechSynthesisUtterance(value), recording: (key, text) => {
+      const clip = PORTAL_NARRATIONS[key]
+      // Do not narrate stale audio if story text changes without regeneration.
+      return clip?.text === text ? new Audio(clip.src) : null
+    } })
     controller.current = c
     const unsubscribe = c.subscribe(() => setState(c.getSnapshot()))
     c.segment('portal-background', '')
