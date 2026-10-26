@@ -4,6 +4,17 @@ import test from 'node:test'
 
 const read = (path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8')
 
+test('demo builds show a global, unmistakable data label', async () => {
+  const [app, banner] = await Promise.all([
+    read('src/App.tsx'),
+    read('src/components/demo/DemoEnvironmentBanner.tsx'),
+  ])
+  assert.match(app, /DemoEnvironmentBanner/)
+  assert.match(banner, /appEnv\.demoMode/)
+  assert.match(banner, /Dữ liệu demo/)
+  assert.match(banner, /aria-live=["']polite["']/)
+})
+
 test('dashboard separates operational and commercial data with accessible revenue history', async () => {
   const source = await read('src/pages/AdminDashboardPage.tsx')
   for (const marker of [
