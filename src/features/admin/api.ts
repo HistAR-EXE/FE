@@ -60,6 +60,15 @@ export type PurgeDemoDatasetResult = {
   deletedRows: number
 }
 
+export type AdminDemoEnvironmentStatus = {
+  enabled: boolean
+  activeUsers: number
+}
+
+export type DemoActivityStatus = {
+  activeUsers: number
+}
+
 export type AdminUserBulkAction = 'SUSPEND' | 'UNSUSPEND' | 'SET_ROLE' | 'SET_TIER'
 
 export type AdminUserBulkResult = {
@@ -1002,6 +1011,16 @@ export const adminApi = {
     getData<AdminDemoDataset>(httpClient.get('/api/admin/demo-dataset')),
   purgeDemoDataset: (body: { userId: string | null; reason: string }) =>
     getData<PurgeDemoDatasetResult>(httpClient.delete('/api/admin/demo-dataset', { data: body })),
+  getDemoEnvironment: () =>
+    getData<AdminDemoEnvironmentStatus>(httpClient.get('/api/admin/demo-environment')),
+  startDemoEnvironment: () =>
+    getData<AdminDemoEnvironmentStatus>(httpClient.post('/api/admin/demo-environment/start')),
+  stopDemoEnvironment: (confirmation: string) =>
+    getData<AdminDemoEnvironmentStatus>(
+      httpClient.post('/api/admin/demo-environment/stop', { confirmation }),
+    ),
+  heartbeatDemoActivity: () =>
+    getData<DemoActivityStatus>(httpClient.post('/api/demo/activity/heartbeat')),
 
   listDiscoveryPoints: (locationId?: string) =>
     getData<AdminDiscoveryPoint[]>(

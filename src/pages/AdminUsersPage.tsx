@@ -9,12 +9,15 @@ import {
   adminApi,
   type AdminDemoAccount,
   type AdminDemoDataset,
+  type AdminDemoEnvironmentStatus,
   type AdminUserSummary,
   type PageResponse,
 } from '../features/admin/api'
 import { parseAdminListState } from '../features/admin/state'
+import { DEMO_STOP_CONFIRMATION, getDemoStopBlock } from '../features/admin/demoEnvironmentState'
 import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
 import { useAuth } from '../shared/auth/useAuth'
+import { appEnv } from '../shared/config/env'
 import { useToast } from '../shared/ui/toast/useToast'
 
 type AdminRole = 'USER' | 'ORG_MEMBER' | 'TEACHER' | 'ADMIN'
@@ -136,6 +139,9 @@ export function AdminUsersPage() {
   })
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [demoDataset, setDemoDataset] = useState<AdminDemoDataset | null>(null)
+  const [demoEnvironment, setDemoEnvironment] = useState<AdminDemoEnvironmentStatus | null>(null)
+  const [demoStopOpen, setDemoStopOpen] = useState(false)
+  const [demoStopConfirmation, setDemoStopConfirmation] = useState('')
   const [demoAccountToDelete, setDemoAccountToDelete] = useState<AdminDemoAccount | 'ALL' | null>(null)
   const [demoReason, setDemoReason] = useState('')
   const [target, setTarget] = useState<RoleTarget | null>(null)
@@ -191,6 +197,11 @@ export function AdminUsersPage() {
     adminApi.previewDemoDataset().then(setDemoDataset).catch(() => setDemoDataset(null))
   }, [])
 
+  const loadDemoEnvironment = useCallback(() => {
+    if (appEnv.demoMode) return
+    adminApi.getDemoEnvironment().then(setDemoEnvironment).catch(() => setDemoEnvironment(null))
+  }, [])
+
   const load = useCallback(() => {
     setLoading(true)
     setError(null)
@@ -226,6 +237,9 @@ export function AdminUsersPage() {
   useEffect(() => {
     loadDemoDataset()
   }, [loadDemoDataset])
+  useEffect(() => {
+    loadDemoEnvironment()
+  }, [loadDemoEnvironment])
   useEffect(() => setSearch(state.q), [state.q])
   useEffect(() => {
     if (params.get('size') === String(USERS_PAGE_SIZE)) return
@@ -323,6 +337,49 @@ export function AdminUsersPage() {
       window.location.assign(session.url)
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Không thể tạo phiên quản trị demo.')
+      setSaving(false)
+    }
+  }
+
+  const startDemoEnvironment = async () => {
+    setSaving(true)
+    try {
+      const status = await adminApi.startDemoEnvironment()
+      setDemoEnvironment(status)
+      showToast({ message: 'Môi trường demo đã sẵn sàng.', type: 'success' })
+    } catch (cause) {
+      showToast({ message: getFriendlyErrorMessage(cause, 'quest'), type: 'error' })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const stopDemoEnvironment = async () => {
+    if (!demoEnvironment) return
+    const blocked = getDemoStopBlock(demoEnvironment, demoStopConfirmation)
+    if (blocked) {
+      showToast({ message: blocked, type: 'error' })
+      return
+    }
+
+    setSaving(true)
+    try {
+      const latest = await adminApi.getDemoEnvironment()
+      setDemoEnvironment(latest)
+      const latestBlock = getDemoStopBlock(latest, demoStopConfirmation)
+      if (latestBlock) {
+        showToast({ message: latestBlock, type: 'error' })
+        return
+      }
+      const status = await adminApi.stopDemoEnvironment(demoStopConfirmation)
+      setDemoEnvironment(status)
+      setDemoStopOpen(false)
+      setDemoStopConfirmation('')
+      showToast({ message: 'Đã tắt môi trường demo. Dữ liệu demo vẫn được giữ nguyên.', type: 'success' })
+    } catch (cause) {
+      showToast({ message: getFriendlyErrorMessage(cause, 'quest'), type: 'error' })
+      loadDemoEnvironment()
+    } finally {
       setSaving(false)
     }
   }
@@ -650,14 +707,66 @@ export function AdminUsersPage() {
         </div>
       </div>
 
-      {(!demoDataset || !demoDataset.enabled) && (
-        <div className="mb-6 flex justify-end">
-          <button type="button" disabled={saving} onClick={() => void openDemoAdmin()}
-            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 font-headline-sm text-on-primary disabled:opacity-50">
-            <MaterialIcon name="open_in_new" className="text-[18px]" />
-            Mở quản trị demo (15 phút)
-          </button>
-        </div>
+      {!appEnv.demoMode && (
+        <section className="mb-6 overflow-hidden rounded-xl border border-outline-variant/50 bg-surface-container-low shadow-sm">
+          <div className="flex flex-col gap-4 p-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex min-w-0 items-start gap-3">
+              <div className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${demoEnvironment?.enabled ? 'bg-primary-container text-primary' : 'bg-surface-container-highest text-outline'}`}>
+                <MaterialIcon name={demoEnvironment?.enabled ? 'science' : 'power_settings_new'} className="text-[20px]" />
+              </div>
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="font-headline-md text-headline-md font-bold text-on-surface">Môi trường demo riêng</p>
+                  <span className={`rounded-full px-2 py-0.5 font-code-sm text-code-sm ${demoEnvironment?.enabled ? 'bg-primary-container text-on-primary-container' : 'bg-surface-container-highest text-outline'}`}>
+                    {demoEnvironment ? (demoEnvironment.enabled ? 'ĐANG BẬT' : 'ĐÃ TẮT') : 'CHƯA KẾT NỐI'}
+                  </span>
+                </div>
+                <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant">
+                  {demoEnvironment?.enabled
+                    ? `${demoEnvironment.activeUsers} người hoạt động trong 5 phút gần nhất. Dữ liệu hoàn toàn tách khỏi production.`
+                    : 'Chỉ khởi động khi cần trình diễn; tắt môi trường không xóa dữ liệu demo.'}
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button type="button" disabled={saving} onClick={loadDemoEnvironment} className={btnGhost}>
+                <MaterialIcon name="refresh" className="text-[18px]" />
+                Làm mới
+              </button>
+              {demoEnvironment?.enabled ? (
+                <>
+                  <button type="button" disabled={saving} onClick={() => void openDemoAdmin()}
+                    className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 font-headline-sm text-on-primary disabled:opacity-50">
+                    <MaterialIcon name="open_in_new" className="text-[18px]" />
+                    Mở quản trị demo (15 phút)
+                  </button>
+                  <button
+                    type="button"
+                    disabled={saving}
+                    onClick={() => {
+                      setDemoStopConfirmation('')
+                      setDemoStopOpen(true)
+                    }}
+                    className="inline-flex items-center gap-2 rounded-lg bg-error px-4 py-2 font-headline-sm text-on-error disabled:opacity-50"
+                  >
+                    <MaterialIcon name="power_settings_new" className="text-[18px]" />
+                    Tắt môi trường demo
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  disabled={saving || !demoEnvironment}
+                  onClick={() => void startDemoEnvironment()}
+                  className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 font-headline-sm text-on-primary disabled:opacity-50"
+                >
+                  <MaterialIcon name="play_arrow" className="text-[18px]" />
+                  {saving ? 'Đang khởi động…' : 'Bật môi trường demo'}
+                </button>
+              )}
+            </div>
+          </div>
+        </section>
       )}
 
       {demoDataset && demoDataset.enabled && (
@@ -1657,6 +1766,48 @@ export function AdminUsersPage() {
                 onClick={() => void runBulk()}
               >
                 {saving ? 'Đang chạy…' : 'Chạy bulk'}
+              </button>
+            </div>
+          </div>
+        </AdminModal>
+      )}
+
+      {demoStopOpen && demoEnvironment && (
+        <AdminModal
+          title="Tắt môi trường demo"
+          subtitle="Dữ liệu demo được giữ nguyên để bật lại sau"
+          icon="power_settings_new"
+          onClose={() => {
+            setDemoStopOpen(false)
+            setDemoStopConfirmation('')
+          }}
+        >
+          <div className="flex flex-col gap-4">
+            <div className={`rounded-lg p-3 font-body-sm text-body-sm ${demoEnvironment.activeUsers > 0 ? 'bg-error-container text-on-error-container' : 'bg-surface-container-high text-on-surface-variant'}`}>
+              {demoEnvironment.activeUsers > 0
+                ? `Chưa thể tắt: còn ${demoEnvironment.activeUsers} người hoạt động trong 5 phút gần nhất. Hãy chờ họ kết thúc rồi bấm Làm mới.`
+                : 'Không phát hiện người dùng đang hoạt động. Hệ thống sẽ kiểm tra lại một lần nữa trước khi tắt.'}
+            </div>
+            <label className="flex flex-col gap-1.5 font-label-sm text-label-sm text-outline">
+              Nhập chính xác {DEMO_STOP_CONFIRMATION} để xác nhận
+              <input
+                value={demoStopConfirmation}
+                onChange={(event) => setDemoStopConfirmation(event.target.value)}
+                autoComplete="off"
+                className={inputClass}
+              />
+            </label>
+            <div className="flex flex-wrap justify-end gap-2">
+              <button type="button" className={btnGhost} disabled={saving} onClick={loadDemoEnvironment}>
+                Làm mới người hoạt động
+              </button>
+              <button
+                type="button"
+                className="rounded-lg bg-error px-4 py-2 font-headline-sm text-on-error disabled:opacity-50"
+                disabled={saving || getDemoStopBlock(demoEnvironment, demoStopConfirmation) !== null}
+                onClick={() => void stopDemoEnvironment()}
+              >
+                {saving ? 'Đang tắt…' : 'Xác nhận tắt demo'}
               </button>
             </div>
           </div>

@@ -26,7 +26,7 @@
     "test:e2e:b2-fullstack": "playwright test -c playwright.fullstack.config.ts",
     "test:e2e:full": "playwright test --project=setup --project=3-fullstack-e2e",
     "test:e2e:report": "playwright show-report",
-    "test:admin": "node --experimental-strip-types --test scripts/admin-state.test.mjs scripts/admin-foundation.test.mjs scripts/admin-pages.test.mjs",
+    "test:admin": "node --experimental-strip-types --test scripts/admin-state.test.mjs scripts/admin-foundation.test.mjs scripts/admin-pages.test.mjs scripts/demo-environment-state.test.mjs",
     "test:station-journey": "node --experimental-strip-types --test scripts/station-journey.test.mjs",
     "test:ar": "node --test scripts/ar-experience.test.mjs scripts/ar-viewer-math.test.mjs scripts/ar-runtime.test.mjs && playwright test -c playwright.ar.config.ts",
     "test:all": "powershell -ExecutionPolicy Bypass -File ../scripts/run-all-tests.ps1",

@@ -188,6 +188,23 @@ test('users expose a guarded demo dataset preview and purge workflow', async () 
   assert.match(page, /demoAccountToDelete/)
 })
 
+test('production admin controls demo lifecycle with activity-aware confirmation', async () => {
+  const [page, api, heartbeat, state] = await Promise.all([
+    read('src/pages/AdminUsersPage.tsx'),
+    read('src/features/admin/api.ts'),
+    read('src/components/demo/DemoActivityHeartbeat.tsx'),
+    read('src/features/admin/demoEnvironmentState.ts'),
+  ])
+  for (const marker of ['Bật môi trường demo', 'Tắt môi trường demo', 'activeUsers']) {
+    assert.match(page, new RegExp(marker))
+  }
+  assert.match(state, /TẮT DEMO/)
+  assert.match(api, /\/api\/admin\/demo-environment/)
+  assert.match(api, /\/api\/demo\/activity\/heartbeat/)
+  assert.match(heartbeat, /60_000/)
+  assert.match(heartbeat, /visibilityState/)
+})
+
 test('organizations use URL-backed paging and only show supported roster aggregates', async () => {
   const [page, api] = await Promise.all([read('src/pages/AdminOrganizationsPage.tsx'), read('src/features/admin/api.ts')])
   for (const marker of ['useSearchParams', 'AdminPagination', 'plan', 'status', 'q']) assert.match(page, new RegExp(marker))
