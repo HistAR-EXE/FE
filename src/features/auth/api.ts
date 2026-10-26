@@ -44,4 +44,6 @@ export const authApi = {
   logout: (refreshToken?: string | null) => getData<{ success?: boolean }>(httpClient.post('/api/auth/logout', { refreshToken })),
   googleLogin: (idToken: string) =>
     getData<AuthPayload>(httpClient.post('/api/auth/google', { idToken })),
+  exchangeDemoAdminSession: (ticket: string) =>
+    getData<AuthPayload>(httpClient.post('/api/demo/admin-session/exchange', { ticket })),
 }

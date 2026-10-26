@@ -315,6 +315,18 @@ export function AdminUsersPage() {
     }
   }
 
+  const openDemoAdmin = async () => {
+    setSaving(true)
+    setError('')
+    try {
+      const session = await adminApi.createDemoAdminSession()
+      window.location.assign(session.url)
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Không thể tạo phiên quản trị demo.')
+      setSaving(false)
+    }
+  }
+
   const adminCountOnPage = result?.items.filter((item) => item.role === 'ADMIN').length ?? 0
   const verifiedPct =
     stats.total > 0 ? Math.round((stats.verified / stats.total) * 1000) / 10 : 0
@@ -637,6 +649,16 @@ export function AdminUsersPage() {
           </span>
         </div>
       </div>
+
+      {(!demoDataset || !demoDataset.enabled) && (
+        <div className="mb-6 flex justify-end">
+          <button type="button" disabled={saving} onClick={() => void openDemoAdmin()}
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 font-headline-sm text-on-primary disabled:opacity-50">
+            <MaterialIcon name="open_in_new" className="text-[18px]" />
+            Mở quản trị demo (15 phút)
+          </button>
+        </div>
+      )}
 
       {demoDataset && demoDataset.enabled && (
         <section className="mb-6 overflow-hidden rounded-xl border border-amber-500/30 bg-amber-500/5 shadow-sm">

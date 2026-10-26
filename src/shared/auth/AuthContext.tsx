@@ -212,6 +212,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     login,
     register,
     loginWithGoogle,
+    acceptSession: storeAuth,
     logout,
     updateUser,
   }

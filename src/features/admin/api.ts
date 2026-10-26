@@ -950,6 +950,8 @@ export type AdminStationQrToken = {
 }
 
 export const adminApi = {
+  createDemoAdminSession: () =>
+    getData<{ url: string; expiresAt: string }>(httpClient.post('/api/admin/demo-session')),
   listUsers: (query: AdminUserQuery | number = {}, legacySize = 20) => {
     const params = typeof query === 'number' ? { page: query, size: legacySize } : query
     return getPageData<AdminUserSummary>(httpClient.get('/api/admin/users', { params }))

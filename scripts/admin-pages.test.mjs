@@ -15,6 +15,20 @@ test('demo builds show a global, unmistakable data label', async () => {
   assert.match(banner, /aria-live=["']polite["']/)
 })
 
+test('real admin opens a short-lived session in the isolated demo', async () => {
+  const [page, adminApi, authApi, route] = await Promise.all([
+    read('src/pages/AdminUsersPage.tsx'),
+    read('src/features/admin/api.ts'),
+    read('src/features/auth/api.ts'),
+    read('src/pages/DemoAdminSessionPage.tsx'),
+  ])
+  assert.match(page, /Mở quản trị demo \(15 phút\)/)
+  assert.match(adminApi, /\/api\/admin\/demo-session/)
+  assert.match(authApi, /\/api\/demo\/admin-session\/exchange/)
+  assert.match(route, /appEnv\.demoMode/)
+  assert.match(route, /acceptSession/)
+})
+
 test('dashboard separates operational and commercial data with accessible revenue history', async () => {
   const source = await read('src/pages/AdminDashboardPage.tsx')
   for (const marker of [

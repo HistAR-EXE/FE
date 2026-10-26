@@ -41,6 +41,7 @@ import { HeritagePortfolioPage } from '../pages/HeritagePortfolioPage'
 import { ProductTourWrapper } from '../features/explore/ProductTour'
 import { GoogleRedirectCompletion } from '../shared/auth/GoogleRedirectCompletion'
 import { AdminConsoleLayout } from '../components/admin/AdminConsoleLayout'
+import { DemoAdminSessionPage } from '../pages/DemoAdminSessionPage'
 
 const ArtifactsPage = lazy(() => import('../pages/ArtifactsPage').then((module) => ({ default: module.ArtifactsPage })))
 const ArtifactDetailPage = lazy(() => import('../pages/ArtifactDetailPage').then((module) => ({ default: module.ArtifactDetailPage })))
@@ -132,6 +133,7 @@ export function AppRoutes() {
                         <Route path="/join" element={<JoinPage />} />
                         <Route path="/privacy" element={<PrivacyPage />} />
                         <Route path="/terms" element={<TermsPage />} />
+                        <Route path="/demo/admin-session" element={<DemoAdminSessionPage />} />
                         <Route path="/pack-prep" element={<PackPrepPage />} />
                         <Route path="/sites/:siteCode/stations/:code/media" element={<StationMediaDemoPage />} />
                         <Route path="/sites/:siteCode/stations/:code/game/:gameId" element={<StationGamePage />} />
