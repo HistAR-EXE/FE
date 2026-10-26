@@ -30,9 +30,38 @@ test('role selection and explicit multi-face choice create a composite without p
   await page.getByTestId('raw-selfie').setInputFiles(path.join(fixtures, 'portrait-two-faces.jpg'))
   await expect(page.getByLabel('Chọn khuôn mặt cần dùng')).toBeVisible()
   await page.getByLabel('Chọn khuôn mặt cần dùng').selectOption('face-2')
-  await page.getByRole('button', { name: 'Tạo ảnh hóa thân' }).click()
+  await expect(page.getByText('Ảnh đã được ghép. Mọi điều chỉnh bên dưới sẽ tự cập nhật bản xem trước.')).toBeVisible()
   await expect(page.getByRole('button', { name: 'Lưu và chia sẻ' })).toBeEnabled()
   expect(requestedProductionAssets).toEqual([])
+})
+
+test('photo page automatically composites the selected portrait and reapplies lighting controls', async ({ page }) => {
+  await mockFaceDetector(page)
+  await page.addInitScript(() => {
+    const values = { timelens_token: 'fixture-token', timelens_user_id: 'heritage-user', timelens_display_name: 'Heritage User', timelens_email: 'heritage@example.test', timelens_role: 'USER', timelens_tier: 'PREMIUM', timelens_email_verified: '1', timelens_mode: 'online' }
+    for (const [key, value] of Object.entries(values)) localStorage.setItem(key, value)
+  })
+  await page.route((url) => url.pathname.startsWith('/api/'), async (route) => {
+    const pathname = new URL(route.request().url()).pathname
+    const data = pathname === '/api/profile/me'
+      ? { id: 'heritage-user', email: 'heritage@example.test', displayName: 'Heritage User', role: 'USER', tier: 'PREMIUM', emailVerified: true, avatarUrl: null, orgId: null, orgSubscription: 'NONE', activeVisitSites: [] }
+      : pathname === '/api/photo-frames' ? []
+      : pathname.endsWith('/stations/ST01') ? { id: 'st01', siteCode: 'cu-chi', code: 'ST01', name: 'Phòng họp', sortOrder: 1, blocks: [] }
+      : []
+    await route.fulfill({ json: { success: true, data } })
+  })
+  await page.route('**/media/photo-roles/**', async (route) => {
+    const relative = new URL(route.request().url()).pathname.replace('/media/photo-roles/', '')
+    await route.fulfill({ path: path.resolve(import.meta.dirname, '../../heritage-assets', relative), contentType: 'image/webp' })
+  })
+  await page.goto('/photo-frame?site=cu-chi&station=ST01&locationId=11111111-1111-1111-1111-111111111111&source=battle-diorama&role=st01-can-bo-lien-lac-nam')
+  await page.locator('input[type=file]').setInputFiles(path.join(fixtures, 'portrait-single-face.jpg'))
+  const preview = page.getByAltText('Ảnh kỷ niệm đang chỉnh')
+  await expect(preview).toBeVisible()
+  const firstPreview = await preview.getAttribute('src')
+  await page.getByLabel('Tăng sáng khuôn mặt').fill('65')
+  await expect.poll(async () => preview.getAttribute('src')).not.toBe(firstPreview)
+  await expect(page.getByRole('button', { name: 'Lưu ảnh hóa thân & Chia sẻ' })).toBeEnabled()
 })
 
 test('approved ST06 roles are available while camera capture remains library-only', async ({ page }) => {

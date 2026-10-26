@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { LowLightOptions } from '../../lib/heritageImage'
 import { composeHeritagePortrait, HERITAGE_REENACTMENT_LABEL, type HeritageOutputVariant } from './compositor'
 import { chooseFaceCandidate, detectFaceCandidates, initialPlacement, type FaceCandidate, type FacePlacement } from './facePlacement'
@@ -32,6 +32,14 @@ export function HeritageStudio({ file, siteCode, stationCode, initialRoleId, tem
   const [selectedFaceId, setSelectedFaceId] = useState<string | undefined>()
   const [placement, setPlacement] = useState<FacePlacement | null>(selected ? initialPlacement(null, selected) : null)
   const [rendering, setRendering] = useState(false)
+  const [detecting, setDetecting] = useState(false)
+  const [renderError, setRenderError] = useState<string | null>(null)
+  const renderSequence = useRef(0)
+  const onCompositeRef = useRef(onComposite)
+
+  useEffect(() => {
+    onCompositeRef.current = onComposite
+  }, [onComposite])
 
   useEffect(() => {
     const next = published.find((role) => role.id === selected?.id)
@@ -46,6 +54,8 @@ export function HeritageStudio({ file, siteCode, stationCode, initialRoleId, tem
     if (!file) {
       setCandidates([])
       setSelectedFaceId(undefined)
+      setDetecting(false)
+      setRenderError(null)
       return
     }
     if (typeof createImageBitmap !== 'function') {
@@ -54,6 +64,7 @@ export function HeritageStudio({ file, siteCode, stationCode, initialRoleId, tem
       return
     }
     let cancelled = false
+    setDetecting(true)
     void createImageBitmap(file)
       .then(async (bitmap) => {
         try {
@@ -61,13 +72,17 @@ export function HeritageStudio({ file, siteCode, stationCode, initialRoleId, tem
           if (!cancelled) {
             setCandidates(found)
             setSelectedFaceId(found.length === 1 ? found[0].id : undefined)
+            setDetecting(false)
           }
         } finally {
           bitmap.close()
         }
       })
       .catch(() => {
-        if (!cancelled) setCandidates([])
+        if (!cancelled) {
+          setCandidates([])
+          setDetecting(false)
+        }
       })
     return () => { cancelled = true }
   }, [file])
@@ -79,22 +94,35 @@ export function HeritageStudio({ file, siteCode, stationCode, initialRoleId, tem
     onRoleChange?.(role)
   }
 
-  const createComposite = async () => {
+  const createComposite = useCallback(async () => {
     if (!file || !selected || !placement) return
     let candidate: FaceCandidate | null
     try {
       candidate = chooseFaceCandidate(candidates, selectedFaceId)
     } catch {
+      setRenderError('Ảnh có nhiều khuôn mặt. Hãy chọn đúng khuôn mặt cần ghép.')
       return
     }
+    const sequence = ++renderSequence.current
     setRendering(true)
+    setRenderError(null)
     try {
       const blob = await composeHeritagePortrait({ photo: file, template: selected, candidate, placement, lowLight, variant })
-      onComposite(new File([blob], `timelens-${selected.id}-${variant}.jpg`, { type: 'image/jpeg' }), selected)
+      if (sequence === renderSequence.current) {
+        onCompositeRef.current(new File([blob], `timelens-${selected.id}-${variant}.jpg`, { type: 'image/jpeg' }), selected)
+      }
+    } catch {
+      if (sequence === renderSequence.current) setRenderError('Không thể ghép ảnh. Hãy thử chọn lại ảnh chân dung.')
     } finally {
-      setRendering(false)
+      if (sequence === renderSequence.current) setRendering(false)
     }
-  }
+  }, [candidates, file, lowLight, placement, selected, selectedFaceId, variant])
+
+  useEffect(() => {
+    if (!file || !selected || !placement || detecting || (candidates.length > 1 && !selectedFaceId)) return
+    const timer = window.setTimeout(() => void createComposite(), 220)
+    return () => window.clearTimeout(timer)
+  }, [candidates.length, createComposite, detecting, file, placement, selected, selectedFaceId])
 
   return (
     <section className="grid gap-md" data-testid="heritage-studio">
@@ -110,6 +138,19 @@ export function HeritageStudio({ file, siteCode, stationCode, initialRoleId, tem
       </div>
       {selected && placement && (
         <>
+          {file && (
+            <div className={`rounded-xl border px-3 py-2 text-sm ${renderError ? 'border-red-400/40 bg-red-500/10 text-red-200' : 'border-[#d9ae58]/35 bg-[#d9ae58]/10 text-[#f3d38b]'}`} role={renderError ? 'alert' : 'status'} aria-live="polite">
+              {renderError
+                ? renderError
+                : detecting
+                  ? 'Đang nhận diện khuôn mặt…'
+                  : candidates.length > 1 && !selectedFaceId
+                    ? 'Ảnh có nhiều khuôn mặt — hãy chọn một khuôn mặt bên dưới.'
+                    : rendering
+                      ? 'Đang ghép khuôn mặt vào vai diễn…'
+                      : 'Ảnh đã được ghép. Mọi điều chỉnh bên dưới sẽ tự cập nhật bản xem trước.'}
+            </div>
+          )}
           {candidates.length > 1 && (
             <label className="grid gap-1 text-sm text-on-surface-variant">Chọn khuôn mặt cần dùng
               <select value={selectedFaceId ?? ''} onChange={(e) => setSelectedFaceId(e.target.value || undefined)} className="rounded-lg border border-outline-variant bg-surface px-sm py-xs">
@@ -120,8 +161,8 @@ export function HeritageStudio({ file, siteCode, stationCode, initialRoleId, tem
           )}
           <FaceAdjustControls placement={placement} template={selected} onChange={setPlacement} />
           <p className="text-xs text-on-surface-variant">Ảnh chỉ được xử lý trong trình duyệt. {HERITAGE_REENACTMENT_LABEL}.</p>
-          <button type="button" disabled={!file || rendering || (candidates.length > 1 && !selectedFaceId)} onClick={() => void createComposite()} className="rounded-lg bg-primary px-md py-sm font-bold text-on-primary disabled:opacity-50">
-            {rendering ? 'Đang dựng ảnh…' : 'Tạo ảnh hóa thân'}
+          <button type="button" disabled={!file || rendering || (candidates.length > 1 && !selectedFaceId)} onClick={() => void createComposite()} className="rounded-lg border border-[#d9ae58]/45 bg-[#d9ae58]/10 px-md py-sm font-bold text-[#f0cf83] disabled:opacity-50">
+            {rendering ? 'Đang ghép ảnh…' : 'Ghép lại ngay'}
           </button>
         </>
       )}

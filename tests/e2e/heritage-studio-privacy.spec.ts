@@ -18,7 +18,7 @@ test('raw selfie stays local and explicit save uploads exactly one generated com
   await page.goto('/tests/fixtures/heritage-studio-harness.html')
   await page.getByTestId('raw-selfie').setInputFiles(portrait)
   await expect.poll(() => uploads.length).toBe(0)
-  await page.getByRole('button', { name: 'Tạo ảnh hóa thân' }).click()
+  await expect(page.getByText('Ảnh đã được ghép. Mọi điều chỉnh bên dưới sẽ tự cập nhật bản xem trước.')).toBeVisible()
   await expect(page.getByRole('button', { name: 'Lưu và chia sẻ' })).toBeEnabled()
   expect(uploads).toHaveLength(0)
   await page.getByRole('button', { name: 'Lưu và chia sẻ' }).click()

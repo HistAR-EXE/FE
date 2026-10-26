@@ -21,6 +21,15 @@ test('photo page keeps original-photo fallback and does not show Frame1', () => 
   assert.doesNotMatch(source, /Frame1/)
 })
 
+test('heritage portrait is recomposed automatically when inputs change', () => {
+  const studio = read('../src/features/heritage-studio/HeritageStudio.tsx')
+  const page = read('../src/pages/PhotoFramePage.tsx')
+  assert.match(studio, /setTimeout\(\(\) => void createComposite\(\), 220\)/)
+  assert.match(studio, /Mọi điều chỉnh bên dưới sẽ tự cập nhật bản xem trước/)
+  assert.match(page, /Tăng sáng khuôn mặt/)
+  assert.match(page, /Lưu ảnh hóa thân & Chia sẻ/)
+})
+
 test('Cedar Falls completion is one-shot and distinguishes 1967 from 1968', () => {
   const viewer = read('../src/features/diorama/BattleDioramaViewer.tsx')
   const page = read('../src/pages/BattleDioramaPage.tsx')

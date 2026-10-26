@@ -107,6 +107,9 @@ export function PhotoFramePage() {
   const stationLabel = stationContext
     ? `${stationContext.stationCode}${stationName ? ` · ${stationName}` : ''}`
     : null
+  const pageTitle = photoMode === 'heritage'
+    ? `Hóa thân 1968${stationLabel ? ` · ${stationLabel}` : ''}`
+    : stationLabel ? `Ảnh kỷ niệm · ${stationLabel}` : 'Ảnh kỷ niệm'
   const returnHref = stationContext
     ? buildStationPagePath(stationContext)
     : '/pack-prep?site=cu-chi'
@@ -166,7 +169,7 @@ export function PhotoFramePage() {
   return (
     <AppLayout
       activeBorder="left"
-      topNav={<SimpleTopNav title={stationLabel ? `Ảnh kỷ niệm · ${stationLabel}` : 'Ảnh kỷ niệm'} backTo={returnHref} backLabel={stationLabel ? `Về ${stationLabel}` : 'Về hành trình'} />}
+      topNav={<SimpleTopNav title={pageTitle} backTo={returnHref} backLabel={stationLabel ? `Về ${stationLabel}` : 'Về hành trình'} />}
       mobileBackTo={returnHref}
       mobileTitle={stationLabel ? `Ảnh · ${stationLabel}` : 'Ảnh kỷ niệm'}
     >
@@ -204,8 +207,8 @@ export function PhotoFramePage() {
 
         <aside className="flex w-full min-w-0 flex-col overflow-hidden rounded-2xl border border-[#d3ab58]/25 bg-surface-container shadow-[0_20px_55px_rgba(0,0,0,0.22)] lg:sticky lg:top-20 lg:max-h-[calc(100dvh-6rem)]">
           <div className="p-lg border-b border-surface-variant">
-            <h2 className="font-headline-lg text-headline-lg text-on-surface">{stationLabel ? `Ảnh kỷ niệm · ${stationLabel}` : 'Ảnh kỷ niệm'}</h2>
-            <p className="font-body-md text-body-md text-on-surface-variant mt-2">Chụp hoặc chọn ảnh, điều chỉnh ánh sáng rồi lưu kỷ niệm tại trạm.</p>
+            <h2 className="font-headline-lg text-headline-lg text-on-surface">{pageTitle}</h2>
+            <p className="font-body-md text-body-md text-on-surface-variant mt-2">{photoMode === 'heritage' ? 'Chọn ảnh chân dung để ghép khuôn mặt vào nhân vật lịch sử. Bản xem trước cập nhật tự động.' : 'Chụp hoặc chọn ảnh, điều chỉnh ánh sáng rồi lưu kỷ niệm tại trạm.'}</p>
           </div>
           <div className="flex-1 overflow-y-auto p-lg flex flex-col gap-xl">
             {photoMode === 'original' && framesLoading && <p className="text-sm text-on-surface-variant">Đang tải khung ảnh...</p>}
@@ -242,6 +245,11 @@ export function PhotoFramePage() {
                 }}
                 className="w-full text-sm"
               />
+              {photoMode === 'heritage' && file && (
+                <p className="rounded-lg border border-[#d9ae58]/30 bg-[#d9ae58]/10 px-3 py-2 text-xs leading-relaxed text-[#efd28f]">
+                  Đã nhận ảnh chân dung. TimeLens đang xử lý ngay trên thiết bị; ảnh gốc chưa được tải lên máy chủ.
+                </p>
+              )}
               {!cameraLocked && (
                 <div className="flex items-start gap-sm rounded-lg border border-outline-variant bg-surface p-sm text-sm text-on-surface-variant" role="note">
                   <MaterialIcon name="flashlight_on" className="text-base text-primary shrink-0" />
@@ -263,25 +271,41 @@ export function PhotoFramePage() {
                 <p className="text-xs text-on-surface-variant">Vai hóa thân của trạm đang được duyệt sử liệu. Ảnh gốc vẫn dùng bình thường.</p>
               )}
               {photoMode === 'heritage' && (
-                <HeritageStudio
-                  file={file}
-                  siteCode={stationContext?.siteCode ?? 'cu-chi'}
-                  stationCode={heritageStationCode}
-                  initialRoleId={initialHeritageRoleId}
-                  variant={variant}
-                  lowLight={lowLight}
-                  onComposite={(composite: File, _template: PublishedHeritageRoleTemplate) => {
-                    setHeritageComposite(composite)
-                    showToast({ message: 'Đã dựng ảnh hóa thân trên thiết bị.', type: 'success' })
-                  }}
-                  onRoleChange={(template) => {
-                    setSelectedHeritageRole(template)
-                    setHeritageComposite(null)
-                  }}
-                />
+                <>
+                  <div className="rounded-xl border border-outline-variant bg-surface p-md">
+                    <h3 className="font-title-md">Ánh sáng khuôn mặt</h3>
+                    <p className="mt-1 text-xs text-on-surface-variant">Chỉ điều chỉnh khuôn mặt được ghép để hòa với ánh sáng trong hầm.</p>
+                    <label className="mt-3 flex flex-col gap-1 text-sm text-on-surface-variant">
+                      <span className="flex justify-between">
+                        <span>Tăng sáng</span>
+                        <span>{Math.round(lowLight.boost * 100)}%</span>
+                      </span>
+                      <input type="range" min={0} max={100} value={Math.round(lowLight.boost * 100)} onChange={(e) => setLowLight((s) => ({ ...s, boost: Number(e.target.value) / 100 }))} aria-label="Tăng sáng khuôn mặt" />
+                    </label>
+                    <label className="mt-3 flex items-center gap-sm text-sm text-on-surface">
+                      <input type="checkbox" checked={lowLight.tunnelGrade} onChange={(e) => setLowLight((s) => ({ ...s, tunnelGrade: e.target.checked }))} />
+                      Hòa màu ánh đèn hầm
+                    </label>
+                  </div>
+                  <HeritageStudio
+                    file={file}
+                    siteCode={stationContext?.siteCode ?? 'cu-chi'}
+                    stationCode={heritageStationCode}
+                    initialRoleId={initialHeritageRoleId}
+                    variant={variant}
+                    lowLight={lowLight}
+                    onComposite={(composite: File, _template: PublishedHeritageRoleTemplate) => {
+                      setHeritageComposite(composite)
+                    }}
+                    onRoleChange={(template) => {
+                      setSelectedHeritageRole(template)
+                      setHeritageComposite(null)
+                    }}
+                  />
+                </>
               )}
             </div>
-            <div className="flex flex-col gap-md">
+            {photoMode === 'original' && <div className="flex flex-col gap-md">
               <h3 className="font-title-md">Chế độ thiếu sáng</h3>
               <label className="flex flex-col gap-1 text-sm text-on-surface-variant">
                 <span className="flex justify-between">
@@ -305,7 +329,7 @@ export function PhotoFramePage() {
                 />
                 Ánh sáng địa đạo (ấm, giảm bão hòa, tối viền)
               </label>
-            </div>
+            </div>}
             <div className="flex flex-col gap-md">
               <h3 className="font-title-md">Khung</h3>
               {photoMode === 'original' ? <select value={frameId} onChange={(e) => setFrameId(e.target.value)} className="bg-surface border border-outline-variant rounded-lg px-sm py-sm">
@@ -315,7 +339,7 @@ export function PhotoFramePage() {
                       {f.name} ({f.era}){f.requiresPremium ? ' · Premium' : ''}
                     </option>
                   ))}
-                </select> : <p className="text-sm text-on-surface-variant">Ảnh hóa thân dùng lớp bối cảnh lịch sử đã duyệt, không chồng thêm khung ảnh.</p>}
+                </select> : <p className="text-sm text-on-surface-variant">Vai diễn đã gồm bối cảnh và trang phục lịch sử; khuôn mặt của bạn sẽ được ghép vào vùng trống trên nhân vật.</p>}
               {photoMode === 'original' && selectedLocked && (
                 <UpgradePrompt
                   compact
@@ -331,7 +355,7 @@ export function PhotoFramePage() {
           <div className="p-lg border-t border-surface-variant mt-auto">
             <button onClick={submit} disabled={uploading || !(photoMode === 'heritage' ? heritageComposite : file) || (photoMode === 'original' && selectedLocked)} className="w-full bg-primary text-on-primary font-title-md py-4 rounded-lg disabled:opacity-60 flex items-center justify-center gap-2">
               <MaterialIcon name="magic_button" />
-              {uploading ? 'Đang upload...' : 'Tạo & Chia sẻ'}
+              {uploading ? 'Đang upload...' : photoMode === 'heritage' ? 'Lưu ảnh hóa thân & Chia sẻ' : 'Tạo & Chia sẻ'}
             </button>
           </div>
         </aside>
