@@ -4,11 +4,12 @@ import { readFileSync } from 'node:fs'
 
 const read = (path) => readFileSync(new URL(path, import.meta.url), 'utf8')
 
-test('production picker exposes only published roles and does not preload assets', () => {
+test('production picker exposes only published roles with image-first previews', () => {
   const source = read('../src/features/heritage-studio/HeritageRolePicker.tsx')
   assert.match(source, /publishedOnly = true/)
   assert.match(source, /getPublishedRoleTemplates/)
-  assert.doesNotMatch(source, /assets\.(?:background|overlay)/)
+  assert.match(source, /HeritageRoleArtwork/)
+  assert.match(source, /variant === 'gallery'/)
 })
 
 test('photo page keeps original-photo fallback and does not show Frame1', () => {
@@ -16,6 +17,7 @@ test('photo page keeps original-photo fallback and does not show Frame1', () => 
   assert.match(source, /Ảnh gốc/)
   assert.match(source, /Hóa thân 1968/)
   assert.match(source, /Vai hóa thân của trạm đang được duyệt sử liệu/)
+  assert.match(source, /photoMode === 'original' && !framesLoading && frames\.length === 0/)
   assert.doesNotMatch(source, /Frame1/)
 })
 

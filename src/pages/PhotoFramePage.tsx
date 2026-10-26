@@ -32,6 +32,7 @@ import {
   readStationRouteContext,
 } from '../features/stations/stationRoutes'
 import { HeritageStudio } from '../features/heritage-studio/HeritageStudio'
+import { HeritageRoleArtwork } from '../features/heritage-studio/HeritageRoleArtwork'
 import { getPublishedRoleTemplates } from '../features/heritage-studio/roleTemplates'
 import type { HeritageStationCode, PublishedHeritageRoleTemplate } from '../features/heritage-studio/types'
 
@@ -49,7 +50,7 @@ export function PhotoFramePage() {
   const [frameId, setFrameId] = useState('')
   const [variant, setVariant] = useState<'square' | 'story'>('square')
   const [file, setFile] = useState<File | null>(null)
-  const [photoMode, setPhotoMode] = useState<'original' | 'heritage'>('original')
+  const [photoMode, setPhotoMode] = useState<'original' | 'heritage'>(() => searchParams.get('role') ? 'heritage' : 'original')
   const [heritageComposite, setHeritageComposite] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
   const [framesLoading, setFramesLoading] = useState(true)
@@ -91,8 +92,13 @@ export function PhotoFramePage() {
   const heritageStationCode = stationContext && /^ST0[1-6]$/.test(stationContext.stationCode)
     ? stationContext.stationCode as HeritageStationCode
     : undefined
-  const hasHeritageRoles = getPublishedRoleTemplates(stationContext?.siteCode ?? 'cu-chi', heritageStationCode).length > 0
+  const heritageRoles = useMemo(
+    () => getPublishedRoleTemplates(stationContext?.siteCode ?? 'cu-chi', heritageStationCode),
+    [heritageStationCode, stationContext?.siteCode],
+  )
+  const hasHeritageRoles = heritageRoles.length > 0
   const initialHeritageRoleId = searchParams.get('role')
+  const [selectedHeritageRole, setSelectedHeritageRole] = useState<PublishedHeritageRoleTemplate | null>(null)
   const previewFile = photoMode === 'heritage' && heritageComposite ? heritageComposite : file
   const previewUrl = useMemo(() => (previewFile ? URL.createObjectURL(previewFile) : null), [previewFile])
   const stationHero = stationContext
@@ -111,6 +117,11 @@ export function PhotoFramePage() {
   useEffect(() => {
     if (initialHeritageRoleId && hasHeritageRoles) setPhotoMode('heritage')
   }, [hasHeritageRoles, initialHeritageRoleId])
+
+  useEffect(() => {
+    const next = heritageRoles.find((role) => role.id === initialHeritageRoleId) ?? heritageRoles[0] ?? null
+    setSelectedHeritageRole(next)
+  }, [heritageRoles, initialHeritageRoleId])
 
   const submit = async () => {
     const uploadFile = photoMode === 'heritage' ? heritageComposite : file
@@ -159,39 +170,46 @@ export function PhotoFramePage() {
       mobileBackTo={returnHref}
       mobileTitle={stationLabel ? `Ảnh · ${stationLabel}` : 'Ảnh kỷ niệm'}
     >
-      <main className="flex-1 mt-14 md:mt-16 p-md md:p-safe-area-inset flex flex-col lg:flex-row gap-md lg:gap-lg overflow-hidden min-h-0">
-        <section className="flex-1 min-h-[280px] lg:min-h-0 bg-surface-container-low rounded-xl border border-surface-variant relative flex items-center justify-center overflow-hidden">
+      <main className="mt-14 grid min-w-0 flex-1 items-start gap-4 p-3 md:mt-16 md:p-5 lg:grid-cols-[minmax(0,1fr)_390px] lg:gap-5">
+        <section className="relative flex min-h-[460px] min-w-0 items-center justify-center overflow-hidden rounded-2xl border border-[#d3ab58]/25 bg-[radial-gradient(circle_at_50%_18%,#263650_0%,#121b2c_46%,#09101c_100%)] px-3 pb-5 pt-20 shadow-[0_24px_70px_rgba(0,0,0,0.25)] lg:sticky lg:top-20 lg:h-[calc(100dvh-6rem)] lg:min-h-[620px] lg:p-5">
           <Link to={returnHref} className="absolute top-md left-md z-20 inline-flex items-center gap-1 px-sm py-xs rounded-full border border-outline-variant bg-surface/80 text-on-surface-variant hover:text-secondary hover:border-secondary transition-colors">
             <MaterialIcon name="arrow_back" className="text-sm" />
             {stationLabel ? `Về ${stationLabel}` : 'Về hành trình'}
           </Link>
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background/80 pointer-events-none" />
-          <div className="relative z-10 w-full max-w-2xl aspect-[3/4] p-4 bg-surface rounded-lg border-2 border-outline-variant shadow-[0_0_40px_rgba(242,191,80,0.1)]">
-            <div className="w-full h-full border-4 border-primary rounded-sm p-2 relative overflow-hidden">
-              <div className="w-full h-full bg-surface-variant relative overflow-hidden">
-                <img
-                  alt={previewUrl ? 'Ảnh kỷ niệm đang chỉnh' : stationLabel ? `Ảnh ${stationLabel}` : 'Ảnh kỷ niệm'}
-                  src={previewUrl || stationHero || images.photoFrameCharacter}
-                  crossOrigin="anonymous"
-                  className="w-full h-full object-cover"
-                  style={previewUrl && !heritageComposite ? { filter: buildPreviewFilter(lowLight) } : undefined}
-                />
-                {previewUrl && !heritageComposite && lowLight.tunnelGrade && (
-                  <div className="absolute inset-0 pointer-events-none" style={{ background: TUNNEL_VIGNETTE_CSS }} />
-                )}
-              </div>
+          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.035)_0%,transparent_38%),radial-gradient(circle_at_50%_100%,rgba(207,158,63,0.12),transparent_40%)]" />
+          <div className={`relative z-10 mx-auto overflow-hidden rounded-2xl border border-[#efcc7b]/45 bg-[#17120d] p-1.5 shadow-[0_28px_80px_rgba(0,0,0,0.48)] ${photoMode === 'heritage' && !heritageComposite ? 'aspect-[9/16] w-full max-w-[420px] lg:h-full lg:max-h-[calc(100dvh-9rem)] lg:w-auto' : variant === 'story' ? 'aspect-[9/16] w-full max-w-[420px] lg:h-full lg:max-h-[calc(100dvh-9rem)] lg:w-auto' : 'aspect-square w-full max-w-[min(72vh,720px)]'}`}>
+            <div className="relative h-full w-full overflow-hidden rounded-xl bg-[#0d1422]">
+              {photoMode === 'heritage' && !heritageComposite && selectedHeritageRole ? (
+                <HeritageRoleArtwork template={selectedHeritageRole} eager showFaceGuide className="h-full w-full" />
+              ) : (
+                <>
+                  <img
+                    alt={previewUrl ? 'Ảnh kỷ niệm đang chỉnh' : stationLabel ? `Ảnh ${stationLabel}` : 'Ảnh kỷ niệm'}
+                    src={previewUrl || stationHero || images.photoFrameCharacter}
+                    crossOrigin="anonymous"
+                    className="h-full w-full object-cover"
+                    style={previewUrl && !heritageComposite ? { filter: buildPreviewFilter(lowLight) } : undefined}
+                  />
+                  {previewUrl && !heritageComposite && lowLight.tunnelGrade && (
+                    <div className="pointer-events-none absolute inset-0" style={{ background: TUNNEL_VIGNETTE_CSS }} />
+                  )}
+                </>
+              )}
             </div>
+          </div>
+          <div className="absolute bottom-4 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap rounded-full border border-white/15 bg-black/55 px-4 py-2 text-xs font-bold text-white/85 backdrop-blur-md">
+            {photoMode === 'heritage' ? 'Xem trước vai hóa thân · 1968' : 'Ảnh kỷ niệm tại trạm'}
           </div>
         </section>
 
-        <aside className="w-full lg:w-[380px] bg-surface-container border border-outline-variant rounded-xl flex flex-col lg:h-full shadow-lg shrink-0">
+        <aside className="flex w-full min-w-0 flex-col overflow-hidden rounded-2xl border border-[#d3ab58]/25 bg-surface-container shadow-[0_20px_55px_rgba(0,0,0,0.22)] lg:sticky lg:top-20 lg:max-h-[calc(100dvh-6rem)]">
           <div className="p-lg border-b border-surface-variant">
             <h2 className="font-headline-lg text-headline-lg text-on-surface">{stationLabel ? `Ảnh kỷ niệm · ${stationLabel}` : 'Ảnh kỷ niệm'}</h2>
             <p className="font-body-md text-body-md text-on-surface-variant mt-2">Chụp hoặc chọn ảnh, điều chỉnh ánh sáng rồi lưu kỷ niệm tại trạm.</p>
           </div>
           <div className="flex-1 overflow-y-auto p-lg flex flex-col gap-xl">
-            {framesLoading && <p className="text-sm text-on-surface-variant">Đang tải khung ảnh...</p>}
-            {!framesLoading && frames.length === 0 && (
+            {photoMode === 'original' && framesLoading && <p className="text-sm text-on-surface-variant">Đang tải khung ảnh...</p>}
+            {photoMode === 'original' && !framesLoading && frames.length === 0 && (
               <p className="text-sm text-on-surface-variant">Chưa có khung ảnh. Thử lại sau.</p>
             )}
             {cameraLocked && (
@@ -238,8 +256,8 @@ export function PhotoFramePage() {
             <div className="flex flex-col gap-md">
               <h3 className="font-title-md">Chế độ ảnh</h3>
               <div className="grid grid-cols-2 gap-sm" role="group" aria-label="Chọn chế độ ảnh">
-                <button type="button" onClick={() => setPhotoMode('original')} className={`rounded-lg border p-sm ${photoMode === 'original' ? 'border-primary bg-primary/10 text-primary' : 'border-outline-variant'}`}>Ảnh gốc</button>
-                <button type="button" disabled={!hasHeritageRoles} onClick={() => setPhotoMode('heritage')} className={`rounded-lg border p-sm disabled:cursor-not-allowed disabled:opacity-50 ${photoMode === 'heritage' ? 'border-primary bg-primary/10 text-primary' : 'border-outline-variant'}`}>Hóa thân 1968</button>
+                <button type="button" onClick={() => setPhotoMode('original')} className={`rounded-xl border p-sm font-bold ${photoMode === 'original' ? 'border-primary bg-primary/10 text-primary' : 'border-outline-variant'}`}>Ảnh gốc</button>
+                <button type="button" disabled={!hasHeritageRoles} onClick={() => setPhotoMode('heritage')} className={`rounded-xl border p-sm font-bold disabled:cursor-not-allowed disabled:opacity-50 ${photoMode === 'heritage' ? 'border-[#d9ae58] bg-[#d9ae58]/10 text-[#edc975]' : 'border-outline-variant'}`}>Hóa thân 1968</button>
               </div>
               {!hasHeritageRoles && (
                 <p className="text-xs text-on-surface-variant">Vai hóa thân của trạm đang được duyệt sử liệu. Ảnh gốc vẫn dùng bình thường.</p>
@@ -255,6 +273,10 @@ export function PhotoFramePage() {
                   onComposite={(composite: File, _template: PublishedHeritageRoleTemplate) => {
                     setHeritageComposite(composite)
                     showToast({ message: 'Đã dựng ảnh hóa thân trên thiết bị.', type: 'success' })
+                  }}
+                  onRoleChange={(template) => {
+                    setSelectedHeritageRole(template)
+                    setHeritageComposite(null)
                   }}
                 />
               )}

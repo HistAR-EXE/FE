@@ -16,9 +16,10 @@ type HeritageStudioProps = {
   variant: HeritageOutputVariant
   lowLight: LowLightOptions
   onComposite: (file: File, template: PublishedHeritageRoleTemplate) => void
+  onRoleChange?: (template: PublishedHeritageRoleTemplate) => void
 }
 
-export function HeritageStudio({ file, siteCode, stationCode, initialRoleId, templates, variant, lowLight, onComposite }: HeritageStudioProps) {
+export function HeritageStudio({ file, siteCode, stationCode, initialRoleId, templates, variant, lowLight, onComposite, onRoleChange }: HeritageStudioProps) {
   const published = useMemo(
     () => templates
       ? templates.filter((role): role is PublishedHeritageRoleTemplate => role.published && role.siteCode === siteCode && (!stationCode || role.stationCode === stationCode))
@@ -75,6 +76,7 @@ export function HeritageStudio({ file, siteCode, stationCode, initialRoleId, tem
     if (!role.published) return
     setSelected(role)
     setPlacement(initialPlacement(null, role))
+    onRoleChange?.(role)
   }
 
   const createComposite = async () => {
@@ -96,7 +98,16 @@ export function HeritageStudio({ file, siteCode, stationCode, initialRoleId, tem
 
   return (
     <section className="grid gap-md" data-testid="heritage-studio">
-      <HeritageRolePicker siteCode={siteCode} stationCode={stationCode} templates={published} selectedId={selected?.id} onSelect={selectRole} />
+      <div>
+        <div className="mb-3 flex items-end justify-between gap-3">
+          <div>
+            <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#d9ae58]">Vai diễn đã duyệt</p>
+            <h3 className="mt-1 text-base font-extrabold text-on-surface">Chọn nhân vật bạn muốn hóa thân</h3>
+          </div>
+          <span className="shrink-0 rounded-full border border-[#d9ae58]/35 bg-[#d9ae58]/10 px-2.5 py-1 text-[11px] font-bold text-[#e9c879]">{published.length} lựa chọn</span>
+        </div>
+        <HeritageRolePicker siteCode={siteCode} stationCode={stationCode} templates={published} selectedId={selected?.id} onSelect={selectRole} />
+      </div>
       {selected && placement && (
         <>
           {candidates.length > 1 && (
