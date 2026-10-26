@@ -59,3 +59,36 @@ test('switching to music-only clears obsolete speech blockage', () => {
  assert.equal(x.c.getSnapshot().blocked,true);x.c.segment('comparison','');
  assert.equal(x.c.getSnapshot().blocked,false);assert.equal(x.c.getSnapshot().waitingForNarration,false);x.c.dispose();
 });
+
+test('bundled Vietnamese narration works without system speech voices', async () => {
+ const utterances=[]; const music={volume:0,play:async()=>{},pause(){},removeAttribute(){},load(){}};
+ const clips=[];let completed=0;
+ const c=createPortalAudio({speech:null,audio:music,utterance:text=>{utterances.push(text);return {text}},recording:()=>{const clip={play:async()=>{},pause(){},removeAttribute(){},load(){},onplaying:null,onended:null,onerror:null};clips.push(clip);return clip},onEnd:()=>completed++});
+ c.segment('1948-0','First');await new Promise(r=>setImmediate(r));assert.equal(c.getSnapshot().supported,true);assert.equal(c.getSnapshot().waitingForNarration,true);assert.equal(utterances.length,0);
+ clips[0].onplaying();assert.equal(c.getSnapshot().speaking,true);clips[0].onended();assert.equal(completed,1);assert.equal(c.getSnapshot().waitingForNarration,false);c.dispose();
+})
+
+test('recorded narration rejects stale completion and resumes after pause', async () => {
+ const clips=[];let completed=0;
+ const c=createPortalAudio({speech:null,audio:{volume:0,play:async()=>{},pause(){},removeAttribute(){},load(){}},utterance:text=>({text}),recording:()=>{const clip={plays:0,pauses:0,play:async function(){this.plays++},pause(){this.pauses++},removeAttribute(){},load(){}};clips.push(clip);return clip},onEnd:()=>completed++});
+ c.segment('a','First');const oldEnd=clips[0].onended;c.segment('b','Second');oldEnd();assert.equal(completed,0);assert.ok(clips[0].pauses>0);clips[1].onplaying();c.setPaused(true);assert.ok(clips[1].pauses>0);c.setPaused(false);assert.ok(clips[1].plays>=2);c.dispose();assert.equal(clips[1].onended,null);
+})
+
+test('recorded audio autoplay rejection exposes recovery and can retry', async () => {
+ let reject=true;const clips=[];
+ const c=createPortalAudio({speech:null,audio:{volume:0,play:async()=>{},pause(){},removeAttribute(){},load(){}},utterance:text=>({text}),recording:()=>{const clip={play:async()=>{if(reject)throw Object.assign(Error('Gesture required'),{name:'NotAllowedError'})},pause(){},removeAttribute(){},load(){}};clips.push(clip);return clip}});
+ c.segment('a','First');await new Promise(r=>setImmediate(r));assert.equal(c.getSnapshot().blocked,true);assert.equal(c.getSnapshot().waitingForNarration,false);reject=false;c.start();await new Promise(r=>setImmediate(r));clips.at(-1).onplaying();assert.equal(c.getSnapshot().blocked,false);c.dispose();
+})
+
+test('failed recording falls back to Vietnamese speech without clearing narration wait', async () => {
+ const x=setup();let clip;
+ x.c.dispose();
+ const c=createPortalAudio({speech:x.speech,audio:x.audio,utterance:text=>({text}),recording:()=>clip={play:async()=>{},pause(){},removeAttribute(){},load(){}}});
+ c.segment('a','First');clip.onerror();assert.equal(x.utterances.length,1);assert.equal(c.getSnapshot().waitingForNarration,true);c.setPaused(true);c.setPaused(false);assert.equal(c.getSnapshot().waitingForNarration,true);x.utterances[0].onend();assert.equal(c.getSnapshot().waitingForNarration,false);c.dispose();
+})
+
+test('late rejection of a resumed recording cannot block a newer narration session', async () => {
+ const clips=[];let rejectResume;
+ const c=createPortalAudio({speech:null,audio:{volume:0,play:async()=>{},pause(){},removeAttribute(){},load(){}},utterance:text=>({text}),recording:()=>{const clip={count:0,play(){this.count++;return this.count===2?new Promise((_,reject)=>{rejectResume=reject}):Promise.resolve()},pause(){},removeAttribute(){},load(){}};clips.push(clip);return clip}});
+ c.segment('a','First');clips[0].onplaying();c.setPaused(true);c.setPaused(false);c.segment('b','Second');clips[1].onplaying();rejectResume(Error('Aborted old play'));await new Promise(r=>setImmediate(r));assert.equal(c.getSnapshot().blocked,false);assert.equal(c.getSnapshot().waitingForNarration,true);c.dispose();
+})

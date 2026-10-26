@@ -2,6 +2,7 @@ type Options = {
   speech: SpeechSynthesis | null
   audio: HTMLAudioElement
   utterance: (text: string) => SpeechSynthesisUtterance
+  recording?: (key: string, text: string) => HTMLAudioElement | null
   storage?: Pick<Storage, 'getItem' | 'setItem'>
   onEnd?: () => void
 }
@@ -10,12 +11,14 @@ export type PortalAudioState = {
   waitingForNarration: boolean; supported: boolean; blocked: boolean; status: string
 }
 const INTRO = 'Chào mừng bạn đến với Cổng Thời Gian. Hãy cùng khám phá hành trình lịch sử Địa đạo Củ Chi. '
-export function createPortalAudio({ speech, audio, utterance, storage, onEnd }: Options) {
+export function createPortalAudio({ speech, audio, utterance, recording, storage, onEnd }: Options) {
   const read = (key: string, fallback: string) => { try { return storage?.getItem(key) ?? fallback } catch { return fallback } }
   const savedVolume = Number(read('portal-volume', '.24'))
   let musicBlocked = false, speechBlocked = false, started = false
   let state: PortalAudioState = { narrationEnabled: read('portal-narration', 'true') !== 'false', musicEnabled: read('portal-music', 'true') !== 'false', volume: Math.min(1, Math.max(0, Number.isFinite(savedVolume) ? savedVolume : .24)), speaking: false, waitingForNarration: false, supported: false, blocked: false, status: '' }
   let paused = false, disposed = false, token = 0, musicToken = 0, key = '', text = '', introRead = false, active = false, pending = false
+  let recorded: HTMLAudioElement | null = null
+  const stopRecording = () => { if (!recorded) return; recorded.onplaying = null; recorded.onended = null; recorded.onerror = null; recorded.pause(); recorded.removeAttribute('src'); recorded.load(); recorded = null }
   let fade: ReturnType<typeof setInterval> | undefined
   let watchdog: ReturnType<typeof setTimeout> | undefined
   const listeners = new Set<() => void>()
@@ -48,21 +51,21 @@ export function createPortalAudio({ speech, audio, utterance, storage, onEnd }: 
       blocked('music', !missing); patch({ status: missing ? 'Không tải được nhạc nền.' : 'Trình duyệt đang chặn âm thanh. Hãy bắt đầu trải nghiệm.' })
     })
   }
-  const cancel = () => { token++; active = false; clearTimeout(watchdog); speech?.cancel(); patch({ speaking: false, waitingForNarration: false }); volume() }
+  const cancel = () => { token++; active = false; clearTimeout(watchdog); stopRecording(); speech?.cancel(); patch({ speaking: false, waitingForNarration: false }); volume() }
   const voice = () => { const voices = speech?.getVoices().filter(v => /^vi(?:-|_|$)/i.test(v.lang)) ?? []; return voices.find(v => v.localService) ?? voices[0] }
   const armWatchdog = (session: number) => {
     clearTimeout(watchdog)
-    watchdog = setTimeout(() => { if (session !== token || paused || started) return; token++; active = false; pending = true; speech?.cancel(); blocked('speech', true); patch({ speaking: false, waitingForNarration: false, status: 'Hãy bắt đầu trải nghiệm để nghe lời đọc.' }); volume() }, 8000)
+    watchdog = setTimeout(() => { if (session !== token || paused || started) return; token++; active = false; pending = true; stopRecording(); speech?.cancel(); blocked('speech', true); patch({ speaking: false, waitingForNarration: false, status: 'Hãy bắt đầu trải nghiệm để nghe lời đọc.' }); volume() }, 8000)
   }
-  const speak = () => {
+  const speak = (nativeOnly = false) => {
     if (disposed || paused || !pending || !state.narrationEnabled || !text.trim()) return
+    stopRecording()
+    const clip = nativeOnly ? null : recording?.(key, text)
     const selected = voice()
-    patch({ supported: !!selected })
-    if (!selected) { patch({ waitingForNarration: false, status: speech ? 'Thiết bị chưa có giọng tiếng Việt. Nội dung vẫn tiếp tục.' : 'Trình duyệt không hỗ trợ thuyết minh.' }); return }
+    patch({ supported: !!clip || !!selected })
+    if (!clip && !selected) { patch({ waitingForNarration: false, status: speech ? 'Thiết bị chưa có giọng tiếng Việt. Nội dung vẫn tiếp tục.' : 'Trình duyệt không hỗ trợ thuyết minh.' }); return }
     pending = false; active = true; started = false
     const session = ++token
-    const u = utterance((introRead ? '' : INTRO) + text)
-    u.voice = selected; u.lang = selected.lang; u.rate = 1.02
     const finish = (success: boolean, message = '') => {
       if (disposed || session !== token || !active) return
       active = false; clearTimeout(watchdog)
@@ -70,6 +73,28 @@ export function createPortalAudio({ speech, audio, utterance, storage, onEnd }: 
       patch({ speaking: false, waitingForNarration: false, status: message || 'Đã đọc xong.' }); volume()
       if (success) onEnd?.()
     }
+    if (clip) {
+      recorded = clip
+      const fallback = () => {
+        if (disposed || session !== token || !active) return
+        stopRecording(); clearTimeout(watchdog); active = false; pending = true
+        speak(true)
+        if (!voice()) patch({ speaking: false, waitingForNarration: false, status: 'Không tải được file thuyết minh. Hãy kiểm tra kết nối rồi tải lại trang.' })
+      }
+      clip.onplaying = () => { if (session === token && active) { started = true; clearTimeout(watchdog); blocked('speech', false); patch({ status: 'Đang thuyết minh.' }) } }
+      clip.onended = () => finish(true)
+      clip.onerror = fallback
+      patch({ speaking: true, waitingForNarration: true, status: 'Đang tải thuyết minh tiếng Việt.' }); volume(); armWatchdog(session)
+      void clip.play().catch((error: unknown) => {
+        if (disposed || session !== token || !active) return
+        if (error instanceof Error && error.name === 'NotAllowedError') {
+          pending = true; blocked('speech', true); finish(false, 'Trình duyệt yêu cầu tương tác để phát thuyết minh.')
+        } else fallback()
+      })
+      return
+    }
+    const u = utterance((introRead ? '' : INTRO) + text)
+    u.voice = selected!; u.lang = selected!.lang; u.rate = 1.02
     u.onend = () => finish(true)
     u.onerror = event => {
       if (event.error === 'not-allowed' && session === token) { pending = true; blocked('speech', true) }
@@ -81,19 +106,19 @@ export function createPortalAudio({ speech, audio, utterance, storage, onEnd }: 
     armWatchdog(session)
     try { speech?.speak(u) } catch { finish(false, 'Không thể phát lời đọc. Nội dung vẫn tiếp tục.') }
   }
-  const voicesChanged = () => { patch({ supported: !!voice() }); speak() }
+  const voicesChanged = () => { patch({ supported: !!recorded || !!voice() }); speak() }
   speech?.addEventListener('voiceschanged', voicesChanged)
   state = { ...state, supported: !!voice() }
   return {
     getSnapshot: () => state,
     subscribe: (fn: () => void) => { listeners.add(fn); return () => { listeners.delete(fn) } },
     segment(nextKey: string, nextText: string) { if (key === nextKey && text === nextText) return; cancel(); key = nextKey; text = nextText; if (!text.trim()) blocked('speech', false); pending = true; speak(); music() },
-    setPaused(value: boolean) { if (paused === value) return; paused = value; if (paused) { speech?.pause(); clearTimeout(watchdog) } else { speech?.resume(); if (!active) speak(); else if (!started) armWatchdog(token) }; music() },
+    setPaused(value: boolean) { if (paused === value) return; paused = value; if (paused) { recorded?.pause(); speech?.pause(); clearTimeout(watchdog) } else { speech?.resume(); if (!active) speak(); else { if (recorded) { const clip = recorded, session = token; void clip.play().catch(() => { if (disposed || paused || session !== token || recorded !== clip) return; pending = true; active = false; clearTimeout(watchdog); blocked('speech', true); patch({ speaking: false, waitingForNarration: false }) }) }; if (!started) armWatchdog(token) } }; music() },
     toggleNarration() { const enabled = !state.narrationEnabled; cancel(); blocked('speech', false); patch({ narrationEnabled: enabled, status: enabled ? '' : 'Đã tắt thuyết minh.' }); save('portal-narration', enabled); pending = enabled; speak() },
     toggleMusic() { patch({ musicEnabled: !state.musicEnabled }); save('portal-music', state.musicEnabled); if (!state.musicEnabled) blocked('music', false); music(true) },
     setVolume(value: number) { patch({ volume: Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : .24 }); save('portal-volume', state.volume); volume() },
     replay() { cancel(); pending = true; speak() },
     start() { if (!paused) { speech?.resume(); speak() }; music() },
-    dispose() { disposed = true; token++; clearInterval(fade); clearTimeout(watchdog); speech?.removeEventListener('voiceschanged', voicesChanged); speech?.cancel(); audio.pause(); audio.removeAttribute('src'); audio.load(); listeners.clear() },
+    dispose() { disposed = true; token++; clearInterval(fade); clearTimeout(watchdog); speech?.removeEventListener('voiceschanged', voicesChanged); stopRecording(); speech?.cancel(); audio.pause(); audio.removeAttribute('src'); audio.load(); listeners.clear() },
   }
 }

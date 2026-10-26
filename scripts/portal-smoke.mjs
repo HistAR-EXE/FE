@@ -25,11 +25,14 @@ try {
     Object.defineProperty(window,'speechSynthesis',{value:speech,configurable:true});
     Object.defineProperty(window,'SpeechSynthesisUtterance',{value:class {constructor(text){this.text=text}},configurable:true});
     const NativeAudio=window.Audio;
-    window.Audio=function(...args){const a=new NativeAudio(...args);window.__portalMusic=a;return a;};
+    window.Audio=function(...args){const a=new NativeAudio(...args);if(String(args[0]).includes('war-epic'))window.__portalMusic=a;return a;};
   });
   await page.route('**://*/api/**',r=>r.fulfill({json:{success:true,data:new URL(r.request().url()).pathname==='/api/profile/me'?{id:'portal-test',displayName:'Portal Tester',email:'portal@example.test',emailVerified:true,role:'USER',tier:'PREMIUM',activeVisitSites:[]}:[]}}));
+  // Exercise native speech fallback if bundled media cannot load.
+  await page.route('**/audio/time-portal/narration-v1/**',r=>r.fulfill({status:404,body:'missing'}));
   await page.goto(`${origin}/time-portal/dia-dao-cu-chi`,{waitUntil:'networkidle'});
   await page.getByRole('heading',{name:'Cổng Thời Gian',exact:true}).waitFor();
+  await page.getByRole('heading',{name:'Cổng Thời Gian',exact:true}).click();
   await page.waitForFunction(()=>window.__portalSpeech.texts.length>0);
   assert.match(await page.evaluate(()=>window.__portalSpeech.texts[0]),/Chào mừng.*Cổng Thời Gian.*Chương 1/);
   await page.waitForFunction(()=>window.__portalMusic.readyState>=2);
