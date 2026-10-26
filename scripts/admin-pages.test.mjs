@@ -148,6 +148,21 @@ test('users expose URL filters and guarded role changes', async () => {
   assert.match(api, /updateRole:[\s\S]{0,160}reason[\s\S]{0,160}expectedRole/)
 })
 
+test('users expose a guarded demo dataset preview and purge workflow', async () => {
+  const [page, api] = await Promise.all([read('src/pages/AdminUsersPage.tsx'), read('src/features/admin/api.ts')])
+  for (const marker of [
+    'Dữ liệu demo',
+    'Xóa toàn bộ bộ demo',
+    'operationalRowCount',
+    'purgeDemoDataset',
+    'userId',
+    'reason',
+  ]) assert.match(`${page}\n${api}`, new RegExp(marker))
+  assert.match(api, /\/api\/admin\/demo-dataset/)
+  assert.match(page, /demoDataset\.enabled/)
+  assert.match(page, /demoAccountToDelete/)
+})
+
 test('organizations use URL-backed paging and only show supported roster aggregates', async () => {
   const [page, api] = await Promise.all([read('src/pages/AdminOrganizationsPage.tsx'), read('src/features/admin/api.ts')])
   for (const marker of ['useSearchParams', 'AdminPagination', 'plan', 'status', 'q']) assert.match(page, new RegExp(marker))

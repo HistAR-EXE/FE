@@ -5,7 +5,13 @@ import { AdminModal } from '../components/admin/AdminModal'
 import { AdminPagination } from '../components/admin/AdminPagination'
 import { AdminPageHeader } from '../components/admin/AdminPageHeader'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
-import { adminApi, type AdminUserSummary, type PageResponse } from '../features/admin/api'
+import {
+  adminApi,
+  type AdminDemoAccount,
+  type AdminDemoDataset,
+  type AdminUserSummary,
+  type PageResponse,
+} from '../features/admin/api'
 import { parseAdminListState } from '../features/admin/state'
 import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
 import { useAuth } from '../shared/auth/useAuth'
@@ -129,6 +135,9 @@ export function AdminUsersPage() {
     unverified: 0,
   })
   const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [demoDataset, setDemoDataset] = useState<AdminDemoDataset | null>(null)
+  const [demoAccountToDelete, setDemoAccountToDelete] = useState<AdminDemoAccount | 'ALL' | null>(null)
+  const [demoReason, setDemoReason] = useState('')
   const [target, setTarget] = useState<RoleTarget | null>(null)
   const [statusTarget, setStatusTarget] = useState<StatusTarget | null>(null)
   const [tierTarget, setTierTarget] = useState<TierTarget | null>(null)
@@ -178,6 +187,10 @@ export function AdminUsersPage() {
       })
   }, [])
 
+  const loadDemoDataset = useCallback(() => {
+    adminApi.previewDemoDataset().then(setDemoDataset).catch(() => setDemoDataset(null))
+  }, [])
+
   const load = useCallback(() => {
     setLoading(true)
     setError(null)
@@ -210,6 +223,9 @@ export function AdminUsersPage() {
   useEffect(() => {
     loadStats()
   }, [loadStats])
+  useEffect(() => {
+    loadDemoDataset()
+  }, [loadDemoDataset])
   useEffect(() => setSearch(state.q), [state.q])
   useEffect(() => {
     if (params.get('size') === String(USERS_PAGE_SIZE)) return
@@ -266,6 +282,30 @@ export function AdminUsersPage() {
       setInviteEmail('')
       setInviteName('')
       setInviteRole('USER')
+      load()
+      loadStats()
+    } catch (cause) {
+      showToast({ message: getFriendlyErrorMessage(cause, 'quest'), type: 'error' })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const purgeDemoDataset = async () => {
+    if (!demoAccountToDelete || demoReason.trim().length < 10) return
+    setSaving(true)
+    try {
+      const result = await adminApi.purgeDemoDataset({
+        userId: demoAccountToDelete === 'ALL' ? null : demoAccountToDelete.id,
+        reason: demoReason.trim(),
+      })
+      showToast({
+        message: `Đã xóa ${result.deletedAccounts} tài khoản demo và ${result.deletedRows} bản ghi liên quan.`,
+        type: 'success',
+      })
+      setDemoAccountToDelete(null)
+      setDemoReason('')
+      loadDemoDataset()
       load()
       loadStats()
     } catch (cause) {
@@ -597,6 +637,55 @@ export function AdminUsersPage() {
           </span>
         </div>
       </div>
+
+      {demoDataset && demoDataset.enabled && (
+        <section className="mb-6 overflow-hidden rounded-xl border border-amber-500/30 bg-amber-500/5 shadow-sm">
+          <div className="flex flex-col gap-3 border-b border-amber-500/20 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="font-headline-md text-headline-md font-bold text-on-surface">Dữ liệu demo</p>
+              <p className="font-body-sm text-body-sm text-on-surface-variant">
+                {demoDataset.accountCount} tài khoản · {demoDataset.operationalRowCount} bản ghi vận hành. Chỉ tồn tại trong môi trường demo.
+              </p>
+            </div>
+            <button
+              type="button"
+              className="inline-flex items-center gap-2 rounded-lg bg-error px-4 py-2 font-headline-sm text-on-error disabled:opacity-50"
+              disabled={saving || demoDataset.accountCount === 0}
+              onClick={() => {
+                setDemoAccountToDelete('ALL')
+                setDemoReason('')
+              }}
+            >
+              <MaterialIcon name="delete_sweep" className="text-[18px]" />
+              Xóa toàn bộ bộ demo
+            </button>
+          </div>
+          <div className="grid gap-2 p-4 md:grid-cols-2 xl:grid-cols-3">
+            {demoDataset.accounts.map((account) => (
+              <div key={account.id} className="flex min-w-0 items-center gap-3 rounded-lg bg-surface-container-lowest p-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface-container-high font-headline-sm font-bold">
+                  {initials(account.displayName)}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-headline-sm font-semibold text-on-surface">{account.displayName}</p>
+                  <p className="truncate font-code-sm text-outline">{account.role} · {account.tier} · {account.points} điểm</p>
+                </div>
+                <button
+                  type="button"
+                  className="rounded-lg p-2 text-error hover:bg-error-container"
+                  aria-label={`Xóa tài khoản demo ${account.displayName}`}
+                  onClick={() => {
+                    setDemoAccountToDelete(account)
+                    setDemoReason('')
+                  }}
+                >
+                  <MaterialIcon name="delete" className="text-[18px]" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       <form
         onSubmit={(event) => {
@@ -1546,6 +1635,46 @@ export function AdminUsersPage() {
                 onClick={() => void runBulk()}
               >
                 {saving ? 'Đang chạy…' : 'Chạy bulk'}
+              </button>
+            </div>
+          </div>
+        </AdminModal>
+      )}
+
+      {demoAccountToDelete && (
+        <AdminModal
+          title={demoAccountToDelete === 'ALL' ? 'Xóa toàn bộ bộ demo' : 'Xóa tài khoản demo'}
+          subtitle={demoAccountToDelete === 'ALL' ? 'Đúng 10 tài khoản và dữ liệu phát sinh' : demoAccountToDelete.email}
+          icon="delete_forever"
+          onClose={() => {
+            setDemoAccountToDelete(null)
+            setDemoReason('')
+          }}
+        >
+          <div className="flex flex-col gap-4">
+            <p className="font-body-sm text-body-sm text-on-surface-variant">
+              Thao tác chỉ xóa danh tính đã đăng ký trong bộ demo, thu hồi phiên và dữ liệu phát sinh. Admin thật và nội dung Củ Chi nền được giữ nguyên.
+            </p>
+            <label className="flex flex-col gap-1.5 font-label-sm text-label-sm text-outline">
+              Lý do (tối thiểu 10 ký tự)
+              <textarea
+                value={demoReason}
+                onChange={(event) => setDemoReason(event.target.value)}
+                rows={3}
+                className={inputClass}
+              />
+            </label>
+            <div className="flex justify-end gap-2">
+              <button type="button" className={btnGhost} disabled={saving} onClick={() => setDemoAccountToDelete(null)}>
+                Hủy
+              </button>
+              <button
+                type="button"
+                className="rounded-lg bg-error px-4 py-2 font-headline-sm text-on-error disabled:opacity-50"
+                disabled={saving || demoReason.trim().length < 10}
+                onClick={() => void purgeDemoDataset()}
+              >
+                {saving ? 'Đang xóa…' : 'Xác nhận xóa dữ liệu demo'}
               </button>
             </div>
           </div>

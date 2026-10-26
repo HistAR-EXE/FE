@@ -38,6 +38,28 @@ export type AdminUserSummary = {
   createdAt: string
 }
 
+export type AdminDemoAccount = {
+  id: string
+  persona: number
+  email: string
+  displayName: string
+  role: string
+  tier: string
+  points: number
+}
+
+export type AdminDemoDataset = {
+  enabled: boolean
+  accountCount: number
+  operationalRowCount: number
+  accounts: AdminDemoAccount[]
+}
+
+export type PurgeDemoDatasetResult = {
+  deletedAccounts: number
+  deletedRows: number
+}
+
 export type AdminUserBulkAction = 'SUSPEND' | 'UNSUSPEND' | 'SET_ROLE' | 'SET_TIER'
 
 export type AdminUserBulkResult = {
@@ -974,6 +996,10 @@ export const adminApi = {
     })
     return res.data
   },
+  previewDemoDataset: () =>
+    getData<AdminDemoDataset>(httpClient.get('/api/admin/demo-dataset')),
+  purgeDemoDataset: (body: { userId: string | null; reason: string }) =>
+    getData<PurgeDemoDatasetResult>(httpClient.delete('/api/admin/demo-dataset', { data: body })),
 
   listDiscoveryPoints: (locationId?: string) =>
     getData<AdminDiscoveryPoint[]>(
