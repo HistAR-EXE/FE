@@ -109,7 +109,7 @@ export interface ApprovedHeritageReview {
 }
 
 interface HeritageImageAsset {
-  readonly url: `/images/photo-roles/cu-chi/st0${1 | 2 | 3 | 4 | 5 | 6}/${string}.webp`
+  readonly url: `/media/photo-roles/cu-chi/st0${1 | 2 | 3 | 4 | 5 | 6}/${string}.webp`
   readonly width: number
   readonly height: number
 }

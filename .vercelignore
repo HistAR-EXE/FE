@@ -1,0 +1,3 @@
+# Approved Heritage Frame source assets are uploaded to Cloudflare R2.
+# Runtime URLs use /media/* and are rewritten by vercel.json.
+heritage-assets/

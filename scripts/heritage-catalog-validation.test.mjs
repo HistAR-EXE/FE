@@ -10,11 +10,11 @@ import { heritageRoleTemplates } from '../src/features/heritage-studio/roleTempl
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 
-test('approved catalog publishes all 12 roles from canonical public assets', async () => {
+test('approved catalog publishes all 12 roles from canonical R2 source assets', async () => {
   const result = await validateHeritageCatalog({ templates: heritageRoleTemplates, publicRoot: path.join(root, 'public') })
   assert.deepEqual(result, { published: 12, drafts: 0 })
-  await access(path.join(root, 'public/images/photo-roles/cu-chi/st01/st01-can-bo-lien-lac-nam-bg.webp'))
-  await access(path.join(root, 'public/images/photo-roles/cu-chi/st01/st01-can-bo-lien-lac-nam-overlay.webp'))
+  await access(path.join(root, 'heritage-assets/cu-chi/st01/st01-can-bo-lien-lac-nam-bg.webp'))
+  await access(path.join(root, 'heritage-assets/cu-chi/st01/st01-can-bo-lien-lac-nam-overlay.webp'))
   await assert.rejects(access(path.join(root, 'heritage-drafts/cu-chi/st01/st01-can-bo-lien-lac-nam-background.draft.webp')))
 })
 
@@ -43,8 +43,8 @@ test('published template requires existing WebP background and transparent overl
     published: true,
     review: { status: 'approved', reviewer: 'Reviewer', reviewedAt: '2026-10-25', note: 'Approved.' },
     assets: {
-      background: { url: '/images/photo-roles/cu-chi/st01/missing-bg.webp', width: 1080, height: 1920 },
-      overlay: { url: '/images/photo-roles/cu-chi/st01/missing-overlay.webp', width: 1080, height: 1920, hasAlpha: true },
+      background: { url: '/media/photo-roles/cu-chi/st01/missing-bg.webp', width: 1080, height: 1920 },
+      overlay: { url: '/media/photo-roles/cu-chi/st01/missing-overlay.webp', width: 1080, height: 1920, hasAlpha: true },
     },
   }
   await assert.rejects(
@@ -55,13 +55,14 @@ test('published template requires existing WebP background and transparent overl
 
 test('published template rejects an opaque overlay even when both WebP files exist', async () => {
   const publicRoot = await mkdtemp(path.join(tmpdir(), 'heritage-catalog-'))
-  const assetDir = path.join(publicRoot, 'images/photo-roles/cu-chi/st01')
+  const assetSourceRoot = path.join(publicRoot, 'heritage-assets')
+  const assetDir = path.join(assetSourceRoot, 'cu-chi/st01')
   await mkdir(assetDir, { recursive: true })
-  const backgroundUrl = '/images/photo-roles/cu-chi/st01/test-role-nam-1968-bg.webp'
-  const overlayUrl = '/images/photo-roles/cu-chi/st01/test-role-nam-1968-overlay.webp'
+  const backgroundUrl = '/media/photo-roles/cu-chi/st01/test-role-nam-1968-bg.webp'
+  const overlayUrl = '/media/photo-roles/cu-chi/st01/test-role-nam-1968-overlay.webp'
   await Promise.all([
-    sharp({ create: { width: 1080, height: 1920, channels: 3, background: '#45321f' } }).webp().toFile(path.join(publicRoot, `.${backgroundUrl}`)),
-    sharp({ create: { width: 1080, height: 1920, channels: 3, background: '#23170e' } }).webp().toFile(path.join(publicRoot, `.${overlayUrl}`)),
+    sharp({ create: { width: 1080, height: 1920, channels: 3, background: '#45321f' } }).webp().toFile(path.join(assetDir, 'test-role-nam-1968-bg.webp')),
+    sharp({ create: { width: 1080, height: 1920, channels: 3, background: '#23170e' } }).webp().toFile(path.join(assetDir, 'test-role-nam-1968-overlay.webp')),
   ])
   const draft = heritageRoleTemplates[0]
   const invalid = {
@@ -74,7 +75,7 @@ test('published template rejects an opaque overlay even when both WebP files exi
     },
   }
   await assert.rejects(
-    validateHeritageCatalog({ templates: [invalid], publicRoot, requireCompleteCatalog: false }),
+    validateHeritageCatalog({ templates: [invalid], publicRoot, assetSourceRoot, requireCompleteCatalog: false }),
     /overlay asset must contain transparency/,
   )
 })

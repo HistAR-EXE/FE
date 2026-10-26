@@ -21,7 +21,7 @@ test('role selection and explicit multi-face choice create a composite without p
   await mockFaceDetector(page)
   const requestedProductionAssets: string[] = []
   page.on('request', (request) => {
-    if (request.url().includes('/images/photo-roles/')) requestedProductionAssets.push(request.url())
+    if (request.url().includes('/media/photo-roles/')) requestedProductionAssets.push(request.url())
   })
   await page.goto('/tests/fixtures/heritage-studio-harness.html')
   await expect(page.getByRole('button', { name: /Cán bộ liên lạc · Nam/ })).toHaveAttribute('aria-pressed', 'true')

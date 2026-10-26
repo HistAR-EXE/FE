@@ -184,7 +184,7 @@ const ROLE_SEEDS = [
 
 function createTemplate(seed: RoleSeed, variant: RoleVariantSeed): HeritageRoleTemplate {
   const id = `${seed.stationCode.toLowerCase()}-${seed.roleSlug}-${variant.roleVariant}`
-  const assetBase = `/images/photo-roles/cu-chi/${seed.stationCode.toLowerCase()}/${id}` as const
+  const assetBase = `/media/photo-roles/cu-chi/${seed.stationCode.toLowerCase()}/${id}` as const
   const template = {
     id,
     siteCode: 'cu-chi',
