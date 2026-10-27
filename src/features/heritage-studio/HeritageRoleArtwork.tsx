@@ -1,4 +1,4 @@
-import { MaterialIcon } from '../../components/ui/MaterialIcon'
+import { useState } from 'react'
 import type { PublishedHeritageRoleTemplate } from './types'
 
 type HeritageRoleArtworkProps = {
@@ -18,6 +18,7 @@ export function HeritageRoleArtwork({
 }: HeritageRoleArtworkProps) {
   const anchor = template.calibration.faceAnchor
   const thumbnail = presentation === 'thumbnail'
+  const [assetError, setAssetError] = useState(false)
 
   return (
     <div
@@ -30,10 +31,11 @@ export function HeritageRoleArtwork({
         aria-hidden="true"
         loading={eager ? 'eager' : 'lazy'}
         className="absolute inset-0 h-full w-full object-cover"
+        onError={() => setAssetError(true)}
       />
 
-      <div
-        className={`${thumbnail ? 'hidden' : 'grid'} absolute z-[1] place-items-center rounded-[48%] border border-[#e9c879]/70 bg-[radial-gradient(circle_at_50%_38%,#8d7250_0%,#4e3b28_58%,#21170f_100%)] text-[#f4dfad] shadow-[0_0_24px_rgba(236,196,105,0.2)]`}
+      {!thumbnail && !assetError && <div
+        className="absolute z-[1] rounded-[48%] border-2 border-dashed border-[#e9c879]/85"
         style={{
           left: `${anchor.x * 100}%`,
           top: `${anchor.y * 100}%`,
@@ -41,17 +43,18 @@ export function HeritageRoleArtwork({
           height: `${anchor.height * 100}%`,
           transform: `rotate(${template.calibration.faceRotationDeg}deg)`,
         }}
-        aria-hidden="true"
-      >
-        <MaterialIcon name="face" className="text-[clamp(1rem,4vw,2.25rem)] opacity-75" />
-      </div>
+        aria-label="Vòng guide khuôn mặt"
+      />}
 
       <img
         src={template.assets.overlay.url}
         alt={`${template.title} ${template.roleVariant === 'nam' ? 'nam' : 'nữ'} tại ${template.stationName}`}
         loading={eager ? 'eager' : 'lazy'}
         className={`absolute inset-0 z-[2] h-full w-full ${thumbnail ? 'object-contain object-bottom' : 'object-cover'}`}
+        onError={() => setAssetError(true)}
       />
+
+      {assetError && <div className="absolute inset-0 z-[4] grid place-items-center bg-[#20170f] p-6 text-center text-sm font-bold text-amber-100">Không tải được artwork. Hãy thử lại khi có mạng.</div>}
 
       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[3] h-1/3 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
 

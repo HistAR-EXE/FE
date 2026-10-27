@@ -11,7 +11,7 @@ import { DISCOVERY_RECORDED_EVENT } from '../features/gamification/discoveryRout
 import mascotImg from '../assets/mascot.png'
 import { HeritageRolePicker } from '../features/heritage-studio/HeritageRolePicker'
 import type { HeritageRoleTemplate } from '../features/heritage-studio/types'
-import { appendHeritageEntrySource, buildStationCameraPath } from '../features/stations/stationRoutes'
+import { appendHeritageEntrySource, buildStationHeritagePath } from '../features/stations/stationRoutes'
 
 const BattleDioramaViewer = lazy(() =>
     import('../features/diorama/BattleDioramaViewer').then((module) => ({
@@ -54,7 +54,7 @@ export function BattleDioramaPage() {
 
     const openHeritageRole = useCallback((role: HeritageRoleTemplate) => {
         if (!role.published) return
-        const base = buildStationCameraPath({
+        const base = buildStationHeritagePath({
             siteCode: role.siteCode,
             stationCode: role.stationCode,
             locationId: activeLocationId,

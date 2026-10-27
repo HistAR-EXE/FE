@@ -3,11 +3,14 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { MaterialIcon } from '../../components/ui/MaterialIcon'
 import { getSeededMinigameId } from '../minigames/api'
+import { getPublishedRoleTemplates } from '../heritage-studio/roleTemplates'
+import type { HeritageStationCode } from '../heritage-studio/types'
 import { CU_CHI_LOCATION_ID, locationIdFromSiteCode } from '../../shared/config/constants'
 import { stationsApi } from './api'
 import {
   appendStationContext,
   buildStationCameraPath,
+  buildStationHeritagePath,
   buildStationChatPath,
   buildStationPagePath,
   buildStationStoryPath,
@@ -76,6 +79,7 @@ export function StationNextSteps({
   }, [site, stationCode])
   const chatHref = buildStationChatPath(context)
   const mediaHref = buildStationPagePath(context)
+  const hasHeritageRoles = getPublishedRoleTemplates(site, stationCode as HeritageStationCode).length > 0
   const gameHref = gameId
     ? appendStationContext(`/sites/${encodeURIComponent(site)}/stations/${encodeURIComponent(stationCode)}/game/${gameId}`, context)
     : null
@@ -140,6 +144,14 @@ export function StationNextSteps({
         >
           <MaterialIcon name="photo_camera" className="text-sm" /> Ảnh kỷ niệm
         </Link>
+        {hasHeritageRoles && (
+          <Link
+            to={buildStationHeritagePath(context)}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-400/15 border border-amber-400/40 text-amber-200 text-xs font-bold"
+          >
+            <MaterialIcon name="auto_awesome" className="text-sm" /> Hóa thân {stationCode}
+          </Link>
+        )}
       </div>
     </div>
   )

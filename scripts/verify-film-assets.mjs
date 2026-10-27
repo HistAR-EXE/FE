@@ -1,4 +1,5 @@
-import { open, stat, rename, rm } from 'node:fs/promises';
+import { open, stat, rename, rm, readFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import { createReadStream, createWriteStream } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { pipeline } from 'node:stream/promises';
@@ -38,24 +39,27 @@ export async function restoreFilm(file, expected, url, fetchImpl = fetch) {
   } finally { await rm(temporary, { force: true }); }
 }
 
+export async function verifyPublicFilm(entry, url, fetchImpl = fetch) {
+  const response = await fetchImpl(url, { headers: { Range: 'bytes=0-1023' }, signal: AbortSignal.timeout(45000) });
+  if (response.status !== 206) throw new Error(`${entry.key}: R2 did not return HTTP 206`);
+  if (response.headers.get('content-type')?.split(';')[0] !== 'video/mp4') throw new Error(`${entry.key}: wrong R2 Content-Type`);
+  const range = response.headers.get('content-range');
+  if (!range?.startsWith('bytes 0-') || Number(range.split('/')[1]) !== entry.size) throw new Error(`${entry.key}: wrong R2 Content-Range`);
+  const bytes = Buffer.from(await response.arrayBuffer());
+  if (bytes.toString('ascii', 4, 8) !== 'ftyp') throw new Error(`${entry.key}: invalid R2 MP4 header`);
+}
+
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const films = [
-    ['cu-chi-introduction-v1.mp4', 167668195, '7c9e1e8a5227c60ed289b1e2cc2934ffb576f526b1691893d056da008f1b62a5'],
-    ['timelens-tvc-1080-v1.mp4', 75070076, '768121dbccb9331bc0a3f91426ff84c1f1f57e6f9844f49629551a73c40d174e'],
-    ['timelens-tvc-1440-v1.mp4', 162173395, 'd985daa75f8a20fd5d729f967a5eab59b74bd31e0e0bb92fc09adb8018e174fb'],
-    ['cu-chi-1080p-v3.mp4', 327231485, 'e2deb168530b90f8af87f863f2b7fcf0f05b2f5357e602dd9f2117186a4f6d35'],
-    ['cu-chi-v2.mp4', 64691040, 'c7de7db8e5bee59063e852961df4d88fdc8c10a2615777a20f70e2acf0a315bf'],
-  ];
-  for (const [name, size, sha256] of films) {
-    const file = fileURLToPath(new URL(`../public/films/${name}`, import.meta.url));
-    const expected = { size, sha256 };
-    if (process.env.VERCEL === '1' && await isLfsPointer(file)) {
-      const commit = process.env.VERCEL_GIT_COMMIT_SHA;
-      if (!/^[a-f0-9]{40}$/i.test(commit || '')) throw new Error('Missing VERCEL_GIT_COMMIT_SHA: cannot restore film from an immutable commit');
-      console.log(`Restoring Git LFS media for build: ${name}`);
-      await restoreFilm(file, expected, `https://media.githubusercontent.com/media/HistAR-EXE/FE/${commit}/public/films/${name}`);
+  const manifest = JSON.parse(await readFile(new URL('../media-r2-manifest.json', import.meta.url), 'utf8'));
+  const films = manifest.files.filter(entry => entry.source.startsWith('films/') && entry.contentType === 'video/mp4');
+  if (films.length !== 5) throw new Error(`Expected 5 film assets in R2 manifest; found ${films.length}`);
+  for (const entry of films) {
+    await verifyPublicFilm(entry, `https://media.timelens.asia/${entry.key}`);
+    console.log(`Verified R2 MP4: ${entry.key} (${entry.size} bytes)`);
+    const file = fileURLToPath(new URL(`../public/${entry.source}`, import.meta.url));
+    if (existsSync(file)) {
+      await verifyFilm(file, entry);
+      console.log(`Verified local MP4: ${entry.source} (${entry.size} bytes)`);
     }
-    await verifyFilm(file, expected);
-    console.log(`Verified MP4: ${name} (${size} bytes)`);
   }
 }

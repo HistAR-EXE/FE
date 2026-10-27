@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises'
 
 import {
   buildStationCameraPath,
+  buildStationHeritagePath,
   buildStationChatPath,
   buildStationPagePath,
   buildStationStoryPath,
@@ -22,6 +23,8 @@ test('station links preserve site, station and location context', () => {
   assert.equal(buildStationStoryPath(context), '/sites/cu-chi/stations/ST01/media#story')
   assert.match(buildStationChatPath(context), /station=ST01/)
   assert.match(buildStationCameraPath(context), /locationId=11111111-1111-1111-1111-111111111111/)
+  assert.match(buildStationCameraPath(context), /mode=original/)
+  assert.match(buildStationHeritagePath({ ...context, stationCode: 'ST02' }), /station=ST02.*mode=heritage/)
 })
 
 test('invalid query context is rejected instead of guessed', () => {

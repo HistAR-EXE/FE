@@ -17,12 +17,38 @@
       "source": "/media/:path*",
       "destination": "https://media.timelens.asia/media/:path*"
     },
+    { "source": "/films/:path*", "destination": "https://media.timelens.asia/films/:path*" },
+    { "source": "/audio/:path*", "destination": "https://media.timelens.asia/audio/:path*" },
+    { "source": "/images/:path*", "destination": "https://media.timelens.asia/images/:path*" },
+    { "source": "/artifacts/cu-chi/:path*", "destination": "https://media.timelens.asia/artifacts/cu-chi/:path*" },
+    { "source": "/badges/:path*", "destination": "https://media.timelens.asia/badges/:path*" },
+    { "source": "/brand/:path*", "destination": "https://media.timelens.asia/brand/:path*" },
+    { "source": "/depth/:path*", "destination": "https://media.timelens.asia/depth/:path*" },
+    { "source": "/huy/:path*", "destination": "https://media.timelens.asia/huy/:path*" },
+    { "source": "/mascot/:path*", "destination": "https://media.timelens.asia/mascot/:path*" },
+    { "source": "/minigames/:path*", "destination": "https://media.timelens.asia/minigames/:path*" },
+    { "source": "/assets/ar-targets/:path*", "destination": "https://media.timelens.asia/assets/ar-targets/:path*" },
+    { "source": "/assets/target-hat.png", "destination": "https://media.timelens.asia/assets/target-hat.png" },
+    { "source": "/assets/target-lamp.png", "destination": "https://media.timelens.asia/assets/target-lamp.png" },
+    { "source": "/assets/artifacts/binoculars.webp", "destination": "https://media.timelens.asia/assets/artifacts/binoculars.webp" },
+    { "source": "/assets/artifacts/canteen.webp", "destination": "https://media.timelens.asia/assets/artifacts/canteen.webp" },
+    { "source": "/assets/artifacts/compass.webp", "destination": "https://media.timelens.asia/assets/artifacts/compass.webp" },
+    { "source": "/assets/artifacts/firstaid.webp", "destination": "https://media.timelens.asia/assets/artifacts/firstaid.webp" },
+    { "source": "/assets/artifacts/flashlight.webp", "destination": "https://media.timelens.asia/assets/artifacts/flashlight.webp" },
+    { "source": "/assets/artifacts/hat.webp", "destination": "https://media.timelens.asia/assets/artifacts/hat.webp" },
+    { "source": "/assets/artifacts/lamp.webp", "destination": "https://media.timelens.asia/assets/artifacts/lamp.webp" },
+    { "source": "/assets/artifacts/pot.webp", "destination": "https://media.timelens.asia/assets/artifacts/pot.webp" },
+    { "source": "/assets/artifacts/rifle.webp", "destination": "https://media.timelens.asia/assets/artifacts/rifle.webp" },
+    { "source": "/assets/artifacts/shovel.webp", "destination": "https://media.timelens.asia/assets/artifacts/shovel.webp" },
+    { "source": "/favicon.svg", "destination": "https://media.timelens.asia/favicon.svg" },
+    { "source": "/icons.svg", "destination": "https://media.timelens.asia/icons.svg" },
+    { "source": "/mascot-2.png", "destination": "https://media.timelens.asia/mascot-2.png" },
     {
       "source": "/__/auth/:path*",
       "destination": "https://histar-a08c1.firebaseapp.com/__/auth/:path*"
     },
     {
-      "source": "/((?!assets/|films/|vendor/ar/|ar\\.html$|ar-runtime\\.js$|ar-catalog\\.json$).*)",
+      "source": "/((?!assets/|films/|audio/|images/|artifacts/cu-chi/|badges/|brand/|depth/|huy/|mascot/|media/|minigames/|favicon\\.svg$|icons\\.svg$|mascot-2\\.png$|vendor/ar/|ar\\.html$|ar-runtime\\.js$|ar-catalog\\.json$).*)",
       "destination": "/index.html"
     }
   ],
@@ -32,7 +58,7 @@
       "headers": [
         {
           "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
+          "value": "public, max-age=86400"
         },
         {
           "key": "X-Content-Type-Options",

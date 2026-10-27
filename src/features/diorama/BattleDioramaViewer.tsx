@@ -284,8 +284,8 @@ export function BattleDioramaViewer({ onStart, onComplete }: { onStart?: () => v
             <audio ref={bombRef} src="/huy/bomb.mp3" />
             <audio ref={tankRef} src="/huy/tank.mp3" />
             <audio ref={gunRef} src="/huy/gunfire.mp3" />
-            <audio ref={fireRef} src="/huy/fire.mp3" loop />
-            <audio ref={dozerRef} src="/huy/bulldozer-engine.mp3" />
+            <audio ref={fireRef} src="/huy/gunfire.mp3" loop />
+            <audio ref={dozerRef} src="/huy/tank.mp3" />
 
             {/* ========================================= */}
             {/* MÀN HÌNH LỜI TỰA (PROLOGUE) */}

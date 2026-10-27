@@ -6,12 +6,14 @@ import {
   type LowLightOptions,
 } from '../../lib/heritageImage.ts'
 import type { FaceCandidate, FacePlacement } from './facePlacement.ts'
-import type { PublishedHeritageRoleTemplate } from './types.ts'
+import type { FaceGeometry, PublishedHeritageRoleTemplate } from './types.ts'
+import { addGrain, drawContactShadow, matchStats, sampleSceneStats } from './faceHarmonize.ts'
 
 export const HERITAGE_REENACTMENT_LABEL = 'Ảnh hóa thân kỹ thuật số · tái hiện 1968'
 export const HERITAGE_DRAW_ORDER = Object.freeze([
   'background',
   'face',
+  'harmonize',
   'grade',
   'foreground',
   'caption',
@@ -23,10 +25,32 @@ export type HeritageOutputVariant = 'square' | 'story'
 export type ComposeHeritagePortraitInput = {
   readonly photo: Blob | string
   readonly template: PublishedHeritageRoleTemplate
-  readonly candidate: FaceCandidate | null
+  readonly candidate: FaceCandidate | FaceGeometry | null
+  readonly needsManualCrop?: boolean
   readonly placement: FacePlacement
   readonly lowLight: LowLightOptions
   readonly variant: HeritageOutputVariant
+}
+
+export type HeritageBitmaps = {
+  readonly background: ImageBitmap | HTMLImageElement
+  readonly photo: ImageBitmap | HTMLImageElement
+  readonly foreground: ImageBitmap | HTMLImageElement
+}
+
+export async function loadHeritageResources(input: Pick<ComposeHeritagePortraitInput, 'photo' | 'template'>): Promise<HeritageBitmaps> {
+  const [background, photo, foreground] = await Promise.all([
+    loadHeritageBitmap(input.template.assets.background.url),
+    loadHeritageBitmap(input.photo),
+    loadHeritageBitmap(input.template.assets.overlay.url),
+  ])
+  return { background, photo, foreground }
+}
+
+export function releaseHeritageResources(resources: HeritageBitmaps): void {
+  closeBitmap(resources.background)
+  closeBitmap(resources.photo)
+  closeBitmap(resources.foreground)
 }
 
 function dimensions(variant: HeritageOutputVariant): { width: number; height: number } {
@@ -58,30 +82,23 @@ function drawCover(
   ctx.drawImage(bitmap, (width - drawWidth) / 2, (height - drawHeight) / 2, drawWidth, drawHeight)
 }
 
-function faceCrop(candidate: FaceCandidate | null, width: number, height: number) {
+function faceCrop(candidate: FaceCandidate | FaceGeometry | null, width: number, height: number, needsManualCrop = false) {
   if (candidate) {
+    const box = 'box' in candidate ? candidate.box : candidate
     // Keep the crop tight. The overlay already provides hair/hat and shoulders, so
     // including the surroundings here creates a visible rectangular "photo patch".
-    const insetX = candidate.width * 0.07
-    const insetTop = candidate.height * 0.02
-    const insetBottom = candidate.height * 0.04
+    const insetX = box.width * 0.07
+    const insetTop = box.height * 0.02
+    const insetBottom = box.height * 0.04
     return {
-      x: (candidate.x + insetX) * width,
-      y: (candidate.y + insetTop) * height,
-      width: Math.max(1, (candidate.width - insetX * 2) * width),
-      height: Math.max(1, (candidate.height - insetTop - insetBottom) * height),
+      x: (box.x + insetX) * width,
+      y: (box.y + insetTop) * height,
+      width: Math.max(1, (box.width - insetX * 2) * width),
+      height: Math.max(1, (box.height - insetTop - insetBottom) * height),
     }
   }
-  // FaceDetector is not available in every browser. A portrait-friendly fallback
-  // is deliberately narrower than the full image to avoid carrying its background.
-  const cropWidth = Math.min(width, height * 0.76)
-  const cropHeight = Math.min(height, cropWidth * 1.28)
-  return {
-    x: (width - cropWidth) / 2,
-    y: Math.max(0, Math.min(height - cropHeight, height * 0.12)),
-    width: cropWidth,
-    height: cropHeight,
-  }
+  if (needsManualCrop) throw new Error('heritage_manual_crop_required')
+  throw new Error('heritage_manual_crop_required')
 }
 
 function coverCrop(crop: { x: number; y: number; width: number; height: number }, targetRatio: number) {
@@ -110,7 +127,7 @@ function drawFeatheredFace(
   const source = bitmapSize(photo)
   const anchor = input.template.calibration.faceAnchor
   const targetRatio = (anchor.width * output.width) / (anchor.height * output.height)
-  const crop = coverCrop(faceCrop(input.candidate, source.width, source.height), targetRatio)
+  const crop = coverCrop(faceCrop(input.candidate, source.width, source.height, input.needsManualCrop), targetRatio)
   const x = input.placement.x * output.width
   const y = input.placement.y * output.height
   const width = anchor.width * output.width * input.placement.scale
@@ -148,13 +165,30 @@ function drawFeatheredFace(
   maskCtx.filter = `blur(${featherPx}px)`
   maskCtx.fillStyle = '#000'
   maskCtx.beginPath()
-  maskCtx.ellipse(0, 0, width * 0.43, height * 0.48, 0, 0, Math.PI * 2)
+  const geometry = input.candidate && 'ovalPath' in input.candidate ? input.candidate : null
+  const ovalPath = geometry?.ovalPath ?? null
+  if (geometry && ovalPath && ovalPath.length >= 3) {
+    ovalPath.forEach((point, index) => {
+      // The mask must follow the same final source rectangle as drawImage.
+      const px = ((point.x * source.width - crop.x) / crop.width - 0.5) * width
+      const py = ((point.y * source.height - crop.y) / crop.height - 0.5) * height
+      if (index === 0) maskCtx.moveTo(px, py)
+      else maskCtx.lineTo(px, py)
+    })
+    maskCtx.closePath()
+  } else {
+    maskCtx.ellipse(0, 0, width * 0.43, height * 0.48, 0, 0, Math.PI * 2)
+  }
   maskCtx.fill()
   maskCtx.restore()
 
   layerCtx.globalCompositeOperation = 'destination-in'
   layerCtx.drawImage(mask, 0, 0)
   layerCtx.globalCompositeOperation = 'source-over'
+  const sceneStats = sampleSceneStats(output, { x: Math.max(0, centerX - width / 2), y: Math.max(0, centerY - height / 2), width: Math.min(width, output.width), height: Math.min(height, output.height) })
+  matchStats(layerCtx, { x: Math.max(0, centerX - width / 2), y: Math.max(0, centerY - height / 2), width: Math.min(width, output.width), height: Math.min(height, output.height) }, sceneStats)
+  addGrain(layerCtx, sceneStats.grainSigma)
+  drawContactShadow(ctx, mask)
   ctx.drawImage(layer, 0, 0)
 }
 
@@ -177,35 +211,35 @@ function drawCaption(ctx: CanvasRenderingContext2D, input: ComposeHeritagePortra
   ctx.fillText(HERITAGE_REENACTMENT_LABEL, width * 0.06, height - barHeight * 0.12)
 }
 
-export async function composeHeritagePortrait(input: ComposeHeritagePortraitInput): Promise<Blob> {
+export function renderHeritagePortrait(canvas: HTMLCanvasElement, input: ComposeHeritagePortraitInput, resources: HeritageBitmaps): void {
   if (!input.template.published || !input.template.assets) throw new Error('heritage_role_not_published')
-  const { width, height } = dimensions(input.variant)
-  const canvas = document.createElement('canvas')
-  canvas.width = width
-  canvas.height = height
+  if (input.variant === 'square') throw new Error('heritage_square_variant_not_supported')
+  const { width, height } = canvas
   const ctx = canvas.getContext('2d')
   if (!ctx) throw new Error('Canvas 2D không khả dụng.')
+  ctx.clearRect(0, 0, width, height)
+  const backgroundSize = bitmapSize(resources.background)
+  drawCover(ctx, resources.background, backgroundSize.width, backgroundSize.height, width, height)
+  drawFeatheredFace(canvas, resources.photo, input)
+  const foregroundSize = bitmapSize(resources.foreground)
+  drawCover(ctx, resources.foreground, foregroundSize.width, foregroundSize.height, width, height)
+  drawCaption(ctx, input, width, height)
+  ctx.textAlign = 'right'
+  ctx.fillStyle = 'rgba(242,191,80,0.92)'
+  ctx.font = `600 ${Math.round(width * 0.025)}px system-ui, sans-serif`
+  ctx.fillText(WATERMARK_TEXT, width * 0.94, height * 0.055)
+}
 
-  const [background, photo, foreground] = await Promise.all([
-    loadHeritageBitmap(input.template.assets.background.url),
-    loadHeritageBitmap(input.photo),
-    loadHeritageBitmap(input.template.assets.overlay.url),
-  ])
+export async function composeHeritagePortrait(input: ComposeHeritagePortraitInput): Promise<Blob> {
+  const resources = await loadHeritageResources(input)
   try {
-    const backgroundSize = bitmapSize(background)
-    drawCover(ctx, background, backgroundSize.width, backgroundSize.height, width, height)
-    drawFeatheredFace(canvas, photo, input)
-    const foregroundSize = bitmapSize(foreground)
-    drawCover(ctx, foreground, foregroundSize.width, foregroundSize.height, width, height)
-    drawCaption(ctx, input, width, height)
-    ctx.textAlign = 'right'
-    ctx.fillStyle = 'rgba(242,191,80,0.92)'
-    ctx.font = `600 ${Math.round(width * 0.025)}px system-ui, sans-serif`
-    ctx.fillText(WATERMARK_TEXT, width * 0.94, height * 0.055)
-    return heritageCanvasToBlob(canvas, 'image/jpeg', 0.92)
+    const canvas = document.createElement('canvas')
+    const size = dimensions(input.variant)
+    canvas.width = size.width
+    canvas.height = size.height
+    renderHeritagePortrait(canvas, input, resources)
+    return await heritageCanvasToBlob(canvas, 'image/jpeg', 0.92)
   } finally {
-    closeBitmap(background)
-    closeBitmap(photo)
-    closeBitmap(foreground)
+    releaseHeritageResources(resources)
   }
 }

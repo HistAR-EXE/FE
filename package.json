@@ -10,7 +10,7 @@
   "scripts": {
     "predev": "node scripts/sync-ar-catalog.mjs",
     "dev": "vite",
-    "prebuild": "node scripts/sync-ar-catalog.mjs && node scripts/verify-film-assets.mjs",
+    "prebuild": "node scripts/sync-ar-catalog.mjs && node scripts/verify-public-media.mjs && node scripts/verify-film-assets.mjs && node scripts/stage-public-r2.mjs",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "ci": "npm run test:heritage-studio && npm run lint && npm run build",
@@ -32,7 +32,7 @@
     "test:all": "powershell -ExecutionPolicy Bypass -File ../scripts/run-all-tests.ps1",
     "test:history": "node --experimental-strip-types --test scripts/history-film.test.mjs scripts/verify-film-assets.test.mjs",
     "test:heritage": "tsx --test scripts/heritage-studio-assets.test.mjs",
-    "test:heritage-studio": "tsx --test scripts/heritage-studio-assets.test.mjs scripts/heritage-catalog-validation.test.mjs scripts/heritage-3d-bridge.test.mjs scripts/heritage-face-placement.test.mjs scripts/heritage-compositor.test.mjs scripts/heritage-studio-ui.test.mjs scripts/heritage-studio-privacy.test.mjs",
+    "test:heritage-studio": "tsx --test scripts/heritage-studio-assets.test.mjs scripts/heritage-catalog-validation.test.mjs scripts/heritage-3d-bridge.test.mjs scripts/heritage-face-placement.test.mjs scripts/heritage-gesture.test.mjs scripts/heritage-compositor.test.mjs scripts/heritage-studio-ui.test.mjs scripts/heritage-studio-privacy.test.mjs",
     "test:history:browser": "node scripts/history-smoke.mjs",
     "test:portal": "node --experimental-strip-types --test scripts/portal-audio.test.mjs scripts/portal-defaults.test.mjs scripts/portal-narration.test.mjs",
     "test:portal:browser": "node scripts/portal-smoke.mjs",
@@ -45,6 +45,7 @@
     "test:portal:recorded:browser": "node scripts/portal-recorded-smoke.mjs"
   },
   "dependencies": {
+    "@mediapipe/tasks-vision": "^1.1.1",
     "@photo-sphere-viewer/core": "^5.14.1",
     "@photo-sphere-viewer/markers-plugin": "^5.14.1",
     "@photo-sphere-viewer/virtual-tour-plugin": "^5.14.1",

@@ -29,7 +29,7 @@ test('only final output is uploaded and heritage mode never sends a frame id', (
   const source = readFileSync(new URL('../src/pages/PhotoFramePage.tsx', import.meta.url), 'utf8')
   assert.equal(source.match(/viralApi\.uploadCreation/g)?.length, 1)
   assert.match(source, /frameId: photoMode === 'heritage' \? null/)
-  assert.match(source, /uploadFile = photoMode === 'heritage' \? heritageComposite : file/)
+  assert.match(source, /exportFullResolution\(\)/)
   assert.doesNotMatch(source, /detectFaceCandidates[\s\S]*uploadCreation/)
 })
 

@@ -45,6 +45,6 @@ test('invalid focus returns no semantic target and valid CTA paths carry closed 
   assert.equal(getHeritageSemanticTarget('ST99_UNKNOWN'), null)
   assert.equal(
     buildHeritageRolePhotoFramePath('ST04', '11111111-1111-1111-1111-111111111111'),
-    '/photo-frame?site=cu-chi&station=ST04&locationId=11111111-1111-1111-1111-111111111111&era=1968&source=time-portal-3d',
+    '/photo-frame?site=cu-chi&station=ST04&locationId=11111111-1111-1111-1111-111111111111&era=1968&source=time-portal-3d&mode=heritage',
   )
 })

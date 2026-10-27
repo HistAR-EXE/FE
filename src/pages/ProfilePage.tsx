@@ -12,6 +12,7 @@ import { images } from '../assets/images'
 import { ProgressSummaryCard } from '../features/gamification/ProgressSummaryCard'
 import { normalizeHeritageName } from '../features/explore/vietnamMap'
 import { viralApi, type UserCreation } from '../features/viral/api'
+import { useToast } from '../shared/ui/toast/useToast'
 import { useAuth } from '../shared/auth/useAuth'
 import { hasBasicGamificationAccess, hasFullGamificationAccess } from '../shared/access/contentAccess'
 import { UpgradePrompt } from '../components/monetization/UpgradePrompt'
@@ -68,6 +69,7 @@ export function ProfilePage() {
     const { user } = useAuth()
     const userId = user?.id
     const navigate = useNavigate()
+    const { showToast } = useToast()
     const passportUnlocked = hasBasicGamificationAccess(user)
     const premiumGamification = hasFullGamificationAccess(user)
 
@@ -79,6 +81,8 @@ export function ProfilePage() {
     const [visitedCount, setVisitedCount] = useState(0)
     const [activeTab, setActiveTab] = useState<ProfileTab>('overview')
     const [creations, setCreations] = useState<UserCreation[]>([])
+    const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+    const [deletingId, setDeletingId] = useState<string | null>(null)
     const [passportStampDates, setPassportStampDates] = useState<Map<string, string>>(new Map())
 
     const [badgeProgress, setBadgeProgress] = useState<ExploreBadgeProgress[]>([])
@@ -122,6 +126,7 @@ export function ProfilePage() {
     useEffect(() => {
         setProfile(null); setBadgeProgress([]); setBadges([]); setQuests([])
         setLocations([]); setVisitedCount(0); setCreations([]); setPassportStampDates(new Map())
+        setConfirmDeleteId(null); setDeletingId(null)
         setSelectedBadge(null); setProfileError(false)
         void loadProfileAndArchive()
         const reload = () => { void loadProfileAndArchive() }
@@ -133,6 +138,21 @@ export function ProfilePage() {
             window.removeEventListener('focus', reload)
         }
     }, [loadProfileAndArchive])
+
+    const deleteCreation = async (creationId: string) => {
+        if (deletingId) return
+        setDeletingId(creationId)
+        try {
+            await viralApi.deleteCreation(creationId)
+            setCreations((current) => current.filter((creation) => creation.id !== creationId))
+            setConfirmDeleteId(null)
+            showToast({ message: 'Đã xóa ảnh khỏi hồ sơ.', type: 'success' })
+        } catch {
+            showToast({ message: 'Không thể xóa ảnh. Vui lòng thử lại.', type: 'error' })
+        } finally {
+            setDeletingId(null)
+        }
+    }
 
     const badgeState = (badge: HeritageBadge) => badgeProgress.find(p => p.id === badge.id)
     const isBadgeEarned = (badge: HeritageBadge) => badgeState(badge)?.earned === true
@@ -374,7 +394,7 @@ export function ProfilePage() {
                                         <MaterialIcon name="history_edu" className="text-sm" /> Bộ sưu tập
                                     </Link>
                                     <Link
-                                        to="/photo-frame"
+                                        to="/photo-frame?returnTo=%2Fprofile"
                                         className="inline-flex items-center gap-1 px-md py-sm border border-outline-variant rounded-lg hover:border-secondary"
                                     >
                                         <MaterialIcon name="photo_camera" className="text-sm" /> Khung ảnh
@@ -389,24 +409,37 @@ export function ProfilePage() {
                                     {creations.length === 0 ? (
                                         <p className="text-sm text-on-surface-variant">
                                             Chưa có ảnh nào.{' '}
-                                            <Link to="/photo-frame" className="text-secondary underline">
+                                            <Link to="/photo-frame?returnTo=%2Fprofile" className="text-secondary underline">
                                                 Tạo tại Khung ảnh
                                             </Link>
                                         </p>
                                     ) : (
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-sm">
                                             {creations.map((c) => (
-                                                <Link
+                                                <div
                                                     key={c.id}
-                                                    to={`/share?creationId=${encodeURIComponent(c.id)}`}
-                                                    className="border border-outline-variant rounded-lg overflow-hidden hover:border-secondary transition-colors"
+                                                    className="relative min-w-0 overflow-hidden rounded-lg border border-outline-variant transition-colors hover:border-secondary"
                                                 >
-                                                    <img src={c.outputUrl} alt="" className="w-full aspect-square object-cover" />
-                                                    <p className="text-[10px] text-on-surface-variant p-1 truncate">
-                                                        {new Date(c.createdAt).toLocaleDateString('vi-VN')}
-                                                        {c.shared ? ' · đã chia sẻ' : ''}
-                                                    </p>
-                                                </Link>
+                                                    <Link to={`/share?creationId=${encodeURIComponent(c.id)}`} aria-label={`Xem ảnh ngày ${new Date(c.createdAt).toLocaleDateString('vi-VN')}`} className="block">
+                                                        <img src={c.outputUrl} alt="" className="w-full aspect-square object-cover" />
+                                                        <p className="text-[10px] text-on-surface-variant p-1 pr-9 truncate">
+                                                            {new Date(c.createdAt).toLocaleDateString('vi-VN')}
+                                                            {c.kind === 'heritage' && c.stationCode ? ` · ${c.stationCode}${c.roleId ? ` · ${c.roleId}` : ''}` : ''}
+                                                            {c.shared ? ' · đã chia sẻ' : ''}
+                                                        </p>
+                                                    </Link>
+                                                    {confirmDeleteId === c.id ? (
+                                                        <div role="group" aria-label="Xác nhận xóa ảnh" className="absolute inset-x-1 bottom-1 flex flex-wrap items-center justify-end gap-1 rounded-lg bg-white/95 p-1 shadow-md">
+                                                            <span className="mr-auto text-[11px] font-semibold text-on-surface">Xóa ảnh này?</span>
+                                                            <button type="button" onClick={() => setConfirmDeleteId(null)} disabled={deletingId === c.id} className="rounded-md px-2 py-1 text-xs text-on-surface hover:bg-surface-container">Hủy</button>
+                                                            <button type="button" onClick={() => void deleteCreation(c.id)} disabled={deletingId === c.id} className="rounded-md bg-red-600 px-2 py-1 text-xs font-bold text-white disabled:opacity-60">{deletingId === c.id ? 'Đang xóa...' : 'Xóa'}</button>
+                                                        </div>
+                                                    ) : (
+                                                        <button type="button" onClick={() => setConfirmDeleteId(c.id)} aria-label={`Xóa ảnh ngày ${new Date(c.createdAt).toLocaleDateString('vi-VN')}`} title="Xóa ảnh" className="absolute right-1 top-1 inline-flex h-9 w-9 items-center justify-center rounded-full bg-black/70 text-white transition-colors hover:bg-red-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-600">
+                                                            <MaterialIcon name="delete" className="text-lg" />
+                                                        </button>
+                                                    )}
+                                                </div>
                                             ))}
                                         </div>
                                     )}

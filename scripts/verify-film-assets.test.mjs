@@ -4,7 +4,18 @@ import { mkdtemp, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
-import { verifyFilm } from './verify-film-assets.mjs';
+import { verifyFilm, verifyPublicFilm } from './verify-film-assets.mjs';
+
+test('R2 film must support byte ranges with the expected total size', async () => {
+  const entry = { key: 'films/example.mp4', size: 2000 };
+  const valid = async () => new Response(Buffer.from('0000ftypisom0000'), {
+    status: 206,
+    headers: { 'content-type': 'video/mp4', 'content-range': 'bytes 0-15/2000' },
+  });
+  await verifyPublicFilm(entry, 'https://example.test/films/example.mp4', valid);
+  await assert.rejects(verifyPublicFilm(entry, 'https://example.test/films/example.mp4', async () => new Response('no range')), /206/);
+  await assert.rejects(verifyPublicFilm({ ...entry, size: 1999 }, 'https://example.test/films/example.mp4', valid), /Content-Range/);
+});
 
 test('rejects a Git LFS pointer even when named mp4', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'film-check-'));

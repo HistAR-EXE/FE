@@ -43,6 +43,8 @@ function roleVariant(
       faceAnchor,
       faceRotationDeg,
       faceFeather: 0.16,
+      faceEyeLine: 0.42,
+      faceInterocular: 0.46,
     },
   }
 }

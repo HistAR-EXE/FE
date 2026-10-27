@@ -14,11 +14,30 @@ export interface HeritageFaceAnchor {
   readonly height: number
 }
 
+export interface HeritagePoint {
+  readonly x: number
+  readonly y: number
+}
+
+export interface FaceGeometry {
+  readonly id: string
+  readonly box: HeritageFaceAnchor
+  readonly eyeLeft: HeritagePoint
+  readonly eyeRight: HeritagePoint
+  readonly mouthCenter: HeritagePoint
+  readonly chin: HeritagePoint
+  readonly ovalPath: readonly HeritagePoint[] | null
+}
+
 export interface HeritageCompositorCalibration {
   readonly canvasSize: HeritageCanvasSize
   readonly faceAnchor: HeritageFaceAnchor
   readonly faceRotationDeg: number
   readonly faceFeather: number
+  /** Eye-line position inside the normalized face anchor. */
+  readonly faceEyeLine: number
+  /** Interocular distance as a fraction of the normalized face anchor width. */
+  readonly faceInterocular: number
 }
 
 interface HeritageFigureReference {

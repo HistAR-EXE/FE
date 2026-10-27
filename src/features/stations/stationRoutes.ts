@@ -77,7 +77,18 @@ export function buildStationCameraPath(input: StationRouteContext): string {
     site: value.siteCode,
     station: value.stationCode,
     locationId: value.locationId,
+        mode: 'original',
   })}`
+}
+
+export function buildStationHeritagePath(input: StationRouteContext): string {
+    const value = requiredContext(input)
+    return `/photo-frame?${new URLSearchParams({
+        site: value.siteCode,
+        station: value.stationCode,
+        locationId: value.locationId,
+        mode: 'heritage',
+    })}`
 }
 
 export function appendStationContext(path: string, input: StationRouteContext): string {
