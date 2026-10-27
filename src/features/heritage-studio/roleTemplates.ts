@@ -43,6 +43,8 @@ function roleVariant(
       faceAnchor,
       faceRotationDeg,
       faceFeather: 0.16,
+      faceEyeLine: 0.42,
+      faceInterocular: 0.46,
     },
   }
 }
@@ -66,8 +68,8 @@ const ROLE_SEEDS = [
     },
     releaseStage: 'gate-a',
     variants: [
-      roleVariant('nam', { x: 0.34, y: 0.12, width: 0.32, height: 0.25 }, -2),
-      roleVariant('nu', { x: 0.35, y: 0.12, width: 0.31, height: 0.25 }, 1),
+      roleVariant('nam', { x: 0.505, y: 0.056, width: 0.182, height: 0.132 }, -2),
+      roleVariant('nu', { x: 0.612, y: 0.05, width: 0.177, height: 0.144 }, 1),
     ],
   },
   {
@@ -88,8 +90,8 @@ const ROLE_SEEDS = [
     },
     releaseStage: 'gate-b',
     variants: [
-      roleVariant('nam', { x: 0.36, y: 0.13, width: 0.3, height: 0.24 }, 3),
-      roleVariant('nu', { x: 0.37, y: 0.13, width: 0.29, height: 0.24 }, -1),
+      roleVariant('nam', { x: 0.472, y: 0.067, width: 0.153, height: 0.108 }, 3),
+      roleVariant('nu', { x: 0.355, y: 0.132, width: 0.191, height: 0.151 }, -1),
     ],
   },
   {
@@ -107,8 +109,8 @@ const ROLE_SEEDS = [
     },
     releaseStage: 'gate-b',
     variants: [
-      roleVariant('nam', { x: 0.35, y: 0.14, width: 0.31, height: 0.24 }, -4),
-      roleVariant('nu', { x: 0.36, y: 0.14, width: 0.3, height: 0.24 }, 2),
+      roleVariant('nam', { x: 0.501, y: 0.106, width: 0.211, height: 0.15 }, -4),
+      roleVariant('nu', { x: 0.58, y: 0.061, width: 0.178, height: 0.145 }, 2),
     ],
   },
   {
@@ -129,8 +131,8 @@ const ROLE_SEEDS = [
     },
     releaseStage: 'gate-c',
     variants: [
-      roleVariant('nam', { x: 0.37, y: 0.12, width: 0.29, height: 0.23 }, 2),
-      roleVariant('nu', { x: 0.36, y: 0.12, width: 0.3, height: 0.23 }, -2),
+      roleVariant('nam', { x: 0.433, y: 0.078, width: 0.225, height: 0.174 }, 2),
+      roleVariant('nu', { x: 0.438, y: 0.046, width: 0.145, height: 0.116 }, -2),
     ],
   },
   {
@@ -154,8 +156,8 @@ const ROLE_SEEDS = [
     },
     releaseStage: 'gate-c',
     variants: [
-      roleVariant('nam', { x: 0.34, y: 0.13, width: 0.31, height: 0.24 }, -3),
-      roleVariant('nu', { x: 0.35, y: 0.13, width: 0.3, height: 0.24 }, 3),
+      roleVariant('nam', { x: 0.479, y: 0.121, width: 0.14, height: 0.1 }, -3),
+      roleVariant('nu', { x: 0.487, y: 0.108, width: 0.132, height: 0.112 }, 3),
     ],
   },
   {
@@ -176,15 +178,15 @@ const ROLE_SEEDS = [
     },
     releaseStage: 'gate-c',
     variants: [
-      roleVariant('nam', { x: 0.36, y: 0.11, width: 0.3, height: 0.24 }, 4),
-      roleVariant('nu', { x: 0.35, y: 0.11, width: 0.31, height: 0.24 }, -1),
+      roleVariant('nam', { x: 0.667, y: 0.241, width: 0.197, height: 0.119 }, 4),
+      roleVariant('nu', { x: 0.427, y: 0.121, width: 0.137, height: 0.103 }, -1),
     ],
   },
 ] satisfies readonly RoleSeed[]
 
 function createTemplate(seed: RoleSeed, variant: RoleVariantSeed): HeritageRoleTemplate {
   const id = `${seed.stationCode.toLowerCase()}-${seed.roleSlug}-${variant.roleVariant}`
-  const assetBase = `/images/photo-roles/cu-chi/${seed.stationCode.toLowerCase()}/${id}` as const
+  const assetBase = `/media/photo-roles/cu-chi/${seed.stationCode.toLowerCase()}/${id}` as const
   const template = {
     id,
     siteCode: 'cu-chi',

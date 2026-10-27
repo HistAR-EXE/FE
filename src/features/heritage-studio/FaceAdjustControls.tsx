@@ -10,8 +10,8 @@ type FaceAdjustControlsProps = {
 export function FaceAdjustControls({ placement, template, onChange }: FaceAdjustControlsProps) {
   const update = (patch: Partial<FacePlacement>) => onChange(clampPlacement({ ...placement, ...patch }, template))
   return (
-    <fieldset className="grid gap-sm rounded-xl border border-outline-variant bg-surface p-md">
-      <legend className="px-2 text-sm font-bold text-on-surface">Căn khuôn mặt</legend>
+    <fieldset className="grid gap-sm">
+      <legend className="sr-only">Căn khuôn mặt</legend>
       <label className="grid gap-1 text-xs text-on-surface-variant">Ngang
         <input aria-label="Di chuyển ngang" type="range" min={0} max={100} value={Math.round(placement.x * 100)} onChange={(e) => update({ x: Number(e.target.value) / 100 })} />
       </label>

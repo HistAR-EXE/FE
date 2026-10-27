@@ -5,7 +5,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
-import { SimpleTopNav } from '../components/layout/TopNav'
+import { QuestBackLink } from '../features/gamification/QuestBackLink'
+import { getPublishedRoleTemplates } from '../features/heritage-studio/roleTemplates'
+import type { HeritageStationCode } from '../features/heritage-studio/types'
 import { ReportContentButton } from '../components/feedback/ReportContentModal'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { QuestBackdrop } from '../features/gamification/QuestBackdrop'
@@ -18,6 +20,7 @@ import { stationDisplayName } from '../features/stations/StationNextSteps'
 import {
     appendStationContext,
     buildStationCameraPath,
+    buildStationHeritagePath,
     buildStationChatPath,
 } from '../features/stations/stationRoutes'
 import { storyApi, type StoryChapter } from '../features/story/api'
@@ -81,6 +84,8 @@ export function StationMediaDemoPage() {
     const stationContext = { siteCode: site, stationCode, locationId }
     const chatHref = buildStationChatPath(stationContext)
     const cameraHref = buildStationCameraPath(stationContext)
+    const heritageHref = buildStationHeritagePath(stationContext)
+    const hasHeritageRoles = getPublishedRoleTemplates(site, stationCode as HeritageStationCode).length > 0
     const name = station?.name ?? fallbackName
 
     useEffect(() => {
@@ -135,13 +140,14 @@ export function StationMediaDemoPage() {
     return (
         <AppLayout
             activeBorder="left"
-            topNav={<SimpleTopNav title={`Trạm ${stationCode}`} backTo={backHref} backLabel="Hành trình 6 trạm" />}
-            mobileBackTo={backHref}
-            mobileTitle={`${stationCode} · ${name}`}
+            hideTopNav
             className="min-h-screen !bg-[#DCEBFF] text-[#0F1B33]"
         >
             <QuestBackdrop />
-            <div className="relative z-10 pt-14 md:pt-16" data-testid="station-page" data-station={stationCode}>
+            <div className="relative z-10" data-testid="station-page" data-station={stationCode}>
+                <div className="mx-auto w-full max-w-5xl px-4 md:px-8">
+                    <QuestBackLink to={backHref} label="Hành trình 6 trạm" ariaLabel="Điều hướng trạm" />
+                </div>
                 {/* Ảnh lớn của trạm */}
                 <section className="relative w-full overflow-hidden rounded-b-[2.5rem] shadow-[0_24px_60px_-18px_rgba(2,117,251,0.55)]">
                     <div className="absolute inset-0 bg-[#0F1B33]">
@@ -305,6 +311,11 @@ export function StationMediaDemoPage() {
                                 <Link to={cameraHref} className="flex flex-col gap-2 rounded-2xl bg-white p-4 text-sm font-black shadow-sm ring-1 ring-[#0275FB]/10">
                                     <MaterialIcon name="photo_camera" className="text-2xl text-[#0275FB]" /> Ảnh kỷ niệm tại trạm
                                 </Link>
+                                {hasHeritageRoles && (
+                                    <Link to={heritageHref} className="col-span-2 flex items-center gap-3 rounded-2xl border border-[#FDC908]/70 bg-[#FFF8DC] p-4 text-sm font-black text-[#6A4B00] shadow-sm">
+                                        <MaterialIcon name="auto_awesome" className="text-2xl text-[#B77900]" /> Hóa thân 1968 · {stationCode}
+                                    </Link>
+                                )}
                                 <Link
                                     to={`/scan?locationId=${encodeURIComponent(locationId)}&site=${encodeURIComponent(site)}`}
                                     className="col-span-2 flex items-center gap-3 rounded-2xl bg-[#FFF2C3] p-4 text-sm font-black text-[#5C4500] ring-1 ring-[#FDC908]/60"

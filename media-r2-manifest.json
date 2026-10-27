@@ -1,0 +1,2154 @@
+{
+  "source": "FE/public",
+  "files": [
+    {
+      "source": "artifacts/cu-chi/cc-01.png",
+      "key": "artifacts/cu-chi/cc-01.png",
+      "size": 10725,
+      "sha256": "443a0f5e36a3b9c8173d529406ee288ce982a07cb4fedf45243898f9f4e49ad3",
+      "contentType": "image/png"
+    },
+    {
+      "source": "artifacts/cu-chi/cc-01.svg",
+      "key": "artifacts/cu-chi/cc-01.svg",
+      "size": 270,
+      "sha256": "0f7fb40ac02719c9645ae2038dc9be7eb6e78d30807b734a2fd3abf9f06b6422",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "source": "artifacts/cu-chi/cc-02.png",
+      "key": "artifacts/cu-chi/cc-02.png",
+      "size": 12109,
+      "sha256": "c8fe9b1cf0eb7d4e4d36656d5b1d00b4d26ca4b616c2dc4ff9d9ab4c6927ea97",
+      "contentType": "image/png"
+    },
+    {
+      "source": "artifacts/cu-chi/cc-02.svg",
+      "key": "artifacts/cu-chi/cc-02.svg",
+      "size": 270,
+      "sha256": "51553eeef1ed325a39bb3db88f46141feff73bd06f4197fbf803ae8008b479fa",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "source": "artifacts/cu-chi/cc-03.png",
+      "key": "artifacts/cu-chi/cc-03.png",
+      "size": 8383,
+      "sha256": "7e56bfb3281b3eda85898dabc99d030b5b77cd06243a3148cd455aaeb93a2daa",
+      "contentType": "image/png"
+    },
+    {
+      "source": "artifacts/cu-chi/cc-03.svg",
+      "key": "artifacts/cu-chi/cc-03.svg",
+      "size": 270,
+      "sha256": "aa0b9e6bf8b277f1f709a73c44a28364d67f8d410279a8372619844e196ae1d6",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "source": "artifacts/cu-chi/cc-04.png",
+      "key": "artifacts/cu-chi/cc-04.png",
+      "size": 7667,
+      "sha256": "86587c7d82a781671ddc4240271206aa19dea89df3cfa66e2f372ad5cb98a673",
+      "contentType": "image/png"
+    },
+    {
+      "source": "artifacts/cu-chi/cc-04.svg",
+      "key": "artifacts/cu-chi/cc-04.svg",
+      "size": 270,
+      "sha256": "e5930901666067dcabdbf1f8ed1be67f49868a8b0558450eeaec437476e41f07",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "source": "artifacts/cu-chi/cc-05.png",
+      "key": "artifacts/cu-chi/cc-05.png",
+      "size": 9830,
+      "sha256": "d36a013f61f799e0134f93aee19e3db9a8371905c26dd137f79fd565fda32ec2",
+      "contentType": "image/png"
+    },
+    {
+      "source": "artifacts/cu-chi/cc-05.svg",
+      "key": "artifacts/cu-chi/cc-05.svg",
+      "size": 270,
+      "sha256": "dac7a6d7c756d83a723db0fdd3314ea30f7b9ad90989b9ba7c1a7b1898a72ca2",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "source": "artifacts/cu-chi/cc-06.png",
+      "key": "artifacts/cu-chi/cc-06.png",
+      "size": 10361,
+      "sha256": "9c6076cbd499ba77a2c208106bc8631b9e181ce3929f008d5d1e81363f827e00",
+      "contentType": "image/png"
+    },
+    {
+      "source": "artifacts/cu-chi/cc-06.svg",
+      "key": "artifacts/cu-chi/cc-06.svg",
+      "size": 270,
+      "sha256": "650458026345cd05b185f356a5a01dc127cc1fb9a114163e613c73a0c6d5b21b",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "source": "artifacts/cu-chi/cc-07.png",
+      "key": "artifacts/cu-chi/cc-07.png",
+      "size": 10310,
+      "sha256": "86b095cedc734233ffbf3b58144b2b0e925d9fab5241b08700fe3a5eb8c52d32",
+      "contentType": "image/png"
+    },
+    {
+      "source": "artifacts/cu-chi/cc-07.svg",
+      "key": "artifacts/cu-chi/cc-07.svg",
+      "size": 270,
+      "sha256": "19e8a2bc1f196b73bf0d7c60348f83bb05f811515dab2b8b0de4a861813a8dbc",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "source": "artifacts/cu-chi/cc-08.png",
+      "key": "artifacts/cu-chi/cc-08.png",
+      "size": 7746,
+      "sha256": "dc25436919f97acc4089625970da57fffeb5e1b9d703aa8d1cd2fc30c41f8f00",
+      "contentType": "image/png"
+    },
+    {
+      "source": "artifacts/cu-chi/cc-08.svg",
+      "key": "artifacts/cu-chi/cc-08.svg",
+      "size": 270,
+      "sha256": "cb528015b5e1343402d4c1dea4d2c910974a463522d352cdd8c63060de7ee9b9",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "source": "artifacts/cu-chi/cc-09.png",
+      "key": "artifacts/cu-chi/cc-09.png",
+      "size": 9939,
+      "sha256": "3370e2afaf35702ff9c7596b2c3c92f6d37e594829ee4946a26af873b0ff3ba1",
+      "contentType": "image/png"
+    },
+    {
+      "source": "artifacts/cu-chi/cc-09.svg",
+      "key": "artifacts/cu-chi/cc-09.svg",
+      "size": 270,
+      "sha256": "803ae657cdc47ee5c334705b8fadd15048d92d36a9581176fbd5fb4acb6e4de1",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "source": "artifacts/cu-chi/cc-10.png",
+      "key": "artifacts/cu-chi/cc-10.png",
+      "size": 10189,
+      "sha256": "71f6e1be4c6ca8973f5cb2296dfb5b9be1ce0a366fd18dfdc791a4f0aa93a08a",
+      "contentType": "image/png"
+    },
+    {
+      "source": "artifacts/cu-chi/cc-10.svg",
+      "key": "artifacts/cu-chi/cc-10.svg",
+      "size": 270,
+      "sha256": "85a4ea296a0695f975859b9b8bf0314199abc354637df63deb962e1358f8c277",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "source": "artifacts/cu-chi/cc-11.png",
+      "key": "artifacts/cu-chi/cc-11.png",
+      "size": 9302,
+      "sha256": "2dc6ebd07314f7f357aab6a409d38d21d9be1ac911b91a40d7543cc96a6bb2f6",
+      "contentType": "image/png"
+    },
+    {
+      "source": "artifacts/cu-chi/cc-11.svg",
+      "key": "artifacts/cu-chi/cc-11.svg",
+      "size": 270,
+      "sha256": "0849957c75f0f0eb62b7fb376e19cbf79daa280c1969b37a1b16410465fc9035",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "source": "artifacts/cu-chi/cc-12.png",
+      "key": "artifacts/cu-chi/cc-12.png",
+      "size": 7173,
+      "sha256": "6c89007de2a4236298ee4e00cea28957d3a907f4ec0caabd5357683f67a44174",
+      "contentType": "image/png"
+    },
+    {
+      "source": "artifacts/cu-chi/cc-12.svg",
+      "key": "artifacts/cu-chi/cc-12.svg",
+      "size": 270,
+      "sha256": "f982b34a0732b56eee3df4a71ce0dd87b698ed82e3fa18b55a1d54388974683f",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "source": "artifacts/cu-chi/cc-13.png",
+      "key": "artifacts/cu-chi/cc-13.png",
+      "size": 13121,
+      "sha256": "57768feeebfe11f02da632f9c8aba21f03f5b2cbadd6a4d19cdd11b972df1b48",
+      "contentType": "image/png"
+    },
+    {
+      "source": "artifacts/cu-chi/cc-13.svg",
+      "key": "artifacts/cu-chi/cc-13.svg",
+      "size": 270,
+      "sha256": "383ebdbb5eeb951af5aee72184c3317e56968a4cd14c4d3a79a3b848105f8ff6",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "source": "artifacts/cu-chi/cc-14.png",
+      "key": "artifacts/cu-chi/cc-14.png",
+      "size": 13485,
+      "sha256": "9011f7e1b5cbba429a432c3c94bbd7b125bbef0d3a9e91fc5070bdcd6d5d5dae",
+      "contentType": "image/png"
+    },
+    {
+      "source": "artifacts/cu-chi/cc-14.svg",
+      "key": "artifacts/cu-chi/cc-14.svg",
+      "size": 270,
+      "sha256": "ffd688af58a4386501a23e4c5b90d4192d44ab3c83114a3bc834c01285543d9a",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "source": "artifacts/cu-chi/cc-15.png",
+      "key": "artifacts/cu-chi/cc-15.png",
+      "size": 13581,
+      "sha256": "8ca9b327c955c47a2d79e8a479b75def58d576567aca7f5211be94997f8cf27f",
+      "contentType": "image/png"
+    },
+    {
+      "source": "artifacts/cu-chi/cc-15.svg",
+      "key": "artifacts/cu-chi/cc-15.svg",
+      "size": 270,
+      "sha256": "4a487d9d93bb8692075fcb69b2728829cb3b25bc64e36836004fc58e0b64bdac",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "source": "artifacts/cu-chi/cc-16.png",
+      "key": "artifacts/cu-chi/cc-16.png",
+      "size": 10719,
+      "sha256": "a123bd268da1917ef1f2136374fec25cc9f3d5b148c895495168ff09f3b0a808",
+      "contentType": "image/png"
+    },
+    {
+      "source": "artifacts/cu-chi/cc-16.svg",
+      "key": "artifacts/cu-chi/cc-16.svg",
+      "size": 270,
+      "sha256": "96c10c96560b32c231127840c6157f102c054631c765717a357e455ba3ac0fd9",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "source": "artifacts/cu-chi/cc-17.png",
+      "key": "artifacts/cu-chi/cc-17.png",
+      "size": 13422,
+      "sha256": "9227cde9cd1bff36a45e1b4215780c1893f284ccfa644a9467d3fad97c32ddb1",
+      "contentType": "image/png"
+    },
+    {
+      "source": "artifacts/cu-chi/cc-17.svg",
+      "key": "artifacts/cu-chi/cc-17.svg",
+      "size": 270,
+      "sha256": "eef9d7f7b86b2806fc5de23368e4b6e44789a0a72930baec91336d5201807b47",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "source": "artifacts/cu-chi/cc-18.png",
+      "key": "artifacts/cu-chi/cc-18.png",
+      "size": 14040,
+      "sha256": "55a5deab0850f92963c9cfa5b682fe733b074fb0e181bef98e970e444d69b447",
+      "contentType": "image/png"
+    },
+    {
+      "source": "artifacts/cu-chi/cc-18.svg",
+      "key": "artifacts/cu-chi/cc-18.svg",
+      "size": 270,
+      "sha256": "43dd474e1de94089f1fbc9401819a4a8313f1c68db98808b4daf973465a93845",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "source": "artifacts/cu-chi/cc-19.png",
+      "key": "artifacts/cu-chi/cc-19.png",
+      "size": 8648,
+      "sha256": "ce74f41c4805fbb38edb08a83dbfb99793e0995a152444e0de1a8dc0d54dffeb",
+      "contentType": "image/png"
+    },
+    {
+      "source": "artifacts/cu-chi/cc-19.svg",
+      "key": "artifacts/cu-chi/cc-19.svg",
+      "size": 270,
+      "sha256": "f9e5c59785aeced9ed7ba9e9d854d8aeab85f02d801ec82e0a107667fb6f02c2",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "source": "artifacts/cu-chi/cc-20.png",
+      "key": "artifacts/cu-chi/cc-20.png",
+      "size": 8289,
+      "sha256": "4e3df53353b5b069ed346cdbeac046804cebf35779e36acf26d8d34d3d3b9c03",
+      "contentType": "image/png"
+    },
+    {
+      "source": "artifacts/cu-chi/cc-20.svg",
+      "key": "artifacts/cu-chi/cc-20.svg",
+      "size": 270,
+      "sha256": "86479979d24e3c1301b160852d7222260a0d668362f7a34066bb24d340ae6382",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "source": "artifacts/cu-chi/cc-21.png",
+      "key": "artifacts/cu-chi/cc-21.png",
+      "size": 11603,
+      "sha256": "61c921cd389b337427fb3a72f5a8535b8c7ddf4f6452b44c34e02fe63796bbc8",
+      "contentType": "image/png"
+    },
+    {
+      "source": "artifacts/cu-chi/cc-21.svg",
+      "key": "artifacts/cu-chi/cc-21.svg",
+      "size": 270,
+      "sha256": "4261bf8b8be8dc1c871e2f8b7763a505ca7991c178a6c668cb66fa86fd89b39a",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "source": "artifacts/cu-chi/cc-22.png",
+      "key": "artifacts/cu-chi/cc-22.png",
+      "size": 10103,
+      "sha256": "71ea6c4de222d9557b3dce8380a50a84d53fdd14fa3c260238ad73a34f303fe3",
+      "contentType": "image/png"
+    },
+    {
+      "source": "artifacts/cu-chi/cc-22.svg",
+      "key": "artifacts/cu-chi/cc-22.svg",
+      "size": 270,
+      "sha256": "8d4a94be41b609dcbdee1ca603368ef3b08b689843bc1a32238a646d6535ebe0",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "source": "artifacts/cu-chi/cc-23.png",
+      "key": "artifacts/cu-chi/cc-23.png",
+      "size": 14313,
+      "sha256": "e1088de963578b30bc061f816218529981a9a04160f4d1f98de00857feae0dee",
+      "contentType": "image/png"
+    },
+    {
+      "source": "artifacts/cu-chi/cc-23.svg",
+      "key": "artifacts/cu-chi/cc-23.svg",
+      "size": 270,
+      "sha256": "4a8c13ebc682b0214253d321d533228545af4ad7cf985a7df8b902e46ef66c4c",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "source": "artifacts/cu-chi/cc-24.png",
+      "key": "artifacts/cu-chi/cc-24.png",
+      "size": 10194,
+      "sha256": "d1071ddf5809a645e4f31f02ee91b66fca4e1aa4fb3ab4eff65b43c8394e589a",
+      "contentType": "image/png"
+    },
+    {
+      "source": "artifacts/cu-chi/cc-24.svg",
+      "key": "artifacts/cu-chi/cc-24.svg",
+      "size": 270,
+      "sha256": "5f1025075faba2a0bca735485e2b6c9d3c2b6949fe0bcc643e9ff1d8ae356898",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "source": "assets/ar-targets/DSCF9675.jpg",
+      "key": "assets/ar-targets/DSCF9675.jpg",
+      "size": 723440,
+      "sha256": "b6b80041c62eaec92bb4c0fa7752380c1ea9f9b9be891d0944dfc274b2f6a120",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "assets/ar-targets/DSCF9691.jpg",
+      "key": "assets/ar-targets/DSCF9691.jpg",
+      "size": 711337,
+      "sha256": "223a8a6db65e94d4d825c626528e88d82dbc2601a12fa23bd030d434b9456ee9",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "assets/ar-targets/DSCF9756.jpg",
+      "key": "assets/ar-targets/DSCF9756.jpg",
+      "size": 876660,
+      "sha256": "71f832e40e97cb1951c4ce3b6321d19f6dfaeb4cbcbe80d206aa5089bc0c0344",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "assets/ar-targets/DSCF9765.jpg",
+      "key": "assets/ar-targets/DSCF9765.jpg",
+      "size": 803744,
+      "sha256": "af8fbca4d6b480d9d635535138a7724b3a7e74700c51d88da1d24a935773ad28",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "assets/ar-targets/DSCF9770.jpg",
+      "key": "assets/ar-targets/DSCF9770.jpg",
+      "size": 862720,
+      "sha256": "4fe2e16c97ffc08ea35cf9fa497bf69b065bbf7f8799fc99677894c97f6261f2",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "assets/ar-targets/DSCF9786.jpg",
+      "key": "assets/ar-targets/DSCF9786.jpg",
+      "size": 800901,
+      "sha256": "f35b4463e669963b63c1256d178a544ae7fd79485e3d3015a61b97fbe2370328",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "assets/ar-targets/DSCF9792.jpg",
+      "key": "assets/ar-targets/DSCF9792.jpg",
+      "size": 736638,
+      "sha256": "c6bb740b44bdd9176edc7bb1ef42df800f9bf653044108fe26fa5227dd8be368",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "assets/ar-targets/DSCF9803.jpg",
+      "key": "assets/ar-targets/DSCF9803.jpg",
+      "size": 681214,
+      "sha256": "39b356e4e1868af4dc8542b03661158172ef6575782784031220515043878a82",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "assets/ar-targets/DSCF9805.jpg",
+      "key": "assets/ar-targets/DSCF9805.jpg",
+      "size": 737683,
+      "sha256": "983d07d44192b3bbb5a5b1816b944c0b64687509a071664a4fb46fe0fd6edccd",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "assets/ar-targets/DSCF9806.jpg",
+      "key": "assets/ar-targets/DSCF9806.jpg",
+      "size": 630613,
+      "sha256": "1b2f5ea5d03b33af8e96d4b7d24240aa7e0497d7f67a661ca48553d30d5937a0",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "assets/ar-targets/originals/DSCF9675.JPG",
+      "key": "assets/ar-targets/originals/DSCF9675.JPG",
+      "size": 11650861,
+      "sha256": "0cfd1682ffdc67b008b52a0f08b13a35183f882afb338f9bf95f9e71f50d8d02",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "assets/ar-targets/originals/DSCF9691.JPG",
+      "key": "assets/ar-targets/originals/DSCF9691.JPG",
+      "size": 13507809,
+      "sha256": "8c7c39370084e56b11e94a501b64abeb9bbbe97b0fbabfe2d7a71bd9a2cef371",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "assets/ar-targets/originals/DSCF9756.JPG",
+      "key": "assets/ar-targets/originals/DSCF9756.JPG",
+      "size": 13565276,
+      "sha256": "76805187382955d3d5ce2fbc9d038a83e14b06598cebeec4f14aa07bb3b895ff",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "assets/ar-targets/originals/DSCF9765.JPG",
+      "key": "assets/ar-targets/originals/DSCF9765.JPG",
+      "size": 12781464,
+      "sha256": "66a1fa572b0b34ce682c8afa8fae76067745f6b763d57038ebe2e3c58706167d",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "assets/ar-targets/originals/DSCF9770.JPG",
+      "key": "assets/ar-targets/originals/DSCF9770.JPG",
+      "size": 11744059,
+      "sha256": "6daabf3dcf3406bd1ec44656a1013ecdca1baffa69005a088da25a284bca6e77",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "assets/ar-targets/originals/DSCF9786.JPG",
+      "key": "assets/ar-targets/originals/DSCF9786.JPG",
+      "size": 12637553,
+      "sha256": "020bb8045e14fcac4cd620ca36929fe99470ffccc0b1ca01b01d851febe3bcb0",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "assets/ar-targets/originals/DSCF9792.JPG",
+      "key": "assets/ar-targets/originals/DSCF9792.JPG",
+      "size": 11603168,
+      "sha256": "ba79c44fd19a4da5b153f50739facfc0bb2f9c68ab25d6b9c790021d12a33c58",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "assets/ar-targets/originals/DSCF9803.JPG",
+      "key": "assets/ar-targets/originals/DSCF9803.JPG",
+      "size": 12306873,
+      "sha256": "db21beef3cdbeb47e328b284c1425aef10124dd496f1d32a7a8f0dd28c61202e",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "assets/ar-targets/originals/DSCF9805.JPG",
+      "key": "assets/ar-targets/originals/DSCF9805.JPG",
+      "size": 11675514,
+      "sha256": "bbdf646e140fa8f3037f9d2fb93d878ef981c4c0ff7f0088e3b0e0601e061d82",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "assets/ar-targets/originals/DSCF9806.JPG",
+      "key": "assets/ar-targets/originals/DSCF9806.JPG",
+      "size": 12650418,
+      "sha256": "f3bf862c7252ef1b8d551b4fc2f7b5d37f9c09d36f4127f1b4b19aa6ef2a89f0",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "assets/artifacts/binoculars.webp",
+      "key": "assets/artifacts/binoculars.webp",
+      "size": 2280,
+      "sha256": "771f9af3d1847ae833e9399eec0459277298702e8ad1eb1177bf63f3d6d859f5",
+      "contentType": "image/webp"
+    },
+    {
+      "source": "assets/artifacts/canteen.webp",
+      "key": "assets/artifacts/canteen.webp",
+      "size": 1960,
+      "sha256": "9dbaf96981211d7956fd2468ffe2e5aef3ca2a2b0ecefda38e34cf8f4f88eb9b",
+      "contentType": "image/webp"
+    },
+    {
+      "source": "assets/artifacts/compass.webp",
+      "key": "assets/artifacts/compass.webp",
+      "size": 1808,
+      "sha256": "4e615b85f336695edde5bd42959e5e4fa468be369bdfa767824a1709ba65f8ec",
+      "contentType": "image/webp"
+    },
+    {
+      "source": "assets/artifacts/firstaid.webp",
+      "key": "assets/artifacts/firstaid.webp",
+      "size": 4766,
+      "sha256": "58339f2ba0f21c22cb8ddd5b50a984006f146f68c04e3554f0230be4d0653241",
+      "contentType": "image/webp"
+    },
+    {
+      "source": "assets/artifacts/flashlight.webp",
+      "key": "assets/artifacts/flashlight.webp",
+      "size": 3106,
+      "sha256": "f8b183bee16df8d92f8aa5e9036d92b2be14ba31b54a4d0c5cbd6f685425e6f8",
+      "contentType": "image/webp"
+    },
+    {
+      "source": "assets/artifacts/hat.webp",
+      "key": "assets/artifacts/hat.webp",
+      "size": 3314,
+      "sha256": "072aff0488ad4170e02c52cc38b4c813802fe38d801837979dc96cf481503d89",
+      "contentType": "image/webp"
+    },
+    {
+      "source": "assets/artifacts/lamp.webp",
+      "key": "assets/artifacts/lamp.webp",
+      "size": 2248,
+      "sha256": "4359e955f895131ce2450fb2a8e6e4774e9317212a217d46e5c4c273779258de",
+      "contentType": "image/webp"
+    },
+    {
+      "source": "assets/artifacts/pot.webp",
+      "key": "assets/artifacts/pot.webp",
+      "size": 2788,
+      "sha256": "087991f9b3150e0ee4eb2b778e06bb1d78cdd63b4235818be9879551a7bb90e2",
+      "contentType": "image/webp"
+    },
+    {
+      "source": "assets/artifacts/rifle.webp",
+      "key": "assets/artifacts/rifle.webp",
+      "size": 2540,
+      "sha256": "e29a6f7bb9776c210778f7c7fa825880f8d447fa5be3520a45f160c312f641c6",
+      "contentType": "image/webp"
+    },
+    {
+      "source": "assets/artifacts/shovel.webp",
+      "key": "assets/artifacts/shovel.webp",
+      "size": 2154,
+      "sha256": "cf947e4b35d51772af4f5484235367843053c71a64f0f26765af3d23ac089673",
+      "contentType": "image/webp"
+    },
+    {
+      "source": "assets/target-hat.png",
+      "key": "assets/target-hat.png",
+      "size": 167029,
+      "sha256": "745aae7381e3dd132a7aaf01a0ed5d9606a7e5a860c11a969743445e75d0d4ce",
+      "contentType": "image/png"
+    },
+    {
+      "source": "assets/target-lamp.png",
+      "key": "assets/target-lamp.png",
+      "size": 143908,
+      "sha256": "5b855ae5782d6166c8a5c037d6820a5d4b2c7050e7c50cc959a55c2ce9dcaa5a",
+      "contentType": "image/png"
+    },
+    {
+      "source": "audio/time-portal/narration-v1/1948-0-997c8b057ecf.mp3",
+      "key": "audio/time-portal/narration-v1/1948-0-997c8b057ecf.mp3",
+      "size": 151344,
+      "sha256": "b0010864b24828bad6e9cbf7c9173bee54bba4220b04f7118676966f93cb5e0f",
+      "contentType": "audio/mpeg"
+    },
+    {
+      "source": "audio/time-portal/narration-v1/1948-1-0306230b5894.mp3",
+      "key": "audio/time-portal/narration-v1/1948-1-0306230b5894.mp3",
+      "size": 78192,
+      "sha256": "36419f6f90dc3e8f8139a8ac9af9f9cb5d1cb386272a1bb4b7ce614eff5f8fc0",
+      "contentType": "audio/mpeg"
+    },
+    {
+      "source": "audio/time-portal/narration-v1/1948-2-761f1c37db3a.mp3",
+      "key": "audio/time-portal/narration-v1/1948-2-761f1c37db3a.mp3",
+      "size": 82080,
+      "sha256": "86fcd7792d4f71d1ba05ce5f64735f4b3ce814b34779186d810e4f0122ea995e",
+      "contentType": "audio/mpeg"
+    },
+    {
+      "source": "audio/time-portal/narration-v1/1948-3-f218b7f81284.mp3",
+      "key": "audio/time-portal/narration-v1/1948-3-f218b7f81284.mp3",
+      "size": 128592,
+      "sha256": "127edee6c37037f35f269f62f79534da9613c3cbd658ede749a16d895a8380aa",
+      "contentType": "audio/mpeg"
+    },
+    {
+      "source": "audio/time-portal/narration-v1/1948-4-636287456e77.mp3",
+      "key": "audio/time-portal/narration-v1/1948-4-636287456e77.mp3",
+      "size": 145296,
+      "sha256": "8ab83719a652adbbcaedde027ef4a92f585601a735e05cf8abb67d2559c3fa9c",
+      "contentType": "audio/mpeg"
+    },
+    {
+      "source": "audio/time-portal/narration-v1/1948-5-9284aedcc3d0.mp3",
+      "key": "audio/time-portal/narration-v1/1948-5-9284aedcc3d0.mp3",
+      "size": 30672,
+      "sha256": "4974c0f415ad83e666d754cf607ee7c599404194851e2de0f3b43729f4348346",
+      "contentType": "audio/mpeg"
+    },
+    {
+      "source": "audio/time-portal/narration-v1/1968-0-83f94666dc06.mp3",
+      "key": "audio/time-portal/narration-v1/1968-0-83f94666dc06.mp3",
+      "size": 186048,
+      "sha256": "cf4cbe6c9d4760dd4d7bccd1a80691724842e503d6bbba9713e0ed83966c9f32",
+      "contentType": "audio/mpeg"
+    },
+    {
+      "source": "audio/time-portal/narration-v1/1968-1-50d5101cba41.mp3",
+      "key": "audio/time-portal/narration-v1/1968-1-50d5101cba41.mp3",
+      "size": 209952,
+      "sha256": "4828d4cb72492f11827a5f1ea721558765accc989be5a09faee29fb421698c61",
+      "contentType": "audio/mpeg"
+    },
+    {
+      "source": "audio/time-portal/narration-v1/1968-2-43efc6868f71.mp3",
+      "key": "audio/time-portal/narration-v1/1968-2-43efc6868f71.mp3",
+      "size": 159264,
+      "sha256": "c0a3b1fd8d81ed928db8fdec9134ab78e0d649d8df07cf92418719864a453fc0",
+      "contentType": "audio/mpeg"
+    },
+    {
+      "source": "audio/time-portal/narration-v1/1968-3-231f75009986.mp3",
+      "key": "audio/time-portal/narration-v1/1968-3-231f75009986.mp3",
+      "size": 169056,
+      "sha256": "bd75b6b2e5ecfb8ee3bd91afaf098a64074519ed57c62442ae54adadc0798b85",
+      "contentType": "audio/mpeg"
+    },
+    {
+      "source": "audio/time-portal/narration-v1/1968-4-d10ab323872d.mp3",
+      "key": "audio/time-portal/narration-v1/1968-4-d10ab323872d.mp3",
+      "size": 186768,
+      "sha256": "ad2ba9b92abe4ec56764e579305ba81ef2189e906512de01bb713feaa19caa82",
+      "contentType": "audio/mpeg"
+    },
+    {
+      "source": "audio/time-portal/narration-v1/1968-5-f204e07056b9.mp3",
+      "key": "audio/time-portal/narration-v1/1968-5-f204e07056b9.mp3",
+      "size": 221040,
+      "sha256": "eadf7283e9fc552baeddadcbae1dcb1fc5de7381fc355ce13ef94c59d26851a4",
+      "contentType": "audio/mpeg"
+    },
+    {
+      "source": "audio/time-portal/narration-v1/1968-6-c20fd0a88164.mp3",
+      "key": "audio/time-portal/narration-v1/1968-6-c20fd0a88164.mp3",
+      "size": 168624,
+      "sha256": "b02bbbfcc5cf821a8105e91c1c42991cbcd452d4de8874bffb3425285e5b1ad8",
+      "contentType": "audio/mpeg"
+    },
+    {
+      "source": "audio/time-portal/narration-v1/1968-7-198a19aa180b.mp3",
+      "key": "audio/time-portal/narration-v1/1968-7-198a19aa180b.mp3",
+      "size": 158688,
+      "sha256": "171cfbf19fc273cdc9c0fdb48399c62ef4a4ee38560701fb672f741fd73da5ab",
+      "contentType": "audio/mpeg"
+    },
+    {
+      "source": "audio/time-portal/narration-v1/1968-8-9f3c68761fc1.mp3",
+      "key": "audio/time-portal/narration-v1/1968-8-9f3c68761fc1.mp3",
+      "size": 31536,
+      "sha256": "4a6978b53f34b57a9b39ededeb7ae8af4ea142919b1564296bbfe584e3ea91ba",
+      "contentType": "audio/mpeg"
+    },
+    {
+      "source": "audio/time-portal/narration-v1/1975-0-b89bc605bd9f.mp3",
+      "key": "audio/time-portal/narration-v1/1975-0-b89bc605bd9f.mp3",
+      "size": 167472,
+      "sha256": "390bbc7157096e6cf55eaa3aaff35aa46e520bda21a28911ceba5aaee9a8b059",
+      "contentType": "audio/mpeg"
+    },
+    {
+      "source": "audio/time-portal/narration-v1/1975-1-52c244838960.mp3",
+      "key": "audio/time-portal/narration-v1/1975-1-52c244838960.mp3",
+      "size": 157824,
+      "sha256": "9fadb2517e00fa780413e7e5e22acb127435e2e4be1b111864663bce3a9c481b",
+      "contentType": "audio/mpeg"
+    },
+    {
+      "source": "audio/time-portal/narration-v1/1975-2-41361498c99d.mp3",
+      "key": "audio/time-portal/narration-v1/1975-2-41361498c99d.mp3",
+      "size": 142128,
+      "sha256": "ddea971d2065a318c684479e4424d9ae461e2ade16aff7af206c57fc7292a4e7",
+      "contentType": "audio/mpeg"
+    },
+    {
+      "source": "audio/time-portal/narration-v1/1975-3-d5fa425747a9.mp3",
+      "key": "audio/time-portal/narration-v1/1975-3-d5fa425747a9.mp3",
+      "size": 145728,
+      "sha256": "04dfde3faa730c32042edbc4c9063c0b8ace35297c6ccd1b85c2159650423620",
+      "contentType": "audio/mpeg"
+    },
+    {
+      "source": "audio/time-portal/narration-v1/1975-4-df3e5aa0c747.mp3",
+      "key": "audio/time-portal/narration-v1/1975-4-df3e5aa0c747.mp3",
+      "size": 155808,
+      "sha256": "8ff36fef9dc06e096e5de2ab7c2e83dc477ad2193ee5c9652664c2a38b253886",
+      "contentType": "audio/mpeg"
+    },
+    {
+      "source": "audio/time-portal/narration-v1/1975-5-404a95a0a7ce.mp3",
+      "key": "audio/time-portal/narration-v1/1975-5-404a95a0a7ce.mp3",
+      "size": 32112,
+      "sha256": "4f13185c2676fab1bb90efb5368343732be97489d7f536b541589a9a496065f9",
+      "contentType": "audio/mpeg"
+    },
+    {
+      "source": "audio/time-portal/narration-v1/2026-0-93ff15423023.mp3",
+      "key": "audio/time-portal/narration-v1/2026-0-93ff15423023.mp3",
+      "size": 175968,
+      "sha256": "6f75252f66ef50be8b538b8e4d8c3525a4d4865b53d7e4fd0b4158b1cd99e63c",
+      "contentType": "audio/mpeg"
+    },
+    {
+      "source": "audio/time-portal/narration-v1/2026-1-98cdea5bad13.mp3",
+      "key": "audio/time-portal/narration-v1/2026-1-98cdea5bad13.mp3",
+      "size": 153504,
+      "sha256": "993e9ed384e585f4a70fe42b306b4a3bba5b64d71041f2a36eb2cc93531d8bbf",
+      "contentType": "audio/mpeg"
+    },
+    {
+      "source": "audio/time-portal/narration-v1/2026-2-c27c4e7e338d.mp3",
+      "key": "audio/time-portal/narration-v1/2026-2-c27c4e7e338d.mp3",
+      "size": 165168,
+      "sha256": "3c8fb26115c0adeec844b493d0c554a682a13538df56ba93d6741e997ba762e4",
+      "contentType": "audio/mpeg"
+    },
+    {
+      "source": "audio/time-portal/narration-v1/2026-3-95dbb9c769b9.mp3",
+      "key": "audio/time-portal/narration-v1/2026-3-95dbb9c769b9.mp3",
+      "size": 124704,
+      "sha256": "918e3a8d63c30673a21d3f3579f9cbe56d9c2f30bd9300c25a978445fde060fe",
+      "contentType": "audio/mpeg"
+    },
+    {
+      "source": "audio/time-portal/narration-v1/2026-4-8ed190c41e3f.mp3",
+      "key": "audio/time-portal/narration-v1/2026-4-8ed190c41e3f.mp3",
+      "size": 144000,
+      "sha256": "d3e13684dd56a2b0c987d79aa8b1e5b1399d20d34961cc3b77f4796809439e67",
+      "contentType": "audio/mpeg"
+    },
+    {
+      "source": "audio/time-portal/narration-v1/2026-5-a77d439d6f5f.mp3",
+      "key": "audio/time-portal/narration-v1/2026-5-a77d439d6f5f.mp3",
+      "size": 142848,
+      "sha256": "b0c2130b956dce6669a0d50fef4a43ff1acd345e43fe064b388f0cf540ca38ef",
+      "contentType": "audio/mpeg"
+    },
+    {
+      "source": "audio/time-portal/narration-v1/2026-6-6a97a6b62490.mp3",
+      "key": "audio/time-portal/narration-v1/2026-6-6a97a6b62490.mp3",
+      "size": 152784,
+      "sha256": "0a6d4a85f46187070e75faee3e9cfc7978f127b42405058bc25b3995f7d67db5",
+      "contentType": "audio/mpeg"
+    },
+    {
+      "source": "audio/time-portal/narration-v1/2026-7-862cebb715a5.mp3",
+      "key": "audio/time-portal/narration-v1/2026-7-862cebb715a5.mp3",
+      "size": 33264,
+      "sha256": "0394f497e6dc71c2ba80cf5adfc1e9dc59d1c8da9d2c990b791930e7a6d6d6cf",
+      "contentType": "audio/mpeg"
+    },
+    {
+      "source": "audio/time-portal/war-epic-v1.mp3",
+      "key": "audio/time-portal/war-epic-v1.mp3",
+      "size": 2985064,
+      "sha256": "12e8cedb03b3d7bcfd33eeed30fde524f6560b31200571da487ae2d280260af0",
+      "contentType": "audio/mpeg"
+    },
+    {
+      "source": "badges/badge-1.png",
+      "key": "badges/badge-1.png",
+      "size": 1242255,
+      "sha256": "f8accbda2ece7078eb67d3ade5cebfee596296533e192e277e6722d3b5bd7a11",
+      "contentType": "image/png"
+    },
+    {
+      "source": "badges/badge-10.png",
+      "key": "badges/badge-10.png",
+      "size": 1822927,
+      "sha256": "e83d245a55b8ea496564f1663539799408d1577a5f68277abbfd532bafbdcf98",
+      "contentType": "image/png"
+    },
+    {
+      "source": "badges/badge-2.png",
+      "key": "badges/badge-2.png",
+      "size": 1328829,
+      "sha256": "9779c8bc95110804bf38b9a0071e63f38232b9ed059978efaeaa4624e563dba2",
+      "contentType": "image/png"
+    },
+    {
+      "source": "badges/badge-3.png",
+      "key": "badges/badge-3.png",
+      "size": 1377851,
+      "sha256": "6a79a54f60cc0888e5ed4c291ff0d9e653dcb84e43fa57b2f8c9439f6ecad352",
+      "contentType": "image/png"
+    },
+    {
+      "source": "badges/badge-4.png",
+      "key": "badges/badge-4.png",
+      "size": 1381379,
+      "sha256": "16f65e5425e886de2ee68c2cc6f0fdcce90497bb4ca57ee0f440203b5a537f46",
+      "contentType": "image/png"
+    },
+    {
+      "source": "badges/badge-5.png",
+      "key": "badges/badge-5.png",
+      "size": 1475057,
+      "sha256": "ce7b0678c001ce3e70cb4ebb3412fe5ac362c23d8985f3ba2e179940ecbfc852",
+      "contentType": "image/png"
+    },
+    {
+      "source": "badges/badge-6.png",
+      "key": "badges/badge-6.png",
+      "size": 1454420,
+      "sha256": "ef985eb5aad5b062bfe3c99275e609f57568d40b9e4a606b31856d84f91d0029",
+      "contentType": "image/png"
+    },
+    {
+      "source": "badges/badge-7.png",
+      "key": "badges/badge-7.png",
+      "size": 1525333,
+      "sha256": "7835ab4d185d72ecce43fb2f50db093f79228da4c545e1cb3ef4feb86aa70d08",
+      "contentType": "image/png"
+    },
+    {
+      "source": "badges/badge-8.png",
+      "key": "badges/badge-8.png",
+      "size": 1618519,
+      "sha256": "6dcf54f64836556d585efdec9233a6f33e942cb49b024bc47dad4eb7774f7915",
+      "contentType": "image/png"
+    },
+    {
+      "source": "badges/badge-9.png",
+      "key": "badges/badge-9.png",
+      "size": 1751910,
+      "sha256": "b3ce9f6b3a334cac5049536dcd7b35cda93f0e455532a31f1e97dae59dbc9635",
+      "contentType": "image/png"
+    },
+    {
+      "source": "brand/histar-about-v1.png",
+      "key": "brand/histar-about-v1.png",
+      "size": 65983,
+      "sha256": "766f77ee8710c3d5396ecfc544b25dc11b6cc6eb5c9a891b1d0ecb6954d17c26",
+      "contentType": "image/png"
+    },
+    {
+      "source": "brand/icon-192.png",
+      "key": "brand/icon-192.png",
+      "size": 23046,
+      "sha256": "49a56d5b6fc642472e23cf8feb396714d7dc20df6f8f1e4c2f43e927ee0028b1",
+      "contentType": "image/png"
+    },
+    {
+      "source": "brand/icon-512.png",
+      "key": "brand/icon-512.png",
+      "size": 101749,
+      "sha256": "b38a88b9dfaa5dffc4c66c39b588daf3a357d37cfba31ed414065b637fd5f867",
+      "contentType": "image/png"
+    },
+    {
+      "source": "brand/logo-histar.png",
+      "key": "brand/logo-histar.png",
+      "size": 65983,
+      "sha256": "766f77ee8710c3d5396ecfc544b25dc11b6cc6eb5c9a891b1d0ecb6954d17c26",
+      "contentType": "image/png"
+    },
+    {
+      "source": "brand/logo_2.png",
+      "key": "brand/logo_2.png",
+      "size": 85983,
+      "sha256": "c285b887e3da1df1b96a515d7a1179db0fda93db1e470e4e63711d90880a25e9",
+      "contentType": "image/png"
+    },
+    {
+      "source": "brand/splash.mp4",
+      "key": "brand/splash.mp4",
+      "size": 201012,
+      "sha256": "c5d54b0f74c6dffec0443b09571b7485f2ee581d7e4c34d24eb4e1491c76174e",
+      "contentType": "video/mp4"
+    },
+    {
+      "source": "brand/team/des-v1/ceo.webp",
+      "key": "brand/team/des-v1/ceo.webp",
+      "size": 197890,
+      "sha256": "dc0fa01875dac6b5bcb333c90372354c67ff940f01ad73b71c4914163ac9c86a",
+      "contentType": "image/webp"
+    },
+    {
+      "source": "brand/team/des-v1/cfo.webp",
+      "key": "brand/team/des-v1/cfo.webp",
+      "size": 205514,
+      "sha256": "affb289ec80470247073f3a378210f336c02efc1008084f7dcf22bd52331415a",
+      "contentType": "image/webp"
+    },
+    {
+      "source": "brand/team/des-v1/cmo.webp",
+      "key": "brand/team/des-v1/cmo.webp",
+      "size": 194070,
+      "sha256": "6be89a84dcfdfcb802fe7a0964850e76c807e4832e2ec47297e4625d40a14040",
+      "contentType": "image/webp"
+    },
+    {
+      "source": "brand/team/des-v1/coo.webp",
+      "key": "brand/team/des-v1/coo.webp",
+      "size": 197970,
+      "sha256": "283374e2f4a763937f063991922ad1a4f4b0ec68749a60b6cab7c0322ff3d568",
+      "contentType": "image/webp"
+    },
+    {
+      "source": "brand/team/des-v1/cpo.webp",
+      "key": "brand/team/des-v1/cpo.webp",
+      "size": 179804,
+      "sha256": "251f2717857ed942433a0679e0ecae35f4dd9ab75056dc2436d55d56cbab47af",
+      "contentType": "image/webp"
+    },
+    {
+      "source": "brand/team/des-v1/cto.webp",
+      "key": "brand/team/des-v1/cto.webp",
+      "size": 199058,
+      "sha256": "18e4eaabdebb8d74ff47bb66efe21097e0b422ac218c98a88bd2b7695446d124",
+      "contentType": "image/webp"
+    },
+    {
+      "source": "brand/team/hao-cmo.jpg",
+      "key": "brand/team/hao-cmo.jpg",
+      "size": 41816,
+      "sha256": "c2e0f848b95a07320c1fb0351740214f8a8bac3d8d83ddfd68334359e1226205",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "brand/team/huy-coo.jpg",
+      "key": "brand/team/huy-coo.jpg",
+      "size": 49479,
+      "sha256": "e43b52366d0ddaaaeb6e9f9cf4047a80afc017fe569d71c5505edc6e7ea25676",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "brand/team/my-cfo.jpg",
+      "key": "brand/team/my-cfo.jpg",
+      "size": 41807,
+      "sha256": "6cb5909bba9224e0b695d334e564b3949bd52153de2515d009633c9b847d50ae",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "brand/team/phat-cto.jpg",
+      "key": "brand/team/phat-cto.jpg",
+      "size": 27903,
+      "sha256": "088422dfe2e0fbe7689103b7a58b25520ab72272a8d028c4c0fc1e5954b2b1a0",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "brand/team/quan-ceo.jpg",
+      "key": "brand/team/quan-ceo.jpg",
+      "size": 20125,
+      "sha256": "583b45d8d6029028153e142711ae2a6e7193308af8fe9f68faf07fa64452083f",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "brand/team/vy-cpo.jpg",
+      "key": "brand/team/vy-cpo.jpg",
+      "size": 37835,
+      "sha256": "fc0a04b41ad1ebc0ffa03a9a34d14625d0b1dc3029446d3df302d56360468ba8",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "depth/layer-0.png",
+      "key": "depth/layer-0.png",
+      "size": 3362282,
+      "sha256": "bbb7c4013ca8ea2337dcea9cccc388a3636f617b81b511abca6b46801f5273da",
+      "contentType": "image/png"
+    },
+    {
+      "source": "depth/layer-1.png",
+      "key": "depth/layer-1.png",
+      "size": 3304535,
+      "sha256": "41819ddb0c03fcbd42b13838f17099830733288661c3828a207924d43855fede",
+      "contentType": "image/png"
+    },
+    {
+      "source": "depth/layer-2.png",
+      "key": "depth/layer-2.png",
+      "size": 2219506,
+      "sha256": "27bb2c3ece9e06b356383d41c829106175731e6483460766c6ca6b328c9046c0",
+      "contentType": "image/png"
+    },
+    {
+      "source": "depth/layer-3.png",
+      "key": "depth/layer-3.png",
+      "size": 2574657,
+      "sha256": "f589c920a0fda8cf7043e496012e34fd39a872de1ba730c345a03972454dbe5a",
+      "contentType": "image/png"
+    },
+    {
+      "source": "favicon.svg",
+      "key": "favicon.svg",
+      "size": 9522,
+      "sha256": "61bc9a161de58248288e6905425d7180f0624c2865007b97d763fdac12043a66",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "source": "films/cu-chi-1080p-v3.mp4",
+      "key": "films/cu-chi-1080p-v3.mp4",
+      "size": 327231485,
+      "sha256": "e2deb168530b90f8af87f863f2b7fcf0f05b2f5357e602dd9f2117186a4f6d35",
+      "contentType": "video/mp4"
+    },
+    {
+      "source": "films/cu-chi-film-poster-v1.png",
+      "key": "films/cu-chi-film-poster-v1.png",
+      "size": 3121889,
+      "sha256": "20bb2182e831bb3e7556910853898ce0ee356a84fa95d35a1b89854a22db4711",
+      "contentType": "image/png"
+    },
+    {
+      "source": "films/cu-chi-introduction-v1.mp4",
+      "key": "films/cu-chi-introduction-v1.mp4",
+      "size": 167668195,
+      "sha256": "7c9e1e8a5227c60ed289b1e2cc2934ffb576f526b1691893d056da008f1b62a5",
+      "contentType": "video/mp4"
+    },
+    {
+      "source": "films/cu-chi-v2.mp4",
+      "key": "films/cu-chi-v2.mp4",
+      "size": 64691040,
+      "sha256": "c7de7db8e5bee59063e852961df4d88fdc8c10a2615777a20f70e2acf0a315bf",
+      "contentType": "video/mp4"
+    },
+    {
+      "source": "films/timelens-tvc-1080-v1.mp4",
+      "key": "films/timelens-tvc-1080-v1.mp4",
+      "size": 75070076,
+      "sha256": "768121dbccb9331bc0a3f91426ff84c1f1f57e6f9844f49629551a73c40d174e",
+      "contentType": "video/mp4"
+    },
+    {
+      "source": "films/timelens-tvc-1440-v1.mp4",
+      "key": "films/timelens-tvc-1440-v1.mp4",
+      "size": 162173395,
+      "sha256": "d985daa75f8a20fd5d729f967a5eab59b74bd31e0e0bb92fc09adb8018e174fb",
+      "contentType": "video/mp4"
+    },
+    {
+      "source": "films/timelens-tvc-poster-v1.jpg",
+      "key": "films/timelens-tvc-poster-v1.jpg",
+      "size": 123659,
+      "sha256": "417157a507f4b8e718f137c7788151b8331ceeb449affc3cf0ee000627ba9241",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "films/timelens-tvc-thumbnail-v2.png",
+      "key": "films/timelens-tvc-thumbnail-v2.png",
+      "size": 2256559,
+      "sha256": "43c05017d13fc44709cc8e09ce0e4c178ea4904c263777e06362e31d88f0d762",
+      "contentType": "image/png"
+    },
+    {
+      "source": "huy/3d-museum-hologram-1.png",
+      "key": "huy/3d-museum-hologram-1.png",
+      "size": 2391266,
+      "sha256": "2f0c79d1bd739b10ef82cbba81dc0f33142f6834e133974db4437996fd3bb202",
+      "contentType": "image/png"
+    },
+    {
+      "source": "huy/3d-museum-hologram-2.png",
+      "key": "huy/3d-museum-hologram-2.png",
+      "size": 2237402,
+      "sha256": "9baeaae860a984c36c374508e6bf231700c42d0a00218bf421d6bb46dae8633d",
+      "contentType": "image/png"
+    },
+    {
+      "source": "huy/bgm-war.mp3",
+      "key": "huy/bgm-war.mp3",
+      "size": 580963,
+      "sha256": "58b1082cd3380557ba5aa3884970c94991b5d655d95863db64dab6ebfbc703de",
+      "contentType": "audio/mpeg"
+    },
+    {
+      "source": "huy/boat-transparent.png",
+      "key": "huy/boat-transparent.png",
+      "size": 300845,
+      "sha256": "b8458903ff43ff012362ec405a5522aa788117546cead039767d24b28abfd2c3",
+      "contentType": "image/png"
+    },
+    {
+      "source": "huy/bomb.mp3",
+      "key": "huy/bomb.mp3",
+      "size": 115356,
+      "sha256": "1f566cb08b237682e144163d4687581d4d5930a2b59e8b245c968373f9422846",
+      "contentType": "audio/mpeg"
+    },
+    {
+      "source": "huy/bulldozer-transparent.png",
+      "key": "huy/bulldozer-transparent.png",
+      "size": 397046,
+      "sha256": "7f7c2538723600c5b4d7566a53e2b64bc7ce865a822ed573b3efae90e1dbe991",
+      "contentType": "image/png"
+    },
+    {
+      "source": "huy/dennish18-modern-war-129016.mp3",
+      "key": "huy/dennish18-modern-war-129016.mp3",
+      "size": 3062016,
+      "sha256": "9fc729abf0733a88539418cc0beab9278d2c40c4d769ceb8c628c8c0d93ffa9c",
+      "contentType": "audio/mpeg"
+    },
+    {
+      "source": "huy/epic-intro.mp3",
+      "key": "huy/epic-intro.mp3",
+      "size": 1344156,
+      "sha256": "f7cd8e6b5c71318e472a11e4f6b6355c3a28fb4d284aeaae8bdfaaddada6291f",
+      "contentType": "audio/mpeg"
+    },
+    {
+      "source": "huy/fire.gif",
+      "key": "huy/fire.gif",
+      "size": 501922,
+      "sha256": "a523113350ba72db440c1382a559574054b338d55c56dcc67ae70d16154cda14",
+      "contentType": "image/gif"
+    },
+    {
+      "source": "huy/gunfire.mp3",
+      "key": "huy/gunfire.mp3",
+      "size": 332695,
+      "sha256": "62411bed73c776f6b99e004ded171a54f4a40a1be4068c6479aadfa09e2af31a",
+      "contentType": "audio/mpeg"
+    },
+    {
+      "source": "huy/heli-transparent.png",
+      "key": "huy/heli-transparent.png",
+      "size": 164098,
+      "sha256": "9cad6d43becd3c8608cf4fc3a5dfc438a67651626d615321d80d2a1fd11d8866",
+      "contentType": "image/png"
+    },
+    {
+      "source": "huy/heli.mp3",
+      "key": "huy/heli.mp3",
+      "size": 320992,
+      "sha256": "00889d14902cdc86d5af5af3b6bbac49e51491688014b0c7af904b63d60517c8",
+      "contentType": "audio/mpeg"
+    },
+    {
+      "source": "huy/mascot-10.png",
+      "key": "huy/mascot-10.png",
+      "size": 1284479,
+      "sha256": "6192202a95389bcd73a36a5486f474f5c60d45fd441597eb7110adb641277a57",
+      "contentType": "image/png"
+    },
+    {
+      "source": "huy/mascot-8.png",
+      "key": "huy/mascot-8.png",
+      "size": 1277713,
+      "sha256": "db343c7d4e71cb5b2eb634c91d56a25a950d33040b0ed5fe584e094d8180b3d8",
+      "contentType": "image/png"
+    },
+    {
+      "source": "huy/nen-sa-ban.png",
+      "key": "huy/nen-sa-ban.png",
+      "size": 3092428,
+      "sha256": "ddb2324094c9fbd5706fbc9a887e1b9baaa4af7d8f50732a0ed26be5e4c53c18",
+      "contentType": "image/png"
+    },
+    {
+      "source": "huy/tank-transparent.png",
+      "key": "huy/tank-transparent.png",
+      "size": 337587,
+      "sha256": "cd5a7043780be8f837ac5066413f4b803952b5aaedf2221d59cb9f9cde4f4cfd",
+      "contentType": "image/png"
+    },
+    {
+      "source": "huy/tank.mp3",
+      "key": "huy/tank.mp3",
+      "size": 322664,
+      "sha256": "b1ce493bcc87d87720a804bbd58664dc39b20a6a8674f25af6a688f6ea18ccd7",
+      "contentType": "audio/mpeg"
+    },
+    {
+      "source": "huy/tunnel-rat-2.png",
+      "key": "huy/tunnel-rat-2.png",
+      "size": 207432,
+      "sha256": "58af140fe525dfe661f25c2232ec20c0ab6fec6f89b4062ec03d65d73837ff88",
+      "contentType": "image/png"
+    },
+    {
+      "source": "huy/tunnel-rat.png",
+      "key": "huy/tunnel-rat.png",
+      "size": 172982,
+      "sha256": "ebf749412d577f8af91a050dac66663577bc602870da1064b49ce686d326bdd0",
+      "contentType": "image/png"
+    },
+    {
+      "source": "huy/vision-edtech-ar.png",
+      "key": "huy/vision-edtech-ar.png",
+      "size": 2267600,
+      "sha256": "98b9412014767766a8dcaf2342236a2acfb93d303794296fd1ae217fda0fa1a3",
+      "contentType": "image/png"
+    },
+    {
+      "source": "huy/vo-step-1.mp3",
+      "key": "huy/vo-step-1.mp3",
+      "size": 1958444,
+      "sha256": "0a5e038088c5826999da7211b0fdfd8615a6f781ca37954b23542a4d0001a925",
+      "contentType": "audio/mpeg"
+    },
+    {
+      "source": "huy/vo-step-2.mp3",
+      "key": "huy/vo-step-2.mp3",
+      "size": 1695788,
+      "sha256": "98c1c7223c21b829512925982a9ae111f452d87c263abaf99a0cb9e30b0245eb",
+      "contentType": "audio/mpeg"
+    },
+    {
+      "source": "huy/vo-step-3.mp3",
+      "key": "huy/vo-step-3.mp3",
+      "size": 1781036,
+      "sha256": "47b424197deb52d6857fb50f038d1e2032a6afd71bd5d7856793f426c48f6921",
+      "contentType": "audio/mpeg"
+    },
+    {
+      "source": "huy/vo-step-4.mp3",
+      "key": "huy/vo-step-4.mp3",
+      "size": 1838636,
+      "sha256": "d1f330a3ac3fb8f47fcdf7cfaa94722894a3d5efd9803f2524419fe880e50d23",
+      "contentType": "audio/mpeg"
+    },
+    {
+      "source": "huy/vo-step-5.mp3",
+      "key": "huy/vo-step-5.mp3",
+      "size": 1688876,
+      "sha256": "b78cd54eafe3eb7b33508c6bc603afbb3e6e1bbb7a6c97995295f4d95b9cb44c",
+      "contentType": "audio/mpeg"
+    },
+    {
+      "source": "huy/vo-step-6.mp3",
+      "key": "huy/vo-step-6.mp3",
+      "size": 2151980,
+      "sha256": "d5db1b9722854830f18e7a6d5c6cdcf9d04528f063955ea929375967171f44d4",
+      "contentType": "audio/mpeg"
+    },
+    {
+      "source": "huy/vo-step-7.mp3",
+      "key": "huy/vo-step-7.mp3",
+      "size": 2248748,
+      "sha256": "768c14a76ca38550000312fd9922f5818c2f9a641b93be1f057502cf6e6e0b1d",
+      "contentType": "audio/mpeg"
+    },
+    {
+      "source": "huy/voiceover.mp3",
+      "key": "huy/voiceover.mp3",
+      "size": 7517996,
+      "sha256": "5b81368da06e4e473db1dddf41135479440f98a2fa2210051246f699db311ef6",
+      "contentType": "audio/mpeg"
+    },
+    {
+      "source": "icons.svg",
+      "key": "icons.svg",
+      "size": 5031,
+      "sha256": "b45fa506195cfcdef406ba9f0c77b36ddc1a7c224040926ec70abc2fdea7b93a",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "source": "images/characters/anh-ba-ngac-nhien.png",
+      "key": "images/characters/anh-ba-ngac-nhien.png",
+      "size": 39721,
+      "sha256": "caf08d6235cae864dd62301dfe51bf68940a51c99ab7f5f66f4e4f16265738e8",
+      "contentType": "image/png"
+    },
+    {
+      "source": "images/characters/anh-ba-vui.png",
+      "key": "images/characters/anh-ba-vui.png",
+      "size": 40177,
+      "sha256": "ebae4229915ce28d8506167bd033c2f3dde06b10f5af6f62f423739342478e23",
+      "contentType": "image/png"
+    },
+    {
+      "source": "images/characters/anh-ba.png",
+      "key": "images/characters/anh-ba.png",
+      "size": 105997,
+      "sha256": "20611fbe405ffd76d8e707928bbca83cf344635254690d41ef16dd46b6cb8a78",
+      "contentType": "image/png"
+    },
+    {
+      "source": "images/characters/chi-nam-ngac-nhien.png",
+      "key": "images/characters/chi-nam-ngac-nhien.png",
+      "size": 44136,
+      "sha256": "96b0e6171dc27f572e552da353995f667209a283827e0b3ab2c79080fcb78c24",
+      "contentType": "image/png"
+    },
+    {
+      "source": "images/characters/chi-nam-vui.png",
+      "key": "images/characters/chi-nam-vui.png",
+      "size": 44470,
+      "sha256": "bae960fe67619c9ffb9dc8b8bd670e613ab709bd0745dff19119750cb5bf6cce",
+      "contentType": "image/png"
+    },
+    {
+      "source": "images/characters/chi-nam.png",
+      "key": "images/characters/chi-nam.png",
+      "size": 103783,
+      "sha256": "b0902076c0f8baf0da64ad7c96d8a60bffc477f59c784467df22ed0199c82a13",
+      "contentType": "image/png"
+    },
+    {
+      "source": "images/cu-chi/an-uong-duoi-ham.jpg",
+      "key": "images/cu-chi/an-uong-duoi-ham.jpg",
+      "size": 47532,
+      "sha256": "6ebb399a64b902de9404be3a9b8c7b6850149c6cb2d48937d5e4e5d41420dedb",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "images/cu-chi/cang-thuong.jpg",
+      "key": "images/cu-chi/cang-thuong.jpg",
+      "size": 32336,
+      "sha256": "a032591d24469dea5ef4aff7cb997efd958e81279de8f3bd143b3b2d29919245",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "images/cu-chi/che-tao-vu-khi.jpg",
+      "key": "images/cu-chi/che-tao-vu-khi.jpg",
+      "size": 11367,
+      "sha256": "90492754f6817fd8bf7eb5c76c9b18885a031bfbc75c4b8c0a75343d563582f9",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "images/cu-chi/coi-xay-thoc.jpg",
+      "key": "images/cu-chi/coi-xay-thoc.jpg",
+      "size": 13154,
+      "sha256": "4f3bb1c06a4d8bcc16408e9a6c5b33eede92cb795d0cfe7ed83a7750c5482220",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "images/cu-chi/dkz.jpg",
+      "key": "images/cu-chi/dkz.jpg",
+      "size": 93082,
+      "sha256": "699c79ef72e94ff6e79f06f0e39fc0322b437695ff892201a5d5a6b46e9bc891",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "images/cu-chi/du-kich-chien-dau.jpg",
+      "key": "images/cu-chi/du-kich-chien-dau.jpg",
+      "size": 205078,
+      "sha256": "35103cf36a71b92cf7188061d6d45834a7f538fc2f6adba920cc2c300d649e6b",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "images/cu-chi/du-kich-vong.jpg",
+      "key": "images/cu-chi/du-kich-vong.jpg",
+      "size": 85064,
+      "sha256": "38e0930ab8c62f13c0f3cb4e91a7471a511b3b52c3571071ccfebdb236afdc27",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "images/cu-chi/duong-ham.jpg",
+      "key": "images/cu-chi/duong-ham.jpg",
+      "size": 27046,
+      "sha256": "e5e777986369081280f3f0d76b0c36167ea62072164f76cbacd9c5f6a9e82791",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "images/cu-chi/duong-mon-rung.jpg",
+      "key": "images/cu-chi/duong-mon-rung.jpg",
+      "size": 119846,
+      "sha256": "4c8ef6f5e992d601ffe638d7d038828a6c7b785e062d247cac30120694cd8f2d",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "images/cu-chi/ham-chong.jpg",
+      "key": "images/cu-chi/ham-chong.jpg",
+      "size": 43004,
+      "sha256": "6920115f730c6a055e0e6d1537512fe72019692d4b2194b9285721df76bc9ab6",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "images/cu-chi/ham-giai-phau.jpg",
+      "key": "images/cu-chi/ham-giai-phau.jpg",
+      "size": 13521,
+      "sha256": "8df80342d4473aea9f30ef12a021740730de490d5bd1c8eed449c6f2c15dfa8a",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "images/cu-chi/ham-ngam.jpg",
+      "key": "images/cu-chi/ham-ngam.jpg",
+      "size": 9235,
+      "sha256": "bcdf870042b96639e97d7887b80f504e934a729e0b255c8d59f3950b706b6b56",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "images/cu-chi/ham-phong-thu-mai-la.jpg",
+      "key": "images/cu-chi/ham-phong-thu-mai-la.jpg",
+      "size": 164996,
+      "sha256": "5ea85b543afa50767fde9351812f684114c9196c3dd934d73dd41fb41a56eb8d",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "images/cu-chi/khoai-mi.jpg",
+      "key": "images/cu-chi/khoai-mi.jpg",
+      "size": 11587,
+      "sha256": "551d3499576b137c64c2611fe7f02b9dbf7e03cd3ea4566d07ba109795502ec1",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "images/cu-chi/loi-xuong-ham.jpg",
+      "key": "images/cu-chi/loi-xuong-ham.jpg",
+      "size": 78130,
+      "sha256": "8fe436aebda772bb530b22e9a4f861e0e0c4e5eb6bec2bd7ba5f02fc198bb3af",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "images/cu-chi/nap-ham-mo.jpg",
+      "key": "images/cu-chi/nap-ham-mo.jpg",
+      "size": 215542,
+      "sha256": "fa191ca9a1256777efc8bb286db09e809aded81ed47f361263766170e5e64676",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "images/cu-chi/phong-hop-ngam.jpg",
+      "key": "images/cu-chi/phong-hop-ngam.jpg",
+      "size": 12445,
+      "sha256": "fd831e180b14b0b514f2e1f94580c64e07a85b506c98d53020db477ea10c3d52",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "images/cu-chi/rung-dia-dao.jpg",
+      "key": "images/cu-chi/rung-dia-dao.jpg",
+      "size": 157298,
+      "sha256": "020390b74d152cccef4ab27af28d24666b54b024979b1d1af67bb05c753f735f",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "images/cu-chi/so-do-ba-tang-2.jpg",
+      "key": "images/cu-chi/so-do-ba-tang-2.jpg",
+      "size": 10962,
+      "sha256": "ba7d6ddf602916bedf854680d0933fb126d51cfb7fd37f2ff73c3b3c683ed1c9",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "images/cu-chi/so-do-ba-tang.jpg",
+      "key": "images/cu-chi/so-do-ba-tang.jpg",
+      "size": 14839,
+      "sha256": "077c313bd6eaad10ae833311a8b5ef408edf71c5e0ddb330a5e63fdb91524143",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "images/cu-chi/tram-st01-phong-hop.jpg",
+      "key": "images/cu-chi/tram-st01-phong-hop.jpg",
+      "size": 64419,
+      "sha256": "30b53f7027e38eee7e2e1710a10d26592f9405b4663d8a7573820c38b3f0c3d8",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "images/cu-chi/tram-st03-gieng.jpg",
+      "key": "images/cu-chi/tram-st03-gieng.jpg",
+      "size": 62319,
+      "sha256": "58e5d8f0ade07e76e816408ea31ed760bca8b5e945dec0728447d0e981288e90",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "images/cu-chi/tram-st04-quan-y.jpg",
+      "key": "images/cu-chi/tram-st04-quan-y.jpg",
+      "size": 74051,
+      "sha256": "c9862f1012c8dd5838c64b1d1eb0a02d5f2bbe30c3a613e34be85c5e731c9570",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "images/cu-chi/tram-st05-xuong-vu-khi.jpg",
+      "key": "images/cu-chi/tram-st05-xuong-vu-khi.jpg",
+      "size": 61472,
+      "sha256": "bdb648156e6ea9d7e953eb7e4a40f5c279be40586c2e886c5c2050fbb9e6120d",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "images/cu-chi/tram-st06-lo-chau-mai.jpg",
+      "key": "images/cu-chi/tram-st06-lo-chau-mai.jpg",
+      "size": 228799,
+      "sha256": "4e0a88b74eb8f5da1648dc65c353329aaa0aa98240c1cb78260582f653eda3f4",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "images/cu-chi/vot-chong.jpg",
+      "key": "images/cu-chi/vot-chong.jpg",
+      "size": 25955,
+      "sha256": "02c8c3c0a61be1ba2560377a5af0dc71d4dc4cb07256688b013f7a3a236c1d54",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "images/cu-chi/xe-tang.jpg",
+      "key": "images/cu-chi/xe-tang.jpg",
+      "size": 122790,
+      "sha256": "f0367389d87facbe738d5ed16226c49ee1ec3e6299e95626f53a7b11a55ca167",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "images/cu-chi/xuong-may.jpg",
+      "key": "images/cu-chi/xuong-may.jpg",
+      "size": 113399,
+      "sha256": "c7e7af2a61d01f28b57965db1a03240f45cff841b5bb2b457a29bb3093a59452",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "images/cu-chi/xuong-vu-khi-2.jpg",
+      "key": "images/cu-chi/xuong-vu-khi-2.jpg",
+      "size": 54522,
+      "sha256": "76b51c433c36b70adf0ba0a3e4ceae1b02c1074a738ea719a2f6b3d4f12893aa",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "images/cu-chi/xuong-vu-khi-3.jpg",
+      "key": "images/cu-chi/xuong-vu-khi-3.jpg",
+      "size": 155380,
+      "sha256": "61865eace52753f2bb4dc52f925eec9b05c7943692aba2846558406638a9a4e1",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "images/landing/chrono-faq-v1.png",
+      "key": "images/landing/chrono-faq-v1.png",
+      "size": 1281245,
+      "sha256": "110ec1fc4d9accdfd82a8563c307c1a3818c60a4dc9da5ef679601c5ea87429d",
+      "contentType": "image/png"
+    },
+    {
+      "source": "images/landing/cu-chi-exhibition-v1.webp",
+      "key": "images/landing/cu-chi-exhibition-v1.webp",
+      "size": 357718,
+      "sha256": "a1bce81ef713e8ec903601a8e9f3e22e1549eb4cd263bffa00cb40b750765658",
+      "contentType": "image/webp"
+    },
+    {
+      "source": "images/landing/features-v1/ai.png",
+      "key": "images/landing/features-v1/ai.png",
+      "size": 973600,
+      "sha256": "cfae2fc1c8db305321e6c12c19c5471fea2f53854093b3a37322cf2bdc323465",
+      "contentType": "image/png"
+    },
+    {
+      "source": "images/landing/features-v1/ar.png",
+      "key": "images/landing/features-v1/ar.png",
+      "size": 943964,
+      "sha256": "a43ccafbb32013bc3ada65329cceb397cd883a4376d040c7b55c4d8f2f929de9",
+      "contentType": "image/png"
+    },
+    {
+      "source": "images/landing/features-v1/history.png",
+      "key": "images/landing/features-v1/history.png",
+      "size": 1153911,
+      "sha256": "dff2fe83668c76a5232ce5363d8e01fa5d7fd59d8f7887879d45be26f4967054",
+      "contentType": "image/png"
+    },
+    {
+      "source": "images/landing/features-v1/leaderboard.png",
+      "key": "images/landing/features-v1/leaderboard.png",
+      "size": 1029314,
+      "sha256": "d12dc4bdabcff187adbdeb3c96c6f24364ee024241177272a49aa229727cfff9",
+      "contentType": "image/png"
+    },
+    {
+      "source": "images/landing/features-v1/museum.png",
+      "key": "images/landing/features-v1/museum.png",
+      "size": 1103945,
+      "sha256": "9587335a4198b98c4abbd4259ce0426d2fe88545fe7b8e5f9a8e82435544f3b9",
+      "contentType": "image/png"
+    },
+    {
+      "source": "images/landing/features-v1/portal.png",
+      "key": "images/landing/features-v1/portal.png",
+      "size": 964175,
+      "sha256": "5c14d2dcfc1030f900a88bbec7a251d7084e3128f1e426b77efdd7eb83fd84ed",
+      "contentType": "image/png"
+    },
+    {
+      "source": "images/landing/features-v1/quests.png",
+      "key": "images/landing/features-v1/quests.png",
+      "size": 1096056,
+      "sha256": "3c96b3bdd48a107ef41cfa8d79ec32062d72624e6403e1dfb5d0503363e90309",
+      "contentType": "image/png"
+    },
+    {
+      "source": "images/landing/features-v1/tour.png",
+      "key": "images/landing/features-v1/tour.png",
+      "size": 1510371,
+      "sha256": "92eb36bb84b0eee616d5def930aea61198e6c052d33d8e2cfd62a68f7208bb40",
+      "contentType": "image/png"
+    },
+    {
+      "source": "images/minigames/dem-lo-1.jpg",
+      "key": "images/minigames/dem-lo-1.jpg",
+      "size": 256494,
+      "sha256": "2aa8b835ab9b40b7dacb4a5d59a6d8d11005907af172e145c26f2fef3c31b37d",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "images/minigames/dem-lo-2.jpg",
+      "key": "images/minigames/dem-lo-2.jpg",
+      "size": 205785,
+      "sha256": "1ed12c9b9c4b04942c8dd040a0b31a9e28a7af7c861f6420bb7531691c03fb20",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "images/minigames/dem-lo-3.jpg",
+      "key": "images/minigames/dem-lo-3.jpg",
+      "size": 205630,
+      "sha256": "887aab8e64c48a6fe2fee59e565e274939fea4b77f42b5c59b902bbd5346b527",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "images/minigames/soi-nap-1.jpg",
+      "key": "images/minigames/soi-nap-1.jpg",
+      "size": 251988,
+      "sha256": "a80523648273141864fc1d4f533787b12736da8195bfde46e7e3866688756cfb",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "images/minigames/soi-nap-2.jpg",
+      "key": "images/minigames/soi-nap-2.jpg",
+      "size": 200545,
+      "sha256": "0c5eff3ada11d52f49ca99f704aab58627f8ec3ad59d8ec3a8ab7c35d7b9d676",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "images/minigames/soi-nap-3.jpg",
+      "key": "images/minigames/soi-nap-3.jpg",
+      "size": 201849,
+      "sha256": "7495c72b892c46dac6d61baf3e054858faff39c4dea636268dd9c2450fdc9c7d",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "images/minigames/soi-nap-cover.jpg",
+      "key": "images/minigames/soi-nap-cover.jpg",
+      "size": 138668,
+      "sha256": "3693a6c5be915937bea7ab72a6f17cb8d1ee00afd2167562ad3f434e1861130d",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "images/minigames/soi-nap-reveal.jpg",
+      "key": "images/minigames/soi-nap-reveal.jpg",
+      "size": 234856,
+      "sha256": "5d2614ad3646fecc36043cdf5b0f050c47d3b8ca8db4ed66da759cd9df637b17",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "images/time-portal/era-1948-main.png",
+      "key": "images/time-portal/era-1948-main.png",
+      "size": 373645,
+      "sha256": "05dc4bbcf453b8ee7fa45a90fdae74dd947aade40f0f69f2455c7d28226fb2a8",
+      "contentType": "image/png"
+    },
+    {
+      "source": "images/time-portal/era-1948-mid.png",
+      "key": "images/time-portal/era-1948-mid.png",
+      "size": 235164,
+      "sha256": "2c9b3ca94120fda63ee8ab2f451492fc8fa6c3f17c8f6fc2cd4964bbb6715146",
+      "contentType": "image/png"
+    },
+    {
+      "source": "images/time-portal/era-1968-aerial.png",
+      "key": "images/time-portal/era-1968-aerial.png",
+      "size": 774044,
+      "sha256": "bf77cfcfa8f32ad72d43c5ccaa12685fcddf1b69692e205a6774fa563cc3a095",
+      "contentType": "image/png"
+    },
+    {
+      "source": "images/time-portal/era-1968-crawl.jpg",
+      "key": "images/time-portal/era-1968-crawl.jpg",
+      "size": 79524,
+      "sha256": "bb3daf878fad0e5c70c8dcfe8ec22357067a6f97a435ef432f87c537e975c0ca",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "images/time-portal/era-1968-main.png",
+      "key": "images/time-portal/era-1968-main.png",
+      "size": 281136,
+      "sha256": "0076ceaf7c1defd084eedbcabc4ebb68290624600d07008fbeffd04fdfe20115",
+      "contentType": "image/png"
+    },
+    {
+      "source": "images/time-portal/era-1968-meeting.jpg",
+      "key": "images/time-portal/era-1968-meeting.jpg",
+      "size": 72940,
+      "sha256": "6d6767e57c94b3145fdb08582a13935e0325a2ea541d03988455269e38758cfa",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "images/time-portal/era-1968-mid.png",
+      "key": "images/time-portal/era-1968-mid.png",
+      "size": 2218604,
+      "sha256": "15d3abddcd5565b17fd3c344042db5e390bfac3e7bb90bc3b96629577346fe36",
+      "contentType": "image/png"
+    },
+    {
+      "source": "images/time-portal/era-1968-surgery.jpg",
+      "key": "images/time-portal/era-1968-surgery.jpg",
+      "size": 71077,
+      "sha256": "0d83ad5b16eaf8d48891ed7352f699444f812a1ef57296e24f5cd341697ceddd",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "images/time-portal/era-1968-tunnel.jpg",
+      "key": "images/time-portal/era-1968-tunnel.jpg",
+      "size": 82650,
+      "sha256": "463e7465c483916728a6e61142d7272b736681d89fd5318dea19f657b8f46ccc",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "images/time-portal/era-1975-main.png",
+      "key": "images/time-portal/era-1975-main.png",
+      "size": 435984,
+      "sha256": "99d1afbe9d92dad8a01302aa2cb5bb9ce71a15f8a494cde59f2ee15d2cf88da7",
+      "contentType": "image/png"
+    },
+    {
+      "source": "images/time-portal/era-1975-mid.png",
+      "key": "images/time-portal/era-1975-mid.png",
+      "size": 359756,
+      "sha256": "ae857af8134ab9967b17fdaff938370d804d7c0f4ba25a7f65087f88a381d975",
+      "contentType": "image/png"
+    },
+    {
+      "source": "images/time-portal/era-2026-main.png",
+      "key": "images/time-portal/era-2026-main.png",
+      "size": 819449,
+      "sha256": "52cbce2b29724da94470ac64b2bad5d158d5dcbbaf2a45747d5a50561019e8f0",
+      "contentType": "image/png"
+    },
+    {
+      "source": "images/time-portal/guerrilla-battle.jpg",
+      "key": "images/time-portal/guerrilla-battle.jpg",
+      "size": 37352,
+      "sha256": "ad2e21b18585e7a7e190e031d65d80fdc4c4687548cf0a46b9bd18109e48fcde",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "images/time-portal/site-diorama.jpg",
+      "key": "images/time-portal/site-diorama.jpg",
+      "size": 92965,
+      "sha256": "7e20da6281e9722cda2cb32e49f485cb788a82944a81c7e91194caa4c2e91d2f",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "images/time-portal/site-forest-huts.jpg",
+      "key": "images/time-portal/site-forest-huts.jpg",
+      "size": 84796,
+      "sha256": "fb2129a8bf2880d4ee017874b1c475030ea18cfd5bbc49b926e93c91e5b678d4",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "images/time-portal/site-hatch.jpg",
+      "key": "images/time-portal/site-hatch.jpg",
+      "size": 35937,
+      "sha256": "14debd7f2c16274dc5c0e597a26226a855ca870e372c964e0150dfbbb8743656",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "images/time-portal/site-kitchen.jpg",
+      "key": "images/time-portal/site-kitchen.jpg",
+      "size": 174836,
+      "sha256": "931e46e782730587807993d33def995b01fd99950ac5c72dab98c5379b5c14ef",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "images/time-portal/site-meeting-room.jpg",
+      "key": "images/time-portal/site-meeting-room.jpg",
+      "size": 26775,
+      "sha256": "7ee04085a098ee8020da06b8d79caa0bdcf05dbad1caa230ddc875e12499214e",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "images/time-portal/site-shelter-hut.jpg",
+      "key": "images/time-portal/site-shelter-hut.jpg",
+      "size": 79280,
+      "sha256": "b94d1212c090b3087ef45f1dd217d0090e11337a741e381107227251c5fbb47e",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "images/time-portal/site-tourists.jpg",
+      "key": "images/time-portal/site-tourists.jpg",
+      "size": 53612,
+      "sha256": "5f8f1e1273611075408a1b34839742f270874aa5fa4a180da8a1b265c3c56c46",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "images/time-portal/sweep-reenactment.jpg",
+      "key": "images/time-portal/sweep-reenactment.jpg",
+      "size": 116685,
+      "sha256": "f67c0a3b03ecb49c71e7434b217e82d59b1ee6aae9d6cc9b28eef6829380ca72",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "images/xua-nay/bep-hoang-cam-1968.webp",
+      "key": "images/xua-nay/bep-hoang-cam-1968.webp",
+      "size": 56582,
+      "sha256": "283e04a9112781bdc77b6e21aa25c9c92b15046de3c5a07f8d7e5470ddbe453b",
+      "contentType": "image/webp"
+    },
+    {
+      "source": "images/xua-nay/bep-hoang-cam-nay.webp",
+      "key": "images/xua-nay/bep-hoang-cam-nay.webp",
+      "size": 111008,
+      "sha256": "80b90c314a4515f06536008a3a1f52404d61073a138643898d7339346fc2ee29",
+      "contentType": "image/webp"
+    },
+    {
+      "source": "images/xua-nay/den-ham-1968.webp",
+      "key": "images/xua-nay/den-ham-1968.webp",
+      "size": 41230,
+      "sha256": "3539ad46e767fcc1a983f61d72851f517c43f12c739b00ca3f7239f6332f60eb",
+      "contentType": "image/webp"
+    },
+    {
+      "source": "images/xua-nay/den-ham-nay.webp",
+      "key": "images/xua-nay/den-ham-nay.webp",
+      "size": 135936,
+      "sha256": "a57e061ee4a9fbbbc9c3c0f8d100feb5ed0eef0ad10f5801809ea67d99b39c60",
+      "contentType": "image/webp"
+    },
+    {
+      "source": "images/xua-nay/mieng-ham-1968.webp",
+      "key": "images/xua-nay/mieng-ham-1968.webp",
+      "size": 120678,
+      "sha256": "71e25a087aae351be21412d4077f55f183abd39da2273c0fc4773e816ef47c5a",
+      "contentType": "image/webp"
+    },
+    {
+      "source": "images/xua-nay/mieng-ham-nay.webp",
+      "key": "images/xua-nay/mieng-ham-nay.webp",
+      "size": 236458,
+      "sha256": "61964aff024d2eec5f1a78503d8854d5aa093f03a621ded4b16cd67bb334209d",
+      "contentType": "image/webp"
+    },
+    {
+      "source": "images/xua-nay/phong-hop-1968.webp",
+      "key": "images/xua-nay/phong-hop-1968.webp",
+      "size": 34590,
+      "sha256": "9ec10a78475e8d73bb65de1795ce85e2c6c259c15050b8dca36ff082e193645d",
+      "contentType": "image/webp"
+    },
+    {
+      "source": "images/xua-nay/phong-hop-nay.webp",
+      "key": "images/xua-nay/phong-hop-nay.webp",
+      "size": 53036,
+      "sha256": "ab1fc099ed4e220316c92c5214226b1b097d4856264ebc087650dc5dd51c3cf2",
+      "contentType": "image/webp"
+    },
+    {
+      "source": "images/xua-nay/thong-hoi-1968.webp",
+      "key": "images/xua-nay/thong-hoi-1968.webp",
+      "size": 101238,
+      "sha256": "d3b61281a4d7cfba983a653d46134895c8e6408a998b4a456d14bed543c515c0",
+      "contentType": "image/webp"
+    },
+    {
+      "source": "images/xua-nay/thong-hoi-nay.webp",
+      "key": "images/xua-nay/thong-hoi-nay.webp",
+      "size": 141464,
+      "sha256": "a139a2321ae5d8a1c7ecfe829ac48124b4a7f54b11d9a0705dc6d92f8331638c",
+      "contentType": "image/webp"
+    },
+    {
+      "source": "mascot/mascot-1.png",
+      "key": "mascot/mascot-1.png",
+      "size": 1196629,
+      "sha256": "4766902e8fba9187e7a2feaa597e04d3acaffa994f2ec3389262e243c2c32248",
+      "contentType": "image/png"
+    },
+    {
+      "source": "mascot/mascot-10.png",
+      "key": "mascot/mascot-10.png",
+      "size": 1284479,
+      "sha256": "6192202a95389bcd73a36a5486f474f5c60d45fd441597eb7110adb641277a57",
+      "contentType": "image/png"
+    },
+    {
+      "source": "mascot/mascot-11.png",
+      "key": "mascot/mascot-11.png",
+      "size": 1339288,
+      "sha256": "7d99a547864f0a1871f2bb60c7866f43f8da16201e0c9a092758edd0bba8dc3a",
+      "contentType": "image/png"
+    },
+    {
+      "source": "mascot/mascot-2.png",
+      "key": "mascot/mascot-2.png",
+      "size": 1149109,
+      "sha256": "b9b92eabecf31712acf3630d4215b5f3dca6043476ac05e72b9aba3b461bb25f",
+      "contentType": "image/png"
+    },
+    {
+      "source": "mascot/mascot-3.png",
+      "key": "mascot/mascot-3.png",
+      "size": 1033347,
+      "sha256": "b71890a80c142a2eee1f0465965c91b485b2baec8d01105ab1066c17acec3764",
+      "contentType": "image/png"
+    },
+    {
+      "source": "mascot/mascot-4.png",
+      "key": "mascot/mascot-4.png",
+      "size": 1127136,
+      "sha256": "e9e9e20f83ca9b5eaba83beb56b25d9764e42c33a35a36fec4018b3951eb9f1e",
+      "contentType": "image/png"
+    },
+    {
+      "source": "mascot/mascot-5.png",
+      "key": "mascot/mascot-5.png",
+      "size": 1161886,
+      "sha256": "183c347fa825bf6f8b26323371571fd570a7a7d9d6b0182ce9d561a379f99629",
+      "contentType": "image/png"
+    },
+    {
+      "source": "mascot/mascot-6.png",
+      "key": "mascot/mascot-6.png",
+      "size": 1281245,
+      "sha256": "110ec1fc4d9accdfd82a8563c307c1a3818c60a4dc9da5ef679601c5ea87429d",
+      "contentType": "image/png"
+    },
+    {
+      "source": "mascot/mascot-7.png",
+      "key": "mascot/mascot-7.png",
+      "size": 1218778,
+      "sha256": "db52969833d12d8fe4907eccf931da6b3fa8c75add88e15f19e7023636afdf7b",
+      "contentType": "image/png"
+    },
+    {
+      "source": "mascot/mascot-8.png",
+      "key": "mascot/mascot-8.png",
+      "size": 1277713,
+      "sha256": "db343c7d4e71cb5b2eb634c91d56a25a950d33040b0ed5fe584e094d8180b3d8",
+      "contentType": "image/png"
+    },
+    {
+      "source": "mascot/mascot-9.png",
+      "key": "mascot/mascot-9.png",
+      "size": 1262489,
+      "sha256": "906bfdaaac289a19a3584c5e7fce467bad56c4bc608bee0ea539fb2ef8c4a7db",
+      "contentType": "image/png"
+    },
+    {
+      "source": "mascot-2.png",
+      "key": "mascot-2.png",
+      "size": 1149109,
+      "sha256": "b9b92eabecf31712acf3630d4215b5f3dca6043476ac05e72b9aba3b461bb25f",
+      "contentType": "image/png"
+    },
+    {
+      "source": "media/cu-chi/map/hero.jpg",
+      "key": "media/cu-chi/map/hero-72a0714aad11.jpg",
+      "size": 19771,
+      "sha256": "72a0714aad11c05b44b95017b80d90247907c1f72aa560636c38f2496b3c0107",
+      "contentType": "image/jpeg"
+    },
+    {
+      "source": "media/cu-chi/st01/audio/ambient.mp3",
+      "key": "media/cu-chi/st01/audio/ambient.mp3",
+      "size": 80501,
+      "sha256": "af369c9cd12e3b1df98489b8af0b6ebb9cf9dc46ac3214c75df23cca4122c339",
+      "contentType": "audio/mpeg"
+    },
+    {
+      "source": "media/cu-chi/st01/video/intro.mp4",
+      "key": "media/cu-chi/st01/video/intro.mp4",
+      "size": 18557,
+      "sha256": "756b8fea304cc659a576f42880460b0b4c5047c4e267e00669acc193f24c2237",
+      "contentType": "video/mp4"
+    },
+    {
+      "source": "media/cu-chi/st02/audio/ambient.mp3",
+      "key": "media/cu-chi/st02/audio/ambient.mp3",
+      "size": 80501,
+      "sha256": "af369c9cd12e3b1df98489b8af0b6ebb9cf9dc46ac3214c75df23cca4122c339",
+      "contentType": "audio/mpeg"
+    },
+    {
+      "source": "media/cu-chi/st02/video/intro.mp4",
+      "key": "media/cu-chi/st02/video/intro.mp4",
+      "size": 18395,
+      "sha256": "8abfdab6f2aacf2f604107be341178a5373dab13d52a00ea615819f21fd062f5",
+      "contentType": "video/mp4"
+    },
+    {
+      "source": "media/cu-chi/st03/audio/ambient.mp3",
+      "key": "media/cu-chi/st03/audio/ambient.mp3",
+      "size": 80501,
+      "sha256": "af369c9cd12e3b1df98489b8af0b6ebb9cf9dc46ac3214c75df23cca4122c339",
+      "contentType": "audio/mpeg"
+    },
+    {
+      "source": "media/cu-chi/st03/video/intro.mp4",
+      "key": "media/cu-chi/st03/video/intro.mp4",
+      "size": 18950,
+      "sha256": "97ba28298005b68f3bdf9b3d9e2b187d41f0832693d57c5f88829beb39600816",
+      "contentType": "video/mp4"
+    },
+    {
+      "source": "media/cu-chi/st04/audio/ambient.mp3",
+      "key": "media/cu-chi/st04/audio/ambient.mp3",
+      "size": 80501,
+      "sha256": "af369c9cd12e3b1df98489b8af0b6ebb9cf9dc46ac3214c75df23cca4122c339",
+      "contentType": "audio/mpeg"
+    },
+    {
+      "source": "media/cu-chi/st04/video/intro.mp4",
+      "key": "media/cu-chi/st04/video/intro.mp4",
+      "size": 18423,
+      "sha256": "6c7a1e0dbfe6f708cbade773deebf59ea46d225c57638734a05aa830337376c8",
+      "contentType": "video/mp4"
+    },
+    {
+      "source": "media/cu-chi/st05/audio/ambient.mp3",
+      "key": "media/cu-chi/st05/audio/ambient.mp3",
+      "size": 80501,
+      "sha256": "af369c9cd12e3b1df98489b8af0b6ebb9cf9dc46ac3214c75df23cca4122c339",
+      "contentType": "audio/mpeg"
+    },
+    {
+      "source": "media/cu-chi/st05/video/intro.mp4",
+      "key": "media/cu-chi/st05/video/intro.mp4",
+      "size": 18217,
+      "sha256": "c2a8d80c35ef71d10ed97022eee92d03b28fa7228613fe4cae9d6b034122713d",
+      "contentType": "video/mp4"
+    },
+    {
+      "source": "media/cu-chi/st06/audio/ambient.mp3",
+      "key": "media/cu-chi/st06/audio/ambient.mp3",
+      "size": 80501,
+      "sha256": "af369c9cd12e3b1df98489b8af0b6ebb9cf9dc46ac3214c75df23cca4122c339",
+      "contentType": "audio/mpeg"
+    },
+    {
+      "source": "media/cu-chi/st06/video/intro.mp4",
+      "key": "media/cu-chi/st06/video/intro.mp4",
+      "size": 18862,
+      "sha256": "d176c66d393ee97c4a1de4fe0958a092da641dfd3d9fcfdf4692255e5ca820c5",
+      "contentType": "video/mp4"
+    },
+    {
+      "source": "media/mascot/mascot-1.png",
+      "key": "media/mascot/mascot-1.png",
+      "size": 1196629,
+      "sha256": "4766902e8fba9187e7a2feaa597e04d3acaffa994f2ec3389262e243c2c32248",
+      "contentType": "image/png"
+    },
+    {
+      "source": "media/mascot/mascot-10.png",
+      "key": "media/mascot/mascot-10.png",
+      "size": 1284479,
+      "sha256": "6192202a95389bcd73a36a5486f474f5c60d45fd441597eb7110adb641277a57",
+      "contentType": "image/png"
+    },
+    {
+      "source": "media/mascot/mascot-11.png",
+      "key": "media/mascot/mascot-11.png",
+      "size": 1339288,
+      "sha256": "7d99a547864f0a1871f2bb60c7866f43f8da16201e0c9a092758edd0bba8dc3a",
+      "contentType": "image/png"
+    },
+    {
+      "source": "media/mascot/mascot-2.png",
+      "key": "media/mascot/mascot-2.png",
+      "size": 1149109,
+      "sha256": "b9b92eabecf31712acf3630d4215b5f3dca6043476ac05e72b9aba3b461bb25f",
+      "contentType": "image/png"
+    },
+    {
+      "source": "media/mascot/mascot-3.png",
+      "key": "media/mascot/mascot-3.png",
+      "size": 1033347,
+      "sha256": "b71890a80c142a2eee1f0465965c91b485b2baec8d01105ab1066c17acec3764",
+      "contentType": "image/png"
+    },
+    {
+      "source": "media/mascot/mascot-4.png",
+      "key": "media/mascot/mascot-4.png",
+      "size": 1127136,
+      "sha256": "e9e9e20f83ca9b5eaba83beb56b25d9764e42c33a35a36fec4018b3951eb9f1e",
+      "contentType": "image/png"
+    },
+    {
+      "source": "media/mascot/mascot-5.png",
+      "key": "media/mascot/mascot-5.png",
+      "size": 1161886,
+      "sha256": "183c347fa825bf6f8b26323371571fd570a7a7d9d6b0182ce9d561a379f99629",
+      "contentType": "image/png"
+    },
+    {
+      "source": "media/mascot/mascot-6.png",
+      "key": "media/mascot/mascot-6.png",
+      "size": 1281245,
+      "sha256": "110ec1fc4d9accdfd82a8563c307c1a3818c60a4dc9da5ef679601c5ea87429d",
+      "contentType": "image/png"
+    },
+    {
+      "source": "media/mascot/mascot-7.png",
+      "key": "media/mascot/mascot-7.png",
+      "size": 1218778,
+      "sha256": "db52969833d12d8fe4907eccf931da6b3fa8c75add88e15f19e7023636afdf7b",
+      "contentType": "image/png"
+    },
+    {
+      "source": "media/mascot/mascot-8.png",
+      "key": "media/mascot/mascot-8.png",
+      "size": 1277713,
+      "sha256": "db343c7d4e71cb5b2eb634c91d56a25a950d33040b0ed5fe584e094d8180b3d8",
+      "contentType": "image/png"
+    },
+    {
+      "source": "media/mascot/mascot-9.png",
+      "key": "media/mascot/mascot-9.png",
+      "size": 1262489,
+      "sha256": "906bfdaaac289a19a3584c5e7fce467bad56c4bc608bee0ea539fb2ef8c4a7db",
+      "contentType": "image/png"
+    },
+    {
+      "source": "minigames/dem-dau-1.svg",
+      "key": "minigames/dem-dau-1.svg",
+      "size": 259,
+      "sha256": "aa65758ebcc246229f4190c899eaa7c995e9226ed0064417fadc6ab298cab5fe",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "source": "minigames/dem-dau-2.svg",
+      "key": "minigames/dem-dau-2.svg",
+      "size": 405,
+      "sha256": "ba466e57337ba5bbad6414f924c862a2c1316c9ba1ec395d78ff48f8a0cde417",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "source": "minigames/dem-dau-3.svg",
+      "key": "minigames/dem-dau-3.svg",
+      "size": 307,
+      "sha256": "ea26ea875487b18fa0cfdb52458d217aef3f57448adb58faf9b5e6cbf433b457",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "source": "minigames/soi-nap-1.svg",
+      "key": "minigames/soi-nap-1.svg",
+      "size": 412,
+      "sha256": "e31de0e9b5a51b4a782ea0e657646a6a29c4a8e93e1132eb322788eb074eae29",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "source": "minigames/soi-nap-2.svg",
+      "key": "minigames/soi-nap-2.svg",
+      "size": 412,
+      "sha256": "1f1f71edd72a42741a76c01d24f0f20b096791b0b7f02ea185197d715ccb975b",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "source": "minigames/soi-nap-3.svg",
+      "key": "minigames/soi-nap-3.svg",
+      "size": 412,
+      "sha256": "d21fe93136b38e9ae67c3230d987c5b50ca743480f6cf7d0367fd14ac35474f5",
+      "contentType": "image/svg+xml"
+    }
+  ]
+}

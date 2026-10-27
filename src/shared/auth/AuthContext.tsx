@@ -17,6 +17,9 @@ import {
 } from './session'
 import { clearReturnTo } from '../router/returnTo'
 import { clearAdminDraftsForUser } from '../../features/admin/state'
+import { clearHeritageUploadsForUser } from '../../lib/heritageUploadOutbox'
+import { clearHeritageDrafts } from '../../lib/heritageStudioDraft'
+import { clearPhotoFrameReturnDrafts } from '../../lib/photoFrameReturnDraft'
 
 function clearAdminDrafts(userId: string | undefined) {
   if (userId && typeof sessionStorage !== 'undefined') clearAdminDraftsForUser(sessionStorage, userId)
@@ -102,10 +105,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   useEffect(() => {
-    const onSessionCleared = () => setUser(null)
+    const onSessionCleared = () => {
+      const ownerId = readStoredUser()?.id ?? user?.id
+      if (ownerId) void clearHeritageDrafts(ownerId)
+      if (ownerId) void clearPhotoFrameReturnDrafts(ownerId)
+      setUser(null)
+    }
     window.addEventListener(SESSION_CLEARED_EVENT, onSessionCleared)
     return () => window.removeEventListener(SESSION_CLEARED_EVENT, onSessionCleared)
-  }, [])
+  }, [user?.id])
 
   useEffect(() => {
     const onSessionRefreshed = () => {
@@ -191,6 +199,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     authApi.logout(getRefreshToken()).catch(() => undefined)
     clearAdminDrafts(user?.id)
+    if (user?.id) void clearHeritageUploadsForUser(user.id)
+    if (user?.id) void clearHeritageDrafts(user.id)
+    if (user?.id) void clearPhotoFrameReturnDrafts(user.id)
     clearSession()
     setUser(null)
   }

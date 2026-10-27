@@ -3,7 +3,7 @@ import path from 'node:path'
 import sharp from 'sharp'
 
 const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/
-const ASSET_URL = /^\/images\/photo-roles\/cu-chi\/(st0[1-6])\/[a-z0-9-]+-(?:bg|overlay)\.webp$/
+const ASSET_URL = /^\/media\/photo-roles\/cu-chi\/(st0[1-6])\/[a-z0-9-]+-(?:bg|overlay)\.webp$/
 const STATIONS = ['ST01', 'ST02', 'ST03', 'ST04', 'ST05', 'ST06']
 const STAGE_ORDER = ['gate-a', 'gate-b', 'gate-c']
 
@@ -20,21 +20,22 @@ function approvedReview(template) {
     && typeof review.note === 'string' && review.note.trim().length > 0
 }
 
-function resolveAsset(publicRoot, template, kind) {
+function resolveAsset(assetSourceRoot, template, kind) {
   const asset = template.assets?.[kind]
   if (!asset || typeof asset.url !== 'string' || !ASSET_URL.test(asset.url)) {
     fail(template, `${kind} asset must use a canonical same-origin WebP URL`)
   }
-  const expectedDir = `/images/photo-roles/cu-chi/${template.stationCode.toLowerCase()}/`
+  const expectedDir = `/media/photo-roles/cu-chi/${template.stationCode.toLowerCase()}/`
   if (!asset.url.startsWith(expectedDir)) fail(template, `${kind} asset belongs to the wrong station`)
-  const publicPath = path.resolve(publicRoot)
-  const assetPath = path.resolve(publicPath, `.${asset.url}`)
-  if (!assetPath.startsWith(`${publicPath}${path.sep}`)) fail(template, `${kind} asset escapes public root`)
+  const sourcePath = path.resolve(assetSourceRoot)
+  const relativePath = asset.url.replace(/^\/media\/photo-roles\//, '')
+  const assetPath = path.resolve(sourcePath, relativePath)
+  if (!assetPath.startsWith(`${sourcePath}${path.sep}`)) fail(template, `${kind} asset escapes source root`)
   return { asset, assetPath }
 }
 
-async function validateImage(template, publicRoot, kind) {
-  const { asset, assetPath } = resolveAsset(publicRoot, template, kind)
+async function validateImage(template, assetSourceRoot, kind) {
+  const { asset, assetPath } = resolveAsset(assetSourceRoot, template, kind)
   try {
     await access(assetPath)
   } catch {
@@ -77,8 +78,8 @@ async function validateDraftImage(template, draftRoot, kind) {
   }
 }
 
-async function validateApproval(publicRoot, stationCode, templates) {
-  const approvalPath = path.join(publicRoot, 'images', 'photo-roles', 'cu-chi', stationCode.toLowerCase(), 'approval.json')
+async function validateApproval(assetSourceRoot, stationCode, templates) {
+  const approvalPath = path.join(assetSourceRoot, 'cu-chi', stationCode.toLowerCase(), 'approval.json')
   const approval = JSON.parse(await readFile(approvalPath, 'utf8'))
   const published = templates.every((template) => template.published)
   if (approval.stationCode !== stationCode) throw new Error(`${stationCode}: approval stationCode mismatch`)
@@ -101,6 +102,7 @@ async function validateApproval(publicRoot, stationCode, templates) {
 export async function validateHeritageCatalog({
   templates,
   publicRoot,
+  assetSourceRoot = path.resolve(publicRoot, '..', 'heritage-assets'),
   draftRoot = path.resolve(publicRoot, '..', 'heritage-drafts'),
   requireCompleteCatalog = true,
 }) {
@@ -118,8 +120,8 @@ export async function validateHeritageCatalog({
       continue
     }
     if (!approvedReview(template)) fail(template, 'published template requires approved review metadata')
-    await validateImage(template, publicRoot, 'background')
-    await validateImage(template, publicRoot, 'overlay')
+    await validateImage(template, assetSourceRoot, 'background')
+    await validateImage(template, assetSourceRoot, 'overlay')
   }
 
   if (requireCompleteCatalog) {
@@ -132,7 +134,7 @@ export async function validateHeritageCatalog({
       if (new Set(stationTemplates.map((template) => template.published)).size !== 1) {
         throw new Error(`${stationCode}: both variants must publish together`)
       }
-      await validateApproval(publicRoot, stationCode, stationTemplates)
+      await validateApproval(assetSourceRoot, stationCode, stationTemplates)
     }
     const stageState = new Map(STAGE_ORDER.map((stage) => [stage, templates.filter((template) => template.releaseStage === stage).every((template) => template.published)]))
     if (stageState.get('gate-b') && !stageState.get('gate-a')) throw new Error('gate-b cannot publish before gate-a')

@@ -1,13 +1,11 @@
 import { Link } from 'react-router-dom'
 import type { ProfileMe, ProfileOverview } from './api'
 import type { ProfileResource } from './useProfileResource'
-import { ProfileFact, ProfileIcon, ProfileImage, ProfileResourceState } from './ProfileUi'
+import { ProfileFact, ProfileIcon, ProfileResourceState } from './ProfileUi'
 import { metricValue, profileDate, roleLabel } from './profileState'
-import { viralApi, type UserCreation } from '../viral/api'
-import { useProfileResource } from './useProfileResource'
+import { ProfileCreations } from './ProfileCreations'
 
 export function ProfileOverviewTab({ userId, profile, overview, onJourney }: { userId: string; profile: ProfileMe; overview: ProfileResource<ProfileOverview>; onJourney: () => void }) {
-  const creations = useProfileResource(`${userId}:creations`, viralApi.myCreations)
   const stats = overview.status === 'ready' ? overview.data?.stats : null
   const cards = [
     ['Nhiệm vụ hoàn thành', metricValue(stats, 'completedQuests'), 'task_alt', 'Trên toàn tài khoản'],
@@ -24,7 +22,7 @@ export function ProfileOverviewTab({ userId, profile, overview, onJourney }: { u
       <section className="pf-card"><div className="pf-card-heading"><ProfileIcon name="person" /><h2>Thông tin nhanh</h2></div><dl className="pf-facts"><ProfileFact label="Vai trò hệ thống" value={roleLabel(profile.role)} /><ProfileFact label="Email" value={profile.email} hint={profile.emailVerified ? 'Email đã xác thực' : 'Email chưa xác thực'} /><ProfileFact label="Thành phố" value={profile.city || 'Chưa cập nhật'} /><ProfileFact label="Tham gia TimeLens" value={overview.data ? profileDate(overview.data.account.createdAt) : 'Chưa tải được dữ liệu'} /></dl><Link className="pf-text-button" to="/settings">Cài đặt tài khoản <ProfileIcon name="arrow_outward" /></Link></section>
       <section className="pf-card pf-next-step"><span className="pf-kicker">HÀNH ĐỘNG TIẾP THEO</span><h2>{stats && stats.completedQuests > 0 ? 'Tiếp nối những điều bạn đã khám phá.' : 'Một hành trình mới đang chờ bạn.'}</h2><p>Khám phá di tích, thực hiện nhiệm vụ và lưu lại những dấu mốc của riêng mình. Tiến độ được đồng bộ từ các hoạt động thực tế trong hệ thống.</p><div className="pf-actions"><Link className="pf-button" to="/quests">Đến nhiệm vụ <ProfileIcon name="arrow_forward" /></Link><Link className="pf-button secondary" to="/explore">Khám phá di sản</Link></div><Link className="pf-text-button" to="/journey-wrapped">Xem tổng kết hành trình</Link></section>
     </div>
-    <section className="pf-card"><div className="pf-section-heading"><div><span className="pf-kicker">KHOẢNH KHẮC CỦA BẠN</span><h2>Sản phẩm đã tạo</h2><p>Ảnh và sản phẩm đã lưu trong tài khoản; chỉ bạn thấy khu vực hồ sơ cá nhân này.</p></div><Link className="pf-button secondary" to="/photo-frame">Tạo khoảnh khắc mới</Link></div><ProfileResourceState<UserCreation[]> resource={creations} label="sản phẩm đã tạo">{items => items.length ? <div className="pf-creations">{items.map(item => <Link key={item.id} to={`/share?creationId=${encodeURIComponent(item.id)}`}><ProfileImage src={item.outputUrl} alt="Sản phẩm đã tạo của bạn" /><div><strong>{item.variant === 'story' ? 'Khung dọc' : 'Khung vuông'}</strong><small>{profileDate(item.createdAt)}</small><span>Xem & chia sẻ ↗</span></div></Link>)}</div> : <div className="pf-empty"><ProfileIcon name="photo_library" /><h3>Chưa có sản phẩm đã lưu</h3><p>Tạo một bức ảnh di sản để lưu dấu hành trình của bạn.</p></div>}</ProfileResourceState></section>
+    <ProfileCreations userId={userId} />
     {overview.data && <p className="pf-footnote">Số liệu tổng hợp lúc {profileDate(overview.data.generatedAt, true)}. XP và cấp độ do hệ thống tính; không cộng lặp điểm ở từng khu vực.</p>}
   </div>
 }

@@ -114,10 +114,12 @@ export async function enhanceCapturedPhoto(file: File, opts: LowLightOptions, ma
 /** Render image onto a 1080x1920 (9:16) canvas with blurred backdrop + "timelens.asia" watermark. */
 export async function exportStoryImage(source: Blob | string, width = STORY_WIDTH, height = STORY_HEIGHT): Promise<Blob> {
   const bmp = await loadHeritageBitmap(source)
+  let canvas: HTMLCanvasElement | null = null
+  try {
   const srcW = 'naturalWidth' in bmp ? bmp.naturalWidth : bmp.width
   const srcH = 'naturalHeight' in bmp ? bmp.naturalHeight : bmp.height
 
-  const canvas = document.createElement('canvas')
+  canvas = document.createElement('canvas')
   canvas.width = width
   canvas.height = height
   const ctx = canvas.getContext('2d')
@@ -137,7 +139,6 @@ export async function exportStoryImage(source: Blob | string, width = STORY_WIDT
   const dw = srcW * fit
   const dh = srcH * fit
   ctx.drawImage(bmp, (width - dw) / 2, (height - dh) / 2 - (isStory ? 0 : height * 0.03), dw, dh)
-  if ('close' in bmp) bmp.close()
 
   // bottom watermark
   const bar = ctx.createLinearGradient(0, height - 260, 0, height)
@@ -157,7 +158,11 @@ export async function exportStoryImage(source: Blob | string, width = STORY_WIDT
   ctx.font = '400 28px system-ui, -apple-system, "Segoe UI", sans-serif'
   ctx.fillText('TimeLens · Hành trình di sản', width / 2, height - 44)
 
-  return heritageCanvasToBlob(canvas, 'image/jpeg', 0.92)
+  return await heritageCanvasToBlob(canvas, 'image/jpeg', 0.92)
+  } finally {
+    if ('close' in bmp) bmp.close()
+    if (canvas) { canvas.width = 0; canvas.height = 0 }
+  }
 }
 
 export function downloadBlob(blob: Blob, filename: string) {

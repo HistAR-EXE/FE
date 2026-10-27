@@ -112,7 +112,7 @@ const expectedStations = {
 }
 
 function expectedAssetPaths(stationCode, roleSlug, roleVariant) {
-  const directory = `/images/photo-roles/cu-chi/${stationCode.toLowerCase()}`
+  const directory = `/media/photo-roles/cu-chi/${stationCode.toLowerCase()}`
   const stem = `${stationCode.toLowerCase()}-${roleSlug}-${roleVariant}`
   return {
     background: `${directory}/${stem}-bg.webp`,
@@ -164,6 +164,8 @@ test('approved catalog exposes canonical runtime assets and keeps variant calibr
       assert.equal('overlayUrl' in template, false)
       assert.deepEqual(template.calibration.canvasSize, { width: 1080, height: 1920 })
       assertNormalizedRect(template.calibration.faceAnchor)
+      assert.ok(template.calibration.faceAnchor.width <= 0.23, `${template.id} face window is too wide for its overlay`)
+      assert.ok(template.calibration.faceAnchor.height <= 0.18, `${template.id} face window is too tall for its overlay`)
       assert.ok(template.calibration.faceFeather >= 0 && template.calibration.faceFeather <= 1)
     }
   }
@@ -183,7 +185,7 @@ test('approval JSON agrees exactly with every template publication decision', as
     const variants = heritageRoleTemplates.filter((template) => template.stationCode === stationCode)
     const approvalPath = path.join(
       feRoot,
-      'public/images/photo-roles/cu-chi',
+      'heritage-assets/cu-chi',
       stationCode.toLowerCase(),
       'approval.json',
     )
@@ -245,8 +247,8 @@ test('approval JSON agrees exactly with every template publication decision', as
       assert.equal(template.assets.overlay.url, expectedPaths.overlay)
       assert.equal(template.assets.overlay.hasAlpha, true)
 
-      const backgroundPath = path.join(feRoot, 'public', template.assets.background.url)
-      const overlayPath = path.join(feRoot, 'public', template.assets.overlay.url)
+      const backgroundPath = path.join(feRoot, 'heritage-assets', template.assets.background.url.replace('/media/photo-roles/', ''))
+      const overlayPath = path.join(feRoot, 'heritage-assets', template.assets.overlay.url.replace('/media/photo-roles/', ''))
       await access(backgroundPath)
       await access(overlayPath)
       const [backgroundMetadata, overlayMetadata] = await Promise.all([

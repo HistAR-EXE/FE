@@ -4,14 +4,14 @@ import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ command }) => ({
+  publicDir: command === 'build' ? '.r2-public-build' : 'public',
   plugins: [
     react(),
     tailwindcss(),
     VitePWA({
       strategies: 'generateSW',
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'icons.svg'],
       manifest: {
         name: 'HistAR TimeLens',
         short_name: 'HistAR',
@@ -27,9 +27,9 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,woff2}'],
+        globPatterns: ['**/*.{js,css,html,svg,woff2,wasm,task,tflite}'],
         // three.js / photo-sphere chunks are large.
-        maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
+        maximumFileSizeToCacheInBytes: 16 * 1024 * 1024,
         cleanupOutdatedCaches: true,
         // SPA: any navigation falls back to the app shell, except APIs and standalone static pages.
         navigateFallback: '/index.html',
@@ -40,13 +40,23 @@ export default defineConfig({
           /^\/ar\.html$/,
           /^\/media\//,
           /^\/films\//,
+          /^\/(audio|images|badges|brand|depth|huy|mascot|minigames)\//,
+          /^\/artifacts\/cu-chi\//,
+          /^\/assets\/ar-targets\//,
+          /^\/assets\/artifacts\/[^/]+\.webp$/,
+          /^\/assets\/target-(hat|lamp)\.png$/,
+          /^\/(favicon\.svg|icons\.svg|mascot-2\.png)$/,
           /^\/__\/auth\//,
         ],
         runtimeCaching: [
           {
-            // Same-origin /media only (Vercel/Vite proxy → R2). Do not intercept media.timelens.asia (CORS).
-            // FE must load /media on the app origin (Vercel/Vite proxy). Do not set VITE_MEDIA_BASE_URL to media.*.
-            urlPattern: ({ url }) => url.pathname.startsWith('/media/') && !/\.(mp4|m3u8|ts|m4s)$/i.test(url.pathname),
+            // Same-origin media is proxied to R2; stream video without service-worker caching.
+            urlPattern: ({ url }) => (
+              /^\/(media|films|audio|images|badges|brand|depth|huy|mascot|minigames)\//.test(url.pathname)
+              || url.pathname.startsWith('/artifacts/cu-chi/')
+              || /^\/assets\/(ar-targets\/|artifacts\/[^/]+\.webp$|target-(hat|lamp)\.png$)/.test(url.pathname)
+              || /^\/(favicon\.svg|icons\.svg|mascot-2\.png)$/.test(url.pathname)
+            ) && !/\.(mp4|webm|mov|m3u8|ts|m4s)$/i.test(url.pathname),
             handler: 'CacheFirst',
             options: {
               cacheName: 'histar-media-v2',
@@ -68,9 +78,18 @@ export default defineConfig({
         target: 'https://media.timelens.asia',
         changeOrigin: true,
         secure: true,
-        bypass(req) {
-          if (req.url?.startsWith('/media/mascot/')) return req.url
-        },
+      },
+      '^/(films|audio|images|badges|brand|depth|huy|mascot|minigames)/': {
+        target: 'https://media.timelens.asia', changeOrigin: true, secure: true,
+      },
+      '^/artifacts/cu-chi/': {
+        target: 'https://media.timelens.asia', changeOrigin: true, secure: true,
+      },
+      '^/assets/(ar-targets/|artifacts/[^/]+\\.webp$|target-(hat|lamp)\\.png$)': {
+        target: 'https://media.timelens.asia', changeOrigin: true, secure: true,
+      },
+      '^/(favicon\\.svg|icons\\.svg|mascot-2\\.png)$': {
+        target: 'https://media.timelens.asia', changeOrigin: true, secure: true,
       },
       '/__/auth': {
         target: 'https://histar-a08c1.firebaseapp.com',
@@ -79,4 +98,4 @@ export default defineConfig({
       },
     },
   },
-})
+}))

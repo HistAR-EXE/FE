@@ -7,3 +7,4 @@
 /* AppLayout's fixed background uses the global dark palette; override only this page. */
 .profile-workspace>.fixed.inset-0{background:linear-gradient(150deg,#e7f1ff 0%,#f4f8ff 65%,#fffdf1 100%)!important}
 @media(max-width:650px){.pf-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));overflow:visible;gap:4px}.pf-tabs button{white-space:normal;padding:13px 8px;border-radius:10px 10px 0 0}}
+.pf-creation{border:1px solid #d3e2f6;border-radius:16px;overflow:hidden;background:white}.pf-creation>a{display:block}.pf-creation a>div:last-child{padding:14px}.pf-creation-actions{padding:14px;display:flex;gap:8px;flex-wrap:wrap;border-top:1px solid #e1eaf6}.pf-creation-actions p{width:100%;font-size:13px}.pf-delete-creation{margin:0 14px 14px;color:#ab392a}

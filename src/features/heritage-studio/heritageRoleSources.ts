@@ -61,5 +61,6 @@ export function buildHeritageRolePhotoFramePath(
     locationId,
     era: '1968',
     source: 'time-portal-3d',
+    mode: 'heritage',
   })}`
 }

@@ -132,4 +132,4 @@ export const CU_CHI_LANDMARKS: CuChiLandmark[] = [
   { lat: 11.1412, lng: 106.4648, label: 'Sông Sài Gòn', color: '#0ea5e9', kind: 'water' },
 ]
 
-export const CU_CHI_MAP_HERO = '/media/cu-chi/map/hero.jpg'
+export const CU_CHI_MAP_HERO = '/media/cu-chi/map/hero-72a0714aad11.jpg'

@@ -10,6 +10,7 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+.r2-public-build/
 *.local
 
 # Environment (secrets — mẫu: .env.example)
@@ -30,6 +31,7 @@ dist-ssr
 /tests/ui/*
 !/tests/ui/chat-stream-contract.spec.ts
 !/tests/ui/chat-failure-retry.spec.ts
+!/tests/ui/station-header.spec.ts
 !/tests/api/
 /tests/api/*
 !/tests/api/admin-console.spec.ts
@@ -51,6 +53,7 @@ dist-ssr
 !/tests/ui/field-trip-planning.spec.ts
 !/tests/ui/field-trip-report.spec.ts
 !/tests/ui/heritage-studio.spec.ts
+!/tests/ui/profile-creations-delete.spec.ts
 !/tests/e2e/heritage-studio-privacy.spec.ts
 !/tests/e2e/heritage-studio-mobile.spec.ts
 !/tests/fullstack/
@@ -76,3 +79,20 @@ dist-ssr
 
 # Large site media is on Cloudflare R2. See docs/MEDIA_R2.md
 public/media/
+public/artifacts/
+public/audio/
+public/badges/
+public/brand/
+public/depth/
+public/films/
+public/huy/
+public/images/
+public/mascot/
+public/minigames/
+public/assets/ar-targets/
+public/assets/artifacts/*.webp
+public/assets/target-hat.png
+public/assets/target-lamp.png
+public/favicon.svg
+public/icons.svg
+public/mascot-2.png

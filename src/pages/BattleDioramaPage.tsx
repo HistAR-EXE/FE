@@ -11,7 +11,7 @@ import { DISCOVERY_RECORDED_EVENT } from '../features/gamification/discoveryRout
 import mascotImg from '../assets/mascot.png'
 import { HeritageRolePicker } from '../features/heritage-studio/HeritageRolePicker'
 import type { HeritageRoleTemplate } from '../features/heritage-studio/types'
-import { appendHeritageEntrySource, buildStationCameraPath } from '../features/stations/stationRoutes'
+import { appendHeritageEntrySource, buildStationHeritagePath } from '../features/stations/stationRoutes'
 
 const BattleDioramaViewer = lazy(() =>
     import('../features/diorama/BattleDioramaViewer').then((module) => ({
@@ -54,7 +54,7 @@ export function BattleDioramaPage() {
 
     const openHeritageRole = useCallback((role: HeritageRoleTemplate) => {
         if (!role.published) return
-        const base = buildStationCameraPath({
+        const base = buildStationHeritagePath({
             siteCode: role.siteCode,
             stationCode: role.stationCode,
             locationId: activeLocationId,
@@ -404,16 +404,19 @@ export function BattleDioramaPage() {
                             <div className="relative flex-1 h-[calc(100dvh-8.5rem)] min-h-[480px] bg-[#07132C]">
                                 <BattleDioramaViewer onStart={() => void recordExperience()} onComplete={() => setDioramaComplete(true)} />
                                 {dioramaComplete && (
-                                    <aside className="absolute inset-x-3 bottom-3 z-[220] mx-auto max-w-3xl rounded-2xl border-2 border-[#FDC908] bg-[#07132C]/95 p-4 text-white shadow-2xl backdrop-blur-md" data-testid="cedar-falls-heritage-entry">
-                                        <div className="mb-3 flex items-start justify-between gap-3">
+                                    <aside className="absolute inset-x-3 bottom-3 top-3 z-[220] mx-auto flex max-w-6xl flex-col overflow-hidden rounded-[1.75rem] border border-[#e5bd62]/70 bg-[#07111f]/97 text-white shadow-[0_30px_100px_rgba(0,0,0,0.65)] backdrop-blur-md" data-testid="cedar-falls-heritage-entry">
+                                        <div className="flex items-start justify-between gap-3 border-b border-white/10 bg-[linear-gradient(110deg,rgba(228,183,86,0.14),transparent_55%)] p-4 sm:p-5">
                                             <div>
-                                                <p className="text-xs font-black uppercase tracking-wider text-[#FDC908]">Tiếp nối đúng bối cảnh</p>
-                                                <h2 className="mt-1 text-lg font-black">Từ chiến dịch Cedar Falls 1967, tiếp tục khám phá đời sống dưới địa đạo năm 1968.</h2>
-                                                <p className="mt-1 text-xs text-blue-100">Chọn vai trước khi mở Khung di sản. Việc mở studio không tạo check-in hoặc cộng điểm.</p>
+                                                <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#efc96e]">Bộ sưu tập hóa thân · 1968</p>
+                                                <h2 className="mt-1 max-w-3xl text-lg font-black sm:text-xl">Chọn một vai diễn trong đời sống địa đạo</h2>
+                                                <p className="mt-1 text-xs font-semibold text-[#efd58f]">Từ chiến dịch Cedar Falls 1967, tiếp tục khám phá đời sống dưới địa đạo năm 1968.</p>
+                                                <p className="mt-1 max-w-3xl text-xs leading-relaxed text-blue-100/80 sm:text-sm">12 vai nam/nữ được dựng từ 24 lớp ảnh đã duyệt. Chọn vai để mở studio. Việc mở studio không tạo check-in hoặc cộng điểm.</p>
                                             </div>
-                                            <button type="button" onClick={() => setDioramaComplete(false)} aria-label="Đóng chọn vai" className="rounded-full border border-white/30 px-2 py-1">×</button>
+                                            <button type="button" onClick={() => setDioramaComplete(false)} aria-label="Đóng chọn vai" className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/20 bg-white/5 text-xl transition hover:border-[#efc96e] hover:text-[#efc96e]">×</button>
                                         </div>
-                                        <HeritageRolePicker siteCode="cu-chi" onSelect={openHeritageRole} />
+                                        <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5">
+                                            <HeritageRolePicker siteCode="cu-chi" variant="gallery" onSelect={openHeritageRole} />
+                                        </div>
                                     </aside>
                                 )}
                             </div>

@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { MaterialIcon } from '../../components/ui/MaterialIcon'
+import { HeritageRoleArtwork } from './HeritageRoleArtwork'
 import { getPublishedRoleTemplates, heritageRoleTemplates } from './roleTemplates'
 import type { HeritageRoleTemplate, HeritageStationCode } from './types'
 
@@ -10,6 +11,7 @@ type HeritageRolePickerProps = {
   templates?: readonly HeritageRoleTemplate[]
   selectedId?: string | null
   onSelect: (template: HeritageRoleTemplate) => void
+  variant?: 'compact' | 'gallery'
 }
 
 export function HeritageRolePicker({
@@ -19,6 +21,7 @@ export function HeritageRolePicker({
   templates,
   selectedId,
   onSelect,
+  variant = 'compact',
 }: HeritageRolePickerProps) {
   const roles = useMemo(() => {
     if (!templates && publishedOnly) return getPublishedRoleTemplates(siteCode, stationCode)
@@ -38,7 +41,13 @@ export function HeritageRolePicker({
   }
 
   return (
-    <div className="grid gap-sm sm:grid-cols-2" role="list" aria-label="Chọn vai hóa thân năm 1968">
+    <div
+      className={variant === 'gallery'
+        ? 'grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4'
+        : 'grid grid-cols-2 gap-3'}
+      role="list"
+      aria-label="Chọn vai hóa thân năm 1968"
+    >
       {roles.map((role) => {
         const selected = selectedId === role.id
         return (
@@ -48,14 +57,25 @@ export function HeritageRolePicker({
               data-testid={`heritage-role-${role.id}`}
               aria-pressed={selected}
               onClick={() => onSelect(role)}
-              className={`h-full w-full rounded-xl border p-sm text-left transition-colors ${selected ? 'border-primary bg-primary/10' : 'border-outline-variant bg-surface hover:border-primary/60'}`}
+              className={`group h-full w-full overflow-hidden rounded-2xl border text-left transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f2c867] ${selected ? 'border-[#f2c867] bg-[#2b2115] shadow-[0_10px_32px_rgba(222,169,67,0.2)]' : 'border-white/15 bg-[#111827] hover:-translate-y-0.5 hover:border-[#d8af58]/70 hover:shadow-xl'}`}
             >
-              <span className="flex items-center justify-between gap-2">
-                <strong className="text-sm text-on-surface">{role.stationCode} · {role.stationName}</strong>
-                <MaterialIcon name={selected ? 'check_circle' : 'person'} className={selected ? 'text-primary' : 'text-on-surface-variant'} />
+              {role.published && (
+                <HeritageRoleArtwork
+                  template={role}
+                  presentation="thumbnail"
+                  className="w-full"
+                />
+              )}
+              <span className="block p-3">
+                <span className="flex items-start justify-between gap-2">
+                  <span>
+                    <strong className="block text-[11px] font-black uppercase tracking-[0.12em] text-[#e3bb67]">{role.stationCode} · {role.stationName}</strong>
+                    <span className="mt-1 block text-sm font-extrabold leading-snug text-white">{role.title} · {role.roleVariant === 'nam' ? 'Nam' : 'Nữ'}</span>
+                  </span>
+                  <MaterialIcon name={selected ? 'check_circle' : 'person'} className={selected ? 'text-[#f2c867]' : 'text-slate-400'} />
+                </span>
+                <span className="mt-1.5 line-clamp-2 block text-xs leading-relaxed text-slate-300">{role.actionLabel}</span>
               </span>
-              <span className="mt-1 block text-sm text-on-surface">{role.title} · {role.roleVariant === 'nam' ? 'Nam' : 'Nữ'}</span>
-              <span className="mt-1 block text-xs text-on-surface-variant">{role.actionLabel}</span>
             </button>
           </div>
         )
