@@ -1,0 +1,16 @@
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
+import type { ProfileMe, ProfileOverview } from './api'
+import type { ProfileResource } from './useProfileResource'
+import { ProfileEditForm } from './ProfileEditForm'
+import { ProfileFact, ProfileIcon } from './ProfileUi'
+import { profileDate, roleLabel } from './profileState'
+
+export function ProfilePersonalTab({ profile, overview, onSaved }: { profile: ProfileMe; overview: ProfileResource<ProfileOverview>; onSaved: (profile: ProfileMe) => void }) {
+  const [editing, setEditing] = useState(false)
+  const provider = overview.data?.account.provider
+  return <div className="pf-tab-content"><div className="pf-section-heading"><div><span className="pf-kicker">THÔNG TIN CỦA RIÊNG BẠN</span><h2>Thông tin cá nhân</h2><p>Giữ thông tin hiển thị chính xác và quản lý các thiết lập bảo mật của tài khoản.</p></div>{!editing && <button className="pf-button" onClick={() => setEditing(true)}><ProfileIcon name="edit" /> Chỉnh sửa hồ sơ</button>}</div>
+    <div className="pf-columns"><section className="pf-card"><div className="pf-card-heading"><ProfileIcon name="badge" /><h2>Thông tin hiển thị</h2></div>{editing ? <ProfileEditForm key={`${profile.id}:${profile.displayName}:${profile.city}:${profile.avatarUrl}`} profile={profile} onSaved={saved => { onSaved(saved); setEditing(false) }} onCancel={() => setEditing(false)} /> : <dl className="pf-facts"><ProfileFact label="Tên hiển thị" value={profile.displayName} /><ProfileFact label="Thành phố" value={profile.city || 'Chưa cập nhật'} /><ProfileFact label="Ngày tham gia" value={overview.data ? profileDate(overview.data.account.createdAt) : 'Chưa tải được thông tin'} /><ProfileFact label="Vai trò hệ thống" value={roleLabel(profile.role)} /></dl>}</section>
+      <section className="pf-card"><div className="pf-card-heading"><ProfileIcon name="shield_person" /><h2>Đăng nhập & bảo mật</h2></div><dl className="pf-facts"><ProfileFact label="Email đăng nhập" value={profile.email} /><ProfileFact label="Xác thực email" value={profile.emailVerified ? 'Đã xác thực' : 'Chưa xác thực'} /><ProfileFact label="Phương thức đăng nhập" value={provider === 'google' ? 'Google' : provider === 'local' ? 'Email và mật khẩu' : 'Chưa có dữ liệu'} /></dl><div className="pf-notice"><ProfileIcon name="lock" /><p>Email đăng nhập, mật khẩu và bảo mật được quản lý trong Cài đặt. Biểu mẫu hồ sơ không thay đổi quyền hoặc gói sử dụng.</p></div><Link className="pf-button secondary" to="/settings">Mở cài đặt tài khoản <ProfileIcon name="arrow_outward" /></Link>{!profile.emailVerified && <Link className="pf-text-button" to="/verify-email/pending">Xác thực email của bạn</Link>}</section></div>
+  </div>
+}

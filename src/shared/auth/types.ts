@@ -96,7 +96,7 @@ export function isOrgMember(user: AuthUser | null | undefined): boolean {
 
 export function isPremium(user: AuthUser | null | undefined): boolean {
   if (!user) return false
-  return user.tier === 'PREMIUM' || user.role === 'ADMIN' || user.role === 'TEACHER'
+  return user.tier === 'PREMIUM' || user.role === 'ADMIN'
 }
 
 export function getPostLoginRedirect(user: AuthUser, from?: string | null): string {

@@ -1,11 +1,10 @@
+import { useTeacherWorkspace } from '../features/org/teacher-workspace-context'
+import { TeacherQuestFields } from '../features/org/TeacherQuestFields'
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
-import { AppLayout } from '../components/layout/AppLayout'
-import { SimpleTopNav } from '../components/layout/TopNav'
 import { Button } from '../components/ui/Button'
 import { fieldTripApi } from '../features/field-trips/api'
 import { FIELD_TRIP_STATUS_LABEL, toIsoFromLocal, type FieldTripResponse } from '../features/field-trips/types'
-import { orgApi, type OrgMembership } from '../features/org/api'
 import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
 import { useToast } from '../shared/ui/toast/useToast'
 
@@ -13,9 +12,9 @@ const fieldClass = 'w-full rounded-lg border border-outline-variant bg-surface p
 
 export function TeacherTripsPage() {
   const { showToast } = useToast()
-  const [memberships, setMemberships] = useState<OrgMembership[]>([])
+  const { memberships, orgId, setOrgId } = useTeacherWorkspace()
   const [trips, setTrips] = useState<FieldTripResponse[]>([])
-  const [orgId, setOrgId] = useState('')
+
   const [siteCode, setSiteCode] = useState('')
   const [title, setTitle] = useState('')
   const [visitStart, setVisitStart] = useState('')
@@ -34,13 +33,6 @@ export function TeacherTripsPage() {
   }
 
   useEffect(() => {
-    orgApi.mine()
-      .then((items) => {
-        const teachers = items.filter((item) => item.orgRole.toLowerCase() === 'teacher')
-        setMemberships(teachers)
-        if (teachers[0]) setOrgId((current) => current || teachers[0].organizationId)
-      })
-      .catch((error) => showToast({ message: getFriendlyErrorMessage(error, 'quest'), type: 'error' }))
     reload()
   }, [showToast])
 
@@ -71,12 +63,12 @@ export function TeacherTripsPage() {
   }
 
   return (
-    <AppLayout activeBorder="left" topNav={<SimpleTopNav title="Chuyến tham quan" backTo="/teacher" />}>
+    <>
       <main className="mt-14 md:mt-16 p-md md:p-lg max-w-5xl mx-auto w-full space-y-md">
         <div>
           <h1 className="font-display-md text-on-surface">Chuyến tham quan</h1>
           <p className="text-sm text-on-surface-variant mt-1">
-            Tạo chuyến, chọn di tích và khung giờ. Nhiệm vụ và chiến dịch dùng mã đã có, không mở trình quản trị.
+            Chọn di tích, khung giờ và nhiệm vụ phù hợp. Chuẩn bị nhóm học sinh trước khi bắt đầu chuyến.
           </p>
         </div>
 
@@ -109,14 +101,7 @@ export function TeacherTripsPage() {
               <input className={fieldClass} type="datetime-local" value={visitEnd} onChange={(event) => setVisitEnd(event.target.value)} required />
             </label>
           </div>
-          <label className="block text-sm space-y-1">
-            Mã nhiệm vụ
-            <input className={`${fieldClass} font-mono text-xs`} value={questId} onChange={(event) => setQuestId(event.target.value)} required />
-          </label>
-          <label className="block text-sm space-y-1">
-            Mã chiến dịch
-            <input className={`${fieldClass} font-mono text-xs`} value={campaignId} onChange={(event) => setCampaignId(event.target.value)} required />
-          </label>
+          <TeacherQuestFields questId={questId} campaignId={campaignId} onQuestChange={setQuestId} onCampaignChange={setCampaignId} campaignRequired />
           <Button type="submit" disabled={saving || memberships.length === 0}>Tạo chuyến</Button>
         </form>
 
@@ -141,6 +126,6 @@ export function TeacherTripsPage() {
           )}
         </section>
       </main>
-    </AppLayout>
+    </>
   )
 }

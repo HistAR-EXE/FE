@@ -1,3 +1,4 @@
+import { TeacherWorkspaceLayout } from '../features/org/TeacherWorkspace'
 // src/routes/AppRoutes.tsx
 import { lazy, Suspense } from 'react'
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom'
@@ -182,6 +183,7 @@ export function AppRoutes() {
                                 </Route>
 
                                 <Route element={<TeacherRoute />}>
+                                    <Route element={<TeacherWorkspaceLayout />}>
                                     <Route path="/teacher" element={<TeacherDashboardPage />} />
                                     <Route path="/teacher/assignments" element={<TeacherAssignmentsPage />} />
                                     <Route path="/teacher/live-board" element={<TeacherLiveBoardPage />} />
@@ -189,6 +191,7 @@ export function AppRoutes() {
                                     <Route path="/teacher/trips/:tripId/live" element={<TeacherTripLivePage />} />
                                     <Route path="/teacher/trips/:tripId/report" element={<TeacherTripReportPage />} />
                                     <Route path="/teacher/trips/:tripId" element={<TeacherTripDetailPage />} />
+                                    </Route>
                                 </Route>
                                 <Route path="/trip/join/:code" element={<TripJoinPage />} />
 

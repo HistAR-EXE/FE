@@ -62,7 +62,7 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      '/api': { target: 'http://127.0.0.1:8080', changeOrigin: true },
+      '/api': { target: process.env.HISTAR_LOCAL_API_TARGET || 'http://127.0.0.1:8080', changeOrigin: true },
       '/ai': { target: 'http://127.0.0.1:8100', changeOrigin: true },
       '/media': {
         target: 'https://media.timelens.asia',

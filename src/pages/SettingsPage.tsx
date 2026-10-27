@@ -1,202 +1,37 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useCallback,useEffect,useRef,useState } from 'react'
+import { Link,useNavigate,useSearchParams } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
-import { SimpleTopNav } from '../components/layout/TopNav'
-import { profileApi, type ProfileMe } from '../features/profile/api'
-import { SettingsClassroomSection } from '../features/settings/SettingsClassroomSection'
-import { SettingsLogoutSection } from '../features/settings/SettingsLogoutSection'
-import { SettingsPremiumSection } from '../features/settings/SettingsPremiumSection'
-import { SettingsProfileSection } from '../features/settings/SettingsProfileSection'
-import { SettingsTeacherSection } from '../features/settings/SettingsTeacherSection'
 import { EmailVerificationBanner } from '../components/auth/EmailVerificationBanner'
+import { profileApi,type ProfileMe } from '../features/profile/api'
+import { ProfileEditForm } from '../features/profile/ProfileEditForm'
+import { ProfileAvatar,ProfileFact,ProfileIcon,ProfileResourceState } from '../features/profile/ProfileUi'
+import { useProfileResource } from '../features/profile/useProfileResource'
+import { profileDate,roleLabel } from '../features/profile/profileState'
+import { SettingsOrganization } from '../features/settings/SettingsOrganization'
+import { SettingsPrivacy } from '../features/settings/SettingsPrivacy'
+import { SettingsPlans } from '../features/settings/SettingsPlans'
+import { SettingsConfirm,type SettingsAction } from '../features/settings/SettingsConfirm'
+import { canAutoJoin,settingsUserPatch,personalAccessLabel } from '../features/settings/settingsState'
 import { orgApi } from '../features/org/api'
 import { billingApi } from '../features/billing/api'
 import { useAuth } from '../shared/auth/useAuth'
-import { getSettingsSections } from '../shared/auth/settingsAccess'
-import { normalizeOrgSubscription, normalizeRole } from '../shared/auth/types'
 import { useToast } from '../shared/ui/toast/useToast'
-import { handleActionLinkError } from '../shared/router/actionErrors'
 import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
-import type { B2cBillingStatus, B2cSubscriptionHistoryItem } from '../features/billing/api'
-
-export function SettingsPage() {
-  const [searchParams] = useSearchParams()
-  const navigate = useNavigate()
-  const { logout, user, updateUser } = useAuth()
-  const [profile, setProfile] = useState<ProfileMe | null>(null)
-  const [upgrading, setUpgrading] = useState(false)
-  const [cancelling, setCancelling] = useState(false)
-  const [orgInviteCode, setOrgInviteCode] = useState('')
-  const [orgJoining, setOrgJoining] = useState(false)
-  const [billingStatus, setBillingStatus] = useState<B2cBillingStatus | null>(null)
-  const [billingHistory, setBillingHistory] = useState<B2cSubscriptionHistoryItem[]>([])
-  const { showToast } = useToast()
-
-  useEffect(() => {
-    profileApi.me().then(setProfile).catch((e) => showToast({ message: getFriendlyErrorMessage(e, 'quest'), type: 'error' }))
-  }, [showToast])
-
-  useEffect(() => {
-    if (user?.orgId) {
-      setBillingStatus(null)
-      setBillingHistory([])
-      return
-    }
-    billingApi.getB2CStatus().then(setBillingStatus).catch(() => setBillingStatus(null))
-    billingApi.getB2CHistory().then(setBillingHistory).catch(() => setBillingHistory([]))
-  }, [user?.orgId])
-
-  useEffect(() => {
-    const joinCode = searchParams.get('joinCode')
-    if (joinCode) setOrgInviteCode(joinCode)
-  }, [searchParams])
-
-  const sections = useMemo(() => {
-    if (!user) return ['profile', 'logout'] as const
-    return getSettingsSections(user.role, user.tier, user.orgId)
-  }, [user])
-
-  const handleJoinOrg = async () => {
-    if (!orgInviteCode.trim()) return
-    try {
-      setOrgJoining(true)
-      const result = await orgApi.join(orgInviteCode.trim())
-      const next = await profileApi.me()
-      setProfile(next)
-      updateUser({
-        role: normalizeRole(result.platformRole),
-        orgId: result.organizationId,
-        orgName: result.organizationName,
-        orgRole: result.orgRole,
-        orgSubscription: normalizeOrgSubscription(next.orgSubscription),
-      })
-      setOrgInviteCode('')
-      showToast({ message: `Đã tham gia ${result.organizationName}`, type: 'success' })
-      navigate('/home', { replace: true })
-    } catch (e) {
-      const joinCode = searchParams.get('joinCode')
-      const autoJoin = searchParams.get('autoJoin') === '1'
-      if (autoJoin && joinCode) {
-        handleActionLinkError(e, navigate, showToast, '/home')
-        return
-      }
-      showToast({ message: getFriendlyErrorMessage(e, 'quest'), type: 'error' })
-    } finally {
-      setOrgJoining(false)
-    }
-  }
-
-  useEffect(() => {
-    const joinCode = searchParams.get('joinCode')?.trim()
-    const autoJoin = searchParams.get('autoJoin') === '1'
-    if (!autoJoin || !joinCode || !user || profile?.orgId || orgJoining) return
-    void handleJoinOrg()
-  }, [searchParams, user, profile?.orgId, orgJoining, handleJoinOrg])
-
-  const handleLeaveOrg = async () => {
-    if (!window.confirm('Bạn có chắc muốn rời tổ chức? Giáo viên sẽ không còn theo dõi tiến độ của bạn.')) return
-    try {
-      await orgApi.leave()
-      const next = await profileApi.me()
-      setProfile(next)
-      updateUser({
-        role: 'USER',
-        orgId: null,
-        orgName: null,
-        orgRole: null,
-        orgSubscription: 'NONE',
-      })
-      showToast({ message: 'Đã rời tổ chức', type: 'success' })
-    } catch (e) {
-      showToast({ message: getFriendlyErrorMessage(e, 'quest'), type: 'error' })
-    }
-  }
-
-  const handleUpgrade = async () => {
-    setUpgrading(true)
-    navigate('/checkout/b2c?next=/settings')
-  }
-
-  const handleCancelPremium = async () => {
-    if (!window.confirm('Bạn muốn hủy gói Premium demo hiện tại?')) return
-    try {
-      setCancelling(true)
-      const nextStatus = await billingApi.cancelB2C()
-      setBillingStatus(nextStatus)
-      updateUser({ tier: 'FREE' })
-      const nextProfile = await profileApi.me()
-      setProfile(nextProfile)
-      setBillingHistory(await billingApi.getB2CHistory())
-      showToast({ message: 'Đã hủy gói Premium demo', type: 'success' })
-    } catch (e) {
-      showToast({ message: getFriendlyErrorMessage(e, 'quest'), type: 'error' })
-    } finally {
-      setCancelling(false)
-    }
-  }
-
-  return (
-    <AppLayout activeBorder="left" topNav={<SimpleTopNav title="Cài đặt" />}>
-      <main className="mt-14 md:mt-16 p-md md:p-lg max-w-3xl mx-auto w-full">
-        {!profile && (
-          <div className="space-y-md">
-            <div className="h-32 rounded-xl bg-surface-container animate-pulse border border-outline-variant" />
-            <p className="text-on-surface-variant text-sm">Đang tải cài đặt...</p>
-          </div>
-        )}
-        {profile && (
-          <div className="space-y-md">
-            <EmailVerificationBanner
-              emailVerified={profile.emailVerified !== false}
-              onVerified={() =>
-                profileApi.me().then((next) => setProfile(next)).catch(() => undefined)
-              }
-            />
-            {sections.map((section) => {
-              switch (section) {
-                case 'profile':
-                  return (
-                    <SettingsProfileSection
-                      key={section}
-                      profile={profile}
-                      onSaved={setProfile}
-                    />
-                  )
-                case 'classroom':
-                  return (
-                    <SettingsClassroomSection
-                      key={section}
-                      profile={profile}
-                      orgInviteCode={orgInviteCode}
-                      orgJoining={orgJoining}
-                      onInviteCodeChange={setOrgInviteCode}
-                      onJoin={() => void handleJoinOrg()}
-                      onLeave={() => void handleLeaveOrg()}
-                    />
-                  )
-                case 'teacher':
-                  return <SettingsTeacherSection key={section} />
-                case 'premium':
-                  return (
-                    <SettingsPremiumSection
-                      key={section}
-                      upgrading={upgrading}
-                      cancelling={cancelling}
-                      billingStatus={billingStatus}
-                      history={billingHistory}
-                      onUpgrade={() => void handleUpgrade()}
-                      onCancel={() => void handleCancelPremium()}
-                    />
-                  )
-                case 'logout':
-                  return <SettingsLogoutSection key={section} onLogout={logout} />
-                default:
-                  return null
-              }
-            })}
-          </div>
-        )}
-      </main>
-    </AppLayout>
-  )
+import '../features/profile/profile.css'
+import '../features/settings/settings.css'
+const sections=[{id:'account',label:'Thông tin tài khoản',icon:'person'},{id:'security',label:'Đăng nhập & bảo mật',icon:'shield_person'},{id:'plans',label:'Gói sử dụng',icon:'workspace_premium'},{id:'organization',label:'Tổ chức & lớp học',icon:'school'},{id:'privacy',label:'Quyền riêng tư & phiên',icon:'tune'}] as const
+export function SettingsPage(){const {user}=useAuth();return <AppLayout hideTopNav mobileTitle="Cài đặt" className="profile-workspace settings-workspace"><main className="pf-main st-main">{user?<SettingsWorkspace key={user.id} userId={user.id}/>:<section className="pf-card"><h1>Cài đặt</h1><Link to="/login">Đăng nhập để quản lý tài khoản</Link></section>}</main></AppLayout>}
+function SettingsWorkspace({userId}:{userId:string}){
+ const {updateUser,logout}=useAuth(),{showToast}=useToast(),navigate=useNavigate()
+ const [params]=useSearchParams(),queryCode=params.get('joinCode')?.trim()||''
+ const identity=useProfileResource(userId,profileApi.me),overview=useProfileResource(`${userId}:settings-overview`,profileApi.overview)
+ const [override,setOverride]=useState<ProfileMe|null>(null),profile=override||identity.data
+ const [tab,setTab]=useState(queryCode?3:0),[code,setCode]=useState(queryCode),[busy,setBusy]=useState(false),[error,setError]=useState(''),[confirmation,setConfirmation]=useState<SettingsAction|null>(null),[revision,setRevision]=useState(0)
+ const attempts=useRef(new Set<string>()),active=useRef(true),tabButtons=useRef<Array<HTMLButtonElement|null>>([])
+ useEffect(()=>{active.current=true;return()=>{active.current=false}},[])
+ const applyProfile=useCallback((next:ProfileMe)=>{if(!active.current||next.id!==userId)return;setOverride(next);updateUser(settingsUserPatch(next));void identity.reload().then(()=>{if(active.current)setOverride(null)});void overview.reload();setRevision(r=>r+1)},[userId,identity.reload,overview.reload,updateUser])
+ const join=useCallback(async(invite:string)=>{if(!invite.trim())return;setBusy(true);setError('');try{await orgApi.join(invite.trim());const next=await profileApi.me();if(!active.current)return;applyProfile(next);setCode('');showToast({message:`Đã tham gia ${next.orgName||'tổ chức'}`,type:'success'})}catch(e){if(active.current)setError(getFriendlyErrorMessage(e,'quest'))}finally{if(active.current)setBusy(false)}},[applyProfile,showToast])
+ useEffect(()=>{const key=`${userId}:${queryCode}`;if(canAutoJoin({enabled:params.get('autoJoin')==='1',userId,code:queryCode,loaded:identity.status==='ready',orgId:profile?.orgId||null,busy,attempted:attempts.current.has(key)?key:null})){attempts.current.add(key);void join(queryCode)}},[params,userId,queryCode,identity.status,profile?.orgId,busy,join])
+ const confirm=async()=>{if(!confirmation||busy)return;if(confirmation==='logout'){logout();navigate('/login',{replace:true});return}setBusy(true);setError('');try{if(confirmation==='leave')await orgApi.leave();else await billingApi.cancelB2C();const next=await profileApi.me();if(!active.current)return;applyProfile(next);showToast({message:confirmation==='leave'?'Đã rời tổ chức':'Đã hủy gói Premium cá nhân',type:'success'});setConfirmation(null)}catch(e){if(active.current){setError(getFriendlyErrorMessage(e,'quest'));setConfirmation(null)}}finally{if(active.current)setBusy(false)}}
+ return <><header className="pf-page-heading"><div><span className="pf-kicker">TIMELENS / QUẢN LÝ TÀI KHOẢN</span><h1>Cài đặt<span>.</span></h1><p>Thông tin rõ ràng. Lựa chọn trong tay bạn.</p></div><Link className="pf-button secondary" to="/profile">Xem hồ sơ <ProfileIcon name="arrow_outward"/></Link></header><ProfileResourceState resource={identity} label="cài đặt tài khoản">{()=>profile&&<><section className="st-summary"><div className="pf-identity"><ProfileAvatar name={profile.displayName} src={profile.avatarUrl}/><div><h2>{profile.displayName}</h2><p>{profile.email}</p><div className="pf-pills"><span className="pf-pill">{roleLabel(profile.role)}</span><span className={`pf-pill ${profile.emailVerified?'green':''}`}>{profile.emailVerified?'Email đã xác thực':'Email chưa xác thực'}</span></div></div></div><div className="st-summary-meta"><span className="pf-kicker">NGUỒN QUYỀN CÁ NHÂN</span><strong>{personalAccessLabel(overview.data?.account.personalTier??null)}</strong>{profile.orgId&&<small>Thành viên {profile.orgName||'tổ chức'}</small>}</div></section><div className="st-layout"><nav className="st-nav" role="tablist" aria-label="Các mục cài đặt" aria-orientation="vertical">{sections.map((s,i)=><button key={s.id} ref={el=>{tabButtons.current[i]=el}} role="tab" id={`settings-tab-${s.id}`} aria-controls={`settings-panel-${s.id}`} aria-selected={tab===i} tabIndex={tab===i?0:-1} onClick={()=>{setTab(i);setError('')}} onKeyDown={e=>{const next=['ArrowDown','ArrowRight'].includes(e.key)?(i+1)%sections.length:['ArrowUp','ArrowLeft'].includes(e.key)?(i+sections.length-1)%sections.length:e.key==='Home'?0:e.key==='End'?sections.length-1:null;if(next!==null){e.preventDefault();setTab(next);tabButtons.current[next]?.focus()}}}><ProfileIcon name={s.icon}/><span>{s.label}</span><ProfileIcon name="chevron_right"/></button>)}</nav><section className="st-panel" role="tabpanel" tabIndex={0} id={`settings-panel-${sections[tab].id}`} aria-labelledby={`settings-tab-${sections[tab].id}`}>{error&&<div className="pf-notice error" role="alert"><ProfileIcon name="error"/><p>{error}</p></div>}{tab===0&&<div className="pf-tab-content"><section className="pf-card"><span className="pf-kicker">NHẬN DIỆN CỦA BẠN</span><h2>Thông tin tài khoản</h2><p>Tên và ảnh hiển thị được sử dụng trong lớp học và hành trình. Email và quyền tài khoản không thay đổi qua biểu mẫu này.</p><ProfileEditForm key={`${profile.id}:${profile.displayName}:${profile.city}:${profile.avatarUrl}`} profile={profile} onSaved={applyProfile}/></section><section className="pf-card"><h2>Thông tin hệ thống</h2><ProfileResourceState resource={overview} label="thông tin tài khoản">{data=><dl className="pf-facts"><ProfileFact label="Ngày tham gia" value={profileDate(data.account.createdAt)}/><ProfileFact label="Vai trò hệ thống" value={roleLabel(profile.role)}/><ProfileFact label="Email đăng nhập" value={profile.email}/></dl>}</ProfileResourceState></section></div>}{tab===1&&<div className="pf-tab-content"><section className="pf-card"><span className="pf-kicker">BẢO VỆ TÀI KHOẢN</span><h2>Đăng nhập & bảo mật</h2><dl className="pf-facts"><ProfileFact label="Email đăng nhập" value={profile.email}/><ProfileFact label="Trạng thái email" value={profile.emailVerified?'Đã xác thực':'Chưa xác thực'}/></dl><EmailVerificationBanner emailVerified={profile.emailVerified===true} onVerified={()=>void profileApi.me().then(applyProfile)}/><ProfileResourceState resource={overview} label="phương thức đăng nhập">{data=><><dl className="pf-facts"><ProfileFact label="Phương thức đăng nhập" value={data.account.provider==='google'?'Google':data.account.provider==='local'?'Email và mật khẩu':'Chưa có dữ liệu'}/></dl>{data.account.provider==='local'&&<><p>Đặt lại mật khẩu qua email xác minh của tài khoản. Bạn sẽ được chuyển tới luồng xác minh trước khi tạo mật khẩu mới.</p><Link className="pf-button secondary" to="/forgot-password">Đặt lại mật khẩu <ProfileIcon name="lock_reset"/></Link></>}{data.account.provider==='google'&&<p>Bạn đang đăng nhập bằng Google. Quản lý mật khẩu và bảo mật trong tài khoản Google của bạn.</p>}</>}</ProfileResourceState></section></div>}{tab===2&&<SettingsPlans key={revision} profile={profile} overview={overview} busy={busy} onCancel={()=>setConfirmation('cancel')}/>}{tab===3&&<SettingsOrganization profile={profile} overview={overview} code={code} busy={busy} onCode={setCode} onJoin={()=>void join(code)} onLeave={()=>setConfirmation('leave')}/>}{tab===4&&<SettingsPrivacy onLogout={()=>setConfirmation('logout')}/>}</section></div></>}</ProfileResourceState><SettingsConfirm action={confirmation} busy={busy} onClose={()=>{if(!busy)setConfirmation(null)}} onConfirm={()=>void confirm()}/></>
 }

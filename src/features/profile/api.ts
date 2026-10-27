@@ -1,5 +1,6 @@
 // src/features/profile/api.ts
-import { getData, getListData, httpClient } from '../../shared/api/httpClient'
+import { getData, getListData, getPageData, httpClient } from '../../shared/api/httpClient'
+import type { QuestProgress } from '../gamification/api'
 import type { OrgSubscription, UserRole, UserTier } from '../../shared/auth/types'
 
 export type ActiveVisitSite = {
@@ -65,7 +66,50 @@ export type JourneySummary = {
   headline: string
 }
 
+export type ProfileOverviewStamp = {
+  locationId: string
+  locationName: string
+  siteCode: string | null
+  coverImage: string | null
+  completedAt: string | null
+  arVerified: boolean
+}
+
+export type ProfileOverview = {
+  profile: ProfileMe
+  account: {
+    createdAt: string | null
+    provider: string | null
+    personalTier: string
+    organizationPremium: boolean
+    organizationStatus: string | null
+    organizationExpiresAt: string | null
+  }
+  stats: {
+    completedQuests: number
+    discoveredLocations: number
+    checkedInLocations: number
+    passportStamps: number
+    earnedBadges: number
+  }
+  passportStamps: ProfileOverviewStamp[]
+  locations: Array<{ id: string; name: string; siteCode: string | null; coverImage: string | null }>
+  generatedAt: string
+}
+
 export const profileApi = {
+  overview: () => getData<ProfileOverview>(httpClient.get('/api/profile/overview')),
+  questsAtLocation: async (locationId: string) => {
+    const result: QuestProgress[] = []
+    let page = 0, totalPages: number
+    do {
+      const data = await getPageData<QuestProgress>(httpClient.get('/api/me/quests', { params: { locationId, page, size: 50 } }))
+      result.push(...data.items)
+      totalPages = data.totalPages
+      page++
+    } while (page < totalPages)
+    return result
+  },
   me: () => getData<ProfileMe>(httpClient.get('/api/profile/me')),
   journeySummary: (siteCode = 'cu-chi') =>
     getData<JourneySummary>(

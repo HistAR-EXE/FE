@@ -1,12 +1,13 @@
+import { useTeacherWorkspace } from '../features/org/teacher-workspace-context'
+import { teacherSnapshotCsv } from '../features/org/teacherWorkspaceState'
+import type { OrgReportSnapshot } from '../features/org/api'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { AppLayout } from '../components/layout/AppLayout'
-import { SimpleTopNav } from '../components/layout/TopNav'
 import { Button } from '../components/ui/Button'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { fieldTripApi } from '../features/field-trips/api'
 import type { FieldTripResponse } from '../features/field-trips/types'
-import { orgApi, type LiveBoardRally, type LiveBoardSnapshot, type OrgMembership } from '../features/org/api'
+import { orgApi, type LiveBoardRally, type LiveBoardSnapshot } from '../features/org/api'
 import { ApiError } from '../shared/api/contracts'
 import { appEnv } from '../shared/config/env'
 import { getToken } from '../shared/auth/session'
@@ -65,10 +66,14 @@ async function readSse(
 export function TeacherLiveBoardPage() {
   const { showToast } = useToast()
   const navigate = useNavigate()
-  const [memberships, setMemberships] = useState<OrgMembership[]>([])
+  const { capabilities, orgId, setOrgId, memberships } = useTeacherWorkspace()
+  const [reports, setReports] = useState<OrgReportSnapshot[]>([])
+  const [reportError, setReportError] = useState('')
+  const [capturing, setCapturing] = useState(false)
+
   const [trips, setTrips] = useState<FieldTripResponse[]>([])
-  const [membershipsLoaded, setMembershipsLoaded] = useState(false)
-  const [orgId, setOrgId] = useState('')
+
+
   const [snapshot, setSnapshot] = useState<LiveBoardSnapshot | null>(null)
   const [mode, setMode] = useState<ConnectionMode>('connecting')
   const [rallying, setRallying] = useState(false)
@@ -89,19 +94,7 @@ export function TeacherLiveBoardPage() {
   )
 
   useEffect(() => {
-    orgApi
-      .mine()
-      .then((items) => {
-        const teacherOrgs = items.filter((m) => m.orgRole?.toLowerCase() === 'teacher')
-        const usable = teacherOrgs.length ? teacherOrgs : items
-        setMemberships(usable)
-        if (usable[0]) setOrgId(usable[0].organizationId)
-      })
-      .catch(() => showToast({ message: 'Không tải được tổ chức.', type: 'error' }))
-      .finally(() => setMembershipsLoaded(true))
-  }, [showToast])
-
-  useEffect(() => {
+    if (!capabilities?.fieldTrips) return
     let cancelled = false
     fieldTripApi.listMine()
       .then((items) => {
@@ -111,7 +104,7 @@ export function TeacherLiveBoardPage() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [capabilities?.fieldTrips])
 
   // Realtime: SSE via fetch; falls back to 5s polling and periodically retries the stream.
   useEffect(() => {
@@ -196,6 +189,27 @@ export function TeacherLiveBoardPage() {
     }
   }, [orgId, applyRally])
 
+  useEffect(() => {
+    if (!orgId || !capabilities?.reports) return
+    let cancelled = false
+    orgApi.reportSnapshots(orgId).then(items => { if (!cancelled) setReports(items) })
+      .catch(() => { if (!cancelled) setReportError('Chưa tải được lịch sử report snapshot.') })
+    return () => { cancelled = true }
+  }, [orgId, capabilities?.reports])
+
+  const captureReport = async () => {
+    setCapturing(true); setReportError('')
+    try { const next = await orgApi.captureReportSnapshot(orgId); setReports(items => [next, ...items]); showToast({ message: 'Đã lưu bản chụp báo cáo tại thời điểm hiện tại.', type: 'success' }) }
+    catch { setReportError('Không lưu được report snapshot. Vui lòng thử lại.') }
+    finally { setCapturing(false) }
+  }
+  const downloadSnapshot = (report: OrgReportSnapshot) => {
+    const blob = new Blob([teacherSnapshotCsv(report.snapshot.rows)], { type: 'text/csv;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const anchor = document.createElement('a')
+    anchor.href = url; anchor.download = `histar-report-${report.id}.csv`; anchor.click()
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+  }
   const onRally = async () => {
     if (!orgId) return
     try {
@@ -233,7 +247,7 @@ export function TeacherLiveBoardPage() {
     mode === 'stream' ? 'Realtime (SSE)' : mode === 'poll' ? 'Polling 5s (dự phòng)' : 'Đang kết nối…'
 
   return (
-    <AppLayout activeBorder="left" topNav={<SimpleTopNav title="Live Board" backTo="/teacher" />}>
+    <>
       <main className="mt-14 md:mt-16 p-md md:p-lg max-w-4xl mx-auto w-full space-y-lg">
         <div className="flex flex-wrap items-center justify-between gap-sm">
           <div>
@@ -250,7 +264,7 @@ export function TeacherLiveBoardPage() {
             </Button>
             <Button type="button" onClick={() => void onRally()} disabled={!orgId || rallying}>
               <MaterialIcon name="campaign" className="text-base mr-1" />
-              Rally
+              Tập trung lớp
             </Button>
           </div>
         </div>
@@ -298,7 +312,7 @@ export function TeacherLiveBoardPage() {
           </div>
         )}
 
-        {membershipsLoaded && !orgId && (
+        {!orgId && (
           <p className="text-sm text-on-surface-variant">Bạn chưa thuộc tổ chức nào.</p>
         )}
 
@@ -352,10 +366,15 @@ export function TeacherLiveBoardPage() {
           </section>
         )}
 
+        {capabilities?.reports && <section className="tw-card">
+          <div className="tw-section-row"><div><span className="tw-eyebrow">LƯU LẠI MỖI CỘT MỐC</span><h2>Report snapshot</h2><p>Bản chụp giữ nguyên số liệu tại lúc lưu, để đối chiếu tiến độ lớp học sau này.</p></div><button className="tw-button" disabled={capturing || !orgId} onClick={() => void captureReport()}>{capturing ? 'Đang lưu…' : 'Lưu snapshot hiện tại'}</button></div>
+          {reportError && <p className="tw-note error" role="alert">{reportError}</p>}
+          {reports.length === 0 ? <p className="tw-note">Chưa có bản chụp báo cáo. Bấm Lưu snapshot để ghi nhận cột mốc đầu tiên.</p> : <ul className="tw-invites">{reports.map(report => <li key={report.id}><div><strong>{new Date(report.createdAt).toLocaleString('vi-VN')}</strong><small>{report.snapshot.memberCount} thành viên · {report.snapshot.activeMembers} đang hoạt động · {report.snapshot.rows.length} dòng dữ liệu</small></div><button className="tw-button secondary" onClick={() => downloadSnapshot(report)}>Tải CSV</button></li>)}</ul>}
+        </section>}
         <Link to="/teacher" className="text-sm text-secondary underline">
           ← Về Teacher Dashboard
         </Link>
       </main>
-    </AppLayout>
+    </>
   )
 }

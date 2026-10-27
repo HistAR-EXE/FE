@@ -1,7 +1,5 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { AppLayout } from '../components/layout/AppLayout'
-import { SimpleTopNav } from '../components/layout/TopNav'
 import { Button } from '../components/ui/Button'
 import { fieldTripApi } from '../features/field-trips/api'
 import { buildFieldTripCsv } from '../features/field-trips/reportExport'
@@ -55,7 +53,7 @@ export function TeacherTripReportPage() {
   }
 
   return (
-    <AppLayout activeBorder="left" topNav={<SimpleTopNav title="Báo cáo chuyến đi" backTo={`/teacher/trips/${tripId}`} />}>
+    <>
       <style>{`
         @media print {
           header, nav, aside, .no-print { display: none !important; }
@@ -106,6 +104,6 @@ export function TeacherTripReportPage() {
           </>
         )}
       </main>
-    </AppLayout>
+    </>
   )
 }

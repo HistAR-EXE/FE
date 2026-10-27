@@ -1,519 +1,111 @@
-import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { AppLayout } from '../components/layout/AppLayout'
-import { SimpleTopNav } from '../components/layout/TopNav'
-import { orgApi, type OrgBillingStatus, type OrgInviteCode, type OrgMembership, type OrgRosterMember } from '../features/org/api'
-import type { OrganizationAnalytics } from '../features/admin/api'
+import { useEffect, useState, type FormEvent } from 'react'
+import { Link } from 'react-router-dom'
+import { orgApi, type OrgEmailInvitation, type OrgInviteCode, type OrgRosterMember } from '../features/org/api'
+import { useTeacherWorkspace } from '../features/org/teacher-workspace-context'
+import { invitationDeliveryMessage, isTeachingMembership } from '../features/org/teacherWorkspaceState'
 import { useToast } from '../shared/ui/toast/useToast'
-import { TeacherOnboardingWizard, useTeacherOnboardingStatus } from '../features/org/TeacherOnboardingWizard'
-import { OrgUpsellBanner } from '../features/org/OrgUpsellBanner'
+import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
 
 export function TeacherDashboardPage() {
-  const [memberships, setMemberships] = useState<OrgMembership[]>([])
-  const [membershipsLoaded, setMembershipsLoaded] = useState(false)
-  const [orgId, setOrgId] = useState('')
-  const [analytics, setAnalytics] = useState<OrganizationAnalytics | null>(null)
+  const { orgId, capabilities, billing, reload } = useTeacherWorkspace()
+  const { showToast } = useToast()
   const [roster, setRoster] = useState<OrgRosterMember[]>([])
+  const [invitations, setInvitations] = useState<OrgEmailInvitation[]>([])
   const [invite, setInvite] = useState<OrgInviteCode | null>(null)
-  const [dashboardStats, setDashboardStats] = useState<OrgBillingStatus | null>(null)
-  const [inviteLoading, setInviteLoading] = useState(false)
-  const [inviteEmail, setInviteEmail] = useState('')
-  const [inviteStudentName, setInviteStudentName] = useState('')
-  const [sendingInviteEmail, setSendingInviteEmail] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [busy, setBusy] = useState('')
+  const [search, setSearch] = useState('')
+  const [email, setEmail] = useState('')
+  const [studentName, setStudentName] = useState('')
   const [provisionEmail, setProvisionEmail] = useState('')
   const [provisionName, setProvisionName] = useState('')
-  const [provisioning, setProvisioning] = useState(false)
-  const [provisionResult, setProvisionResult] = useState<string | null>(null)
-  const [removingUserId, setRemovingUserId] = useState<string | null>(null)
-  const navigate = useNavigate()
-  const { showToast } = useToast()
-  const { showOnboarding } = useTeacherOnboardingStatus()
-  const [onboardingDismissed, setOnboardingDismissed] = useState(false)
-
-  const reloadMemberships = () => {
-    orgApi
-      .mine()
-      .then((items) => {
-        // Management APIs are teacher-only. Do not render teacher controls for
-        // a student membership that happens to be returned by the API.
-        const teacherMemberships = items.filter((item) => item.orgRole.toLowerCase() === 'teacher')
-        setMemberships(teacherMemberships)
-        if (teacherMemberships[0]) setOrgId((prev) => prev || teacherMemberships[0].organizationId)
-      })
-      .catch(() => showToast({ message: 'Không tải được tổ chức.', type: 'error' }))
-      .finally(() => setMembershipsLoaded(true))
-  }
+  const [teacherEmail, setTeacherEmail] = useState('')
+  const [teacherName, setTeacherName] = useState('')
+  const [provisionResult, setProvisionResult] = useState('')
+  const [teacherResult, setTeacherResult] = useState('')
+  const [inviteResult, setInviteResult] = useState('')
+  const [revision, setRevision] = useState(0)
 
   useEffect(() => {
-    reloadMemberships()
-  }, [showToast])
+    let cancelled = false
+    setLoading(true)
+    setError('')
+    Promise.all([orgApi.roster(orgId), orgApi.emailInvitations(orgId), orgApi.getInviteCode(orgId)])
+      .then(([members, pending, code]) => { if (!cancelled) { setRoster(members); setInvitations(pending); setInvite(code) } })
+      .catch(error => { if (!cancelled) setError(getFriendlyErrorMessage(error, 'quest')) })
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
+  }, [orgId, revision])
 
-  useEffect(() => {
-    const onFocus = () => reloadMemberships()
-    window.addEventListener('focus', onFocus)
-    return () => window.removeEventListener('focus', onFocus)
-  }, [])
+  const refresh = () => { setRevision(value => value + 1); reload() }
+  const reportError = (error: unknown) => showToast({ message: getFriendlyErrorMessage(error, 'quest'), type: 'error' })
+  const students = roster.filter(member => !isTeachingMembership(member.orgRole))
+  const filtered = students.filter(member => `${member.displayName} ${member.email}`.toLocaleLowerCase('vi').includes(search.toLocaleLowerCase('vi')))
+  const staff = roster.filter(member => isTeachingMembership(member.orgRole))
 
-  useEffect(() => {
-    if (!orgId) return
-    orgApi.analytics(orgId).then(setAnalytics).catch(() => setAnalytics(null))
-    orgApi.roster(orgId).then(setRoster).catch(() => setRoster([]))
-    orgApi.getInviteCode(orgId).then(setInvite).catch(() => setInvite(null))
-    orgApi.dashboardStats(orgId).then(setDashboardStats).catch(() => setDashboardStats(null))
-  }, [orgId])
-
-  const regenerateInvite = async () => {
-    if (!orgId) return
+  const sendInvitation = async (event: FormEvent) => {
+    event.preventDefault(); setBusy('invite'); setInviteResult('')
     try {
-      setInviteLoading(true)
-      const next = await orgApi.generateInviteCode(orgId)
-      setInvite(next)
-      showToast({ message: 'Đã tạo mã mời mới', type: 'success' })
-    } catch {
-      showToast({ message: 'Không tạo được mã mời', type: 'error' })
-    } finally {
-      setInviteLoading(false)
-    }
+      const result = await orgApi.sendInviteEmail(orgId, { studentEmail: email.trim(), studentName: studentName.trim() || undefined })
+      setInviteResult(invitationDeliveryMessage(result.deliveryStatus, result.email))
+      setEmail(''); setStudentName('')
+      setInvitations(await orgApi.emailInvitations(orgId))
+      showToast({ message: result.deliveryStatus === 'SENT' ? 'Đã gửi lời mời' : 'Đã lưu lời mời local', type: 'success' })
+    } catch (error) { reportError(error) } finally { setBusy('') }
   }
-
+  const provision = async (event: FormEvent, kind: 'student' | 'teacher') => {
+    event.preventDefault(); setBusy(kind)
+    const setResult = kind === 'student' ? setProvisionResult : setTeacherResult
+    setResult('')
+    try {
+      const payload = { email: (kind === 'student' ? provisionEmail : teacherEmail).trim(), displayName: (kind === 'student' ? provisionName : teacherName).trim() || undefined, sendCredentialsEmail: false }
+      const result = await (kind === 'student' ? orgApi.provisionStudent(orgId, payload) : orgApi.provisionTeacher(orgId, payload))
+      setResult(result.accountCreated ? `Đã cấp tài khoản ${result.email}.${result.temporaryPassword ? ` Mật khẩu tạm: ${result.temporaryPassword}` : ''} Hãy lưu và bàn giao riêng cho người dùng.` : `Đã thêm ${result.email} vào tổ chức.`)
+      if (kind === 'student') { setProvisionEmail(''); setProvisionName('') } else { setTeacherEmail(''); setTeacherName('') }
+      setRoster(await orgApi.roster(orgId))
+      reload()
+      showToast({ message: 'Đã cấp quyền tài khoản', type: 'success' })
+    } catch (error) { reportError(error) } finally { setBusy('') }
+  }
+  const removeStudent = async (member: OrgRosterMember) => {
+    if (!window.confirm(`Loại ${member.displayName} khỏi tổ chức? Quyền Premium do tổ chức cấp sẽ bị thu hồi.`)) return
+    setBusy(member.userId)
+    try { await orgApi.removeMember(member.userId); refresh() } catch (error) { reportError(error) } finally { setBusy('') }
+  }
   const copyInvite = async () => {
-    const text = invite?.inviteUrl ?? invite?.inviteCode
-    if (!text) return
-    try {
-      const fullUrl =
-        invite?.inviteUrl?.startsWith('http')
-          ? invite.inviteUrl
-          : `${window.location.origin}${invite?.inviteUrl ?? `/join?code=${invite?.inviteCode}`}`
-      await navigator.clipboard.writeText(fullUrl)
-      showToast({ message: 'Đã copy link mời', type: 'success' })
-    } catch {
-      showToast({ message: text, type: 'info' })
-    }
+    if (!invite?.inviteCode) return
+    const url = invite.inviteUrl?.startsWith('http') ? invite.inviteUrl : `${window.location.origin}/join?code=${encodeURIComponent(invite.inviteCode)}`
+    try { await navigator.clipboard.writeText(url); showToast({ message: 'Đã sao chép link tham gia', type: 'success' }) } catch { setInviteResult(url) }
+  }
+  const renewInvite = async () => {
+    setBusy('code')
+    try { setInvite(await orgApi.generateInviteCode(orgId)) } catch (error) { reportError(error) } finally { setBusy('') }
   }
 
-  const sendInviteEmail = async () => {
-    if (!orgId || !inviteEmail.trim()) return
-    try {
-      setSendingInviteEmail(true)
-      await orgApi.sendInviteEmail(orgId, {
-        studentEmail: inviteEmail.trim(),
-        studentName: inviteStudentName.trim() || undefined,
-      })
-      showToast({ message: `Đã gửi email mời tới ${inviteEmail.trim()}`, type: 'success' })
-      setInviteEmail('')
-      setInviteStudentName('')
-      const next = await orgApi.getInviteCode(orgId)
-      setInvite(next)
-    } catch {
-      showToast({ message: 'Không gửi được email mời. Kiểm tra SMTP hoặc thử lại.', type: 'error' })
-    } finally {
-      setSendingInviteEmail(false)
-    }
-  }
+  return <main>
+    <div className="tw-page-head"><div><span className="tw-eyebrow">MỖI LỚP HỌC, MỘT HÀNH TRÌNH</span><h1>Chào lớp học của bạn.</h1><p>Mời học sinh, chuẩn bị nhiệm vụ và theo dõi những bước khám phá đầu tiên. Mọi quyền và hạn mức được cập nhật từ tổ chức.</p></div><a className="tw-button" href="#invite-students"><span className="material-symbols-outlined" aria-hidden="true">person_add</span>Mời học sinh</a></div>
+    <section className="tw-journey"><div className="tw-journey-icon"><span className="material-symbols-outlined" aria-hidden="true">school</span></div><div><h2>{students.length ? 'Lớp học đã sẵn sàng khám phá.' : 'Bắt đầu từ lời mời đầu tiên.'}</h2><p>{students.length ? `${students.length} học sinh đã có mặt. Theo dõi tiến độ hoặc chuẩn bị hoạt động tiếp theo cho lớp.` : 'Gửi email mời hoặc cấp tài khoản học sinh. Học sinh đăng nhập bằng email đã xác thực để nhận quyền Premium theo tổ chức.'}</p></div>{capabilities?.assignments && <Link className="tw-button secondary" to="/teacher/assignments">Chuẩn bị bài tập ↗</Link>}</section>
+    {billing && <section className="tw-stats" aria-label="Hạn mức tổ chức">
+      <Stat label="TÀI KHOẢN XÁC THỰC" value={`${billing.verifiedAccounts} / ${billing.maxVerifiedAccounts.toLocaleString('vi-VN')}`} detail="Bao gồm tài khoản được cấp trong tổ chức" used={billing.verifiedAccounts} limit={billing.maxVerifiedAccounts} />
+      <Stat label="ĐANG SỬ DỤNG ĐỒNG THỜI" value={`${billing.ccuCurrent} / ${billing.maxCcu}`} detail="Số tài khoản hoạt động cùng lúc" used={billing.ccuCurrent} limit={billing.maxCcu} />
+      <Stat label="AI DÙNG CHUNG / THÁNG" value={billing.aiQueriesLimit == null ? 'Không giới hạn' : `${billing.aiQueriesUsed.toLocaleString('vi-VN')} / ${billing.aiQueriesLimit.toLocaleString('vi-VN')}`} detail={billing.aiQueriesLimit == null ? 'Không giới hạn theo gói Premium' : `Làm mới: ${new Date(`${billing.quotaResetsOn}T00:00:00`).toLocaleDateString('vi-VN')}`} used={billing.aiQueriesUsed} limit={billing.aiQueriesLimit} />
+      <Stat label="THỜI HẠN GÓI" value={billing.endDate ? new Date(`${billing.endDate}T00:00:00`).toLocaleDateString('vi-VN') : 'Đang hoạt động'} detail={`Gói ${billing.planType} · Quyền Premium theo tổ chức`} />
+    </section>}
+    {error && <div className="tw-note error" role="alert">Chưa tải được dữ liệu lớp học: {error} <button onClick={() => setRevision(value => value + 1)}>Thử lại</button></div>}
+    <div className="tw-columns"><div className="tw-stack">
+      <section className="tw-card" id="invite-students"><span className="tw-eyebrow">01 / KẾT NỐI LỚP HỌC</span><h2>Mời học sinh bằng email</h2><p>Hệ thống ghi nhận lời mời cho đúng email. Khi học sinh đăng nhập và xác thực email, quyền Premium được cấp theo thời hạn và hạn mức của tổ chức.</p><form className="tw-form" onSubmit={sendInvitation}><div className="tw-form-grid"><label>Email học sinh<input type="email" required value={email} onChange={event => setEmail(event.target.value)} placeholder="hocsinh@truong.edu.vn" /></label><label>Tên học sinh (tùy chọn)<input value={studentName} onChange={event => setStudentName(event.target.value)} placeholder="Nguyễn Minh Anh" /></label></div><button className="tw-button" disabled={Boolean(busy) || !capabilities?.manageMembers || billing?.accountLimitReached}>Gửi email mời ↗</button></form>{inviteResult && <p className="tw-note" role="status">{inviteResult}</p>}{invitations.length > 0 && <ul className="tw-invites" aria-label="Lời mời đã tạo">{invitations.slice(0, 8).map(item => <li key={item.email}><div><strong>{item.email}</strong><small>Hết hạn {new Date(item.expiresAt).toLocaleDateString('vi-VN')}</small></div><span>{item.status === 'ACCEPTED' ? 'Đã tham gia' : item.status === 'EXPIRED' ? 'Hết hạn' : 'Chờ tham gia'} · {item.deliveryStatus === 'SENT' ? 'Đã gửi thư' : 'Chỉ lưu local'}</span></li>)}</ul>}</section>
+      <section className="tw-card"><div className="tw-section-row"><div><span className="tw-eyebrow">02 / THÀNH VIÊN & TIẾN ĐỘ</span><h2>Học sinh trong tổ chức <span className="tw-plan-badge">{students.length}</span></h2></div><input className="tw-search" aria-label="Tìm học sinh" placeholder="Tìm tên hoặc email…" value={search} onChange={event => setSearch(event.target.value)} /></div><p className="tw-table-hint">Vuốt ngang bảng để xem đầy đủ tiến độ và thao tác.</p><div className="tw-table-scroll"><table className="tw-table"><thead><tr><th>Học sinh</th><th>Điểm</th><th>Quest</th><th>Tiến độ</th><th>Thao tác</th></tr></thead><tbody>{loading ? <tr><td colSpan={5} className="tw-empty">Đang tải thành viên…</td></tr> : !filtered.length ? <tr><td colSpan={5} className="tw-empty">{search ? 'Không tìm thấy học sinh phù hợp.' : 'Chưa có học sinh. Hãy gửi lời mời đầu tiên.'}</td></tr> : filtered.map(member => <tr key={member.userId}><td><strong>{member.displayName}</strong><small>{member.email}</small></td><td>{member.totalPoints}</td><td>{member.questsCompleted}</td><td>{member.questProgress?.length ? member.questProgress.slice(0, 2).map(quest => <div key={quest.questId}><small>{quest.title} · {quest.completionPct}%</small><div className="tw-meter"><span style={{ width: `${Math.min(100, Math.max(0, quest.completionPct))}%` }} /></div></div>) : <small>Chưa có hoạt động</small>}</td><td><button className="tw-button danger" disabled={Boolean(busy)} onClick={() => void removeStudent(member)}>Loại khỏi lớp</button></td></tr>)}</tbody></table></div></section>
+    </div><div className="tw-stack">
+      {capabilities?.manageTeachers && <section className="tw-card"><span className="tw-eyebrow">DÀNH CHO QUẢN LÝ B2B</span><h2>Cấp tài khoản giáo viên</h2><p>Giáo viên quản lý học sinh và các nghiệp vụ của gói. Quyền quản lý tổ chức không được cấp qua biểu mẫu này.</p><form className="tw-form" onSubmit={event => void provision(event, 'teacher')}><label>Email giáo viên<input type="email" required value={teacherEmail} onChange={event => setTeacherEmail(event.target.value)} placeholder="giaovien@truong.edu.vn" /></label><label>Tên hiển thị<input value={teacherName} onChange={event => setTeacherName(event.target.value)} placeholder="Cô Nguyễn Lan" /></label><button className="tw-button" disabled={Boolean(busy) || billing?.accountLimitReached}>Cấp quyền giáo viên</button></form>{teacherResult && <p className="tw-note success" role="status">{teacherResult}</p>}<ul className="tw-invites">{staff.map(member => <li key={member.userId}><div><strong>{member.displayName}</strong><small>{member.email}</small></div><span>{member.orgRole === 'owner' ? 'Quản lý B2B' : 'Giáo viên'}</span></li>)}</ul></section>}
+      <section className="tw-card"><h2>Cấp tài khoản học sinh</h2><p>Dành cho học sinh chưa có tài khoản. Mật khẩu tạm hiển thị sau khi tạo; không tự gửi email đăng nhập.</p><form className="tw-form" onSubmit={event => void provision(event, 'student')}><label>Email học sinh<input type="email" required value={provisionEmail} onChange={event => setProvisionEmail(event.target.value)} placeholder="hocsinh@truong.edu.vn" /></label><label>Tên hiển thị<input value={provisionName} onChange={event => setProvisionName(event.target.value)} placeholder="Nguyễn Minh Anh" /></label><button className="tw-button secondary" disabled={Boolean(busy) || !capabilities?.manageMembers || billing?.accountLimitReached}>Tạo tài khoản học sinh</button></form>{provisionResult && <p className="tw-note success" role="status">{provisionResult}</p>}{billing?.accountLimitReached && <p className="tw-note warning">Tổ chức đã đạt giới hạn tài khoản. Liên hệ quản lý để nâng gói.</p>}</section>
+      <section className="tw-card"><h2>Tham gia bằng mã lớp</h2><p>Học sinh đã có tài khoản có thể dùng mã tại Cài đặt → Lớp học.</p>{invite?.inviteCode && <div className="tw-journey" style={{ marginTop: 15, padding: 16, marginBottom: 12 }}><strong style={{ letterSpacing: 4, color: '#0875f9' }}>{invite.inviteCode}</strong><button className="tw-button secondary" onClick={() => void copyInvite()}>Copy link</button></div>}<button className="tw-button secondary" disabled={Boolean(busy)} onClick={() => void renewInvite()}>Tạo mã mới</button>{invite?.expiresAt && <p style={{ marginTop: 10 }}>Hết hạn: {new Date(invite.expiresAt).toLocaleString('vi-VN')}</p>}</section>
+      <section className="tw-card"><h2>Quyền trong gói {billing?.planType}</h2><div className="tw-capability-list">{[['Quản lý thành viên & tiến độ', capabilities?.manageMembers], ['Tạo và giao bài tập', capabilities?.assignments], ['Live Board & report snapshot', capabilities?.liveBoard], ['Hoạt động nhóm', capabilities?.groups], ['Chuyến tham quan', capabilities?.fieldTrips]].map(([label, enabled]) => <div key={String(label)}><span className={`material-symbols-outlined ${enabled ? '' : 'is-locked'}`} aria-hidden="true">{enabled ? 'check_circle' : 'lock'}</span>{label}</div>)}</div><p className="tw-note warning" style={{ marginTop: 18 }}>Khi rời tổ chức hoặc gói hết hạn, quyền Premium do tổ chức cấp sẽ hết hiệu lực. Gói Premium cá nhân đã mua được giữ riêng.</p></section>
+    </div></div>
+  </main>
+}
 
-  const provisionStudent = async () => {
-    if (!orgId || !provisionEmail.trim()) return
-    try {
-      setProvisioning(true)
-      setProvisionResult(null)
-      const result = await orgApi.provisionStudent(orgId, {
-        email: provisionEmail.trim(),
-        displayName: provisionName.trim() || undefined,
-        sendCredentialsEmail: false,
-      })
-      const msg = result.accountCreated
-        ? result.temporaryPassword
-          ? `Đã tạo tài khoản. Mật khẩu tạm: ${result.temporaryPassword}`
-          : 'Đã tạo tài khoản và gửi email thông tin đăng nhập.'
-        : 'Học sinh đã có tài khoản — đã thêm vào lớp.'
-      setProvisionResult(msg)
-      showToast({ message: 'Đã cấp tài khoản học sinh', type: 'success' })
-      setProvisionEmail('')
-      setProvisionName('')
-      const [nextRoster, nextStats] = await Promise.all([
-        orgApi.roster(orgId),
-        orgApi.dashboardStats(orgId),
-      ])
-      setRoster(nextRoster)
-      setDashboardStats(nextStats)
-    } catch {
-      showToast({ message: 'Không tạo được tài khoản học sinh', type: 'error' })
-    } finally {
-      setProvisioning(false)
-    }
-  }
-
-  const students = roster.filter((m) => m.orgRole !== 'teacher')
-
-  const removeMember = async (userId: string) => {
-    if (!window.confirm('Xoá học sinh này khỏi tổ chức?')) return
-    try {
-      setRemovingUserId(userId)
-      await orgApi.removeMember(userId)
-      setRoster((prev) => prev.filter((member) => member.userId !== userId))
-      setDashboardStats((prev) =>
-        prev
-          ? {
-              ...prev,
-              verifiedAccounts: Math.max(0, prev.verifiedAccounts - 1),
-            }
-          : prev,
-      )
-      showToast({ message: 'Đã xoá học sinh khỏi tổ chức', type: 'success' })
-    } catch {
-      showToast({ message: 'Không thể xoá học sinh', type: 'error' })
-    } finally {
-      setRemovingUserId(null)
-    }
-  }
-
-  return (
-    <AppLayout activeBorder="left" topNav={<SimpleTopNav title="Bảng giáo viên (MVP)" />}>
-      <main className="mt-14 md:mt-16 p-md md:p-lg max-w-5xl mx-auto w-full space-y-md">
-        <div className="flex flex-wrap items-center gap-sm">
-          <div className="flex-1 min-w-0">
-            <h1 className="font-display-md text-on-surface">Dashboard lớp học</h1>
-            <p className="text-sm text-on-surface-variant mt-1">
-              Theo dõi lớp học — MVP teacher (giao bài + tiến độ cơ bản). LMS đầy đủ / org invite nằm sau MVBP.
-            </p>
-          </div>
-          <Link to="/groups" className="text-sm px-sm py-xs border border-outline-variant rounded-lg hover:border-secondary">
-            Team-based Quest Room
-          </Link>
-          {dashboardStats?.planType === 'PREMIUM' && (
-            <Link to="/teacher/assignments" className="text-sm px-sm py-xs border border-secondary/40 rounded-lg text-secondary">
-              LMS Premium
-            </Link>
-          )}
-          <Link to="/teacher/trips" className="text-sm px-sm py-xs border border-secondary/40 rounded-lg text-secondary">
-            Chuyến tham quan
-          </Link>
-          <Link to="/teacher/live-board" className="text-sm px-sm py-xs border border-secondary/40 rounded-lg text-secondary">
-            Live Board
-          </Link>
-          <Link to="/profile" className="text-sm text-secondary underline">
-            Hồ sơ
-          </Link>
-        </div>
-
-        {/* Teacher Onboarding Wizard */}
-        {showOnboarding && !onboardingDismissed && membershipsLoaded && memberships.length > 0 && (
-          <TeacherOnboardingWizard
-            orgId={orgId}
-            onComplete={() => setOnboardingDismissed(true)}
-            onAction={(action) => {
-              if (action === 'invite') regenerateInvite()
-              else if (action === 'live-board') navigate('/teacher/live-board')
-              else if (action === 'assignments') navigate('/teacher/assignments')
-            }}
-          />
-        )}
-
-                {membershipsLoaded && memberships.length === 0 && (
-          <section className="bg-surface-container border border-outline-variant rounded-xl p-lg text-center space-y-md">
-            <h2 className="font-title-md text-on-surface">Cần org Premium B2B</h2>
-            <p className="text-sm text-on-surface-variant max-w-md mx-auto">
-              Dashboard lớp học chỉ khả dụng khi trường/lớp đã có tổ chức trên gói B2B. Đăng ký license trường hoặc liên hệ số hóa di tích B2B2C.
-            </p>
-            <div className="flex flex-wrap justify-center gap-sm">
-              <Link
-                to="/checkout/b2b?next=%2Fteacher"
-                className="px-md py-sm rounded-lg border border-secondary text-secondary hover:bg-secondary/10"
-              >
-                Mua gói trường (SePay QR)
-              </Link>
-              <Link
-                to="/checkout/b2b2c"
-                className="px-md py-sm rounded-lg border border-outline-variant hover:border-secondary"
-              >
-                Tư vấn B2B2C
-              </Link>
-            </div>
-          </section>
-        )}
-
-        {memberships.length > 1 && (
-          <label className="flex items-center gap-sm text-sm">
-            Tổ chức
-            <select
-              value={orgId}
-              onChange={(e) => setOrgId(e.target.value)}
-              className="bg-surface-container border border-outline-variant rounded-full px-md py-xs"
-            >
-              {memberships.map((m) => (
-                <option key={m.organizationId} value={m.organizationId}>
-                  {m.name}
-                </option>
-              ))}
-            </select>
-          </label>
-        )}
-
-        {orgId && (
-          <section className="bg-surface-container border border-outline-variant rounded-xl p-md space-y-sm">
-            <h2 className="font-title-md">Mã mời tổ chức</h2>
-            <p className="text-sm text-on-surface-variant">
-              Học sinh nhập mã này tại Cài đặt → Lớp học để gia nhập lớp.
-            </p>
-            {invite?.inviteCode ? (
-              <div className="flex flex-wrap items-center gap-sm">
-                <code className="text-lg font-mono tracking-widest text-secondary bg-surface-container-high px-md py-xs rounded-lg border border-outline-variant">
-                  {invite.inviteCode}
-                </code>
-                {invite.inviteUrl && (
-                  <span className="text-xs text-on-surface-variant">{invite.inviteUrl}</span>
-                )}
-                {invite.expiresAt && (
-                  <span className="text-xs text-on-surface-variant w-full">
-                    Hết hạn: {new Date(invite.expiresAt).toLocaleString('vi-VN')} (7 ngày)
-                  </span>
-                )}
-                <button type="button" onClick={() => void copyInvite()} className="text-sm text-secondary underline">
-                  Copy
-                </button>
-                <button
-                  type="button"
-                  disabled={inviteLoading}
-                  onClick={() => void regenerateInvite()}
-                  className="text-sm px-sm py-xs border border-outline-variant rounded-lg"
-                >
-                  {inviteLoading ? 'Đang tạo...' : 'Tạo mã mới'}
-                </button>
-              </div>
-            ) : (
-              <button
-                type="button"
-                disabled={inviteLoading}
-                onClick={() => void regenerateInvite()}
-                className="text-sm px-md py-sm border border-secondary text-secondary rounded-lg"
-              >
-                Tạo mã mời
-              </button>
-            )}
-            <div className="border-t border-outline-variant pt-md space-y-sm">
-              <h3 className="font-medium text-sm">Gửi lời mời qua email</h3>
-              <p className="text-xs text-on-surface-variant">
-                Học sinh nhận email có link deep-link (đăng ký → tham gia lớp tự động).
-              </p>
-              <label className="block text-sm space-y-1">
-                Email học sinh
-                <input
-                  type="email"
-                  value={inviteEmail}
-                  onChange={(e) => setInviteEmail(e.target.value)}
-                  className="w-full rounded-lg border border-outline-variant bg-surface px-md py-sm"
-                  placeholder="hocsinh@truong.edu.vn"
-                />
-              </label>
-              <label className="block text-sm space-y-1">
-                Tên học sinh (tuỳ chọn)
-                <input
-                  value={inviteStudentName}
-                  onChange={(e) => setInviteStudentName(e.target.value)}
-                  className="w-full rounded-lg border border-outline-variant bg-surface px-md py-sm"
-                  placeholder="Nguyễn Văn A"
-                />
-              </label>
-              {invite?.inviteUrl && (
-                <p className="text-xs text-on-surface-variant break-all">
-                  Link preview: {invite.inviteUrl.startsWith('http') ? invite.inviteUrl : `${window.location.origin}${invite.inviteUrl}`}
-                </p>
-              )}
-              <button
-                type="button"
-                disabled={sendingInviteEmail || !inviteEmail.trim()}
-                onClick={() => void sendInviteEmail()}
-                className="text-sm px-md py-sm bg-secondary text-on-secondary rounded-lg disabled:opacity-60"
-              >
-                {sendingInviteEmail ? 'Đang gửi...' : 'Gửi email mời'}
-              </button>
-            </div>
-            <div className="border-t border-outline-variant pt-md space-y-sm">
-              <h3 className="font-medium text-sm">Tạo tài khoản học sinh (Sub-account)</h3>
-              <p className="text-xs text-on-surface-variant">
-                Giáo viên tạo account hộ học sinh — học sinh đăng nhập bằng email và mật khẩu tạm (đổi tại Cài đặt).
-              </p>
-              <label className="block text-sm space-y-1">
-                Email học sinh
-                <input
-                  type="email"
-                  value={provisionEmail}
-                  onChange={(e) => setProvisionEmail(e.target.value)}
-                  className="w-full rounded-lg border border-outline-variant bg-surface px-md py-sm"
-                  placeholder="hocsinh@truong.edu.vn"
-                />
-              </label>
-              <label className="block text-sm space-y-1">
-                Tên hiển thị (tuỳ chọn)
-                <input
-                  value={provisionName}
-                  onChange={(e) => setProvisionName(e.target.value)}
-                  className="w-full rounded-lg border border-outline-variant bg-surface px-md py-sm"
-                  placeholder="Nguyễn Văn A"
-                />
-              </label>
-              {provisionResult && (
-                <p className="text-xs text-secondary bg-surface-container-high rounded-lg p-sm break-all">{provisionResult}</p>
-              )}
-              <button
-                type="button"
-                disabled={provisioning || !provisionEmail.trim() || dashboardStats?.accountLimitReached}
-                onClick={() => void provisionStudent()}
-                className="text-sm px-md py-sm border border-secondary text-secondary rounded-lg disabled:opacity-60"
-              >
-                {provisioning ? 'Đang tạo...' : 'Tạo tài khoản học sinh'}
-              </button>
-            </div>
-          </section>
-        )}
-
-        {dashboardStats && (
-          <>
-            {dashboardStats.planType !== "PREMIUM" && <OrgUpsellBanner billing={dashboardStats} />}
-            {dashboardStats.aiQueriesLimit != null &&
-              dashboardStats.aiQueriesUsed >= dashboardStats.aiQueriesLimit && (
-                <div className="rounded-xl border border-error/50 bg-error/10 p-md text-sm text-error">
-                  Đã dùng hết AI Pool tháng này ({dashboardStats.aiQueriesUsed}/{dashboardStats.aiQueriesLimit}). Cân nhắc
-                  nâng gói để học sinh tiếp tục chat AI.
-                </div>
-              )}
-          <section className="grid grid-cols-2 md:grid-cols-4 gap-sm">
-            <div className={`bg-surface-container border rounded-xl p-md ${dashboardStats.accountLimitReached ? 'border-error/50' : 'border-outline-variant'}`}>
-              <p className="text-xs text-on-surface-variant uppercase">Tài khoản đã cấp</p>
-              <p className="text-2xl font-bold">
-                {dashboardStats.verifiedAccounts}/{dashboardStats.maxVerifiedAccounts}
-              </p>
-              {dashboardStats.accountLimitReached && <p className="text-xs text-error mt-1">Đã chạm giới hạn tài khoản</p>}
-            </div>
-            <div className={`bg-surface-container border rounded-xl p-md ${dashboardStats.ccuLimitReached ? 'border-error/50' : 'border-outline-variant'}`}>
-              <p className="text-xs text-on-surface-variant uppercase">CCU (demo)</p>
-              <p className="text-2xl font-bold">
-                {dashboardStats.ccuCurrent}/{dashboardStats.maxCcu}
-              </p>
-              {dashboardStats.ccuLimitReached && <p className="text-xs text-error mt-1">Đang đầy CCU của gói</p>}
-            </div>
-            <div className="bg-surface-container border border-outline-variant rounded-xl p-md">
-              <p className="text-xs text-on-surface-variant uppercase">AI queries tháng</p>
-              <p className="text-2xl font-bold">
-                {dashboardStats.aiQueriesUsed}/
-                {dashboardStats.aiQueriesLimit ?? '∞'}
-              </p>
-              <p className="text-xs text-on-surface-variant mt-1">
-                Reset: {dashboardStats.quotaResetsOn ?? 'Không giới hạn'}
-              </p>
-            </div>
-            <div className={`bg-surface-container border rounded-xl p-md ${!dashboardStats.isActive || (dashboardStats.daysUntilExpiry >= 0 && dashboardStats.daysUntilExpiry <= 30) ? 'border-secondary/50' : 'border-outline-variant'}`}>
-              <p className="text-xs text-on-surface-variant uppercase">Trạng thái gói</p>
-              <p className="text-2xl font-bold">{dashboardStats.isActive ? dashboardStats.planType : 'EXPIRED'}</p>
-              {dashboardStats.planType === 'STANDARD' && dashboardStats.daysUntilExpiry >= 0 && dashboardStats.daysUntilExpiry <= 14 && (
-                <p className="text-xs text-primary mt-1">Classroom Trial · còn {dashboardStats.daysUntilExpiry} ngày</p>
-              )}
-              <p className="text-xs text-on-surface-variant mt-1">
-                {dashboardStats.daysUntilExpiry < 0
-                  ? 'Không giới hạn thời hạn'
-                  : dashboardStats.isActive
-                    ? `Còn ${dashboardStats.daysUntilExpiry} ngày`
-                    : 'Đã hết hạn'}
-              </p>
-            </div>
-          </section>
-          </>
-        )}
-
-        {analytics && (
-          <section className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-sm">
-            <div className="bg-surface-container border border-outline-variant rounded-xl p-md">
-              <p className="text-xs text-on-surface-variant uppercase">Thành viên</p>
-              <p className="text-2xl font-bold">{analytics.memberCount}</p>
-            </div>
-            <div className="bg-surface-container border border-outline-variant rounded-xl p-md">
-              <p className="text-xs text-on-surface-variant uppercase">Hoàn thành quest</p>
-              <p className="text-2xl font-bold">{analytics.completionRatePct}%</p>
-            </div>
-            <div className="bg-surface-container border border-outline-variant rounded-xl p-md">
-              <p className="text-xs text-on-surface-variant uppercase">Full tour Củ Chi</p>
-              <p className="text-2xl font-bold">{analytics.fullTourRatePct}%</p>
-            </div>
-          </section>
-        )}
-
-        {orgId && (
-        <section className="bg-surface-container border border-outline-variant rounded-xl overflow-hidden">
-          <div className="p-md border-b border-outline-variant">
-            <h2 className="font-title-md">Danh sách học sinh</h2>
-            <p className="text-sm text-on-surface-variant">{students.length} học sinh</p>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-surface-container-high text-on-surface-variant">
-                <tr>
-                  <th className="text-left p-sm">Học sinh</th>
-                  <th className="hidden sm:table-cell text-left p-sm">Level</th>
-                  <th className="hidden sm:table-cell text-left p-sm">XP</th>
-                  <th className="text-left p-sm">Quest hoàn thành</th>
-                  <th className="hidden md:table-cell text-left p-sm">Tiến độ quest</th>
-                  <th className="text-left p-sm">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody>
-                {students.map((s) => (
-                  <tr key={s.userId} className="border-t border-outline-variant/40">
-                    <td className="p-sm">
-                      <p className="font-medium">{s.displayName}</p>
-                      <p className="text-xs text-on-surface-variant">{s.email}</p>
-                    </td>
-                    <td className="hidden sm:table-cell p-sm">{s.level}</td>
-                    <td className="hidden sm:table-cell p-sm">{s.totalPoints}</td>
-                    <td className="p-sm">{s.questsCompleted}</td>
-                    <td className="hidden md:table-cell p-sm min-w-[140px]">
-                      {(s.questProgress ?? []).length === 0 ? (
-                        <span className="text-on-surface-variant">—</span>
-                      ) : (
-                        <div className="space-y-1">
-                          {s.questProgress!.slice(0, 3).map((q) => (
-                            <div key={q.questId} className="text-xs">
-                              <div className="flex justify-between gap-1 mb-0.5">
-                                <span className="truncate max-w-[100px]" title={q.title}>
-                                  {q.title}
-                                </span>
-                                <span>{q.completionPct}%</span>
-                              </div>
-                              <div className="h-1.5 rounded-full bg-surface-container-high overflow-hidden">
-                                <div
-                                  className="h-full bg-secondary rounded-full"
-                                  style={{ width: `${q.completionPct}%` }}
-                                />
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </td>
-                    <td className="p-sm">
-                      <button
-                        type="button"
-                        disabled={removingUserId === s.userId}
-                        onClick={() => void removeMember(s.userId)}
-                        className="text-error underline disabled:opacity-60"
-                      >
-                        {removingUserId === s.userId ? 'Đang xoá...' : 'Xoá'}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-                {students.length === 0 && (
-                  <tr>
-                    <td colSpan={6} className="p-md text-on-surface-variant text-center">
-                      Chưa có học sinh trong tổ chức.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </section>
-        )}
-      </main>
-    </AppLayout>
-  )
+function Stat({ label, value, detail, used, limit }: { label: string; value: string; detail: string; used?: number; limit?: number | null }) {
+  const ratio = limit && used != null ? Math.min(100, Math.max(0, used / limit * 100)) : 0
+  return <div className={`tw-stat ${ratio >= 90 ? 'is-warning' : ''}`}><span>{label}</span><strong>{value}</strong><small>{detail}</small>{limit != null && <div className="tw-meter"><span style={{ width: `${ratio}%` }} /></div>}</div>
 }

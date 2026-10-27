@@ -1,7 +1,5 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { AppLayout } from '../components/layout/AppLayout'
-import { SimpleTopNav } from '../components/layout/TopNav'
 import { fieldTripApi } from '../features/field-trips/api'
 import {
   FIELD_TRIP_STATUS_LABEL,
@@ -72,7 +70,7 @@ export function TeacherTripLivePage() {
   const completed = status === 'COMPLETED'
 
   return (
-    <AppLayout activeBorder="left" topNav={<SimpleTopNav title={trip?.title ?? 'Live board'} backTo={`/teacher/trips/${tripId}`} />}>
+    <>
       <main className="mt-14 md:mt-16 p-md md:p-lg max-w-5xl mx-auto w-full space-y-md">
         {error && <p role="alert" className="rounded-lg border border-error/40 bg-error/10 px-md py-sm text-sm">{error}</p>}
         <div className="space-y-1">
@@ -120,6 +118,6 @@ export function TeacherTripLivePage() {
           )}
         </section>
       </main>
-    </AppLayout>
+    </>
   )
 }

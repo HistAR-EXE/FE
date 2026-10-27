@@ -9,7 +9,6 @@ export function isAdminPreview(role?: string): boolean {
 
 export function hasPremiumAccess(user?: ContentAccessUser): boolean {
   if (!user) return false
-  if (user.orgId) return true
   return isPremium(user as AuthUser)
 }
 

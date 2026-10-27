@@ -1,7 +1,7 @@
+import { useTeacherWorkspace } from '../features/org/teacher-workspace-context'
+import { TeacherQuestFields } from '../features/org/TeacherQuestFields'
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
-import { AppLayout } from '../components/layout/AppLayout'
-import { SimpleTopNav } from '../components/layout/TopNav'
 import { Button } from '../components/ui/Button'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { getData, httpClient } from '../shared/api/httpClient'
@@ -42,6 +42,8 @@ type TeacherAiDraft = {
 
 export function TeacherAssignmentsPage() {
   const { showToast } = useToast()
+  const { capabilities } = useTeacherWorkspace()
+  const [loadError, setLoadError] = useState('')
   const [assignments, setAssignments] = useState<Assignment[]>([])
   const [drafts, setDrafts] = useState<TeacherAiDraft[]>([])
   const [title, setTitle] = useState('')
@@ -59,10 +61,10 @@ export function TeacherAssignmentsPage() {
   const reload = () => {
     getData<Assignment[]>(httpClient.get('/api/lms/assignments'))
       .then(setAssignments)
-      .catch(() => setAssignments([]))
-    getData<TeacherAiDraft[]>(httpClient.get('/api/lms/teacher-ai-drafts'))
+      .catch(() => setLoadError('Chưa tải được bài tập. Vui lòng thử lại.'))
+    if (capabilities?.contentDrafts) getData<TeacherAiDraft[]>(httpClient.get('/api/lms/teacher-ai-drafts'))
       .then(setDrafts)
-      .catch(() => setDrafts([]))
+      .catch(() => setLoadError('Chưa tải được bản nháp nội dung. Vui lòng thử lại.'))
   }
 
   const onCreateDraft = async (e: FormEvent) => {
@@ -210,11 +212,11 @@ export function TeacherAssignmentsPage() {
   }
 
   return (
-    <AppLayout activeBorder="left" topNav={<SimpleTopNav title="LMS — Giao bài" backTo="/teacher" />}>
+    <>
       <main className="mt-14 md:mt-16 p-md md:p-lg max-w-4xl mx-auto w-full space-y-lg">
         <div className="flex flex-wrap items-center justify-between gap-sm">
           <div>
-            <h1 className="font-display-md text-on-surface">LMS Premium</h1>
+            <h1 className="font-display-md text-on-surface">Bài tập của lớp</h1>
             <p className="text-sm text-on-surface-variant">Giao bài quest, auto-chấm khi học sinh hoàn thành, xuất báo cáo CSV/PDF.</p>
           </div>
           <div className="flex gap-2">
@@ -237,36 +239,21 @@ export function TeacherAssignmentsPage() {
             placeholder="Tiêu đề bài"
             className="w-full neo-input rounded-lg px-md py-sm"
           />
-          <input
-            id="assignment-campaign-id"
-            aria-label="Campaign UUID bài tập"
-            value={campaignId}
-            onChange={(e) => setCampaignId(e.target.value)}
-            placeholder="Campaign UUID"
-            className="w-full neo-input rounded-lg px-md py-sm font-mono text-xs"
-          />
-          <input
-            id="assignment-quest-id"
-            aria-label="Quest UUID bài tập"
-            value={questId}
-            onChange={(e) => setQuestId(e.target.value)}
-            placeholder="Quest UUID"
-            className="w-full neo-input rounded-lg px-md py-sm font-mono text-xs"
-          />
+          <TeacherQuestFields questId={questId} campaignId={campaignId} onQuestChange={setQuestId} onCampaignChange={setCampaignId} />
           <Button type="submit" disabled={loading}>
             Giao bài
           </Button>
         </form>
 
-        <section className="bg-surface-container border border-secondary/30 rounded-xl p-md space-y-sm">
+        {capabilities?.contentDrafts && <section className="bg-surface-container border border-secondary/30 rounded-xl p-md space-y-sm">
           <div>
             <h2 className="font-title-md">Draft AI — review trước publish</h2>
             <p className="text-xs text-on-surface-variant mt-1">Citation và đủ bốn bản dịch đã duyệt là điều kiện publish. Draft không tự động thành bài tập.</p>
           </div>
           <form onSubmit={(e) => void onCreateDraft(e)} className="space-y-sm">
             <input value={draftTitle} onChange={(e) => setDraftTitle(e.target.value)} placeholder="Tiêu đề draft" className="w-full neo-input rounded-lg px-md py-sm" />
-            <input id="teacher-draft-quest-id" aria-label="Quest UUID draft AI" value={draftQuestId} onChange={(e) => setDraftQuestId(e.target.value)} placeholder="Quest UUID" className="w-full neo-input rounded-lg px-md py-sm font-mono text-xs" />
-            <input id="teacher-draft-campaign-id" aria-label="Campaign UUID draft AI" value={draftCampaignId} onChange={(e) => setDraftCampaignId(e.target.value)} placeholder="Campaign UUID" className="w-full neo-input rounded-lg px-md py-sm font-mono text-xs" />
+            <TeacherQuestFields questId={draftQuestId} campaignId={draftCampaignId} onQuestChange={setDraftQuestId} onCampaignChange={setDraftCampaignId} campaignRequired />
+
             <input value={sourceVersion} onChange={(e) => setSourceVersion(e.target.value)} placeholder="Phiên bản nguồn đã duyệt, ví dụ cu-chi-v1" className="w-full neo-input rounded-lg px-md py-sm" />
             <textarea value={draftContent} onChange={(e) => setDraftContent(e.target.value)} placeholder="Câu hỏi, đáp án hoặc nội dung AI draft đã được giáo viên rà soát" className="w-full neo-input rounded-lg px-md py-sm min-h-24" />
             <input value={citationTitle} onChange={(e) => setCitationTitle(e.target.value)} placeholder="Tên tư liệu/citation đã duyệt" className="w-full neo-input rounded-lg px-md py-sm" />
@@ -296,6 +283,8 @@ export function TeacherAssignmentsPage() {
           </div>
         </section>
 
+        }
+        {loadError && <p className="tw-note error" role="alert">{loadError} <button onClick={reload}>Thử lại</button></p>}
         <section className="space-y-md">
           {assignments.map((assignment) => (
             <article key={assignment.id} className="bg-surface-container border border-outline-variant rounded-xl p-md">
@@ -321,6 +310,6 @@ export function TeacherAssignmentsPage() {
           ← Về Teacher Dashboard
         </Link>
       </main>
-    </AppLayout>
+    </>
   )
 }

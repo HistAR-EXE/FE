@@ -7,6 +7,26 @@ export type OrgMembership = {
   orgRole: string
 }
 
+export type OrgCapabilities = {
+  manageMembers: boolean
+  manageTeachers: boolean
+  assignments: boolean
+  liveBoard: boolean
+  reports: boolean
+  groups: boolean
+  fieldTrips: boolean
+  contentDrafts: boolean
+  organizationActive: boolean
+  premiumAccess: boolean
+}
+
+export type OrgEmailInvitation = {
+  email: string
+  status: string
+  deliveryStatus: 'SENT' | 'LOCAL_ONLY'
+  expiresAt: string
+}
+
 export type OrgQuestProgressItem = {
   questId: string
   title: string
@@ -90,7 +110,13 @@ export type LiveBoardRally = {
   rallyAt: string
 }
 
+export type OrgReportSnapshot = { id: string; createdAt: string; snapshot: LiveBoardSnapshot }
+
 export const orgApi = {
+  reportSnapshots: (orgId: string) => getData<OrgReportSnapshot[]>(httpClient.get(`/api/org/${orgId}/report-snapshots`)),
+  captureReportSnapshot: (orgId: string) => getData<OrgReportSnapshot>(httpClient.post(`/api/org/${orgId}/report-snapshots`)),
+  capabilities: (orgId: string) => getData<OrgCapabilities>(httpClient.get(`/api/org/${orgId}/capabilities`)),
+  emailInvitations: (orgId: string) => getData<OrgEmailInvitation[]>(httpClient.get(`/api/org/${orgId}/email-invitations`)),
   mine: () => getData<OrgMembership[]>(httpClient.get('/api/org/mine')),
   analytics: (orgId: string) =>
     getData<OrganizationAnalytics>(httpClient.get(`/api/org/${orgId}/analytics`)),
@@ -103,7 +129,9 @@ export const orgApi = {
   quota: () => getData<OrgBillingStatus>(httpClient.get('/api/org/quota')),
   join: (inviteCode: string) => getData<JoinOrgResult>(httpClient.post('/api/org/join', { inviteCode })),
   sendInviteEmail: (orgId: string, payload: { studentEmail: string; studentName?: string }) =>
-    getData<void>(httpClient.post(`/api/org/${orgId}/invite-email`, payload)),
+    getData<OrgEmailInvitation>(httpClient.post(`/api/org/${orgId}/invite-email`, payload)),
+  provisionTeacher: (orgId: string, payload: { email: string; displayName?: string; sendCredentialsEmail?: boolean }) =>
+    getData<ProvisionStudentResult>(httpClient.post(`/api/org/${orgId}/teachers/provision`, payload)),
   provisionStudent: (
     orgId: string,
     payload: { email: string; displayName?: string; sendCredentialsEmail?: boolean },

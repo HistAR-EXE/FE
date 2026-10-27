@@ -1,8 +1,7 @@
+import { TeacherQuestFields } from '../features/org/TeacherQuestFields'
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import QRCode from 'qrcode'
-import { AppLayout } from '../components/layout/AppLayout'
-import { SimpleTopNav } from '../components/layout/TopNav'
 import { Button } from '../components/ui/Button'
 import { fieldTripApi } from '../features/field-trips/api'
 import {
@@ -189,7 +188,7 @@ export function TeacherTripDetailPage() {
   }
 
   return (
-    <AppLayout activeBorder="left" topNav={<SimpleTopNav title="Chi tiết chuyến đi" backTo="/teacher/trips" />}>
+    <>
       <main className="mt-14 md:mt-16 p-md md:p-lg max-w-5xl mx-auto w-full space-y-md">
         {loadError && <p role="alert" className="rounded-lg border border-error/40 bg-error/10 px-md py-sm text-sm">{loadError}</p>}
         {!trip && !loadError && <p className="text-sm text-on-surface-variant">Đang tải chuyến đi...</p>}
@@ -267,14 +266,7 @@ export function TeacherTripDetailPage() {
                     <input className={fieldClass} type="datetime-local" value={visitEnd} onChange={(event) => setVisitEnd(event.target.value)} required />
                   </label>
                 </div>
-                <label className="block text-sm space-y-1">
-                  Mã nhiệm vụ
-                  <input className={`${fieldClass} font-mono text-xs`} value={questId} onChange={(event) => setQuestId(event.target.value)} required />
-                </label>
-                <label className="block text-sm space-y-1">
-                  Mã chiến dịch
-                  <input className={`${fieldClass} font-mono text-xs`} value={campaignId} onChange={(event) => setCampaignId(event.target.value)} required />
-                </label>
+                <TeacherQuestFields questId={questId} campaignId={campaignId} onQuestChange={setQuestId} onCampaignChange={setCampaignId} campaignRequired />
                 <Button type="submit" disabled={saving}>Lưu thay đổi</Button>
               </form>
             )}
@@ -332,6 +324,6 @@ export function TeacherTripDetailPage() {
           </>
         )}
       </main>
-    </AppLayout>
+    </>
   )
 }

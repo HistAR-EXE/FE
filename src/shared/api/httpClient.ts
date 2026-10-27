@@ -36,12 +36,12 @@ async function tryRefreshToken() {
         const userId = localStorage.getItem('timelens_user_id') ?? ''
         const displayName = localStorage.getItem('timelens_display_name') ?? ''
         const email = localStorage.getItem('timelens_email') ?? undefined
-        const roleRaw = localStorage.getItem('timelens_role')
+        const roleRaw = typeof payload.role === 'string' ? payload.role : localStorage.getItem('timelens_role')
         const role = roleRaw ? normalizeRole(roleRaw) : undefined
-        const tierRaw = localStorage.getItem('timelens_tier')
+        const tierRaw = typeof payload.tier === 'string' ? payload.tier : localStorage.getItem('timelens_tier')
         const tier = tierRaw ? normalizeTier(tierRaw) : undefined
-        const orgId = localStorage.getItem('timelens_org_id') ?? undefined
-        const orgSubRaw = localStorage.getItem('timelens_org_subscription')
+        const orgId = 'orgId' in payload ? payload.orgId as string | null : localStorage.getItem('timelens_org_id') ?? undefined
+        const orgSubRaw = typeof payload.orgSubscription === 'string' ? payload.orgSubscription : localStorage.getItem('timelens_org_subscription')
         const orgSubscription = orgSubRaw ? normalizeOrgSubscription(orgSubRaw) : undefined
         const avatarUrl = localStorage.getItem('timelens_avatar_url')
         if (!nextAccessToken || !userId || !displayName) return null
