@@ -15,7 +15,6 @@ export type ARSceneConfig = {
   name: string
   unlockKey: string
   previewImage: string
-  mindTarget?: string
   modelScale: number
   modelPosition: [number, number, number]
   modelRotation: [number, number, number]

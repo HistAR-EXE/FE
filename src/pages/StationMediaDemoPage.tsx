@@ -5,6 +5,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
+import { PremiumContentModal } from '../components/monetization/PremiumContentModal'
 import { QuestBackLink } from '../features/gamification/QuestBackLink'
 import { getPublishedRoleTemplates } from '../features/heritage-studio/roleTemplates'
 import type { HeritageStationCode } from '../features/heritage-studio/types'
@@ -29,6 +30,8 @@ import { emitEvent } from '../lib/pilotEvents'
 import { setActiveStationCode } from '../lib/stationSafety'
 import { isPilotSiteCode, locationIdFromSiteCode } from '../shared/config/constants'
 import { resolveMediaUrl } from '../shared/config/env'
+import { canAccessStoryPremium } from '../shared/access/contentAccess'
+import { useAuth } from '../shared/auth/useAuth'
 
 const STATIONS = ['ST01', 'ST02', 'ST03', 'ST04', 'ST05', 'ST06'] as const
 const ONSITE_QUEST_BY_SITE: Record<string, string> = { 'cu-chi': '33333333-3333-3333-3333-333333333340' }
@@ -59,6 +62,29 @@ function useMediaAvailable(path: string) {
 }
 
 export function StationMediaDemoPage() {
+    const { code = 'ST01', siteCode: siteParam } = useParams<{ code: string; siteCode?: string }>()
+    const { user, isAuthenticated, isLoading } = useAuth()
+    const [popupOpen, setPopupOpen] = useState(true)
+    const site = isPilotSiteCode(siteParam) ? siteParam.trim().toLowerCase() : 'cu-chi'
+    const stationCode = code.toUpperCase()
+    const premiumStation = site === 'cu-chi' && /^ST0[3-6]$/.test(stationCode)
+    useEffect(() => setPopupOpen(true), [site, stationCode])
+    if (isLoading) return <AppLayout hideTopNav><main className="p-8" role="status">Đang kiểm tra quyền truy cập…</main></AppLayout>
+    if (premiumStation && !canAccessStoryPremium(user, site)) {
+        return <AppLayout hideTopNav className="min-h-screen !bg-[#DCEBFF] text-[#0F1B33]">
+            <main className="mx-auto max-w-2xl space-y-5 p-6">
+                <QuestBackLink to="/quests" label="Hành trình 6 trạm" />
+                <h1 className="text-2xl font-black">Trạm {stationCode} cần nâng cấp</h1>
+                <p>Bạn có thể xem trạm ST01–ST02 miễn phí. Nâng cấp để vào nội dung trạm này.</p>
+                <button type="button" onClick={() => setPopupOpen(true)} className="rounded-xl bg-[#0275FB] px-5 py-3 font-bold text-white">Xem gói Premium</button>
+            </main>
+            <PremiumContentModal open={popupOpen} onClose={() => setPopupOpen(false)} title={`Trạm ${stationCode}`} authenticated={isAuthenticated} />
+        </AppLayout>
+    }
+    return <StationMediaContent />
+}
+
+function StationMediaContent() {
     const { code = 'ST01', siteCode: siteParam } = useParams<{ code: string; siteCode?: string }>()
     const site = isPilotSiteCode(siteParam) ? siteParam.trim().toLowerCase() : 'cu-chi'
     const stationCode = STATIONS.includes(code.toUpperCase() as (typeof STATIONS)[number]) ? code.toUpperCase() : 'ST01'

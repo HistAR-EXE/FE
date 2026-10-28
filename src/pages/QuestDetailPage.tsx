@@ -229,6 +229,10 @@ export function QuestDetailPage() {
             )
     }
 
+    useEffect(() => {
+        if (quest?.lock?.reason === 'PREMIUM') setPremiumPopup(true)
+    }, [quest?.lock?.reason])
+
     if (questId && !isDevMinigameQuestVisible(questId)) {
         return (
             <AppLayout hideTopNav mobileBackTo="/quests" mobileTitle="Nhiệm vụ">
@@ -243,11 +247,6 @@ export function QuestDetailPage() {
         quest?.track === 'ONSITE' &&
         !!detail?.steps.length &&
         detail.steps.every((step) => /^station:ST\d{2}$/i.test(step.key))
-
-    // Auto-open premium popup when quest is premium-locked
-    useEffect(() => {
-        if (quest?.lock?.reason === 'PREMIUM') setPremiumPopup(true)
-    }, [quest?.lock?.reason])
 
     return (
         <AppLayout
@@ -450,6 +449,7 @@ function StatusPanel({
     starting,
     onStart,
     onOpenArtifact,
+    onPremiumPopup,
 }: {
     quest: QuestV2Card
     steps: QuestV2Step[]

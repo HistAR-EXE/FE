@@ -9,7 +9,7 @@ import { Link } from 'react-router-dom'
 import { MaterialIcon } from '../../components/ui/MaterialIcon'
 import { emitEvent } from '../../lib/pilotEvents'
 import { useAuth } from '../../shared/auth/useAuth'
-import { isPremium } from '../../shared/auth/types'
+import { canAccessStoryPremium } from '../../shared/access/contentAccess'
 import { getSeededMinigameId } from '../minigames/api'
 import { shortChapterTitle, stationMedia, storySeriesName } from '../stations/stationMedia'
 import { stationDisplayName } from '../stations/StationNextSteps'
@@ -129,7 +129,7 @@ export function StoryJourneyPanel({ siteCode, className = '', questSteps, points
                         : null
                     // Ở chế độ nhiệm vụ, trạng thái của dòng là "đã check-in hay chưa" — đó cũng là bước của nhiệm vụ.
                     const done = isDone(chapter)
-                    const isPremiumBlocked = chapter.requiresPremium && !chapter.completed && !isPremium(user)
+                    const isPremiumBlocked = chapter.requiresPremium && !chapter.completed && !canAccessStoryPremium(user, siteCode)
                     // Chương mở tuần tự: cần check-in ở trạm của chương liền trước. Nói rõ tên trạm đó cho đỡ mơ hồ.
                     const previous = chapters.find((c) => c.chapterNumber === chapter.chapterNumber - 1)
                     const previousLabel = previous

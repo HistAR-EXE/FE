@@ -19,7 +19,13 @@ async function check(entry, method, headers = {}) {
       if (response.status !== expectedStatus) throw new Error(`HTTP ${response.status}; expected ${expectedStatus}`);
       if (response.headers.get('content-type')?.split(';')[0] !== entry.contentType) throw new Error('Content-Type differs');
       if (method === 'HEAD') {
-        if (Number(response.headers.get('content-length')) !== entry.size) throw new Error('Content-Length differs');
+        const length = response.headers.get('content-length');
+        if (length === null) {
+          await response.body?.cancel();
+          await check(entry, 'GET', { Range: 'bytes=0-1023' });
+          return;
+        }
+        if (Number(length) !== entry.size) throw new Error('Content-Length differs');
       } else if (!response.headers.get('content-range')?.startsWith('bytes 0-')
         || Number(response.headers.get('content-range').split('/')[1]) !== entry.size) {
         throw new Error('Content-Range differs');
