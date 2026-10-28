@@ -1,4 +1,4 @@
-// Generic onsite hub: pack → scan → story → wrapped (per pilot site).
+// Generic onsite hub: pack → scan → story (per pilot site).
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { MaterialIcon } from '../../components/ui/MaterialIcon'
@@ -133,19 +133,11 @@ export function SiteOnsiteHub({
             <p className="mt-1 text-xs font-black text-[#0F1B33]">Xem trước 6 trạm</p>
             <p className="text-[10px] font-semibold text-slate-500">Ảnh thật & thuyết minh</p>
           </Link>
-          <Link to={`/journey-wrapped?site=${encodeURIComponent(code)}`} className={tile}>
-            <MaterialIcon name="auto_awesome" className="text-2xl text-purple-500" />
-            <p className="mt-1 text-xs font-black text-[#0F1B33]">Hồ sơ giao liên</p>
-            <p className="text-[10px] font-semibold text-slate-500">Wrapped 9:16</p>
-          </Link>
         </div>
 
         <div className="mt-4 flex flex-wrap gap-3">
           <Link to="/mode-select" className="inline-flex items-center gap-1.5 text-[11px] font-black text-[#0275FB] hover:underline">
             <MaterialIcon name="swap_horiz" className="text-sm" /> Chọn chế độ Onsite
-          </Link>
-          <Link to="/squad" className="inline-flex items-center gap-1.5 text-[11px] font-black text-slate-600 hover:underline">
-            <MaterialIcon name="groups" className="text-sm" /> Tiểu đội
           </Link>
           <Link to={`/pricing?site=${encodeURIComponent(code)}`} className="inline-flex items-center gap-1.5 text-[11px] font-black text-[#8A6A00] hover:underline">
             <MaterialIcon name="payments" className="text-sm" /> Journey Pass / Premium

@@ -9,13 +9,13 @@ const PLAN_UPGRADES: Record<string, { next: PlanTier; label: string; features: s
   TRIAL: {
     next: 'STANDARD',
     label: 'Standard Package',
-    features: ['40 CCU đồng thời', '400 tài khoản', '30.000 AI queries/tháng', 'Quest Room multiplayer'],
+    features: ['40 CCU đồng thời', '400 tài khoản', '30.000 AI queries/tháng', 'Giao bài tập & Live Board'],
     price: '15.000.000đ/năm',
   },
   MICRO: {
     next: 'STANDARD',
     label: 'Standard Package',
-    features: ['Nâng CCU từ 15 → 40', 'Tài khoản từ 100 → 400', 'AI queries từ 5K → 30K', 'Quest Room multiplayer'],
+    features: ['Nâng CCU từ 15 → 40', 'Tài khoản từ 100 → 400', 'AI queries từ 5K → 30K', 'Giao bài tập & Live Board'],
     price: '15.000.000đ/năm',
   },
   STANDARD: {

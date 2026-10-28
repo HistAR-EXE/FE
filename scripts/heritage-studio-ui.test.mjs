@@ -31,7 +31,7 @@ test('heritage portrait is recomposed automatically when inputs change', () => {
   assert.doesNotMatch(studio, /Ghép lại ngay/)
   assert.match(studio, /Tinh chỉnh bằng thanh trượt/)
   assert.match(page, /Ánh sáng/)
-  assert.match(page, /Lưu ảnh hóa thân & Chia sẻ/)
+  assert.match(page, /Lưu ảnh & tiếp tục/)
 })
 
 test('Cedar Falls completion is one-shot and distinguishes 1967 from 1968', () => {
@@ -53,7 +53,7 @@ test('ST06 camera safety remains library-only', () => {
 test('heritage flow has one shared light control and no square selector', () => {
   const source = read('../src/pages/PhotoFramePage.tsx')
   assert.equal(source.match(/type="range"/g)?.length, 1)
-  assert.doesNotMatch(source, /photoMode === 'heritage'[\s\S]{0,1200}variant === 'square'[\s\S]{0,1200}Vuông/)
+  assert.doesNotMatch(read('../src/features/heritage-studio/HeritageStudioPanel.tsx'), /onVariantChange|Vuông 1080/)
   assert.match(source, /returnTo.*profile/)
 })
 

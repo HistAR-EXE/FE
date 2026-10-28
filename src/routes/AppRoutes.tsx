@@ -19,13 +19,9 @@ import { JoinPage } from '../pages/JoinPage'
 import { VerifyEmailPage } from '../pages/VerifyEmailPage'
 import { VerifyEmailPendingPage } from '../pages/VerifyEmailPendingPage'
 import { ForgotPasswordPage } from '../pages/ForgotPasswordPage'
-import { GroupHubPage } from '../pages/GroupHubPage'
-import { SquadLobbyPage } from '../pages/SquadLobbyPage'
-import { GroupProgressPage } from '../pages/GroupProgressPage'
 import { PackPrepPage } from '../pages/PackPrepPage'
 import { StationMediaDemoPage } from '../pages/StationMediaDemoPage'
 import { StationGamePage } from '../pages/StationGamePage'
-import { JourneyWrappedPage } from '../pages/JourneyWrappedPage'
 import { CreatorLandingPage } from '../pages/CreatorLandingPage'
 import { CreatorStatsPage } from '../pages/CreatorStatsPage'
 import { PrivacyPage } from '../pages/PrivacyPage'
@@ -201,10 +197,6 @@ export function AppRoutes() {
                                 <Route path="/artifacts" element={<ArtifactsPage />} />
                                 <Route path="/artifacts/:id" element={<ArtifactDetailPage />} />
                                 <Route path="/profile" element={<ProfilePage />} />
-                                <Route path="/journey-wrapped" element={<JourneyWrappedPage />} />
-                                <Route path="/groups" element={<GroupHubPage />} />
-                                <Route path="/squad" element={<SquadLobbyPage />} />
-                                <Route path="/groups/:groupId/progress" element={<GroupProgressPage />} />
                                 <Route path="/share" element={<SharePage />} />
                                 <Route path="/photo-frame" element={<PhotoFramePage />} />
                                 <Route path="/scan" element={<ScanPage />} />

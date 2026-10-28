@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { EraLockedModal } from '../components/monetization/EraLockedModal'
+import { PremiumContentModal } from '../components/monetization/PremiumContentModal'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { analyticsApi } from '../features/analytics/api'
 import { collectionApi } from '../features/collection/api'
@@ -59,6 +60,7 @@ export function QuestDetailPage() {
     const [starting, setStarting] = useState(false)
     const [artifactStep, setArtifactStep] = useState<QuestV2Step | null>(null)
     const [paywallEra, setPaywallEra] = useState<number | null>(null)
+    const [premiumPopup, setPremiumPopup] = useState(false)
     const [callOffer, setCallOffer] = useState(false)
     const reconciled = useRef(false)
 
@@ -242,6 +244,11 @@ export function QuestDetailPage() {
         !!detail?.steps.length &&
         detail.steps.every((step) => /^station:ST\d{2}$/i.test(step.key))
 
+    // Auto-open premium popup when quest is premium-locked
+    useEffect(() => {
+        if (quest?.lock?.reason === 'PREMIUM') setPremiumPopup(true)
+    }, [quest?.lock?.reason])
+
     return (
         <AppLayout
             hideTopNav
@@ -281,6 +288,7 @@ export function QuestDetailPage() {
                                 starting={starting}
                                 onStart={startQuest}
                                 onOpenArtifact={setArtifactStep}
+                                onPremiumPopup={() => setPremiumPopup(true)}
                             />
 
                             {callOffer && (
@@ -376,6 +384,14 @@ export function QuestDetailPage() {
                 <ArtifactViewerModal step={artifactStep} locationId={locationId} onClose={() => setArtifactStep(null)} />
             )}
 
+            <PremiumContentModal
+                open={premiumPopup}
+                onClose={() => setPremiumPopup(false)}
+                title={quest?.title ?? 'Nội dung Premium'}
+                next={`/quests/${questId ?? ''}`}
+                authenticated={isAuthenticated}
+            />
+
             <EraLockedModal
                 open={paywallEra !== null}
                 onClose={() => setPaywallEra(null)}
@@ -441,6 +457,7 @@ function StatusPanel({
     starting: boolean
     onStart: () => void
     onOpenArtifact: (step: QuestV2Step) => void
+    onPremiumPopup?: () => void
 }) {
     const { requiredDone, requiredTotal, optionalDone, optionalTotal } = quest.progress
     const pct = requiredTotal > 0 ? Math.round((requiredDone / requiredTotal) * 100) : 0
@@ -454,6 +471,7 @@ function StatusPanel({
                         <MaterialIcon name="lock" className="text-xl text-[#0275FB]" /> Nhiệm vụ đang khóa
                     </p>
                     <p className="mt-1 text-sm text-slate-600">{quest.lock.message}</p>
+                    {quest.lock.reason === 'PREMIUM' && <button type="button" onClick={() => onPremiumPopup?.()} className="mt-3 inline-flex min-h-[44px] items-center rounded-xl bg-blue-600 px-4 text-sm font-bold text-white">Xem gói Premium</button>}
                     {quest.lock.afterQuest && (
                         <Link
                             to={`/quests/${quest.lock.afterQuest.id}`}

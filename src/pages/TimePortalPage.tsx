@@ -51,6 +51,9 @@ export function TimePortalPage() {
   const [era, setEra] = useState<EraValue>(premium || !isPremiumEra(requestedEra) ? requestedEra : 2026)
   const [paywallOpen, setPaywallOpen] = useState(!premium && isPremiumEra(requestedEra))
   const [paywallEra, setPaywallEra] = useState<EraValue>(isPremiumEra(requestedEra) ? requestedEra : 1948)
+  useEffect(() => {
+    if (!premium && isPremiumEra(era)) { setEra(2026); setPaywallEra(era); setPaywallOpen(true) }
+  }, [premium, era])
   const { showToast } = useToast()
   const { applyEngagement } = useUserProgress()
   const recordedKeys = useRef(new Set<string>())
@@ -120,6 +123,15 @@ export function TimePortalPage() {
   if (locationId && shouldCanonicalizeLocationParam(locationParam)) {
     return <Navigate replace to={timePortalPath(locationId, routerLocation.search)} />
   }
+
+  if (!isAuthenticated) return <AppLayout mobileTitle="Cổng thời gian">
+    <main className="flex min-h-[70vh] items-center justify-center bg-slate-50 p-6 text-center">
+      <div><h1 className="text-2xl font-bold">Đăng nhập để khám phá Cổng thời gian</h1>
+        <p className="mt-2 text-slate-600">Tiến độ khám phá sẽ được lưu vào tài khoản của bạn.</p>
+        <button type="button" onClick={() => navigate(`/login?${new URLSearchParams({ returnTo: routerLocation.pathname + routerLocation.search })}`)} className="mt-5 rounded-xl bg-blue-600 px-5 py-3 font-bold text-white">Đăng nhập</button>
+      </div>
+    </main>
+  </AppLayout>
 
   return (
     <AppLayout

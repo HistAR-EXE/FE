@@ -1,5 +1,5 @@
 // src/pages/ArExperiencePage.tsx
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { ArHomeExperience } from "../features/ar/ArHomeExperience";
 import { AppLayout } from "../components/layout/AppLayout";
@@ -11,6 +11,10 @@ import {
 } from "../features/ar/arExperience";
 import { ArCameraExperience } from "../features/ar/ArCameraExperience";
 import { CU_CHI_LOCATION_ID } from "../shared/config/constants";
+import { useAuth } from '../shared/auth/useAuth'
+import { hasPremiumAccess } from '../shared/access/contentAccess'
+import { isFreeAr } from '../shared/access/premiumContentPolicy'
+import { PremiumContentModal } from '../components/monetization/PremiumContentModal'
 import mascotImg from "../assets/mascot.png";
 import "../features/ar/arExperience.css";
 
@@ -45,10 +49,11 @@ const OPTIONS = [
 ] as const;
 
 export function ArExperiencePage() {
+    const { isAuthenticated, user } = useAuth()
     const [params, setParams] = useSearchParams();
     const includeReview =
         AR_REVIEW_ARTIFACTS.length > 0 && params.get("review") === "1";
-    const artifact = readArtifact(params.get("artifact"), includeReview);
+    const artifact = readArtifact(params.get("artifact") ?? (!hasPremiumAccess(user) ? 'rifle' : null), includeReview);
     const collection = includeReview
         ? [...AR_ARTIFACTS, ...AR_REVIEW_ARTIFACTS]
         : AR_ARTIFACTS;
@@ -62,7 +67,16 @@ export function ArExperiencePage() {
         ? requestedView!
         : "explore";
     const [loadModel, setLoadModel] = useState(false);
+    const [premiumOpen, setPremiumOpen] = useState(() => !isAuthenticated || (!hasPremiumAccess(user) && !isFreeAr(artifact.id)))
+    const [lockedTarget, setLockedTarget] = useState<string | undefined>(undefined)
+    const locked = !isAuthenticated || (!hasPremiumAccess(user) && !isFreeAr(artifact.id))
+    useEffect(() => { if (locked) setPremiumOpen(true) }, [locked, artifact.id])
     const change = (next: string, id = artifact.id) => {
+        if (!isAuthenticated || (!hasPremiumAccess(user) && !isFreeAr(id))) {
+            setLockedTarget(`/ar-experience?${new URLSearchParams({ artifact: id, view: next })}`)
+            setPremiumOpen(true)
+            return
+        }
         setLoadModel(false);
         const nextParams = new URLSearchParams({ artifact: id });
         if (next !== "explore") nextParams.set("view", next);
@@ -75,11 +89,20 @@ export function ArExperiencePage() {
         if (includeReview) {
             nextParams.delete("review");
             if (artifact.status === "review")
-                nextParams.set("artifact", AR_ARTIFACTS[0].id);
+                nextParams.set("artifact", hasPremiumAccess(user) ? AR_ARTIFACTS[0].id : 'rifle');
         } else nextParams.set("review", "1");
         setLoadModel(false);
         setParams(nextParams);
     };
+
+    if (locked) return <AppLayout mobileTitle="Khám phá AR" showCta={false}>
+        <main className="min-h-screen bg-slate-50 p-6 text-center">
+            <h1 className="text-2xl font-bold">{artifact.name}</h1>
+            <p className="mt-3">Mẫu AR này cần Premium.</p>
+            <button type="button" className="mt-5 rounded-xl bg-blue-600 px-5 py-3 font-bold text-white" onClick={() => setPremiumOpen(true)}>Xem quyền truy cập</button>
+            <PremiumContentModal open={premiumOpen} onClose={() => setPremiumOpen(false)} title="Mẫu AR này cần Premium" authenticated={isAuthenticated} next={lockedTarget} />
+        </main>
+    </AppLayout>
 
     if (view === "target")
         return (
@@ -121,6 +144,7 @@ export function ArExperiencePage() {
             className="ar-experience-shell"
             showCta={false}
         >
+            <PremiumContentModal open={premiumOpen} onClose={() => setPremiumOpen(false)} title="Mẫu AR này cần Premium" authenticated={isAuthenticated} next={lockedTarget} />
             <div className={`ar-experience ${view === "camera" ? "is-camera" : ""}`}>
                 <header className="ar-hero">
                     <div className="ar-hero-copy">

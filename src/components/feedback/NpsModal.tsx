@@ -71,18 +71,18 @@ export function NpsModal({ context = 'home', stationCode }: Props) {
       <div
         role="dialog"
         aria-modal="true"
-        data-testid="nps-wrapped-cta"
+        data-testid="nps-thanks"
         className="fixed inset-0 z-[900] flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm p-4"
       >
         <div className="w-full max-w-md rounded-2xl border border-white/15 bg-[#12141f] text-white shadow-2xl p-6 space-y-4 text-center">
           <h2 className="text-lg font-black">Cảm ơn bạn!</h2>
-          <p className="text-sm text-gray-300">Xem Hồ sơ giao liên (Wrapped) và chia sẻ hành trình Củ Chi.</p>
+          <p className="text-sm text-gray-300">Xem tiến độ và những dấu mốc đã lưu trong hồ sơ của bạn.</p>
           <Link
-            to="/journey-wrapped"
+            to="/profile"
             className="inline-flex w-full justify-center rounded-xl bg-gradient-to-r from-[#fe951c] to-[#e07d0b] px-4 py-2.5 text-sm font-black text-black"
             onClick={() => setOpen(false)}
           >
-            Mở Hồ sơ giao liên
+            Xem hồ sơ của bạn
           </Link>
           <button type="button" onClick={() => setOpen(false)} className="text-xs text-gray-500 font-bold">
             Đóng

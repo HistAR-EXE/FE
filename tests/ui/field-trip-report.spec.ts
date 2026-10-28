@@ -288,7 +288,6 @@ async function mockFieldTrips(page: Page, options: MockOptions = {}) {
     if (/^\/api\/org\/[^/]+\/live-board\/stream$/.test(path)) {
       return route.fulfill({ status: 204, body: '' })
     }
-    if (path === '/api/groups/mine') return ok([])
     if (path === '/api/teacher/field-trips' && method === 'GET') return ok(state.trips)
 
     const live = path.match(/^\/api\/teacher\/field-trips\/([^/]+)\/live-board$/)

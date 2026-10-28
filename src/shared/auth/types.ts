@@ -71,7 +71,6 @@ const SAFE_REDIRECT_PREFIXES = [
   '/trip',
   '/admin',
   '/characters',
-  '/groups',
   '/mode-select',
   '/verify-email/pending',
 ] as const

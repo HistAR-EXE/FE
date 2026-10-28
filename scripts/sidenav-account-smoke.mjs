@@ -48,14 +48,15 @@ try {
   assert.ok(metrics.top>=8&&metrics.bottom<=height,`account panel fits viewport ${height}`);
  }
  await page.keyboard.press('Escape');await page.setViewportSize({width:1280,height:800});await account.click();await menu.waitFor();
- for(const [label,path] of [['Hồ sơ cá nhân','/profile'],['Cài đặt','/settings'],['Tổng kết hành trình','/journey-wrapped'],['Nhóm học tập','/groups'],['Biệt đội của tôi','/squad'],['Khung ảnh cá nhân','/photo-frame'],['Chia sẻ hành trình','/share'],['Gói dịch vụ','/pricing']]) assert.equal(await menu.getByRole('link',{name:new RegExp(label)}).getAttribute('href'),path);
+ for(const [label,path] of [['Hồ sơ cá nhân','/profile'],['Cài đặt','/settings'],['Ảnh & chia sẻ','/photo-frame'],['Gói dịch vụ','/pricing']]) assert.equal(await menu.getByRole('link',{name:new RegExp(label)}).getAttribute('href'),path);
+ for(const label of ['Tổng kết hành trình','Nhóm học tập','Biệt đội của tôi']) assert.equal(await menu.getByRole('link',{name:label,exact:true}).count(),0);
  assert.equal(await menu.getByRole('link',{name:'Cổng quản trị',exact:true}).count(),0);
  await page.keyboard.press('Escape'); assert.equal(await menu.count(),0); assert.equal(await account.evaluate(el=>el===document.activeElement),true);
  await account.click(); await page.getByRole('heading',{name:/Tái hiện lịch sử/}).click(); assert.equal(await menu.count(),0);
  await account.click(); await menu.getByRole('link',{name:/Hồ sơ cá nhân/}).click(); await page.waitForURL('**/profile');
- await page.locator('header').getByText('Hồ sơ',{exact:true}).waitFor();
+ await page.getByRole('heading',{name:'Hồ sơ của bạn.'}).waitFor();
  await account.click(); await menu.getByRole('link',{name:/Cài đặt/}).click(); await page.waitForURL('**/settings');
- await page.locator('header').getByText('Cài đặt',{exact:true}).waitFor();
+ await page.getByRole('heading',{name:'Cài đặt.'}).waitFor();
  assert.equal(await menu.count(),0);
  await account.click(); await page.screenshot({path:'test-results/sidenav-account-expanded.png',fullPage:false});
  await page.keyboard.press('Escape'); await sidebar.getByTitle('Thu gọn thanh bên',{exact:true}).click();

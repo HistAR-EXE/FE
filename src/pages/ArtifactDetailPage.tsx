@@ -4,6 +4,10 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 // Import dữ liệu từ trang ArtifactsPage
 import { MOCK_ARTIFACTS, CATEGORY_MAP } from './ArtifactsPage'
+import { useAuth } from '../shared/auth/useAuth'
+import { hasPremiumAccess } from '../shared/access/contentAccess'
+import { isFreeArtifact } from '../shared/access/premiumContentPolicy'
+import { PremiumContentModal } from '../components/monetization/PremiumContentModal'
 
 // Component Trình xem 3D (Đã tinh chỉnh cho trang chi tiết rộng rãi)
 function Fullscreen3DViewer({ sketchfabId, title }: { sketchfabId: string; title: string }) {
@@ -89,6 +93,7 @@ function Fullscreen3DViewer({ sketchfabId, title }: { sketchfabId: string; title
 }
 
 export function ArtifactDetailPage() {
+    const { isAuthenticated, user } = useAuth()
     const { id } = useParams<{ id: string }>()
     const navigate = useNavigate()
 
@@ -107,6 +112,10 @@ export function ArtifactDetailPage() {
                 </button>
             </div>
         )
+    }
+
+    if (!isAuthenticated || (!hasPremiumAccess(user) && !isFreeArtifact(artifact.id))) {
+        return <div className="min-h-screen bg-slate-50"><PremiumContentModal open onClose={() => navigate('/artifacts')} title="Mô hình này cần Premium" authenticated={isAuthenticated} /></div>
     }
 
     const catInfo = CATEGORY_MAP[artifact.category]

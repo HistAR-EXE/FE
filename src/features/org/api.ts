@@ -13,7 +13,6 @@ export type OrgCapabilities = {
   assignments: boolean
   liveBoard: boolean
   reports: boolean
-  groups: boolean
   fieldTrips: boolean
   contentDrafts: boolean
   organizationActive: boolean

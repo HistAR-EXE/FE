@@ -5,5 +5,4 @@ export function settingsUserPatch(p: Pick<ProfileMe, 'displayName'|'email'|'avat
 export function canAutoJoin(a: { enabled:boolean; userId:string; code:string; loaded:boolean; orgId:string|null; busy:boolean; attempted:string|null }) {
   return !!(a.enabled && a.userId && a.code.trim() && a.loaded && !a.orgId && !a.busy && a.attempted !== `${a.userId}:${a.code.trim()}`)
 }
-export function canUseOrganizationGroups(plan:string, active:boolean) { return active && ['STANDARD','PREMIUM'].includes(plan) }
 export function personalAccessLabel(tier:string|null) { return tier === null ? 'Chưa tải được quyền cá nhân' : tier === 'PREMIUM' ? 'Premium cá nhân' : 'Miễn phí' }
