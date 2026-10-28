@@ -13,7 +13,8 @@ import { analyticsApi } from '../features/analytics/api'
 import { collectionApi } from '../features/collection/api'
 import { ArtifactViewerModal } from '../features/gamification/ArtifactViewerModal'
 import { gamificationApi, type NarrativeInvestigation } from '../features/gamification/api'
-import { DISCOVERY_RECORDED_EVENT } from '../features/gamification/discoveryRouting'
+import { DISCOVERY_RECORDED_EVENT, discoveryDeepLink } from '../features/gamification/discoveryRouting'
+import { questLockKeyLabel } from '../features/gamification/questLockPresentation'
 import { NarrativeInvestigationBoard } from '../features/gamification/NarrativeInvestigationBoard'
 import { QuestBackdrop } from '../features/gamification/QuestBackdrop'
 import { questStepAction } from '../features/gamification/questStepAction'
@@ -481,14 +482,23 @@ function StatusPanel({
                         </Link>
                     )}
                     {quest.lock.keys.length > 0 && (
-                        <ul className="mt-3 space-y-1.5">
-                            {quest.lock.keys.map((key) => (
-                                <li key={key.key} className="flex items-center gap-2 text-sm">
+                        <ul className="mt-3 space-y-3">
+                            {quest.lock.keys.map((key, index) => (
+                                <li key={key.key} className="flex items-start gap-3 text-sm">
                                     <MaterialIcon
                                         name={key.done ? 'check_circle' : 'radio_button_unchecked'}
-                                        className={`text-lg ${key.done ? 'text-emerald-600' : 'text-slate-400'}`}
+                                        className={`mt-0.5 text-lg ${key.done ? 'text-emerald-600' : 'text-slate-400'}`}
                                     />
-                                    <span className={key.done ? 'text-slate-500 line-through' : 'font-bold text-[#0F1B33]'}>{key.label}</span>
+                                    <div className="min-w-0">
+                                        <p className={key.done ? 'text-slate-500 line-through' : 'font-bold text-[#0F1B33]'}>
+                                            {questLockKeyLabel(key, quest.locationId, index)}
+                                        </p>
+                                        {!key.done && key.key.startsWith('scene:') && (
+                                            <Link to={discoveryDeepLink(quest.locationId, key.key)} className="mt-1 inline-flex min-h-8 items-center gap-1 font-bold text-[#0275FB] hover:underline">
+                                                Khám phá cảnh 360° <MaterialIcon name="arrow_forward" className="text-base" />
+                                            </Link>
+                                        )}
+                                    </div>
                                 </li>
                             ))}
                         </ul>
