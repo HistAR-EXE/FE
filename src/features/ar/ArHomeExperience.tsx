@@ -46,13 +46,19 @@ export function ArHomeExperience({ artifact, includeReview, onOpenCamera }: { ar
         <li><span>2</span><div><strong>Chọn “Bật camera AR” trên điện thoại</strong><p>Trong trang vừa mở, cho phép trình duyệt truy cập camera. Không cần cài ứng dụng.</p></div></li>
         <li><span>3</span><div><strong>Quét ảnh màu để hiện mô hình</strong><p>Hướng camera AR vào toàn bộ ảnh trên laptop hoặc bản in. Mô hình xuất hiện trên màn hình điện thoại; bạn có thể xoay, đổi kích thước và bật chuyển động.</p></div></li>
       </ol>
+    </div>
+    <div className="ar-handoff-utilities">
+      <div className="ar-handoff-connect">
       <div className="ar-qr-row">
         {qr ? <img src={qr} alt="QR mở AR trên điện thoại" /> : <span role="status">{qrError ? 'Chưa tạo được QR. Dùng đường dẫn bên cạnh.' : 'Đang tạo QR…'}</span>}
         <div><strong>{mobile ? "Mở AR trên điện thoại khác" : "QR mở đúng trang AR"}</strong><button className="ar-text-link" onClick={async () => { try { await navigator.clipboard.writeText(phoneUrl); setCopied(true) } catch { setCopied(false) } }}>{copied ? 'Đã sao chép đường dẫn' : 'Sao chép đường dẫn ↗'}</button><a className="ar-phone-link" href={phoneUrl}>{phoneUrl}</a></div>
       </div>
       {localOnly && <p className="ar-error">Bạn đang chạy trên localhost. QR chưa mở được website của laptop từ điện thoại. Hãy dùng đường dẫn HTTPS truy cập được hoặc cấu hình kết nối local theo hướng dẫn.</p>}
+      </div>
+      <div className="ar-handoff-alternatives">
       {!mobile && <details className="ar-webcam-option"><summary>Dùng camera trên laptop?</summary><p>Webcam cần ảnh in hoặc ảnh mở trên điện thoại, đặt trước camera.</p><p>Webcam không nhìn thấy ảnh trên chính màn hình laptop. Nếu chỉ có laptop, bạn có thể chọn Khám phá 3D.</p><button aria-label="Dùng webcam laptop" className="ar-button ar-button-blue" onClick={onOpenCamera}><MaterialIcon name="videocam" />Dùng webcam laptop</button></details>}
       <ArCardEmail artifact={artifact} />
+      </div>
     </div>
   </section>
 }

@@ -1,3 +1,6 @@
+import { ExploreVideoLibrary } from '../features/explore/ExploreVideoLibrary'
+import { ExploreLoading } from '../features/explore/ExploreLoading'
+import { MAX_VIDEO_XP, videoCompletionCount, videoRewardTotal } from '../features/explore/videoState'
 // src/pages/ExplorePage.tsx
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AppLayout } from '../components/layout/AppLayout'
@@ -628,7 +631,7 @@ const MAX_ARCHIVE_XP =
     SECRET_CIPHERS.reduce((s, c) => s + c.xpReward, 0) +
     INVESTIGATION_CLUES.reduce((s, cl) => s + cl.xp, 0) +
     100 + // Điểm kết luận bàn điều tra
-    STORY_DOSSIERS.reduce((s, d) => s + d.xp, 0)
+    STORY_DOSSIERS.reduce((s, d) => s + d.xp, 0) + MAX_VIDEO_XP
 
 // ============================================================================
 // Thành tích chỉ được khôi phục từ server sau khi đăng nhập.
@@ -1062,7 +1065,7 @@ export function ExplorePage() {
         if (dataStatus !== 'ready' || !userId || snapshotOwner !== userId) return
         const path = honorsParams.get('honorsPath')
         const target = honorsParams.get('target')
-        const sections: Record<string, string> = { depths: 'depth-quiz-section', ciphers: 'honors-ciphers', evidence: 'honors-evidence', dossiers: 'honors-dossiers' }
+        const sections: Record<string, string> = { depths: 'depth-quiz-section', ciphers: 'honors-ciphers', evidence: 'honors-evidence', dossiers: 'honors-dossiers', videos: 'cu-chi-videos' }
         if (!path || !Object.prototype.hasOwnProperty.call(sections, path)) return
         const identity = `${userId}:${path}:${target ?? ''}`
         if (appliedHonorsLink.current === identity) return
@@ -1101,12 +1104,7 @@ export function ExplorePage() {
 
     if (!user || snapshotOwner !== user.id || dataStatus !== 'ready') {
         return <AppLayout activeBorder="right" mobileTitle="Khám phá">
-            <main className="min-h-[60vh] flex items-center justify-center p-6">
-                <div role={dataStatus === 'error' ? 'alert' : 'status'} className="text-center space-y-4">
-                    <p>{!user ? 'Đăng nhập để xem XP và thành tích của tài khoản.' : dataStatus === 'error' ? 'Không thể tải tiến độ đã lưu. Vui lòng thử lại.' : 'Đang tải XP và thành tích từ hệ thống…'}</p>
-                    {dataStatus === 'error' && user && <button type="button" onClick={() => { setDataStatus('loading'); void loadBackendState() }} className="rounded-xl bg-blue-600 px-5 py-3 text-white focus-visible:outline-2">Thử lại</button>}
-                </div>
-            </main>
+            <ExploreLoading signedIn={!!user} error={dataStatus === 'error'} onRetry={() => { setDataStatus('loading'); void loadBackendState() }} />
         </AppLayout>
     }
 
@@ -1371,16 +1369,16 @@ export function ExplorePage() {
                 {/* ========================================================= */}
                 {/* HERO BANNER: HƯỚNG DẪN KHÁM PHÁ & BẢNG TIẾN ĐỘ TỔNG HỢP     */}
                 {/* ========================================================= */}
-                <section className="relative overflow-hidden bg-gradient-to-br from-[#0353B8] via-[#0275FB] to-[#014296] border-b-4 border-[#FDC908] shadow-[0_18px_45px_rgba(2,117,251,0.28)] pt-10 pb-14 lg:py-14">
+                <section className="relative overflow-hidden bg-gradient-to-br from-[#0353B8] via-[#0275FB] to-[#014296] border-b-4 border-[#FDC908] shadow-[0_18px_45px_rgba(2,117,251,0.28)] py-6 lg:py-7">
                     <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff12_1px,transparent_1px),linear-gradient(to_bottom,#ffffff12_1px,transparent_1px)] bg-[size:2.75rem_2.75rem] pointer-events-none" />
                     <div className="absolute -top-24 right-[15%] w-[500px] h-[500px] bg-[#FDC908]/25 rounded-full blur-[120px] animate-pulse pointer-events-none" />
 
                     <div className="relative max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 z-10">
                         {/* Chia 2 cột: Cột trái (Thông tin chức năng) - Cột phải (Bảng tiến độ kép) */}
-                        <div className="grid grid-cols-1 xl:grid-cols-12 gap-x-12 gap-y-20 items-center">
+                        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 xl:gap-8 items-center">
 
                             {/* CỘT TRÁI (7 PHẦN): TÊN NGƯỜI DÙNG & HƯỚNG DẪN TÍNH NĂNG CHI TIẾT */}
-                            <div className="xl:col-span-7 space-y-5 text-center xl:text-left">
+                            <div className="xl:col-span-7 space-y-3 text-center xl:text-left min-w-0">
                                 <div className="inline-flex flex-wrap items-center justify-center xl:justify-start gap-2.5">
                                     <span className="px-3.5 py-1.5 rounded-full bg-[#FDC908] text-[#0F1B33] font-black text-[11px] uppercase tracking-wider shadow-[0_0_20px_rgba(253,201,8,0.6)] flex items-center gap-1.5">
                                         <span className="w-2 h-2 rounded-full bg-[#0275FB] animate-ping" />
@@ -1389,87 +1387,96 @@ export function ExplorePage() {
                                 </div>
 
                                 <div className="space-y-1">
-                                    <p className="text-xs sm:text-sm font-black uppercase tracking-[0.2em] text-[#FFF2C3]">
+                                    <p className="text-[10px] sm:text-xs font-black uppercase tracking-[0.12em] text-[#FFF2C3]">
                                         ✦ Chào mừng nhà thám hiểm trở lại ✦
                                     </p>
-                                    <h1 className="text-4xl sm:text-5xl 2xl:text-[3.4rem] font-black text-white tracking-tight leading-tight drop-shadow-md">
+                                    <h1 className="text-2xl sm:text-3xl 2xl:text-4xl font-black text-white tracking-tight leading-tight drop-shadow-md">
                                         <span className="whitespace-nowrap">Xin chào,</span>{' '}
-                                        <span className="whitespace-nowrap text-transparent bg-clip-text bg-gradient-to-r from-[#FFF2C3] via-[#FDC908] to-[#FFD93D] drop-shadow-[0_2px_12px_rgba(253,201,8,0.5)]">
+                                        <span className="break-words text-transparent bg-clip-text bg-gradient-to-r from-[#FFF2C3] via-[#FDC908] to-[#FFD93D] drop-shadow-[0_2px_12px_rgba(253,201,8,0.5)]">
                                             {displayName}!
                                         </span>
                                     </h1>
                                 </div>
 
-                                <p className="text-sm sm:text-base text-blue-50 font-medium leading-relaxed max-w-2xl mx-auto xl:mx-0">
-                                    Tại trang <strong>Khảo cứu tương tác</strong> này, bạn sẽ tham gia vào hành trình giải mã bí ẩn Địa đạo Củ Chi. Hãy hoàn thành 4 nhiệm vụ bên dưới để tích lũy XP, thăng cấp và chinh phục trọn bộ <strong>9 Huy Hiệu Đất Thép</strong>!
+                                <p className="text-sm text-blue-50 font-medium leading-relaxed max-w-2xl mx-auto xl:mx-0">
+                                    Giải mã Địa đạo Củ Chi qua 5 nhóm hoạt động. Tích lũy XP, thăng cấp và chinh phục <strong>9 Huy Hiệu Đất Thép</strong>!
                                 </p>
 
                                 {/* LƯỚI HƯỚNG DẪN 4 TÍNH NĂNG CHÍNH MỚI BỔ SUNG */}
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mt-6">
-                                    <div className="bg-white/10 backdrop-blur-md border border-white/20 p-4 sm:p-5 rounded-2xl text-left hover:bg-white/15 transition-colors group">
-                                        <div className="flex items-center gap-2.5 mb-2">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                    <div className="bg-white/10 backdrop-blur-md border border-white/20 p-3 rounded-xl text-left hover:bg-white/15 transition-colors group">
+                                        <div className="flex items-center gap-2 mb-1.5">
                                             <div className="w-8 h-8 rounded-lg bg-[#0275FB] flex items-center justify-center text-white shadow-inner group-hover:scale-110 transition-transform">
                                                 <MaterialIcon name="layers" className="text-base" />
                                             </div>
-                                            <h3 className="font-black text-white text-sm uppercase tracking-wide">1. Khảo sát 4 Tầng ngầm</h3>
+                                            <h3 className="font-black text-white text-xs uppercase tracking-wide">1. Khảo sát 4 Tầng ngầm</h3>
                                         </div>
-                                        <p className="text-xs text-blue-100/90 leading-relaxed font-medium">Bấm chọn từng mốc mặt cắt từ 0m đến -12m để phân tích thông số sinh tồn và cấu trúc chống bom.</p>
+                                        <p className="text-xs text-blue-100/90 leading-relaxed font-medium">Khám phá cấu trúc và khả năng sinh tồn từ 0 đến −12m.</p>
                                     </div>
 
-                                    <div className="bg-white/10 backdrop-blur-md border border-white/20 p-4 sm:p-5 rounded-2xl text-left hover:bg-white/15 transition-colors group">
-                                        <div className="flex items-center gap-2.5 mb-2">
+                                    <div className="bg-white/10 backdrop-blur-md border border-white/20 p-3 rounded-xl text-left hover:bg-white/15 transition-colors group">
+                                        <div className="flex items-center gap-2 mb-1.5">
                                             <div className="w-8 h-8 rounded-lg bg-[#FDC908] flex items-center justify-center text-[#0F1B33] shadow-inner group-hover:scale-110 transition-transform">
                                                 <MaterialIcon name="vpn_key" className="text-base" />
                                             </div>
-                                            <h3 className="font-black text-white text-sm uppercase tracking-wide">2. Phòng Cơ Yếu Mật</h3>
+                                            <h3 className="font-black text-white text-xs uppercase tracking-wide">2. Phòng Cơ Yếu Mật</h3>
                                         </div>
-                                        <p className="text-xs text-blue-100/90 leading-relaxed font-medium">Giải đáp các câu đố lịch sử để mở niêm phong 3 bức mật lệnh chiến khu bị mã hóa.</p>
+                                        <p className="text-xs text-blue-100/90 leading-relaxed font-medium">Giải câu đố lịch sử, mở khóa 3 mật lệnh chiến khu.</p>
                                     </div>
 
-                                    <div className="bg-white/10 backdrop-blur-md border border-white/20 p-4 sm:p-5 rounded-2xl text-left hover:bg-white/15 transition-colors group">
-                                        <div className="flex items-center gap-2.5 mb-2">
+                                    <div className="bg-white/10 backdrop-blur-md border border-white/20 p-3 rounded-xl text-left hover:bg-white/15 transition-colors group">
+                                        <div className="flex items-center gap-2 mb-1.5">
                                             <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center text-white shadow-inner group-hover:scale-110 transition-transform">
                                                 <MaterialIcon name="fact_check" className="text-base" />
                                             </div>
-                                            <h3 className="font-black text-white text-sm uppercase tracking-wide">3. Bàn Điều Tra Chứng Cứ</h3>
+                                            <h3 className="font-black text-white text-xs uppercase tracking-wide">3. Bàn Điều Tra Chứng Cứ</h3>
                                         </div>
-                                        <p className="text-xs text-blue-100/90 leading-relaxed font-medium">Thu thập 4 mảnh ghép giám định hiện trường để xuất bản báo cáo kết luận về hệ thống ngụy trang.</p>
+                                        <p className="text-xs text-blue-100/90 leading-relaxed font-medium">Thu thập 4 chứng cứ, giải mã hệ thống ngụy trang.</p>
                                     </div>
 
-                                    <div className="bg-white/10 backdrop-blur-md border border-white/20 p-4 sm:p-5 rounded-2xl text-left hover:bg-white/15 transition-colors group">
-                                        <div className="flex items-center gap-2.5 mb-2">
+                                    <div className="bg-white/10 backdrop-blur-md border border-white/20 p-3 rounded-xl text-left hover:bg-white/15 transition-colors group">
+                                        <div className="flex items-center gap-2 mb-1.5">
                                             <div className="w-8 h-8 rounded-lg bg-rose-500 flex items-center justify-center text-white shadow-inner group-hover:scale-110 transition-transform">
                                                 <MaterialIcon name="auto_stories" className="text-base" />
                                             </div>
-                                            <h3 className="font-black text-white text-sm uppercase tracking-wide">4. Đọc Hồ Sơ Chuyên Sâu</h3>
+                                            <h3 className="font-black text-white text-xs uppercase tracking-wide">4. Đọc Hồ Sơ Chuyên Sâu</h3>
                                         </div>
-                                        <p className="text-xs text-blue-100/90 leading-relaxed font-medium">Lĩnh hội kiến thức từ 6 mảnh chuyện Đất Thép và vượt qua trắc nghiệm để nhận lượng lớn XP.</p>
+                                        <p className="text-xs text-blue-100/90 leading-relaxed font-medium">Đọc 6 câu chuyện Đất Thép và làm trắc nghiệm nhận XP.</p>
                                     </div>
+                                    <a href="#cu-chi-videos" className="sm:col-span-2 bg-white/10 backdrop-blur-md border border-white/20 p-3 rounded-xl text-left hover:bg-white/15 transition-colors group">
+                                        <div className="flex items-center gap-2 mb-1.5">
+                                            <div className="w-8 h-8 rounded-lg bg-[#FDC908] flex items-center justify-center text-[#0F1B33] shadow-inner group-hover:scale-110 transition-transform">
+                                                <MaterialIcon name="play_circle" className="text-base" />
+                                            </div>
+                                            <h3 className="font-black text-white text-xs uppercase tracking-wide">5. Khám phá qua 7 video</h3>
+                                        </div>
+                                        <p className="text-xs text-blue-100/90 leading-relaxed font-medium">Xem câu chuyện tại di tích, vượt thử thách và nhận thêm 210 XP.</p>
+                                    </a>
                                 </div>
                             </div>
 
                             {/* CỘT PHẢI (5 PHẦN): BẢNG TIẾN ĐỘ KÉP (GLOBAL LEVEL & CU CHI XP) */}
-                            <div className="xl:col-span-5 relative mt-44 xl:mt-32 flex justify-center w-full">
+                            <div className="xl:col-span-5 relative flex flex-col items-center w-full min-w-0">
 
-                                {/* Mascot Chrono Đứng Lớp Dưới (z-0), Cố định, đẩy lên cao hơn để nhường chỗ cho bảng dài ra */}
-                                <div className="absolute -top-[170px] sm:-top-[190px] z-0 pointer-events-none flex justify-center w-full">
+                                {/* Dành không gian riêng cho linh vật để ảnh lớn không tràn lên mép banner. */}
+                                <div className="relative h-40 sm:h-44 pt-4 z-0 pointer-events-none flex justify-center w-full">
                                     <div className="absolute top-10 w-44 h-44 bg-gradient-to-t from-[#FDC908]/90 to-transparent blur-[30px] rounded-full opacity-60" />
 
                                     {/* Ảnh Chrono */}
                                     <img
                                         src={mascotImg}
                                         alt="Chrono"
-                                        className="relative w-[200px] sm:w-[230px] object-contain drop-shadow-[0_-5px_15px_rgba(0,0,0,0.4)]"
+                                        className="relative h-full w-auto max-w-[55%] object-contain -translate-x-6 sm:-translate-x-3 drop-shadow-[0_4px_18px_rgba(0,0,0,0.35)]"
                                     />
 
-                                    <div className="absolute top-2 right-[10%] sm:right-[15%] bg-white text-[#0F1B33] border-2 border-[#FDC908] px-3.5 py-1.5 rounded-full shadow-[0_5px_15px_rgba(0,0,0,0.15)] flex items-center gap-1.5 z-20">
+                                    <div className="absolute top-6 sm:top-8 right-0 sm:right-[3%] bg-white text-[#0F1B33] border-2 border-[#FDC908] px-3 py-1.5 rounded-full shadow-[0_5px_15px_rgba(0,0,0,0.15)] flex items-center gap-1.5 z-20">
                                         <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                                         <span className="text-[10px] font-black uppercase whitespace-nowrap">Bắt đầu nào!</span>
                                     </div>
                                 </div>
 
                                 {/* BẢNG TIẾN ĐỘ TỔNG HỢP NẰM LỚP TRÊN (z-10) */}
-                                <div className="w-full max-w-[540px] xl:max-w-[480px] bg-white/95 backdrop-blur-xl border-2 border-[#FDC908] p-5 sm:p-6 rounded-[2rem] shadow-[0_25px_50px_rgba(0,0,0,0.25)] space-y-5 text-[#0F1B33] relative z-10 mx-auto">
+                                <div className="w-full max-w-[540px] xl:max-w-[480px] -mt-10 sm:-mt-12 shrink-0 bg-white border-2 border-[#FDC908] p-4 rounded-3xl shadow-[0_25px_50px_rgba(0,0,0,0.25)] space-y-3 text-[#0F1B33] relative z-10 mx-auto">
 
                                     {/* PHẦN 1: THANH CẤP ĐỘ TÀI KHOẢN TOÀN CỤC */}
                                     <div>
@@ -1554,8 +1561,8 @@ export function ExplorePage() {
                                         </div>
                                     </div>
 
-                                    {/* 4 Ô Điểm Thành Phần */}
-                                    <div className="grid grid-cols-4 gap-1.5 sm:gap-2 pt-2 text-center">
+                                    {/* Điểm thành phần, bao gồm video đã được server xác nhận */}
+                                    <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5 sm:gap-2 pt-2 text-center">
                                         <div className="p-2 rounded-xl bg-[#F2F7FF] border border-[#0275FB]/10">
                                             <p className="text-xs sm:text-sm font-black text-[#0275FB]">+{depthEarnedXp}</p>
                                             <p className="text-[8px] sm:text-[9px] font-bold text-slate-500 uppercase mt-0.5">Tầng ({exploredDepthIds.length}/4)</p>
@@ -1572,6 +1579,7 @@ export function ExplorePage() {
                                             <p className="text-xs sm:text-sm font-black text-amber-600">+{dossierEarnedXp}</p>
                                             <p className="text-[8px] sm:text-[9px] font-bold text-slate-500 uppercase mt-0.5">Hồ sơ ({completedDossierIds.length}/6)</p>
                                         </div>
+                                        <div className="p-2 rounded-xl bg-[#EDFFF6] border border-emerald-200"><p className="text-xs sm:text-sm font-black text-emerald-700">+{videoRewardTotal(unlockedKeys)}</p><p className="text-[8px] sm:text-[9px] font-bold text-slate-500 uppercase mt-0.5">Video ({videoCompletionCount(unlockedKeys)}/7)</p></div>
                                     </div>
                                 </div>
                             </div>
@@ -2093,6 +2101,50 @@ export function ExplorePage() {
                                 )
                             })}
                         </div>
+                        {/* Tư liệu đặc biệt mở khóa sau ba mật thư */}
+                        <section className="rounded-[2.2rem] border-2 border-[#FDC908] bg-gradient-to-r from-[#FFFBEB] via-white to-[#EAF3FF] p-6 sm:p-8 shadow-lg space-y-4">
+                            <div className="flex flex-wrap items-center justify-between gap-3">
+                                <div className="flex items-center gap-2.5">
+                                    <div className="w-11 h-11 rounded-2xl bg-[#FDC908] text-[#0F1B33] flex items-center justify-center shadow-sm">
+                                        <MaterialIcon name={allCiphersUnlocked ? 'lock_open' : 'lock'} className="text-2xl" />
+                                    </div>
+                                    <div>
+                                        <span className="text-[10px] font-black uppercase tracking-wider text-[#0275FB]">
+                                            KHO LƯU TRỮ ĐẶC BIỆT · GẮN VỚI HUY HIỆU "NGƯỜI GIỮ KHO BÁU"
+                                        </span>
+                                        <h3 className="text-xl sm:text-2xl font-black text-[#0F1B33]">
+                                            Chuyện Chưa Kể: Bức Điện Mật Đêm Giao Thừa 1968 Dưới Đáy Địa Đạo
+                                        </h3>
+                                    </div>
+                                </div>
+                                <span
+                                    className={`px-4 py-1.5 rounded-full text-xs font-black uppercase ${
+                                        allCiphersUnlocked
+                                            ? 'bg-emerald-500 text-white'
+                                            : 'bg-[#FFF2C3] text-[#0F1B33] border border-[#FDC908]'
+                                    }`}
+                                >
+                                    {allCiphersUnlocked ? 'ĐÃ MỞ NIÊM PHONG' : `Cần giải mã ${unlockedCipherIds.length}/3 Mật thư`}
+                                </span>
+                            </div>
+
+                            {allCiphersUnlocked ? (
+                                <div className="p-6 rounded-2xl bg-white border border-emerald-300 space-y-3 text-sm text-slate-700 leading-relaxed font-medium">
+                                    <p className="font-black text-[#0275FB]">
+                                        [TƯ LIỆU ĐẶC BIỆT ĐÃ MỞ KHÓA]:
+                                    </p>
+                                    <p>
+                                        Đêm 29 Tết Mậu Thân (1968), dưới căn hầm sâu 8 mét tại Bến Dược, ánh đèn dầu leo lét chiếu lên tấm bản đồ tác chiến Sài Gòn - Gia Định. Hàng ngàn cán bộ, chiến sĩ đã lặng lẽ di chuyển qua các ngách địa đạo ngầm để tập kết sát ven đô mà không một máy bay trinh sát nào phát hiện. Trước giờ xuất kích, bữa cơm Tết dưới lòng đất chỉ có bánh tét gói bằng lá chuối rừng và nước giếng ngầm, nhưng lời thề "Quyết tử cho Tổ quốc quyết sinh" đã vang vọng khắp 250km lòng đất thép.
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="p-6 rounded-2xl bg-white/70 border border-dashed border-[#0275FB]/30 text-center space-y-2">
+                                    <p className="text-xs sm:text-sm font-bold text-slate-600">
+                                        Nội dung tuyệt mật này đang được bảo vệ. Bạn chỉ cần giải mã đủ <strong>3 Mật Thư Chiến Khu</strong> ở phía trên để tự động mở khóa toàn văn câu chuyện!
+                                    </p>
+                                </div>
+                            )}
+                        </section>
                     </section>
 
                     {/* --------------------------------------------------------- */}
@@ -2340,53 +2392,10 @@ export function ExplorePage() {
                         </div>
                     </section>
 
-                    {/* --------------------------------------------------------- */}
-                    {/* MODULE 5: HỒ SƠ TUYỆT MẬT (MỞ KHÓA KHI GIẢI ĐỦ 3 MẬT THƯ) */}
-                    {/* --------------------------------------------------------- */}
-                    <section className="rounded-[2.2rem] border-2 border-[#FDC908] bg-gradient-to-r from-[#FFFBEB] via-white to-[#EAF3FF] p-6 sm:p-8 shadow-lg space-y-4">
-                        <div className="flex flex-wrap items-center justify-between gap-3">
-                            <div className="flex items-center gap-2.5">
-                                <div className="w-11 h-11 rounded-2xl bg-[#FDC908] text-[#0F1B33] flex items-center justify-center shadow-sm">
-                                    <MaterialIcon name={allCiphersUnlocked ? 'lock_open' : 'lock'} className="text-2xl" />
-                                </div>
-                                <div>
-                                    <span className="text-[10px] font-black uppercase tracking-wider text-[#0275FB]">
-                                        KHO LƯU TRỮ ĐẶC BIỆT · GẮN VỚI HUY HIỆU "NGƯỜI GIỮ KHO BÁU"
-                                    </span>
-                                    <h3 className="text-xl sm:text-2xl font-black text-[#0F1B33]">
-                                        Chuyện Chưa Kể: Bức Điện Mật Đêm Giao Thừa 1968 Dưới Đáy Địa Đạo
-                                    </h3>
-                                </div>
-                            </div>
-                            <span
-                                className={`px-4 py-1.5 rounded-full text-xs font-black uppercase ${
-                                    allCiphersUnlocked
-                                        ? 'bg-emerald-500 text-white'
-                                        : 'bg-[#FFF2C3] text-[#0F1B33] border border-[#FDC908]'
-                                }`}
-                            >
-                                {allCiphersUnlocked ? 'ĐÃ MỞ NIÊM PHONG' : `Cần giải mã ${unlockedCipherIds.length}/3 Mật thư`}
-                            </span>
-                        </div>
 
-                        {allCiphersUnlocked ? (
-                            <div className="p-6 rounded-2xl bg-white border border-emerald-300 space-y-3 text-sm text-slate-700 leading-relaxed font-medium">
-                                <p className="font-black text-[#0275FB]">
-                                    [TƯ LIỆU ĐẶC BIỆT ĐÃ MỞ KHÓA]:
-                                </p>
-                                <p>
-                                    Đêm 29 Tết Mậu Thân (1968), dưới căn hầm sâu 8 mét tại Bến Dược, ánh đèn dầu leo lét chiếu lên tấm bản đồ tác chiến Sài Gòn - Gia Định. Hàng ngàn cán bộ, chiến sĩ đã lặng lẽ di chuyển qua các ngách địa đạo ngầm để tập kết sát ven đô mà không một máy bay trinh sát nào phát hiện. Trước giờ xuất kích, bữa cơm Tết dưới lòng đất chỉ có bánh tét gói bằng lá chuối rừng và nước giếng ngầm, nhưng lời thề "Quyết tử cho Tổ quốc quyết sinh" đã vang vọng khắp 250km lòng đất thép.
-                                </p>
-                            </div>
-                        ) : (
-                            <div className="p-6 rounded-2xl bg-white/70 border border-dashed border-[#0275FB]/30 text-center space-y-2">
-                                <p className="text-xs sm:text-sm font-bold text-slate-600">
-                                    Nội dung tuyệt mật này đang được bảo vệ. Bạn chỉ cần giải mã đủ <strong>3 Mật Thư Chiến Khu</strong> ở phía trên để tự động mở khóa toàn văn câu chuyện!
-                                </p>
-                            </div>
-                        )}
-                    </section>
 
+                    {/* KHÁM PHÁ QUA VIDEO: SAU CÁC PHẦN KHẢO CỨU VÀ HỒ SƠ */}
+                    {userId && <ExploreVideoLibrary key={userId} userId={userId} onSnapshot={applySnapshot} />}
                 </div>
 
                 {/* ========================================================= */}

@@ -12,7 +12,7 @@ import { HonorsRules } from '../features/leaderboard/HonorsRules'
 import { NextJourneyStep, AchievementSpotlights, HonorsTimeline } from '../features/leaderboard/HonorsStories'
 import { HonorsPassport } from '../features/leaderboard/HonorsPassport'
 import { CommunityFootprint } from '../features/leaderboard/CommunityFootprint'
-import mascotImg from '../assets/mascot.png'
+import mascotImg from '../assets/mascot-chrono-flying.png'
 import '../features/leaderboard/honors.css'
 import '../features/leaderboard/honors-polish.css'
 import '../features/leaderboard/honors-stories.css'
@@ -545,17 +545,26 @@ export function LeaderboardPage() {
                 <style>
                     {`
                     @keyframes honorsFloat {
-                        0%, 100% { transform: translateY(0px) rotate(0deg); }
-                        25% { transform: translateY(-8px) rotate(-1.5deg); }
-                        50% { transform: translateY(2px) rotate(0deg); }
-                        75% { transform: translateY(-5px) rotate(1.5deg); }
+                        0%, 100% { transform: translateY(2px) rotate(-3deg); }
+                        35% { transform: translateY(-12px) rotate(2deg); }
+                        65% { transform: translateY(-6px) rotate(-1deg); }
                     }
                     @keyframes honorsShimmer {
                         0% { transform: translateX(-100%); }
                         100% { transform: translateX(200%); }
                     }
                     .honors-mascot-float {
-                        animation: honorsFloat 6s ease-in-out infinite;
+                        animation: honorsFloat 5s ease-in-out infinite;
+                        transform-origin: 50% 65%;
+                    }
+                    .honors-mascot-scene:hover .honors-mascot-float { animation-duration: 3s; }
+                    .honors-mascot-star { position: absolute; z-index: 15; color: #FDC908; font-size: 28px; pointer-events: none; animation: honorsStar 3.2s ease-in-out infinite; }
+                    .honors-mascot-star--one { top: 17%; left: 8%; }
+                    .honors-mascot-star--two { top: 32%; right: 2%; font-size: 20px; animation-delay: -1.1s; }
+                    .honors-mascot-star--three { bottom: 12%; left: 14%; font-size: 18px; animation-delay: -2s; }
+                    @keyframes honorsStar { 0%, 100% { opacity: .35; transform: scale(.7) rotate(-12deg); } 50% { opacity: 1; transform: translateY(-5px) scale(1.15) rotate(12deg); } }
+                    @media (prefers-reduced-motion: reduce) {
+                        .honors-mascot-scene *, .honors-mascot-scene:hover .honors-mascot-float { animation: none !important; }
                     }
                     .honors-page {
                         padding: 0 !important;
@@ -748,14 +757,17 @@ export function LeaderboardPage() {
 
                             {/* CỘT PHẢI (5 PHẦN): LINH VẬT CHRONO & LA BÀN THỜI GIAN */}
                             <div className="xl:col-span-5 relative flex items-center justify-center py-4">
-                                <div className="relative w-64 h-64 sm:w-80 sm:h-80 flex items-center justify-center">
+                                <div className="honors-mascot-scene relative w-64 h-64 sm:w-80 sm:h-80 flex items-center justify-center">
                                     <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-[#FDC908]/45 via-amber-200/20 to-transparent blur-2xl animate-pulse pointer-events-none" />
                                     <div className="absolute w-full h-full rounded-full border-2 border-dashed border-[#FDC908]/60 animate-[spin_24s_linear_infinite] pointer-events-none" />
                                     <div className="absolute w-4/5 h-4/5 rounded-full border-2 border-dotted border-white/40 animate-[spin_16s_linear_infinite_reverse] pointer-events-none" />
                                     <div className="absolute w-3/5 h-3/5 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 pointer-events-none" />
 
+                                    <span className="honors-mascot-star honors-mascot-star--one" aria-hidden="true">✦</span>
+                                    <span className="honors-mascot-star honors-mascot-star--two" aria-hidden="true">✦</span>
+                                    <span className="honors-mascot-star honors-mascot-star--three" aria-hidden="true">✧</span>
                                     <img
-                                        className="honors-mascot-float relative z-10 w-48 h-48 sm:w-60 sm:h-60 object-contain drop-shadow-[0_18px_35px_rgba(0,0,0,0.45)] select-none"
+                                        className="honors-mascot-float relative z-10 w-56 h-56 sm:w-72 sm:h-72 object-contain drop-shadow-[0_18px_35px_rgba(0,0,0,0.35)] select-none"
                                         src={mascotImg}
                                         alt="Chrono đồng hành cùng nhà thám hiểm"
                                     />

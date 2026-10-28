@@ -1,5 +1,6 @@
 // src/components/panorama/Tour360Hud.tsx
 import { useMemo, useState } from 'react'
+import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 
 import type { Hotspot, Panorama } from '../../features/panorama/api'
@@ -10,6 +11,7 @@ import { getArSceneByPanoramaId } from '../../features/ar/cuChiArScenes'
 import { MaterialIcon } from '../ui/MaterialIcon'
 
 type Tour360HudProps = {
+  audioControl?: ReactNode
   locationId: string
   panoramas: Panorama[]
   activePanorama: Panorama | undefined
@@ -26,6 +28,7 @@ type Tour360HudProps = {
 }
 
 export function Tour360Hud({
+  audioControl,
   locationId,
   panoramas,
   activePanorama,
@@ -84,6 +87,7 @@ export function Tour360Hud({
           <p className="tour360-hud-title">{activePanorama?.title ?? 'Tour 360°'}</p>
         )}
         <div className="flex items-center gap-1 shrink-0">
+          {audioControl}
           {isCuChi && viewMode === 'panorama' && activePanoramaId && getArSceneByPanoramaId(activePanoramaId) && (
             <Link
               to={buildArUrl({
@@ -98,17 +102,6 @@ export function Tour360Hud({
               <MaterialIcon name="view_in_ar" />
             </Link>
           )}
-          {isCuChi && viewMode === 'panorama' && (
-            <button
-              type="button"
-              className="tour360-hud-btn"
-              onClick={onOpenMap}
-              aria-label="Mở bản đồ"
-              title="Bản đồ"
-            >
-              <MaterialIcon name="map" />
-            </button>
-          )}
           <button
             type="button"
             className={`tour360-hud-btn ${immersive ? 'is-active' : ''}`}
@@ -117,15 +110,6 @@ export function Tour360Hud({
             title={immersive ? 'Thu nhỏ' : 'Toàn màn hình'}
           >
             <MaterialIcon name={immersive ? 'close_fullscreen' : 'open_in_full'} />
-          </button>
-          <button
-            type="button"
-            className={`tour360-hud-btn ${menuOpen ? 'is-active' : ''}`}
-            onClick={onToggleMenu}
-            aria-label="Menu tour"
-            aria-expanded={menuOpen}
-          >
-            <MaterialIcon name="more_vert" />
           </button>
         </div>
       </div>

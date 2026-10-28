@@ -8,7 +8,8 @@ import { useVisitSessionForLocation } from '../features/visit/VisitSessionProvid
 import { CU_CHI_LOCATION_ID } from '../shared/config/constants'
 import { exploreApi } from '../features/explore/api'
 import { DISCOVERY_RECORDED_EVENT } from '../features/gamification/discoveryRouting'
-import mascotImg from '../assets/mascot.png'
+import mascotImg from '../assets/mascot-chrono-history.png'
+import '../features/diorama/diorama-banner.css'
 import { HeritageRolePicker } from '../features/heritage-studio/HeritageRolePicker'
 import type { HeritageRoleTemplate } from '../features/heritage-studio/types'
 import { appendHeritageEntrySource, buildStationHeritagePath } from '../features/stations/stationRoutes'
@@ -209,16 +210,21 @@ export function BattleDioramaPage() {
                                             className="xl:col-span-5 relative hidden md:flex items-center justify-center py-2"
                                             aria-hidden="true"
                                         >
-                                            <div className="relative w-64 h-64 sm:w-76 sm:h-76 flex items-center justify-center">
+                                            <div className="tl-history-scene relative w-64 h-64 sm:w-76 sm:h-76 flex items-center justify-center">
                                                 <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-[#FDC908]/40 via-amber-200/20 to-transparent blur-2xl animate-pulse pointer-events-none" />
                                                 <div className="absolute w-full h-full rounded-full border-2 border-dashed border-[#FDC908]/60 animate-[spin_26s_linear_infinite] pointer-events-none" />
                                                 <div className="absolute w-4/5 h-4/5 rounded-full border-2 border-dotted border-white/40 animate-[spin_18s_linear_infinite_reverse] pointer-events-none" />
                                                 <div className="absolute w-3/5 h-3/5 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 pointer-events-none" />
 
+                                                <div className="tl-history-platform"><span /><span /><span /></div>
+                                                <div className="tl-history-token tl-history-token--map"><MaterialIcon name="map" /></div>
+                                                <div className="tl-history-token tl-history-token--film"><MaterialIcon name="movie" /></div>
+                                                <span className="tl-history-spark tl-history-spark--one">✦</span>
+                                                <span className="tl-history-spark tl-history-spark--two">✧</span>
                                                 <img
                                                     src={mascotImg}
                                                     alt=""
-                                                    className="tl-diorama-mascot-float relative z-10 w-44 h-44 sm:w-56 sm:h-56 object-contain drop-shadow-[0_18px_35px_rgba(0,0,0,0.45)] select-none"
+                                                    className="tl-diorama-mascot-float tl-history-mascot relative z-10 w-56 h-56 sm:w-72 sm:h-72 object-contain drop-shadow-[0_18px_35px_rgba(0,0,0,0.35)] select-none"
                                                 />
 
                                                 <span className="absolute -top-2 right-0 z-20 bg-white text-[#0F1B33] border-2 border-[#FDC908] px-3.5 py-1.5 rounded-full shadow-lg flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider">

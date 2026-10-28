@@ -1,0 +1,17 @@
+.tl-history-scene { isolation: isolate; perspective: 800px; }
+.tl-history-scene .tl-history-mascot { animation: tlHistoryFlight 5s ease-in-out infinite; transform-origin: 55% 55%; }
+.tl-history-scene:hover .tl-history-mascot { animation-duration: 3.5s; }
+.tl-history-platform { position: absolute; width: 65%; height: 42%; bottom: 4%; left: 17%; transform: rotateX(62deg) rotateZ(-32deg); transform-style: preserve-3d; pointer-events: none; }
+.tl-history-platform span { position: absolute; inset: 0; border: 1px solid #a8e6ff90; border-radius: 18px; background: linear-gradient(135deg, #9cefff30, #0275fb25); box-shadow: 0 8px 0 #0353b850, 0 15px 30px #001c5730; }
+.tl-history-platform span:nth-child(2) { transform: translateZ(-20px); border-color: #fdc90880; }
+.tl-history-platform span:nth-child(3) { transform: translateZ(-40px); opacity: .5; }
+.tl-history-token { position: absolute; z-index: 12; display: grid; place-items: center; width: 46px; height: 46px; border: 1px solid #fff8; border-radius: 14px; background: linear-gradient(135deg, #fff9d2, #fdc908); color: #0353b8; box-shadow: 4px 5px 0 #a76f09, 8px 14px 24px #002e7360; animation: tlHistoryToken 4s ease-in-out infinite; }
+.tl-history-token--map { left: -2%; top: 24%; transform: rotate(-12deg); }
+.tl-history-token--film { right: -3%; bottom: 20%; background: linear-gradient(135deg, #effbff, #9cddff); box-shadow: 4px 5px 0 #0061b2, 8px 14px 24px #002e7360; animation-delay: -2s; }
+.tl-history-spark { position: absolute; z-index: 11; color: #fff2c3; font-size: 25px; animation: tlHistoryTwinkle 3s ease-in-out infinite; }
+.tl-history-spark--one { top: 12%; left: 18%; }
+.tl-history-spark--two { top: 35%; right: 1%; animation-delay: -1.5s; font-size: 18px; }
+@keyframes tlHistoryFlight { 0%, 100% { transform: translate(-4px, 3px) rotate(-4deg); } 50% { transform: translate(5px, -12px) rotate(2deg); } }
+@keyframes tlHistoryToken { 0%, 100% { translate: 0 0; rotate: -8deg; } 50% { translate: 0 -9px; rotate: 5deg; } }
+@keyframes tlHistoryTwinkle { 0%, 100% { opacity: .3; scale: .75; } 50% { opacity: 1; scale: 1.15; } }
+@media (prefers-reduced-motion: reduce) { .tl-history-scene *, .tl-history-scene:hover .tl-history-mascot { animation: none !important; } }

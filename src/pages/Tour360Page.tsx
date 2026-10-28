@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { Tour360Hud } from '../components/panorama/Tour360Hud'
+import { TourBackgroundAudio } from '../components/panorama/TourBackgroundAudio'
 
 const CU_CHI_LOCATION_ID = '11111111-1111-1111-1111-111111111111'
 
@@ -82,6 +83,7 @@ export function Tour360Page() {
                 {/* OVERLAY UI: THANH HUD CHUẨN CỦA TIMELENS ĐỂ ĐIỀU HƯỚNG */}
                 <div className="relative z-40 pointer-events-auto">
                     <Tour360Hud
+                        audioControl={<TourBackgroundAudio />}
                         locationId={activeLocationId}
                         panoramas={[]}
                         activePanorama={undefined}

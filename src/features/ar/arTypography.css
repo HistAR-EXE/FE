@@ -1,0 +1,52 @@
+/* Shared readable type scale across the three AR experiences. */
+.ar-experience { font-size: 16px; line-height: 1.65; }
+.ar-experience p,
+.ar-experience .ar-exhibit-story > p:not(.ar-eyebrow):not(.ar-footnote),
+.ar-experience .ar-numbered-steps p,
+.ar-experience .ar-onsite p,
+.ar-experience .ar-onsite ol,
+.ar-experience .ar-object-details,
+.ar-experience .ar-review-notice,
+.ar-experience .ar-target-display > p { font-size: 16px; line-height: 1.75; }
+.ar-experience .ar-hero-copy > p:not(.ar-eyebrow) { font-size: 17px; line-height: 1.75; }
+.ar-experience .ar-hero h1 { font-size: clamp(34px, 3.6vw, 52px); line-height: 1.18; }
+.ar-experience .ar-section-heading h2,
+.ar-experience .ar-exhibit-story h2,
+.ar-experience .ar-handoff-guide h2,
+.ar-experience .ar-onsite h2 { font-size: clamp(25px, 2.2vw, 32px); line-height: 1.35; }
+.ar-experience .ar-model-placeholder h3 { font-size: 24px; line-height: 1.4; }
+.ar-experience .ar-mode-nav strong { font-size: 17px; line-height: 1.4; }
+.ar-experience .ar-mode-nav small { font-size: 14px; line-height: 1.6; }
+.ar-experience .ar-artifact-tabs strong { font-size: 15px; line-height: 1.5; }
+.ar-experience .ar-artifact-tabs small { font-size: 13px; line-height: 1.6; }
+.ar-experience .ar-numbered-steps strong,
+.ar-experience .ar-qr-row strong { font-size: 16px; line-height: 1.5; }
+.ar-experience .ar-button,
+.ar-experience .ar-text-link,
+.ar-experience .ar-inline-actions button { font-size: 15px; line-height: 1.5; white-space: normal; }
+.ar-experience .ar-button { min-height: 48px; }
+.ar-experience .ar-footnote,
+.ar-experience .ar-phone-link,
+.ar-experience .ar-error,
+.ar-experience .ar-model-placeholder > small,
+.ar-experience .ar-photo-help,
+.ar-experience .ar-exhibit-story .ar-model-disclaimer { font-size: 14px; line-height: 1.7; }
+.ar-experience .ar-eyebrow,
+.ar-experience .ar-hero .ar-eyebrow,
+.ar-experience .ar-section-chip,
+.ar-experience .ar-target-label { font-size: 12px; line-height: 1.6; letter-spacing: .08em; }
+.ar-experience .ar-hero-tags { font-size: 14px; line-height: 1.5; }
+.ar-experience .ar-artifact-tabs button { min-width: 0; }
+.ar-experience .ar-mode-nav button > div,
+.ar-experience .ar-artifact-tabs button > span:not(.material-symbols-outlined) { min-width: 0; overflow-wrap: anywhere; }
+@media (max-width: 640px) {
+    .ar-experience p,
+    .ar-experience .ar-exhibit-story > p:not(.ar-eyebrow):not(.ar-footnote),
+    .ar-experience .ar-numbered-steps p,
+    .ar-experience .ar-onsite p,
+    .ar-experience .ar-onsite ol,
+    .ar-experience .ar-object-details { font-size: 15px; }
+    .ar-experience .ar-mode-nav strong { font-size: 15px; }
+    .ar-experience .ar-mode-nav small { font-size: 13px; }
+    .ar-experience .ar-hero-copy > p:not(.ar-eyebrow) { font-size: 16px; }
+}

@@ -1,0 +1,96 @@
+/* Photo studio refinements, scoped to avoid changing profile pages. */
+.photo-flow-workspace .ph-shell { padding-top: 20px; }
+.photo-flow-workspace .pf-page-heading { padding: 22px 28px; margin-bottom: 20px; border-radius: 28px; }
+.photo-flow-workspace .pf-page-heading h1 { font-size: clamp(28px, 3vw, 40px); line-height: 1.2; margin-top: 10px; }
+.photo-flow-workspace .pf-page-heading p { font-size: 14px; }
+.photo-flow-workspace .ph-shell .ph-steps { padding: 8px; margin-bottom: 20px; }
+.photo-flow-workspace .ph-shell .ph-steps li { padding: 10px 14px; }
+.photo-flow-workspace .ph-live-stage { padding-top: 60px; }
+.ph-stage-heading { position: absolute; inset: 18px 20px auto; display: flex; justify-content: space-between; gap: 12px; font-size: 10px; font-weight: 800; letter-spacing: .06em; color: #60738c; }
+.ph-stage-heading > span:first-child { display: inline-flex; gap: 6px; align-items: center; color: #0275fb; }
+.ph-stage-heading .material-symbols-outlined { font-size: 16px; }
+.ph-drop-overlay { position: absolute; inset: 12px; z-index: 45; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; border: 3px dashed #0275fb; border-radius: 22px; background: #eaf3fff5; color: #0353b8; pointer-events: none; }
+.ph-drop-overlay .material-symbols-outlined { font-size: 48px; }
+.ph-upload-error { position: absolute; z-index: 50; top: 50px; left: 16px; right: 16px; background: #fff1f2; border: 1px solid #fecdd3; color: #9f1239; border-radius: 12px; padding: 12px; font-size: 12px; line-height: 1.5; }
+.ph-mode-icon { font-size: 19px; vertical-align: middle; margin-right: 3px; }
+.ph-mode-hint { display: block; margin-top: 4px; font-size: 10px; font-weight: 600; opacity: .8; }
+.ph-frame-note { display: flex; align-items: flex-start; gap: 7px; background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; border-radius: 12px; padding: 10px 12px; font-size: 12px; line-height: 1.6; }
+.ph-frame-note .material-symbols-outlined { font-size: 18px; flex-shrink: 0; }
+.ph-format { display: flex; align-items: center; flex-direction: column; gap: 5px; padding: 12px; cursor: pointer; background: #f8fbff; }
+.ph-format strong { font-size: 12px; }
+.ph-format small { font-size: 10px; opacity: .75; }
+.ph-format[aria-pressed=true] { border-width: 2px; background: #eaf3ff; }
+.ph-reset-light { color: #0275fb; font-size: 11px; font-weight: 800; border: 1px solid #c8dcf7; border-radius: 8px; padding: 5px 9px; background: white; cursor: pointer; }
+.ph-caption-presets { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+.ph-caption-presets button { padding: 7px 12px; font-size: 11px; font-weight: 700; border-radius: 99px; border: 1px solid #c8dcf7; color: #0353b8; background: #f2f7ff; cursor: pointer; }
+.ph-caption-presets button:hover { border-color: #0275fb; background: #eaf3ff; }
+.ph-caption-count { color: #60738c; font-size: 11px; text-align: right; margin-top: 6px; }
+.photo-flow-workspace button:focus-visible, .photo-flow-workspace a:focus-visible, .photo-flow-workspace label:focus-within { outline: 3px solid #0275fb; outline-offset: 3px; }
+@media (min-width: 1024px) {
+    .photo-flow-workspace .photo-frame-workspace {
+        grid-template-columns: minmax(320px, 1fr) minmax(0, 1fr) !important;
+        height: clamp(480px, calc(100dvh - 40px), 820px);
+        align-items: stretch;
+        overflow: hidden;
+    }
+    .photo-flow-workspace .photo-frame-workspace > section.ph-live-stage {
+        height: 100%;
+        min-height: 0;
+        max-height: none;
+        position: relative;
+        top: auto;
+        align-self: stretch;
+    }
+    .photo-flow-workspace .photo-frame-workspace > aside {
+        height: 100%;
+        min-height: 0;
+        max-height: none;
+        position: relative;
+        top: auto;
+        overflow: hidden;
+    }
+    .photo-flow-workspace .photo-frame-workspace > aside > div:first-child { flex-shrink: 0; padding: 18px 20px; }
+    .photo-flow-workspace .ph-controls-scroll { overscroll-behavior-y: contain; scrollbar-gutter: stable; padding: 20px; gap: 20px; }
+    .photo-flow-workspace .photo-frame-workspace > .ph-editor-review { height: 100%; overflow-y: auto; min-height: 0; }
+}
+.photo-flow-workspace [aria-label="Chọn vai hóa thân năm 1968"][role="list"] {
+    max-height: 260px;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    scrollbar-gutter: stable;
+    padding: 4px;
+    gap: 8px;
+    border-radius: 16px;
+    background: #f2f7ff;
+}
+.photo-flow-workspace [aria-label="Chọn vai hóa thân năm 1968"] [role="listitem"] > button {
+    display: grid;
+    grid-template-columns: 72px minmax(0, 1fr);
+    align-items: stretch;
+    background: white;
+    border: 1px solid #d2e3fa;
+    color: #0f1b33;
+    border-radius: 12px;
+    box-shadow: none;
+}
+.photo-flow-workspace [aria-label="Chọn vai hóa thân năm 1968"] [role="listitem"] > button[aria-pressed="true"] {
+    background: #eaf3ff;
+    border: 2px solid #0275fb;
+}
+.photo-flow-workspace [aria-label="Chọn vai hóa thân năm 1968"] [data-testid^="heritage-artwork-"] { height: 100%; min-height: 98px; aspect-ratio: auto; }
+.photo-flow-workspace [aria-label="Chọn vai hóa thân năm 1968"] button > span { padding: 9px; }
+.photo-flow-workspace [aria-label="Chọn vai hóa thân năm 1968"] button strong { font-size: 9px; letter-spacing: .02em; color: #0275fb; }
+.photo-flow-workspace [aria-label="Chọn vai hóa thân năm 1968"] button strong + span { font-size: 11px; color: #0f1b33; }
+.photo-flow-workspace [aria-label="Chọn vai hóa thân năm 1968"] button > span > span:last-child { font-size: 10px; line-height: 1.4; color: #64748b; }
+@media (max-width: 450px) {
+    .photo-flow-workspace [aria-label="Chọn vai hóa thân năm 1968"][role="list"] { grid-template-columns: 1fr; max-height: 230px; }
+}
+@media (max-width: 760px) {
+    .photo-flow-workspace .pf-page-heading { padding: 20px; gap: 16px; }
+    .photo-flow-workspace .ph-shell .ph-steps { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+    .photo-flow-workspace .ph-shell .ph-steps li { flex-direction: column; text-align: center; padding: 10px 5px; gap: 6px; }
+    .photo-flow-workspace .ph-shell .ph-steps li strong { font-size: 10px; }
+    .photo-flow-workspace .ph-shell .ph-steps li small { display: none; }
+    .photo-flow-workspace .ph-live-stage { height: 54dvh; min-height: 370px; }
+}
+@media (prefers-reduced-motion: reduce) { .photo-flow-workspace *, .photo-flow-workspace *::after { animation: none !important; transition: none !important; } }

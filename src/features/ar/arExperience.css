@@ -775,19 +775,21 @@
 .ar-handoff {
     display: grid;
     grid-template-columns: 1fr 1.05fr;
+    align-items: start;
     padding: 16px;
     gap: 16px;
 }
 
 .ar-target-display {
-    padding: 32px;
+    padding: 24px;
     background: linear-gradient(180deg, #07132c 0%, #0e224d 60%, #033980 100%);
     border: 2px solid #fdc908;
     border-radius: 24px;
     color: #ffffff;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
+    align-self: start;
     align-items: center;
     text-align: center;
     box-shadow: 0 16px 40px rgba(15, 27, 51, 0.22);
@@ -1779,7 +1781,13 @@
 .ar-experience-shell header.fixed .text-white {
     color: #0f1b33 !important;
 }
-.ar-image-actions { display:flex; flex-direction:column; align-items:center; gap:16px; width:100%; margin-top:18px; }
+.ar-handoff-utilities { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1.05fr); gap: 20px; padding: 20px; border: 1px solid #dce6f4; border-radius: 24px; background: #f8fbff; align-items: start; }
+.ar-handoff-connect, .ar-handoff-alternatives { min-width: 0; }
+.ar-handoff-connect .ar-qr-row { margin-top: 0; }
+.ar-handoff-alternatives > :first-child { margin-top: 0; }
+.ar-handoff-guide { justify-content: flex-start; }
+@media(max-width: 900px) { .ar-handoff-utilities { grid-template-columns: 1fr; padding: 16px; gap: 16px; } }
+.ar-image-actions { display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:12px 20px; width:100%; margin-top:16px; }
 .ar-photo-help { display:block; margin-top:20px; font-size:11px; line-height:1.7; opacity:.8; }
 .ar-flow-summary { font-size:15px; font-weight:700; line-height:1.7; margin:18px 0; color:#416083; }
 .ar-webcam-option, .ar-card-email, .ar-device-note { border:1px solid #dce6f4; border-radius:18px; padding:20px; margin-top:20px; background:#fff; }

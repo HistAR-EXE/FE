@@ -367,7 +367,7 @@ export function ArtifactsPage() {
                 {/* ========================================= */}
                 {/* HERO BANNER - ĐÃ TRẢ VỀ NGUYÊN GỐC THEO YÊU CẦU */}
                 {/* ========================================= */}
-                <section className="relative overflow-visible bg-gradient-to-br from-[#0275FB] to-[#015cc8] border-b-4 border-[#FDC908] shadow-[0_10px_30px_rgba(2,117,251,0.3)] pt-6 md:pt-10 pb-12 md:pb-16 lg:pb-20">
+                <section className="relative overflow-visible bg-gradient-to-br from-[#0275FB] to-[#015cc8] border-b-4 border-[#FDC908] shadow-[0_10px_30px_rgba(2,117,251,0.3)] py-6 lg:py-8">
 
                     {/* BỘ HIỆU ỨNG: LƯỚI KHÔNG GIAN 3D (HOLOGRAM GRID) */}
                     <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff15_1px,transparent_1px),linear-gradient(to_bottom,#ffffff15_1px,transparent_1px)] bg-[size:3rem_3rem] [mask-image:radial-gradient(ellipse_80%_80%_at_50%_50%,#000_20%,transparent_100%)] pointer-events-none" />
@@ -379,10 +379,10 @@ export function ArtifactsPage() {
                     <div className="absolute top-0 right-[10%] w-[500px] h-[500px] bg-[#FDC908]/20 rounded-full blur-[100px] pointer-events-none" />
                     <div className="absolute bottom-0 left-[10%] w-[400px] h-[400px] bg-white/10 rounded-full blur-[80px] pointer-events-none" />
 
-                    <div className="relative max-w-[1600px] mx-auto px-6 lg:px-8 xl:px-10 w-full flex flex-col lg:flex-row items-center justify-between gap-8 lg:gap-16 z-10 pt-10 md:pt-6 lg:pt-2">
+                    <div className="relative max-w-[1600px] mx-auto px-6 lg:px-8 xl:px-10 w-full flex flex-col lg:flex-row items-center justify-between gap-6 lg:gap-8 z-10">
 
                         {/* KHỐI TRÁI: TEXT & HƯỚNG DẪN */}
-                        <div className="w-full lg:w-[60%] flex flex-col justify-start z-20">
+                        <div className="w-full lg:w-[57%] flex flex-col justify-start z-20">
 
                             {/* Badge (Nhãn trạng thái) */}
                             <div className="flex items-center gap-2.5 mb-4 bg-[#015cc8]/60 w-max px-4 py-2 rounded-full border border-white/20 backdrop-blur-md shadow-sm">
@@ -393,26 +393,26 @@ export function ArtifactsPage() {
                             </div>
 
                             {/* Tiêu đề Khổng lồ */}
-                            <h1 className="text-4xl md:text-5xl lg:text-6xl xl:text-[3.5rem] font-black text-white tracking-[-0.02em] leading-tight mb-4 drop-shadow-lg whitespace-nowrap">
+                            <h1 className="text-3xl md:text-4xl xl:text-[2.75rem] font-black text-white tracking-[-0.02em] leading-tight mb-4 drop-shadow-lg ">
                                 BẢO TÀNG SỐ <span className="text-[#FDC908] drop-shadow-[0_0_15px_rgba(253,201,8,0.4)]">3D</span>
                             </h1>
 
                             {/* Mô tả */}
-                            <p className="text-sm md:text-base lg:text-lg text-blue-50 font-medium leading-relaxed mb-8 max-w-3xl drop-shadow-md">
-                                Vượt qua rào cản địa lý để chạm tay vào quá khứ. Khám phá và tương tác trực tiếp với các kỷ vật chiến tranh được phục dựng 3D, mang lại trải nghiệm lịch sử sống động ngay trên thiết bị của bạn.
+                            <p className="text-sm md:text-base text-blue-50 font-medium leading-relaxed mb-4 max-w-3xl drop-shadow-md">
+                                Khám phá kỷ vật chiến tranh qua mô hình 3D. Xoay, phóng to và tìm hiểu câu chuyện lịch sử ngay trên thiết bị của bạn.
                             </p>
 
                             {/* CÁC THẺ TÍNH NĂNG */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 w-full xl:w-[90%]">
-                                <div className="p-5 md:p-6 rounded-[1.5rem] bg-white/10 backdrop-blur-md border border-white/20 shadow-[0_8px_30px_rgba(0,0,0,0.1)] hover:bg-white/20 transition-all duration-300 group hover:-translate-y-1">
-                                    <div className="w-12 h-12 rounded-full bg-[#FDC908] shadow-[0_0_15px_rgba(253,201,8,0.5)] flex items-center justify-center mb-4 text-[#0275FB] group-hover:scale-110 transition-transform">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
+                                <div className="p-3 md:p-4 rounded-[1.5rem] bg-white/10 backdrop-blur-md border border-white/20 shadow-[0_8px_30px_rgba(0,0,0,0.1)] hover:bg-white/20 transition-all duration-300 group hover:-translate-y-1">
+                                    <div className="w-9 h-9 rounded-full bg-[#FDC908] shadow-[0_0_15px_rgba(253,201,8,0.5)] flex items-center justify-center mb-2 text-[#0275FB] group-hover:scale-110 transition-transform">
                                         <MaterialIcon name="3d_rotation" className="text-xl" />
                                     </div>
                                     <h4 className="text-xs font-black text-white uppercase tracking-widest mb-2 drop-shadow-sm">TƯƠNG TÁC ĐA CHIỀU</h4>
                                     <p className="text-[11px] md:text-xs text-blue-100 font-medium leading-relaxed">Tự do xoay 360°, phóng to để quan sát chi tiết từng vết xước, rỉ sét và dấu ấn thời gian.</p>
                                 </div>
-                                <div className="p-5 md:p-6 rounded-[1.5rem] bg-white/10 backdrop-blur-md border border-white/20 shadow-[0_8px_30px_rgba(0,0,0,0.1)] hover:bg-white/20 transition-all duration-300 group hover:-translate-y-1">
-                                    <div className="w-12 h-12 rounded-full bg-white shadow-[0_0_15px_rgba(255,255,255,0.5)] flex items-center justify-center mb-4 text-[#0275FB] group-hover:scale-110 transition-transform">
+                                <div className="p-3 md:p-4 rounded-[1.5rem] bg-white/10 backdrop-blur-md border border-white/20 shadow-[0_8px_30px_rgba(0,0,0,0.1)] hover:bg-white/20 transition-all duration-300 group hover:-translate-y-1">
+                                    <div className="w-9 h-9 rounded-full bg-white shadow-[0_0_15px_rgba(255,255,255,0.5)] flex items-center justify-center mb-2 text-[#0275FB] group-hover:scale-110 transition-transform">
                                         <MaterialIcon name="history_edu" className="text-xl" />
                                     </div>
                                     <h4 className="text-xs font-black text-white uppercase tracking-widest mb-2 drop-shadow-sm">HỒ SƠ LỊCH SỬ</h4>
@@ -422,14 +422,14 @@ export function ArtifactsPage() {
                         </div>
 
                         {/* KHỐI PHẢI: GIAO DIỆN 3D SPATIAL & MASCOT */}
-                        <div className="w-full lg:w-[45%] relative h-[400px] md:h-[480px] flex items-center justify-center shrink-0 mt-12 lg:mt-0 perspective-1000">
+                        <div className="w-full lg:w-[40%] relative h-[260px] md:h-[300px] flex items-center justify-center shrink-0 mt-0 perspective-1000">
 
                             {/* Hào quang nền tổng thể */}
                             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[350px] bg-[#388cf1]/20 rounded-full blur-[60px] pointer-events-none" />
 
                             {/* [HÌNH ẢNH PHÍA SAU] - La Bàn / Bộ Đàm */}
                             {/* ĐÃ FIX: Mở rộng scale lên 1.15 để khi hover không bị lộ viền đen */}
-                            <div className="absolute left-[0%] md:-left-[5%] top-[5%] md:top-[10%] w-[75%] max-w-[340px] aspect-[4/3] rounded-3xl border border-[#388cf1]/30 overflow-hidden shadow-[0_15px_30px_rgba(0,0,0,0.6)] z-0 transform rotate-y-[15deg] translate-z-[-60px] opacity-80 blur-[1px] transition-all duration-700 hover:blur-none hover:opacity-100 hover:z-30 hover:scale-105 hover:rotate-y-[0deg] cursor-pointer bg-[#050a14] group">
+                            <div className="absolute left-[0%] md:-left-[5%] top-[5%] md:top-[10%] w-[65%] max-w-[260px] aspect-[4/3] rounded-3xl border border-[#388cf1]/30 overflow-hidden shadow-[0_15px_30px_rgba(0,0,0,0.6)] z-0 transform rotate-y-[15deg] translate-z-[-60px] opacity-80 blur-[1px] transition-all duration-700 hover:blur-none hover:opacity-100 hover:z-30 hover:scale-105 hover:rotate-y-[0deg] cursor-pointer bg-[#050a14] group">
                                 <div className="absolute inset-0 bg-[#0275FB]/20 mix-blend-overlay z-10 pointer-events-none transition-opacity duration-500 group-hover:opacity-0" />
                                 <img
                                     src="/huy/3d-museum-hologram-1.png"
@@ -441,7 +441,7 @@ export function ArtifactsPage() {
 
                             {/* [HÌNH ẢNH PHÍA TRƯỚC] - Mũ Cối Hologram */}
                             {/* ĐÃ FIX: Dùng scale-[1.15] cho thẻ img thay vì dùng chung với class animate float để ảnh luôn chìm lấp viền đen */}
-                            <div className="absolute right-[5%] md:right-0 top-[20%] w-[85%] max-w-[380px] aspect-[4/3] rounded-[2rem] border-2 border-white/10 overflow-hidden shadow-[0_25px_50px_rgba(0,0,0,0.7),0_0_40px_rgba(253,201,8,0.15)] z-20 transform rotate-y-[-8deg] translate-z-[40px] transition-all duration-700 hover:scale-[1.03] hover:rotate-y-[0deg] bg-[#080d1a]">
+                            <div className="absolute right-[5%] md:right-0 top-[20%] w-[78%] max-w-[310px] aspect-[4/3] rounded-[2rem] border-2 border-white/10 overflow-hidden shadow-[0_25px_50px_rgba(0,0,0,0.7),0_0_40px_rgba(253,201,8,0.15)] z-20 transform rotate-y-[-8deg] translate-z-[40px] transition-all duration-700 hover:scale-[1.03] hover:rotate-y-[0deg] bg-[#080d1a]">
                                 <img
                                     src="/huy/3d-museum-hologram-2.png"
                                     alt="3D Hologram Artifact"
@@ -454,7 +454,7 @@ export function ArtifactsPage() {
                                 </div>
 
                             {/* [ẢNH MASCOT LƠ LỬNG] */}
-                            <div className="absolute -bottom-10 md:-bottom-16 right-[-5%] md:-right-8 z-40 w-[180px] md:w-[220px] animate-[float_4s_ease-in-out_infinite] drop-shadow-[0_20px_30px_rgba(0,0,0,0.6)]">
+                            <div className="absolute bottom-0 right-0 z-40 w-[110px] md:w-[140px] animate-[float_4s_ease-in-out_infinite] drop-shadow-[0_20px_30px_rgba(0,0,0,0.6)]">
                                 <img src="/huy/mascot-8.png" alt="Chrono Mascot" className="w-full h-auto object-contain" />
                                 <div className="absolute -top-12 -left-10 md:-top-16 md:-left-16 z-50 bg-white px-4 md:px-5 py-2 md:py-2.5 rounded-2xl rounded-br-none border-2 border-[#FDC908] shadow-[0_10px_25px_rgba(0,0,0,0.2)] animate-bounce w-max">
                                     <p className="text-[10px] md:text-xs font-black text-[#0275FB]">Wow! Cổ vật 3D kìa! ✨</p>
@@ -474,7 +474,7 @@ export function ArtifactsPage() {
                 <div className="absolute top-[800px] right-[-5%] w-[600px] h-[600px] bg-[#FDC908]/5 rounded-full blur-[100px] pointer-events-none" />
                 <div className="absolute bottom-[10%] left-[20%] w-[500px] h-[500px] bg-[#0275FB]/5 rounded-full blur-[100px] pointer-events-none" />
 
-                <div className="max-w-[1600px] mx-auto px-4 md:px-8 mt-16 relative z-10">
+                <div className="max-w-[1600px] mx-auto px-4 md:px-8 mt-8 relative z-10">
 
                     {/* ========================================= */}
                     {/* BỘ LỌC DANH MỤC TRỰC QUAN & SÁNG SỦA */}

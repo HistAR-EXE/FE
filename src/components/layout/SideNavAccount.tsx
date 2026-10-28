@@ -9,7 +9,6 @@ import { MaterialIcon } from '../ui/MaterialIcon'
 const PERSONAL_LINKS = [
     { to: '/profile', icon: 'person', label: 'Hồ sơ cá nhân' },
     { to: '/settings', icon: 'settings', label: 'Cài đặt' },
-    { to: '/photo-frame', icon: 'photo_camera', label: 'Ảnh & chia sẻ' },
     { to: '/pricing', icon: 'workspace_premium', label: 'Gói dịch vụ' },
 ]
 

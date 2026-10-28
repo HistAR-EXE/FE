@@ -1,0 +1,24 @@
+.ar-experience .ar-hero-visual { min-height: 350px; perspective: 900px; isolation: isolate; }
+.ar-experience .ar-hero-mascot { width: 280px; height: 280px; animation: arChronoJoy 5s ease-in-out infinite; transform-origin: 50% 70%; filter: drop-shadow(0 20px 25px #002b6470); }
+.ar-hero-visual:hover .ar-hero-mascot { animation-duration: 3.5s; }
+.ar-hologram-floor { position: absolute; left: 23%; bottom: 12%; width: 54%; height: 33%; transform: rotateX(65deg) rotateZ(-25deg); transform-style: preserve-3d; pointer-events: none; }
+.ar-hologram-floor span { position: absolute; inset: 0; border-radius: 20px; border: 1px solid #b5f3ff99; background: repeating-linear-gradient(0deg, transparent 0 24px, #b5f3ff30 24px 25px), repeating-linear-gradient(90deg, #70dcff15 0 24px, #b5f3ff30 24px 25px); box-shadow: 0 12px 35px #001c5740; }
+.ar-hologram-floor span:nth-child(2) { transform: translateZ(-18px); border-color: #fdc90880; }
+.ar-hologram-floor span:nth-child(3) { transform: translateZ(-36px); opacity: .5; }
+.ar-feature-float { position: absolute; z-index: 4; display: flex; align-items: center; gap: 8px; padding: 10px 12px; border: 1px solid #fff9; border-radius: 15px; color: #0353b8; background: linear-gradient(135deg, #fff, #d5efff); box-shadow: 3px 5px 0 #0059ad, 8px 16px 28px #00285540; animation: arFeatureHover 4.5s ease-in-out infinite; }
+.ar-feature-float span:not(.material-symbols-outlined) { font-size: 9px; font-weight: 900; letter-spacing: .04em; max-width: 90px; line-height: 1.5; }
+.ar-feature-float > .material-symbols-outlined { font-size: 29px; }
+.ar-feature-float--cube { left: -5%; top: 17%; background: linear-gradient(135deg, #fff9d8, #fdc908); box-shadow: 3px 5px 0 #b88204, 8px 16px 28px #00285540; }
+.ar-feature-float--phone { right: -2%; top: 34%; animation-delay: -1.5s; overflow: hidden; }
+.ar-feature-float--scan { left: -3%; bottom: 7%; animation-delay: -3s; }
+.ar-feature-float--phone i { position: absolute; inset: 0; background: linear-gradient(110deg, transparent 35%, #ffffffa0 50%, transparent 65%); animation: arHologramScan 4s ease-in-out infinite; pointer-events: none; }
+.ar-scene-spark { position: absolute; z-index: 4; color: #fff2c3; font-size: 28px; animation: arSparkJoy 3s ease-in-out infinite; }
+.ar-scene-spark--one { top: 7%; left: 39%; }
+.ar-scene-spark--two { right: 18%; bottom: 10%; font-size: 20px; animation-delay: -1.5s; }
+.ar-experience .ar-hero-visual .ar-hero-icon { display: none; }
+@keyframes arChronoJoy { 0%, 100% { transform: translateY(3px) rotate(-3deg); } 50% { transform: translateY(-11px) rotate(3deg); } }
+@keyframes arFeatureHover { 0%, 100% { translate: 0 0; rotate: -5deg; } 50% { translate: 0 -8px; rotate: 2deg; } }
+@keyframes arSparkJoy { 0%, 100% { scale: .7; opacity: .4; } 50% { scale: 1.1; opacity: 1; } }
+@keyframes arHologramScan { 0%, 20% { transform: translateX(-120%); } 70%, 100% { transform: translateX(120%); } }
+@media (min-width: 768px) and (max-width: 1100px) { .ar-experience .ar-hero-mascot { width: 220px; height: 220px; } .ar-feature-float { padding: 8px; } .ar-feature-float span:not(.material-symbols-outlined) { max-width: 65px; font-size: 8px; } }
+@media (prefers-reduced-motion: reduce) { .ar-experience .ar-hero-visual *, .ar-hero-visual:hover .ar-hero-mascot { animation: none !important; } }

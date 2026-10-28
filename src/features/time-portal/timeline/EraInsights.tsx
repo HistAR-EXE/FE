@@ -120,18 +120,6 @@ export function EraInsights({ story, onOpen3D, xuaNay }: Props) {
         </button>
       )}
 
-      <details className="rounded-2xl border border-blue-100 bg-white px-3.5 py-2.5 text-xs text-slate-600 backdrop-blur-xl">
-        <summary className="cursor-pointer select-none font-medium text-slate-600">Nguồn tư liệu</summary>
-        <ul className="mt-2 space-y-1">
-          {story.sources.map((s) => (
-            <li key={s.url}>
-              <a href={s.url} target="_blank" rel="noopener noreferrer" className="underline decoration-blue-200 underline-offset-2 hover:text-[#142646]">
-                {s.label}
-              </a>
-            </li>
-          ))}
-        </ul>
-      </details>
     </div>
   )
 }

@@ -1,3 +1,4 @@
+import { checkoutPlanCopy, confirmedPrice, confirmedJourneyExpiry } from '../features/billing/planPresentation'
 // src/pages/CheckoutB2CPage.tsx
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
@@ -12,7 +13,7 @@ import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
 import { useToast } from '../shared/ui/toast/useToast'
 import { images } from '../assets/images'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
-import { isPilotSiteCode } from '../shared/config/constants'
+import { getPilotSite } from '../shared/config/constants'
 import { markJourneyPassActive } from '../shared/access/contentAccess'
 
 export function CheckoutB2CPage() {
@@ -26,11 +27,19 @@ export function CheckoutB2CPage() {
     const [status, setStatus] = useState<B2cPaymentStatusCode | null>(null)
     const [statusDetail, setStatusDetail] = useState<B2cPaymentStatus | null>(null)
     const [upgraded, setUpgraded] = useState(false)
-    const [priceVnd, setPriceVnd] = useState(49_000)
+    const [priceVnd, setPriceVnd] = useState<number | null>(null)
+    const [priceForPlan, setPriceForPlan] = useState<string | null>(null)
+    const [pricingState, setPricingState] = useState<'loading' | 'ready' | 'error'>('loading')
+    const [priceAttempt, setPriceAttempt] = useState(0)
     const [emailVerified, setEmailVerified] = useState<boolean | undefined>(user?.emailVerified)
 
     const planType = searchParams.get('plan') === 'journey_pass' ? 'JOURNEY_PASS' : 'PREMIUM'
-    const siteCode = isPilotSiteCode(searchParams.get('site')) ? searchParams.get('site')! : 'cu-chi'
+    const requestedSite = searchParams.get('site')
+    const site = getPilotSite(requestedSite || 'cu-chi')
+    const siteCode = site?.siteCode || 'cu-chi'
+    const organizationBlocked = !!user?.orgId
+    const unsupportedSite = planType === 'JOURNEY_PASS' && !site
+    const planCopy = checkoutPlanCopy(planType, site?.name || siteCode)
 
     const returnTo = useMemo(() => {
         const next = searchParams.get('next')
@@ -38,35 +47,29 @@ export function CheckoutB2CPage() {
     }, [searchParams])
 
     useEffect(() => {
-        billingApi
-            .getPublicPricing()
-            .then((data) =>
-                setPriceVnd(
-                    planType === 'JOURNEY_PASS'
-                        ? (data.b2cJourneyPassPriceVnd ?? 29_000)
-                        : data.b2cPremiumPriceVnd,
-                ),
-            )
-            .catch(() => undefined)
+        let active = true
+        billingApi.getPublicPricing().then(data => {
+            const price = confirmedPrice(planType === 'JOURNEY_PASS' ? data.b2cJourneyPassPriceVnd : data.b2cPremiumPriceVnd)
+            if (active) { setPriceVnd(price); setPriceForPlan(planType); setPricingState(price === null ? 'error' : 'ready') }
+        }).catch(() => { if (active) { setPriceVnd(null); setPricingState('error') } })
         profileApi.me()
             .then((profile) => setEmailVerified(profile.emailVerified))
             .catch(() => undefined)
-    }, [planType])
+        return () => { active = false }
+    }, [planType, priceAttempt])
 
     const completeUpgrade = async (nextPath: string) => {
         const profile = await profileApi.me()
         if (planType === 'JOURNEY_PASS') {
-            const match = profile.activeVisitSites?.find(
-                (s) => s.siteCode?.toLowerCase() === siteCode.toLowerCase(),
-            )
-            const expiresMs = match?.expiresAt
-                ? Date.parse(match.expiresAt)
-                : Date.now() + 72 * 60 * 60 * 1000
-            markJourneyPassActive(siteCode, Number.isFinite(expiresMs) ? expiresMs : Date.now() + 72 * 60 * 60 * 1000)
-            showToast({ message: 'Journey Pass 72h đã kích hoạt cho site này!', type: 'success' })
+            const expiresMs = confirmedJourneyExpiry(profile.activeVisitSites, siteCode)
+            markJourneyPassActive(siteCode, expiresMs)
+            setUpgraded(true)
+            showToast({ message: 'Journey Pass đã được xác nhận cho di tích đã chọn.', type: 'success' })
             navigate(nextPath)
             return
         }
+        if (profile.tier !== 'PREMIUM') throw new Error('Chưa xác nhận được quyền Premium. Hãy kiểm tra lại trạng thái thanh toán.')
+        setUpgraded(true)
         updateUser({
             tier: profile.tier,
             orgId: profile.orgId,
@@ -83,8 +86,7 @@ export function CheckoutB2CPage() {
             const nextStatus = await billingApi.getB2CPaymentStatus(orderCode)
             setStatus(nextStatus.status)
             setStatusDetail(nextStatus)
-            if (nextStatus.status === 'PAID' && (nextStatus.upgraded || planType === 'JOURNEY_PASS')) {
-                setUpgraded(true)
+            if (nextStatus.status === 'PAID' && nextStatus.upgraded) {
                 emitEvent('purchase_success', {
                     payload: {
                         orderCode,
@@ -103,7 +105,7 @@ export function CheckoutB2CPage() {
     }
 
     const handleCheckout = async () => {
-        if (loading || emailVerified === false) return
+        if (loading || emailVerified !== true || pricingState !== 'ready' || priceForPlan !== planType || priceVnd === null || unsupportedSite || organizationBlocked) return
         try {
             setLoading(true)
             const next = await billingApi.createB2CPayment(returnTo, {
@@ -111,6 +113,7 @@ export function CheckoutB2CPage() {
                 siteCode: planType === 'JOURNEY_PASS' ? siteCode : undefined,
             })
             setPayment(next)
+            setPriceVnd(next.amountVnd)
             setStatus(next.status)
             setStatusDetail(null)
             if (next.status === 'UNDERPAID') void refreshPaymentStatus(next.orderCode, true)
@@ -179,33 +182,22 @@ export function CheckoutB2CPage() {
                                 </span>
                                 {/* Ép chữ trên 1 dòng với whitespace-nowrap và size text nhỏ lại một chút */}
                                 <h1 className="text-2xl md:text-[1.75rem] font-black text-white tracking-tight drop-shadow-md whitespace-nowrap">
-                                    Gói Đặc Quyền Premium
+                                    {planCopy.title}
                                 </h1>
                             </div>
 
                             <div className="bg-[#0B1120]/60 rounded-xl px-4 py-3 border border-white/10 shadow-inner mb-4 backdrop-blur-md">
                                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Tổng thanh toán</p>
                                 <div className="flex items-baseline gap-1">
-                                    <span className="text-3xl font-black text-[#fdb438] drop-shadow-[0_0_10px_rgba(253,180,56,0.5)]">{priceVnd.toLocaleString('vi-VN')}</span>
+                                    <span className="text-3xl font-black text-[#fdb438] drop-shadow-[0_0_10px_rgba(253,180,56,0.5)]">{priceVnd === null || priceForPlan !== planType ? (pricingState === 'loading' ? 'Đang tải giá…' : 'Chưa xác nhận giá') : priceVnd.toLocaleString('vi-VN')}</span>
                                     <span className="text-xs font-bold text-gray-300 uppercase">VND</span>
-                                    <span className="text-xs font-bold text-gray-400 ml-1">/tháng</span>
+                                    <span className="text-xs font-bold text-gray-400 ml-1">/ {planCopy.period}</span>
                                 </div>
                             </div>
 
                             {!payment ? (
-                                <ul className="space-y-3 text-sm font-medium text-gray-200 mt-2">
-                                    <li className="flex items-center gap-3 bg-white/5 py-2 px-3 rounded-xl border border-white/5 hover:border-white/10 transition-colors">
-                                        <MaterialIcon name="check_circle" className="text-[#fe951c] text-lg drop-shadow-[0_0_5px_rgba(254,149,28,0.6)]" />
-                                        RAG AI Không giới hạn
-                                    </li>
-                                    <li className="flex items-center gap-3 bg-white/5 py-2 px-3 rounded-xl border border-white/5 hover:border-white/10 transition-colors">
-                                        <MaterialIcon name="check_circle" className="text-[#fe951c] text-lg drop-shadow-[0_0_5px_rgba(254,149,28,0.6)]" />
-                                        Mở khóa Time Portal 3 kỷ nguyên
-                                    </li>
-                                    <li className="flex items-center gap-3 bg-white/5 py-2 px-3 rounded-xl border border-white/5 hover:border-white/10 transition-colors">
-                                        <MaterialIcon name="check_circle" className="text-[#fe951c] text-lg drop-shadow-[0_0_5px_rgba(254,149,28,0.6)]" />
-                                        Gamification toàn diện
-                                    </li>
+                                <ul className="space-y-2 text-xs text-gray-200">
+                                    {planCopy.features.map(feature => <li key={feature} className="flex items-start gap-2 py-2"><MaterialIcon name="check_circle" className="text-[#fe951c] text-lg shrink-0" /><span>{feature}</span></li>)}
                                 </ul>
                             ) : (
                                 <div className="flex-1 flex flex-col justify-center animate-[fadeIn_0.5s_ease-out]">
@@ -254,23 +246,26 @@ export function CheckoutB2CPage() {
                                     </div>
                                     <h3 className="text-xl font-black text-white mb-3 tracking-tight drop-shadow-md">Tạo Mã QR Tự Động</h3>
                                     <p className="text-xs text-gray-300 mb-8 font-medium leading-relaxed">
-                                        Hệ thống sẽ tạo mã QR bảo mật riêng cho bạn. Chỉ cần mở ứng dụng Ngân hàng (hoặc Momo) để quét. Tài khoản sẽ được <strong>kích hoạt tự động sau 5 giây</strong>.
+                                        Hệ thống sẽ tạo mã QR bảo mật riêng cho bạn. Chỉ cần mở ứng dụng Ngân hàng (hoặc Momo) để quét. Quyền gói chỉ được kích hoạt khi hệ thống xác nhận thanh toán thành công; thời gian tùy xử lý của ngân hàng.
                                     </p>
                                     {emailVerified === false && (
                                         <div className="w-full max-w-[280px] mb-4 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-left text-xs text-amber-100">
                                             <p className="font-bold mb-1">Cần xác minh email trước khi thanh toán</p>
                                             <p className="text-amber-200/90 mb-2">
-                                                Vui lòng xác minh email để kích hoạt gói Premium an toàn.
+                                                Vui lòng xác minh email trước khi kích hoạt gói đã chọn.
                                             </p>
                                             <Link to="/verify-email/pending" className="text-[#388cf1] font-bold underline">
                                                 Đi tới xác minh email
                                             </Link>
                                         </div>
                                     )}
+                                    {organizationBlocked && <p role="alert" className="mb-4 text-sm text-amber-200">Tài khoản đang thuộc tổ chức nên không thể mua thêm gói cá nhân. Hãy quản lý gói hiện tại tại <Link className="underline" to="/settings">Cài đặt</Link>.</p>}
+                                    {unsupportedSite && <p role="alert" className="mb-4 text-sm text-amber-200">Di tích này chưa hỗ trợ Journey Pass. Vui lòng quay lại bảng giá để chọn di tích được hỗ trợ.</p>}
+                                    {pricingState === 'error' && <div role="alert" className="mb-4 text-sm text-amber-200">Chưa tải được giá xác nhận. <button type="button" className="underline" onClick={() => { setPricingState('loading'); setPriceVnd(null); setPriceAttempt(v => v + 1) }}>Tải lại giá</button></div>}
                                     <Button
                                         type="button"
                                         aria-label={loading ? 'Đang khởi tạo thanh toán SePay' : 'Tạo thanh toán SePay'}
-                                        disabled={loading || emailVerified === false}
+                                        disabled={loading || emailVerified !== true || pricingState !== 'ready' || priceForPlan !== planType || priceVnd === null || unsupportedSite || organizationBlocked}
                                         onClick={() => void handleCheckout()}
                                         className="w-full max-w-[280px] h-12 rounded-2xl bg-gradient-to-r from-[#1a79e5] via-[#388cf1] to-[#1a79e5] hover:from-[#388cf1] hover:to-[#1a79e5] text-white font-black text-xs uppercase tracking-wider shadow-[0_5px_25px_rgba(56,140,241,0.5)] hover:shadow-[0_8px_35px_rgba(56,140,241,0.8)] hover:scale-105 transition-all cursor-pointer flex items-center justify-center gap-2"
                                     >
@@ -327,7 +322,7 @@ export function CheckoutB2CPage() {
                                                 {statusDetail?.transferContent ?? payment.transferContent}
                                             </p>
                                             <p className="text-orange-200/70 mt-2">
-                                                Chuyển dư (≥ số tiền) vẫn được chấp nhận. Premium sẽ tự kích hoạt khi tổng tiền đủ.
+                                                Chuyển dư (≥ số tiền) vẫn được chấp nhận. Gói đã chọn chỉ được kích hoạt sau khi hệ thống xác nhận đủ tiền.
                                             </p>
                                         </div>
                                     )}

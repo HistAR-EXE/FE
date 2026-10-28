@@ -11,8 +11,10 @@ import {
 } from "../features/ar/arExperience";
 import { ArCameraExperience } from "../features/ar/ArCameraExperience";
 import { CU_CHI_LOCATION_ID } from "../shared/config/constants";
-import mascotImg from "../assets/mascot.png";
+import mascotImg from "../assets/mascot-chrono-ar.png";
 import "../features/ar/arExperience.css";
+import "../features/ar/arHeroScene.css";
+import "../features/ar/arTypography.css";
 
 const ArtifactModelViewer = lazy(() =>
     import("../features/ar/ArtifactModelViewer").then((module) => ({
@@ -153,6 +155,12 @@ export function ArExperiencePage() {
                     <div className="ar-hero-visual" aria-hidden="true">
                         <div className="ar-orbit ar-orbit-one" />
                         <div className="ar-orbit ar-orbit-two" />
+                        <div className="ar-hologram-floor"><span /><span /><span /></div>
+                        <div className="ar-feature-float ar-feature-float--cube"><MaterialIcon name="deployed_code" /><span>XOAY · KHÁM PHÁ 3D</span></div>
+                        <div className="ar-feature-float ar-feature-float--phone"><MaterialIcon name="smartphone" /><span>ĐƯA DI SẢN VÀO AR</span><i /></div>
+                        <div className="ar-feature-float ar-feature-float--scan"><MaterialIcon name="qr_code_scanner" /><span>QUÉT TRẠM DI TÍCH</span></div>
+                        <span className="ar-scene-spark ar-scene-spark--one">✦</span>
+                        <span className="ar-scene-spark ar-scene-spark--two">✧</span>
                         <img
                             src={mascotImg}
                             alt=""
@@ -415,10 +423,6 @@ export function ArExperiencePage() {
                                                     </div>
 
                                                     <p className="text-xs leading-relaxed text-slate-600 ar-model-disclaimer">{artifact.note}</p>
-                                                    <p className="text-xs leading-relaxed text-slate-600 ar-model-attribution">
-                                                        Mô hình: <strong>{artifact.author}</strong> · {artifact.license}{" · "}
-                                                        <a href={artifact.source} target="_blank" rel="noopener noreferrer" className="ar-text-link">Nguồn mô hình ↗</a>
-                                                    </p>
                                                     <button
                                                         className="ar-button ar-button-yellow w-full"
                                                         onClick={() => change("home")}

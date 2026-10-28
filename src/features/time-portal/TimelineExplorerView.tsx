@@ -11,6 +11,7 @@
 
 import './portalExperience.css'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import type { ReactNode } from 'react'
 import { MaterialIcon } from '../../components/ui/MaterialIcon'
 import { getEraData } from './cuChiEraData'
 import { ERA_VALUES, eraTimelineLabel, type EraValue } from './eraLabels'
@@ -32,6 +33,7 @@ type Props = {
   isPremium?: boolean
   onPremiumRequired?: (era: EraValue) => void
   onSwitchTo3D?: () => void
+  render3D?: (era: EraValue) => ReactNode
   /** Mở "Xưa & Nay" tại điểm gắn với khoảnh khắc (kèm id khoảnh khắc để quay lại đúng chỗ). */
   onOpenXuaNay?: (spot: XuaNaySpotId, momentId: string) => void
   /** Mở lại đúng khoảnh khắc này (ví dụ khi quay về từ "Xưa & Nay"). */
@@ -95,6 +97,7 @@ export function TimelineExplorerView({
   isPremium = true,
   onPremiumRequired,
   onSwitchTo3D,
+  render3D,
   onOpenXuaNay,
   initialMomentId,
   onEraChange,
@@ -106,6 +109,12 @@ export function TimelineExplorerView({
     return Math.max(0, i)
   })
   const [hover, setHover] = useState(false)
+  const [browsingModel, setBrowsingModel] = useState(false)
+  const modelSectionRef = useRef<HTMLElement>(null)
+  const open3D = useCallback(() => {
+    if (render3D) modelSectionRef.current?.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' })
+    else onSwitchTo3D?.()
+  }, [render3D, onSwitchTo3D])
   const [hold, setHold] = useState(false)
   const [pageHidden, setPageHidden] = useState(false)
   const [panelsVisible, setPanelsVisible] = useState(true)
@@ -150,7 +159,7 @@ export function TimelineExplorerView({
     setIndex(i)
   }, [])
 
-  const audioPaused = suspended || hold || pageHidden || !!warp || insightsOpen || !panelsVisible || !!lightbox
+  const audioPaused = suspended || browsingModel || hold || pageHidden || !!warp || insightsOpen || !panelsVisible || !!lightbox
   const narrationText = moment
     ? `${story.chapter}. ${moment.date}. ${moment.title}. ${moment.body}${moment.dyk ? ` Bạn có biết? ${moment.dyk}` : ''}`
     : `Thử thách. ${story.quiz.question}`
@@ -251,7 +260,7 @@ export function TimelineExplorerView({
   const paused = audioPaused || hover || audio.blocked
   const openPhoto = (p: Photo) => setLightbox(p)
 
-  /* Lối vào "Xưa & Nay" ở bảng số liệu: ưu tiên điểm của khoảnh khắc đang xem, rồi điểm đầu tiên của chương. */
+  /* Nút Xưa & Nay giữ đúng điểm và khoảnh khắc đang xem để quay lại. */
   const panelSpot: XuaNaySpotId = moment?.xuaNay ?? story.moments.find((m) => m.xuaNay)?.xuaNay ?? XUA_NAY_SPOTS[0]
   const panelXuaNay = onOpenXuaNay
     ? {
@@ -272,20 +281,24 @@ export function TimelineExplorerView({
           </div>
           <div className="flex items-center gap-2">
             {!isWide && <button type="button" onClick={() => setInsightsOpen(true)} className={TOOL_BTN}><MaterialIcon name="insights" className="text-lg" />Số liệu</button>}
-            {onSwitchTo3D && <button type="button" onClick={onSwitchTo3D} className={TOOL_BTN} aria-label="Xem 3D"><MaterialIcon name="view_in_ar" className="text-lg" />Xem 3D</button>}
+            {panelXuaNay && <button type="button" onClick={panelXuaNay.onOpen} className={TOOL_BTN} aria-label="Mở Xưa & Nay tại di tích"><MaterialIcon name="compare" className="text-lg" />Xưa &amp; Nay<MaterialIcon name="arrow_forward" className="text-base" /></button>}
             <button type="button" onClick={() => setPanelsVisible((v) => !v)} className={TOOL_BTN} aria-label={panelsVisible ? 'Ẩn chữ, chỉ xem ảnh' : 'Hiện nội dung'} aria-pressed={!panelsVisible}><MaterialIcon name={panelsVisible ? 'visibility_off' : 'visibility'} className="text-lg" /></button>
           </div>
         </div>
         <PortalAudioControls audio={audio} className="mt-3" />
       </div>
-      <div className="relative min-h-0 flex-1 overflow-y-auto">
+      <div className="relative min-h-0 flex-1 overflow-y-auto" onScroll={(event) => {
+        const section = modelSectionRef.current
+        if (section) setBrowsingModel(section.getBoundingClientRect().top < event.currentTarget.getBoundingClientRect().top + event.currentTarget.clientHeight * .55)
+      }}>
         <StoryBackdrop story={story} visual={visual} visualKey={visualKey} durationMs={durationMs || 12000} />
 
         <div
-          className={`relative z-10 grid min-h-full grid-cols-1 gap-4 p-4 sm:gap-5 sm:p-5 lg:h-full lg:min-h-[520px] lg:grid-cols-[minmax(300px,360px)_minmax(0,1fr)] lg:grid-rows-[auto_minmax(0,1fr)] lg:gap-x-5 lg:gap-y-3 lg:p-5 xl:grid-cols-[minmax(300px,360px)_minmax(0,1fr)_260px] 2xl:gap-x-7 2xl:p-7 ${
-            panelsVisible ? '' : '[&>.tp-panel]:pointer-events-none [&>.tp-panel]:opacity-0'
+          className={`relative z-10 grid grid-cols-1 gap-4 p-4 sm:gap-5 sm:p-5 lg:grid-cols-[minmax(300px,360px)_minmax(0,1fr)] lg:items-stretch lg:gap-x-5 lg:gap-y-3 lg:p-5 xl:grid-cols-[minmax(300px,360px)_minmax(0,1fr)_260px] 2xl:gap-x-7 2xl:p-7 ${
+            panelsVisible ? '' : '[&_.tp-panel]:pointer-events-none [&_.tp-panel]:opacity-0'
           }`}
         >
+          <div className="flex min-w-0 flex-col gap-4 lg:col-start-1 lg:row-start-1">
           {/* Tiêu đề chương */}
           <header className="tp-panel min-w-0 transition-opacity duration-500 lg:col-start-1 lg:row-start-1">
             <div className="flex min-h-[44px] items-center gap-2">
@@ -321,22 +334,9 @@ export function TimelineExplorerView({
             )}
           </header>
 
-          {/* Ảnh tư liệu — hiển thị trọn vẹn */}
-          <div className="relative min-h-[280px] min-w-0 rounded-[28px] bg-white/25 sm:min-h-[340px] lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:min-h-0">
-            <PhotoStage
-              visual={visual}
-              visualKey={visualKey}
-              durationMs={durationMs || 12000}
-              filter="none"
-              dim={isQuiz}
-              onOpen={openPhoto}
-              tap={isDesktop ? undefined : { onPrev: goPrev, onNext: goNext, onHold: setHold }}
-            />
-          </div>
-
           {/* Thẻ kể chuyện */}
           <div
-            className="tp-panel tp-scroll min-h-0 max-h-[58vh] overflow-y-auto transition-opacity duration-500 lg:col-start-1 lg:row-start-2 lg:max-h-full lg:self-start"
+            className="tp-panel min-w-0 transition-opacity duration-500"
             onMouseEnter={() => setHover(true)}
             onMouseLeave={() => setHover(false)}
           >
@@ -356,7 +356,7 @@ export function TimelineExplorerView({
               onRetry={retry}
               onNextChapter={() => nextEra && requestEra(nextEra)}
               onRestart={() => requestEra(ERA_VALUES[0])}
-              onOpen3D={onSwitchTo3D}
+              onOpen3D={open3D}
               onOpenPhoto={visual.kind === 'photo' ? () => openPhoto(visual) : undefined}
               onOpenXuaNay={
                 onOpenXuaNay && moment
@@ -368,23 +368,52 @@ export function TimelineExplorerView({
             />
           </div>
 
+          </div>
+
+
+          {/* Ảnh tư liệu — hiển thị trọn vẹn */}
+          <div className="relative min-h-[280px] min-w-0 rounded-[28px] bg-white/25 sm:min-h-[340px] lg:col-start-2 lg:row-start-1 lg:min-h-[520px] lg:h-full lg:self-stretch">
+            <PhotoStage
+              visual={visual}
+              visualKey={visualKey}
+              durationMs={durationMs || 12000}
+              filter="none"
+              dim={isQuiz}
+              onOpen={openPhoto}
+              tap={isDesktop ? undefined : { onPrev: goPrev, onNext: goNext, onHold: setHold }}
+            />
+          </div>
+
           {/* Số liệu + sơ đồ (màn hình rất rộng) */}
           {isWide && (
             <aside
-              className="tp-panel tp-scroll min-h-0 overflow-y-auto transition-opacity duration-500 xl:col-start-3 xl:row-span-2 xl:row-start-1"
+              className="tp-panel min-w-0 transition-opacity duration-500 xl:col-start-3 xl:row-start-1 xl:self-start"
               onMouseEnter={() => setHover(true)}
               onMouseLeave={() => setHover(false)}
             >
-              <EraInsights key={era} story={story} onOpen3D={onSwitchTo3D} xuaNay={panelXuaNay} />
+              <EraInsights key={era} story={story} />
             </aside>
           )}
         </div>
 
+        {render3D && <section ref={modelSectionRef} className="relative z-10 mx-4 mb-6 rounded-[28px] border-2 border-blue-100 bg-white p-4 shadow-sm sm:mx-5 sm:p-6" aria-labelledby="portal-model-heading">
+          <header className="flex flex-wrap items-center justify-between gap-4 pb-5">
+            <div>
+              <p className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-blue-600"><MaterialIcon name="view_in_ar" /> KHÁM PHÁ KHÔNG GIAN LỊCH SỬ</p>
+              <h2 id="portal-model-heading" className="mt-2 text-xl font-black text-slate-900 sm:text-2xl">Địa đạo 3D · {eraTimelineLabel(era)}</h2>
+              <p className="mt-2 text-sm text-slate-500">Kéo để xoay · Chạm vào hầm hoặc nhãn để xem chi tiết.</p>
+            </div>
+
+          </header>
+          <div className="relative h-[78dvh] min-h-[480px] sm:h-[85dvh] sm:min-h-[620px] overflow-hidden rounded-2xl bg-gradient-to-b from-sky-900 via-sky-800 to-amber-900">{render3D(era)}</div>
+          <p className="mt-3 text-xs leading-relaxed text-slate-500">Mô hình minh họa cấu trúc địa đạo theo thời kỳ đang chọn. Dùng thanh thời gian để tiếp tục hành trình.</p>
+        </section>}
+
         {/* Bảng số liệu (màn hình nhỏ hơn 1280px) */}
         {insightsOpen && !isWide && (
-          <div className="absolute inset-0 z-40 flex flex-col justify-end bg-black/60 backdrop-blur-sm lg:items-end lg:justify-stretch" onClick={() => setInsightsOpen(false)}>
+          <div className="relative z-20 mx-4 mb-5 sm:mx-5">
             <div
-              className="tp-scroll max-h-[85%] overflow-y-auto rounded-t-3xl border-t border-blue-100 bg-white p-4 pb-6 lg:h-full lg:max-h-none lg:w-[340px] lg:rounded-none lg:border-l lg:border-t-0"
+              className="rounded-3xl border border-blue-100 bg-white p-4 sm:p-6"
               style={{ animation: 'tp-enter 300ms ease-out both' }}
               onClick={(e) => e.stopPropagation()}
             >
@@ -399,7 +428,7 @@ export function TimelineExplorerView({
                   <MaterialIcon name="close" className="text-xl" />
                 </button>
               </div>
-              <EraInsights key={era} story={story} onOpen3D={onSwitchTo3D} xuaNay={panelXuaNay} />
+              <EraInsights key={era} story={story} />
             </div>
           </div>
         )}

@@ -48,7 +48,7 @@
       "destination": "https://histar-a08c1.firebaseapp.com/__/auth/:path*"
     },
     {
-      "source": "/((?!assets/|films/|audio/|images/|artifacts/cu-chi/|badges/|brand/|depth/|huy/|mascot/|media/|minigames/|favicon\\.svg$|icons\\.svg$|mascot-2\\.png$|vendor/ar/|ar\\.html$|ar-runtime\\.js$|ar-catalog\\.json$).*)",
+      "source": "/((?!assets/|videos/cu-chi/|films/|audio/|images/|artifacts/cu-chi/|badges/|brand/|depth/|huy/|mascot/|media/|minigames/|favicon\\.svg$|icons\\.svg$|mascot-2\\.png$|vendor/ar/|ar\\.html$|ar-runtime\\.js$|ar-catalog\\.json$).*)",
       "destination": "/index.html"
     }
   ],

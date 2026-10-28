@@ -47,7 +47,9 @@
     "export:portal-narration": "node --experimental-strip-types scripts/export-portal-narration.mjs",
     "test:portal:recorded:browser": "node scripts/portal-recorded-smoke.mjs",
     "test:teacher": "node --experimental-strip-types --test scripts/teacher-workspace.test.mjs",
-    "test:profile": "node --experimental-strip-types --test scripts/profile-workspace.test.mjs",
+    "test:packages": "node --experimental-strip-types --test scripts/package-entitlements.test.mjs",
+    "test:explore-videos": "node --experimental-strip-types --test scripts/explore-videos.test.mjs",
+    "test:profile": "node --experimental-strip-types --test scripts/profile-workspace.test.mjs scripts/profile-details.test.mjs",
     "test:profile:browser": "node scripts/profile-fullstack-smoke.mjs",
     "test:settings": "node --experimental-strip-types --test scripts/settings-workspace.test.mjs",
     "test:settings:browser": "node scripts/settings-fullstack-smoke.mjs"

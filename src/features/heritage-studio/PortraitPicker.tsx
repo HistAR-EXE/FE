@@ -25,7 +25,11 @@ export function PortraitPicker({ file, cameraLocked = false, onChange }: Portrai
     setThumbnail(url)
     return () => URL.revokeObjectURL(url)
   }, [file])
-  const accept = (event: React.ChangeEvent<HTMLInputElement>) => onChange(event.target.files?.[0] ?? null)
+  const accept = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = event.target.files?.[0]
+    if (selected) onChange(selected)
+    event.target.value = ''
+  }
   return (
     <div className="grid min-w-0 gap-sm" data-testid="portrait-picker">
       <div className={`grid min-w-0 gap-sm ${mobilePointer ? 'grid-cols-2' : 'grid-cols-1'}`}>

@@ -40,6 +40,7 @@ const navItems: readonly NavigationItem[] = [
 
     { to: '/quests', icon: 'assignment', label: 'Nhiệm vụ', prefixes: ['/quests'], modes: 'both' as const },
     { to: '/artifacts', icon: 'history_edu', label: 'Bảo tàng 3D', prefixes: ['/artifacts'], modes: 'both' as const },
+    { to: '/photo-frame', icon: 'photo_camera', label: 'Ảnh & chia sẻ', prefixes: ['/photo-frame'], modes: 'both' as const },
     { to: '/leaderboard', icon: 'leaderboard', label: 'Bảng xếp hạng', prefixes: ['/leaderboard'], modes: 'both' as const },
     {
         to: '/admin/content',
@@ -58,6 +59,7 @@ const mobileNavItems: readonly NavigationItem[] = [
     { to: '/ar-experience', icon: 'view_in_ar', label: 'AR', modes: 'both' as const, prefixes: ['/ar-experience', '/scan'] },
     { to: '/quests', icon: 'assignment', label: 'Nhiệm vụ', modes: 'both' as const, prefixes: ['/quests'] },
     { to: '/artifacts', icon: 'history_edu', label: 'Bảo tàng', modes: 'both' as const, prefixes: ['/artifacts'] },
+    { to: '/photo-frame', icon: 'photo_camera', label: 'Ảnh & chia sẻ', modes: 'both' as const, prefixes: ['/photo-frame'] },
 ] as const
 
 function withChatPath(items: readonly NavigationItem[], chatPath: string): NavigationItem[] {

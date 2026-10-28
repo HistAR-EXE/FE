@@ -23,7 +23,9 @@ async function copyTree(directory) {
     } else if (item.isFile()) {
       const rel = relative(source, from).replaceAll('\\', '/');
       if (migrated.has(rel)) continue;
-      if (mediaExtension.test(rel)) throw new Error(`Public media is missing from R2 manifest: ${rel}`);
+      // Reviewed Cu Chi videos ship with the app until a CDN migration is explicitly performed.
+      const bundledExploreVideo = /^videos\/cu-chi\/[a-z-]+\.(mp4|jpg)$/.test(rel);
+      if (mediaExtension.test(rel) && !bundledExploreVideo) throw new Error(`Public media is missing from R2 manifest: ${rel}`);
       const to = join(stage, rel);
       await mkdir(resolve(to, '..'), { recursive: true });
       await cp(from, to);

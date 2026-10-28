@@ -89,7 +89,7 @@ export const AboutPage = () => {
                             <br />
                             lịch sử bằng
                             <br />
-                            <span>những kết nối mới.</span>
+                            <span>những kết nối mới</span>
                         </h1>
                         <p className="pub-lead">
                             HistAR Team kết hợp phát triển phần mềm, thiết kế và nội dung để xây dựng TimeLens — nền tảng khám phá di sản qua không gian 360°, mô hình 3D, câu chuyện lịch sử và tương tác AI.
@@ -166,9 +166,9 @@ export const AboutPage = () => {
                             <span className="tl-live-dot" /> 01 / Điều chúng tôi tin
                         </p>
                         <h2 id="mission-title" className="tl-section-title">
-                            Gìn giữ giá trị di sản.
+                            Gìn giữ giá trị di sản
                             <br />
-                            <span>Khơi mở cảm hứng hôm nay.</span>
+                            <span>Khơi mở cảm hứng hôm nay</span>
                         </h2>
                     </div>
 
@@ -186,7 +186,7 @@ export const AboutPage = () => {
                         <div className="about-mission-copy">
                             <article>
                                 <span>01.1 / Tầm nhìn</span>
-                                <h3>Đưa di sản đến gần hơn.</h3>
+                                <h3>Đưa di sản đến gần hơn</h3>
                                 <p>
                                     Hướng tới một nền tảng giáo dục di sản dễ tiếp cận, nơi công
                                     nghệ giúp người học tìm thấy sự gắn kết với lịch sử và văn hóa
@@ -195,7 +195,7 @@ export const AboutPage = () => {
                             </article>
                             <article>
                                 <span>01.2 / Sứ mệnh</span>
-                                <h3>Mở thêm cách để hiểu lịch sử.</h3>
+                                <h3>Mở thêm cách để hiểu lịch sử</h3>
                                 <p>
                                     HistAR xây dựng TimeLens để kết nối tư liệu, hình ảnh và trải
                                     nghiệm tương tác; khơi gợi sự tò mò trước, rồi khuyến khích
@@ -206,8 +206,8 @@ export const AboutPage = () => {
                     </div>
 
                     <div className="about-philosophy">
-                        <div className="about-philosophy-brand"><img src="/brand/histar-about-v1.png" alt="HistAR Team" width="1920" height="1920" loading="lazy" /><span>DI SẢN · GIÁO DỤC · CÔNG NGHỆ</span></div>
-                        <div><p className="tl-eyebrow">TRIẾT LÝ SÁNG LẬP</p><h3>Công nghệ mở lối.<br /><em>Sự thấu hiểu tạo giá trị.</em></h3><p>TimeLens không chỉ trình bày thông tin lịch sử. Chúng tôi muốn biến việc tìm hiểu di sản thành một trải nghiệm có thể quan sát, đặt câu hỏi và chủ động khám phá — từ lớp học đến điểm tham quan.</p><p>Mỗi lựa chọn về nội dung, thiết kế và kỹ thuật cần giúp người dùng hiểu câu chuyện rõ hơn, đồng thời phù hợp với điều kiện sử dụng và vận hành thực tế.</p></div>
+                        <div className="about-philosophy-brand"><img src="/brand/histar-about-v1.png" alt="HistAR Team" width="1920" height="1920" loading="lazy" /><span>DI SẢN - GIÁO DỤC - CÔNG NGHỆ</span></div>
+                        <div><p className="tl-eyebrow">TRIẾT LÝ SÁNG LẬP</p><h3>Công nghệ mở lối<br /><em>Sự thấu hiểu tạo giá trị</em></h3><p>TimeLens không chỉ trình bày thông tin lịch sử. Chúng tôi muốn biến việc tìm hiểu di sản thành một trải nghiệm có thể quan sát, đặt câu hỏi và chủ động khám phá — từ lớp học đến điểm tham quan.</p><p>Mỗi lựa chọn về nội dung, thiết kế và kỹ thuật cần giúp người dùng hiểu câu chuyện rõ hơn, đồng thời phù hợp với điều kiện sử dụng và vận hành thực tế.</p></div>
                     </div>
                     <div className="about-values-heading"><p className="tl-eyebrow">GIÁ TRỊ CỐT LÕI</p><h3>Những nguyên tắc dẫn dắt cách chúng tôi xây dựng.</h3></div>
                     <div className="about-values">
@@ -442,7 +442,7 @@ export const AboutPage = () => {
                         <h2 id="pilot-title" className="tl-section-title">
                             Đất Thép Củ Chi
                             <br />
-                            <em>Câu chuyện đầu tiên.</em>
+                            <em>Câu chuyện đầu tiên</em>
                         </h2>
                         <p className="pub-lead">
                             Từ không gian dưới lòng đất đến những câu chuyện về cuộc sống và ý

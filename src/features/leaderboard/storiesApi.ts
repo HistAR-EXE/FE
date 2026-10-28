@@ -19,7 +19,7 @@ export async function loadHonorsStories(groupId?: string | null): Promise<Honors
   }))
   if (!data || !text(data.userId) || !date(data.updatedAt)
     || !Array.isArray(data.timeline) || data.timeline.length > 80
-    || !Array.isArray(data.paths) || data.paths.length > 4
+    || !Array.isArray(data.paths) || data.paths.length > 5
     || !Array.isArray(data.spotlights) || data.spotlights.length > 4
     || !data.timeline.every(item => item && text(item.id) && text(item.title) && text(item.description)
       && (item.occurredAt === null || date(item.occurredAt)) && safeHref(item.href) && text(item.icon))

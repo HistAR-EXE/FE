@@ -1,0 +1,39 @@
+.explore-wait {
+    position: relative;
+    isolation: isolate;
+    min-height: 100vh;
+    padding: clamp(32px, 7vh, 80px) 24px 40px;
+    overflow: hidden;
+    color: #0f1b33;
+    background: radial-gradient(ellipse at 20% 10%, #dcecff, transparent 55%), radial-gradient(ellipse at 90% 70%, #fff2c3, transparent 45%), #f2f7ff;
+    font-family: 'Be Vietnam Pro', sans-serif;
+}
+.explore-wait__grid { position: absolute; inset: 0; z-index: -1; background-image: linear-gradient(#0275fb06 1px, transparent 1px), linear-gradient(90deg, #0275fb06 1px, transparent 1px); background-size: 44px 44px; }
+.explore-wait__panel { max-width: 660px; margin: auto; padding: 28px clamp(20px, 4vw, 48px) 32px; border: 1px solid #cdddF5; border-radius: 32px; background: #ffffffed; text-align: center; box-shadow: 0 20px 65px #0275fb0c; }
+.explore-wait__scene { position: relative; display: grid; place-items: center; width: 210px; height: 190px; margin: 0 auto 20px; }
+.explore-wait__scene img { position: relative; width: 150px; height: 160px; object-fit: contain; filter: drop-shadow(0 10px 16px #0275fb25); animation: explore-float 3.6s ease-in-out infinite; }
+.explore-wait__orbit { position: absolute; width: 170px; height: 170px; border: 1px dashed #0275fb40; border-radius: 50%; background: radial-gradient(circle, #fff2c3 0, #eaf3ff 60%, transparent 70%); }
+.explore-wait__badge { position: absolute; bottom: 2px; right: 15px; display: grid; place-items: center; width: 42px; height: 42px; background: #fdc908; border: 4px solid white; border-radius: 14px; color: #0353b8; transform: rotate(8deg); }
+.explore-wait__spark { position: absolute; color: #fdc908; font-size: 28px; animation: explore-float 3s ease-in-out infinite; }
+.explore-wait__spark--one { left: 0; top: 30px; }
+.explore-wait__spark--two { right: 2px; top: 9px; font-size: 20px; animation-delay: -.9s; }
+.explore-wait__eyebrow { color: #0275fb; font-size: 10px; font-weight: 900; letter-spacing: .13em; }
+.explore-wait__message h1 { margin: 12px 0; font-size: clamp(22px, 2.5vw, 30px); font-weight: 900; line-height: 1.35; letter-spacing: -.03em; }
+.explore-wait__message p { margin: 0 auto; max-width: 440px; color: #64748b; font-size: 14px; line-height: 1.8; }
+.explore-wait__track { height: 6px; max-width: 320px; margin: 24px auto 18px; overflow: hidden; border-radius: 99px; background: #eaf3ff; }
+.explore-wait__track span { display: block; width: 42%; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #0275fb, #fdc908); animation: explore-travel 1.8s ease-in-out infinite; }
+.explore-wait__chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.explore-wait__chips > span { display: inline-flex; align-items: center; gap: 5px; padding: 6px 10px; border: 1px solid #dceaff; border-radius: 99px; font-size: 11px; font-weight: 700; color: #0353b8; background: #f8fbff; }
+.explore-wait__chips .material-symbols-outlined { font-size: 16px; }
+.explore-wait__retry { display: inline-flex; align-items: center; gap: 8px; margin-top: 24px; padding: 12px 24px; border: 0; border-radius: 14px; background: #0275fb; color: white; font: inherit; font-weight: 800; cursor: pointer; }
+.explore-wait__retry:focus-visible { outline: 3px solid #fdc908; outline-offset: 4px; }
+.explore-wait__preview { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; max-width: 900px; margin: 24px auto 0; }
+.explore-wait__placeholder { display: flex; align-items: center; gap: 12px; border: 1px solid #dceaff; border-radius: 18px; padding: 20px; background: #ffffffb0; }
+.explore-wait__placeholder i { width: 38px; height: 38px; flex-shrink: 0; border-radius: 12px; background: #dceaff; }
+.explore-wait__placeholder div { flex: 1; }
+.explore-wait__placeholder span { display: block; height: 8px; margin: 7px 0; border-radius: 9px; background: #e4edfa; }
+.explore-wait__placeholder span + span { width: 65%; }
+@keyframes explore-float { 50% { transform: translateY(-7px); } }
+@keyframes explore-travel { from { transform: translateX(-105%); } to { transform: translateX(345%); } }
+@media (max-width: 600px) { .explore-wait { padding: 24px 16px; } .explore-wait__preview { grid-template-columns: 1fr; gap: 10px; } .explore-wait__placeholder { padding: 14px; } }
+@media (prefers-reduced-motion: reduce) { .explore-wait * { animation: none !important; } }

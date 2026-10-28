@@ -9,6 +9,7 @@ import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { useAuth } from '../shared/auth/useAuth'
 import { hasPremiumAccess } from '../shared/access/contentAccess'
 import { exportOriginalPhoto } from '../features/photo-flow/originalPhoto'
+import { photoUploadError } from '../features/photo-flow/photoUpload'
 import { resolveMediaUrl } from '../shared/config/env'
 import {
     DEFAULT_LOW_LIGHT,
@@ -28,6 +29,7 @@ import { PhotoSharePanel } from '../features/photo-flow/PhotoSharePanel'
 import { photoFlowPath, photoFlowStage } from '../features/photo-flow/photoFlow'
 import '../features/profile/profile.css'
 import '../features/photo-flow/photo-flow.css'
+import '../features/photo-flow/photo-studio.css'
 import type {
     HeritageStudioHandle,
     HeritagePreviewState,
@@ -197,7 +199,7 @@ export function PhotoFramePage() {
                         <h1>
                             Ảnh &amp; chia sẻ<span>.</span>
                         </h1>
-                        <p>Tạo một khoảnh khắc. Kể câu chuyện của riêng bạn.</p>
+                        <p>Một bức ảnh của bạn. Một câu chuyện di sản để kể.</p>
                     </div>
                     <Link className="pf-button secondary" to="/profile">
                         Ảnh đã lưu <MaterialIcon name="photo_library" />
@@ -319,7 +321,13 @@ function PhotoFrameEditor({
         setHeritagePreview(state)
         setHasHeritagePreview(state.ready)
     }, [])
+    const [photoInputError, setPhotoInputError] = useState('')
+    const [draggingPhoto, setDraggingPhoto] = useState(false)
     const updatePortraitFile = useCallback((next: File | null) => {
+        if (!next) return
+        const error = photoUploadError(next)
+        if (error) { setPhotoInputError(error); return }
+        setPhotoInputError('')
         setFile(next)
         setQueued(false)
         setHasHeritagePreview(false)
@@ -760,7 +768,15 @@ function PhotoFrameEditor({
             {/* =================================================================== */}
             {/* SÂN KHẤU XEM TRƯỚC ẢNH (PREVIEW STAGE)                              */}
             {/* =================================================================== */}
-            <section className="relative flex h-[50dvh] min-h-[340px] min-w-0 items-center justify-center overflow-hidden rounded-[28px] border-2 border-[#0275FB]/20 bg-gradient-to-b from-[#FFFFFF] via-[#F4F9FF] to-[#EAF3FF] px-4 pb-24 pt-6 shadow-[0_18px_48px_rgba(2,117,251,0.08)] lg:sticky lg:top-5 lg:h-[calc(100dvh-2.5rem)] lg:min-h-[640px] lg:px-6 lg:pb-24">
+            <section
+                data-dragging={draggingPhoto || undefined}
+                onDragOver={(event) => { event.preventDefault(); if (!reviewing && !uploading && !queued) setDraggingPhoto(true) }}
+                onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDraggingPhoto(false) }}
+                onDrop={(event) => { event.preventDefault(); setDraggingPhoto(false); if (!reviewing && !uploading && !queued) updatePortraitFile(event.dataTransfer.files[0] ?? null) }}
+                className="ph-live-stage relative flex h-[50dvh] min-h-[340px] min-w-0 items-center justify-center overflow-hidden rounded-[28px] border-2 border-[#0275FB]/20 bg-gradient-to-b from-[#FFFFFF] via-[#F4F9FF] to-[#EAF3FF] px-4 pb-24 pt-6 shadow-[0_18px_48px_rgba(2,117,251,0.08)] lg:sticky lg:top-5 lg:h-[calc(100dvh-2.5rem)] lg:min-h-[640px] lg:px-6 lg:pb-24">
+                <div className="ph-stage-heading"><span><MaterialIcon name="visibility" /> XEM TRƯỚC</span><span>{photoMode === 'heritage' || variant === 'story' ? 'Dọc · 9:16' : 'Vuông · 1:1'}</span></div>
+                {draggingPhoto && <div className="ph-drop-overlay"><MaterialIcon name="add_photo_alternate" /><strong>Thả ảnh vào đây để bắt đầu</strong></div>}
+                {photoInputError && <p className="ph-upload-error" role="alert">{photoInputError}</p>}
                 <div
                     className="pointer-events-none absolute inset-0 bg-[radial-gradient(#0275FB_1px,transparent_1px)] [background-size:24px_24px] opacity-[0.07]"
                     aria-hidden="true"
@@ -832,14 +848,14 @@ function PhotoFrameEditor({
                     Chọn ảnh của bạn để bắt đầu
                   </span>
                                     <span className="text-xs font-medium leading-relaxed text-[#475569] max-w-[220px]">
-                    Ảnh đã chọn sẽ hiện ở đây để bạn xem trước.
+                    Chọn hoặc kéo thả ảnh vào đây. JPG, PNG, WebP · tối đa 20 MB.
                   </span>
                                     <span className="mt-1 inline-flex items-center justify-center whitespace-nowrap rounded-xl border border-white/40 bg-gradient-to-r from-[#0353B8] via-[#0275FB] to-[#014296] px-4 py-2.5 text-xs font-black text-white shadow-[0_8px_20px_rgba(2,117,251,0.3)] transition-transform hover:scale-[1.02]">
                     Chọn ảnh từ thiết bị
                   </span>
                                     <input
                                         type="file"
-                                        accept="image/*"
+                                        accept="image/jpeg,image/png,image/webp"
                                         aria-label="Chọn ảnh cho khung kỷ niệm"
                                         onChange={(event) =>
                                             updatePortraitFile(event.target.files?.[0] ?? null)
@@ -861,10 +877,10 @@ function PhotoFrameEditor({
                     </p>
                 )}
 
-                <div className="absolute bottom-[4.75rem] left-1/2 z-20 w-max max-w-[calc(100%-1.5rem)] -translate-x-1/2 rounded-full border border-[#FDC908]/75 bg-[#0F1B33]/85 px-3.5 py-1 text-center text-[11px] font-black uppercase tracking-wider text-[#FFF2C3] shadow-md backdrop-blur-md">
+                <div className="absolute bottom-[4.75rem] left-1/2 z-20 w-max max-w-[calc(100%-1.5rem)] -translate-x-1/2 rounded-full border border-[#FDC908]/75 bg-[#0F1B33]/85 px-3.5 py-1 text-center text-[11px] font-black uppercase tracking-wider text-[#FFF2C3] shadow-md backdrop-blur-md" role="status">
                     {photoMode === 'heritage'
                         ? '✦ Xem trước vai hóa thân · 1968'
-                        : '✦ Ảnh kỷ niệm tại trạm'}
+                        : !file ? '✦ Chọn ảnh để mở bước xem lại' : '✦ Ảnh kỷ niệm của bạn'}
                 </div>
 
                 <button
@@ -914,7 +930,7 @@ function PhotoFrameEditor({
                 </div>
 
                 {/* Nội dung cuộn bên trong Bảng điều khiển */}
-                <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-5 sm:p-6">
+                <div className="ph-controls-scroll flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto p-5 sm:p-6" tabIndex={0} role="region" aria-label="Chọn ảnh và điều chỉnh ảnh">
                     {/* Chế độ ảnh */}
                     <div className="flex min-w-0 flex-col gap-2.5">
                         <h3 className="text-xs font-black uppercase tracking-wider text-[#0275FB]">
@@ -939,7 +955,8 @@ function PhotoFrameEditor({
                                         : 'border-slate-200 bg-[#F8FAFC] text-[#475569] hover:border-[#0275FB]/40 hover:bg-white'
                                 }`}
                             >
-                                Ảnh gốc
+                                <MaterialIcon name="photo_camera" className="ph-mode-icon" /> Ảnh gốc
+                                <small className="ph-mode-hint">Giữ trọn khoảnh khắc</small>
                             </button>
                             <button
                                 type="button"
@@ -957,7 +974,8 @@ function PhotoFrameEditor({
                                         : 'border-slate-200 bg-[#F8FAFC] text-[#475569] hover:border-[#FDC908] hover:bg-white'
                                 }`}
                             >
-                                Hóa thân 1968
+                                <MaterialIcon name="auto_awesome" className="ph-mode-icon" /> Hóa thân 1968
+                                <small className="ph-mode-hint">Thử một vai di sản</small>
                             </button>
                         </div>
                         {!hasHeritageRoles && (
@@ -1045,12 +1063,12 @@ function PhotoFrameEditor({
 
                     {/* Khối tinh chỉnh Ánh sáng */}
                     <div className="flex flex-col gap-3.5 rounded-2xl border border-[#0275FB]/15 bg-[#F8FBFF] p-4">
-                        <h3 className="text-xs font-black uppercase tracking-wider text-[#0275FB]">
+                        <div className="flex items-center justify-between gap-2"><h3 className="text-xs font-black uppercase tracking-wider text-[#0275FB]">
                             Ánh sáng
-                        </h3>
+                        </h3><button type="button" className="ph-reset-light" onClick={() => setLowLight({ ...DEFAULT_LOW_LIGHT })}>Đặt lại</button></div>
                         <label className="flex flex-col gap-2 text-xs sm:text-sm font-semibold text-[#334155]">
               <span className="flex items-center justify-between">
-                <span>Tăng sáng (đường cong gamma)</span>
+                <span>Tăng sáng ảnh</span>
                 <span className="rounded-full bg-[#EAF3FF] px-2.5 py-0.5 text-xs font-black text-[#0275FB]">
                   {Math.round(lowLight.boost * 100)}%
                 </span>

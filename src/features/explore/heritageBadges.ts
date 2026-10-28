@@ -80,13 +80,13 @@ export const HERITAGE_BADGES: HeritageBadge[] = [
     {
         id: 'badge_scholar_mind',
         name: 'Tinh Hoa Bác Học',
-        rankLabel: 'Khảo Cứu · 6 Hồ Sơ',
+        rankLabel: 'Khảo Cứu · Hồ Sơ & Video',
         image: '/badges/badge-3.png',
         badgeNumber: 3,
         description:
             'Trí tuệ tỏa sáng giữa những thẻ bài thành cổ và cổ vật, tôn vinh nhà nghiên cứu đã vượt qua toàn bộ thử thách kiến thức tại Củ Chi.',
-        requirementText: 'Hoàn thành trắc nghiệm & lĩnh hội trọn vẹn 6/6 Hồ sơ Đất Thép',
-        xpRequired: 615,
+        requirementText: 'Hoàn thành 6/6 Hồ sơ Đất Thép và 7/7 thử thách video (xem ≥90% và trả lời đúng)',
+        xpRequired: 825,
     },
     {
         id: 'badge_time_envoy',
@@ -107,8 +107,8 @@ export const HERITAGE_BADGES: HeritageBadge[] = [
         badgeNumber: 10,
         description:
             'Mắt thần công nghệ phóng chiếu luồng sáng xuyên qua lớp đất đá, mở ra cánh cổng di sản rực rỡ — danh hiệu tối thượng của TimeLens.',
-        requirementText: 'Đạt 1.130 XP & hoàn tất mọi trải nghiệm (360°, Sa bàn, AI, Cổ vật)',
-        xpRequired: 1130,
+        requirementText: 'Đạt 1.340 XP, hoàn thành 7/7 thử thách video và các trải nghiệm 360°, Sa bàn, AI, Cổ vật',
+        xpRequired: 1340,
     },
 ]
 

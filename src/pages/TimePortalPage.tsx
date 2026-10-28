@@ -5,6 +5,7 @@ import { EraLockedModal } from '../components/monetization/EraLockedModal'
 import { usePortalAudio } from '../features/time-portal/timeline/usePortalAudio'
 import { PortalAudioControls } from '../features/time-portal/timeline/PortalAudioControls'
 import { TimelineExplorerView } from '../features/time-portal/TimelineExplorerView'
+import { PortalModelViewport } from '../features/time-portal/PortalModelViewport'
 import { XuaNayView } from '../features/time-portal/xuaNay/XuaNayView'
 import { isXuaNaySpot, type XuaNaySpotId } from '../features/time-portal/xuaNay/xuaNayData'
 import { ERA_VALUES, resolvePortalEra, type EraValue } from '../features/time-portal/eraLabels'
@@ -138,10 +139,19 @@ export function TimePortalPage() {
             initialMomentId={returnMoment}
             isPremium={premium}
             onPremiumRequired={requirePremium}
-            onSwitchTo3D={() => {
-              setReturnMoment(undefined)
-              setMode('3d')
-            }}
+            render3D={(selectedEra) => (
+              <PortalModelViewport>
+              <Suspense fallback={<div className="flex h-full items-center justify-center text-sm text-white" role="status">Đang chuẩn bị mô hình địa đạo 3D…</div>}>
+                <TunnelScene3D
+                  era={selectedEra}
+                  focusTarget={focusTarget}
+                  locationId={locationId ?? CU_CHI_LOCATION_ID}
+                  onHeritageRoleOpen={(stationCode) => navigate(buildHeritageRolePhotoFramePath(stationCode as HeritageStationCode, locationId ?? CU_CHI_LOCATION_ID))}
+                  className="h-full"
+                />
+              </Suspense>
+              </PortalModelViewport>
+            )}
             onOpenXuaNay={(next, momentId) => {
               setSpot(next)
               setReturnMoment(momentId)

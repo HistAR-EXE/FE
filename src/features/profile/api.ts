@@ -1,3 +1,4 @@
+import type { ProfileDetails } from './profileDetails'
 // src/features/profile/api.ts
 import { getData, getListData, getPageData, httpClient } from '../../shared/api/httpClient'
 import type { QuestProgress } from '../gamification/api'
@@ -8,7 +9,7 @@ export type ActiveVisitSite = {
   expiresAt: string
 }
 
-export type ProfileMe = {
+export type ProfileMe = ProfileDetails & {
   id: string
   email: string
   displayName: string
@@ -97,7 +98,12 @@ export const profileApi = {
   badgesCatalog: () => getListData<BadgeCatalogItem>(httpClient.get('/api/badges')),
   myBadges: () => getListData<MyBadge>(httpClient.get('/api/me/badges')),
   passport: () => getData<PassportMe>(httpClient.get('/api/me/passport')),
-  updateMe: (payload: { displayName?: string; avatarUrl?: string | null; city?: string | null }) =>
+  updateMe: (payload: ProfileDetails & { displayName?: string; avatarUrl?: string | null; city?: string | null }) =>
     getData<ProfileMe>(httpClient.patch('/api/profile/me', payload)),
+  uploadAvatar: (file: File) => {
+    const form = new FormData()
+    form.append('file', file)
+    return getData<{ avatarUrl: string }>(httpClient.post('/api/profile/me/avatar', form, { headers: { 'Content-Type': 'multipart/form-data' } }))
+  },
   upgrade: () => getData<ProfileMe>(httpClient.post('/api/profile/upgrade')),
 }
