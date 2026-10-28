@@ -2,17 +2,19 @@
 // "Hành trình 6 trạm": lộ trình tại di tích, mỗi trạm một chương truyện.
 // Khi nhận nhiệm vụ Tại di tích, truyền `questSteps` vào để panel này là giao diện DUY NHẤT của nhiệm vụ
 // (gộp tiến độ check-in + nội dung truyện), thay cho danh sách "Các bước" — tránh hai khối nói cùng một việc.
-// Chương mở theo thứ tự check-in (quét QR), từ chương 3 cần Premium. Ở nhà vẫn xem trước được từng trạm.
+// Chương mở theo thứ tự check-in (quét QR), từ chương 3 cần Premium. Trạm premium bị chặn hoàn toàn từ ngoài.
 
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { MaterialIcon } from '../../components/ui/MaterialIcon'
 import { emitEvent } from '../../lib/pilotEvents'
 import { useAuth } from '../../shared/auth/useAuth'
+import { canAccessStoryPremium } from '../../shared/access/contentAccess'
 import { getSeededMinigameId } from '../minigames/api'
 import { shortChapterTitle, stationMedia, storySeriesName } from '../stations/stationMedia'
 import { stationDisplayName } from '../stations/StationNextSteps'
 import type { QuestV2Step } from '../gamification/questsV2Api'
+import { PremiumContentModal } from '../../components/monetization/PremiumContentModal'
 import { storyApi, type StoryChapter } from './api'
 
 type StoryJourneyPanelProps = {
@@ -37,6 +39,7 @@ function doneStations(steps: QuestV2Step[] | undefined): Set<string> {
 export function StoryJourneyPanel({ siteCode, className = '', questSteps, pointsReward }: StoryJourneyPanelProps) {
     const { isAuthenticated, user } = useAuth()
     const [chapters, setChapters] = useState<StoryChapter[]>([])
+    const [premiumPopupChapter, setPremiumPopupChapter] = useState<StoryChapter | null>(null)
 
     useEffect(() => {
         let cancelled = false
@@ -110,7 +113,7 @@ export function StoryJourneyPanel({ siteCode, className = '', questSteps, points
                     />
                 </div>
                 <p className="mt-3 text-xs font-semibold text-white/85">
-                    Quét QR khi đứng ở trạm để tính bước và mở chương truyện. Chương 1–2 miễn phí, từ chương 3 cần Premium hoặc Journey Pass. Ở nhà vẫn xem trước được từng trạm.
+                    Quét QR khi đứng ở trạm để tính bước và mở chương truyện. Chương 1–2 miễn phí, từ chương 3 cần Premium hoặc Journey Pass.
                 </p>
             </header>
 
@@ -126,6 +129,7 @@ export function StoryJourneyPanel({ siteCode, className = '', questSteps, points
                         : null
                     // Ở chế độ nhiệm vụ, trạng thái của dòng là "đã check-in hay chưa" — đó cũng là bước của nhiệm vụ.
                     const done = isDone(chapter)
+                    const isPremiumBlocked = chapter.requiresPremium && !chapter.completed && !canAccessStoryPremium(user, siteCode)
                     // Chương mở tuần tự: cần check-in ở trạm của chương liền trước. Nói rõ tên trạm đó cho đỡ mơ hồ.
                     const previous = chapters.find((c) => c.chapterNumber === chapter.chapterNumber - 1)
                     const previousLabel = previous
@@ -139,6 +143,30 @@ export function StoryJourneyPanel({ siteCode, className = '', questSteps, points
                             data-done={done ? 'true' : 'false'}
                             className={`flex gap-4 p-4 sm:p-5 ${done ? 'bg-emerald-50/60' : ''}`}
                         >
+                            {isPremiumBlocked ? (
+                            <button
+                                type="button"
+                                onClick={() => setPremiumPopupChapter(chapter)}
+                                className="relative h-20 w-24 shrink-0 overflow-hidden rounded-2xl bg-[#DCEBFF] sm:h-24 sm:w-32 cursor-pointer"
+                                aria-label={`Trạm ${stationName} — cần Premium`}
+                            >
+                                {media ? (
+                                    <img
+                                        src={media.hero}
+                                        alt=""
+                                        loading="lazy"
+                                        className="h-full w-full object-cover brightness-50 saturate-0"
+                                    />
+                                ) : (
+                                    <span className="flex h-full w-full items-center justify-center text-[#0275FB]">
+                                        <MaterialIcon name="location_on" className="text-3xl" />
+                                    </span>
+                                )}
+                                <span className="absolute left-1.5 top-1.5 flex h-7 min-w-7 items-center justify-center rounded-full px-1.5 text-xs font-black bg-[#0F1B33]/80 text-white">
+                                    <MaterialIcon name="lock" className="text-sm" />
+                                </span>
+                            </button>
+                            ) : (
                             <Link
                                 to={stationHref}
                                 className="relative h-20 w-24 shrink-0 overflow-hidden rounded-2xl bg-[#DCEBFF] sm:h-24 sm:w-32"
@@ -164,6 +192,7 @@ export function StoryJourneyPanel({ siteCode, className = '', questSteps, points
                                     {locked ? <MaterialIcon name="lock" className="text-sm" /> : chapter.chapterNumber}
                                 </span>
                             </Link>
+                            )}
 
                             <div className="min-w-0 flex-1">
                                 <div className="flex flex-wrap items-center gap-1.5">
@@ -181,7 +210,10 @@ export function StoryJourneyPanel({ siteCode, className = '', questSteps, points
                                         </span>
                                     )}
                                 </div>
-                                <h4 className={`mt-1.5 text-base font-black leading-snug sm:text-lg ${locked ? 'text-slate-500' : 'text-[#0F1B33]'}`}>
+                                <h4
+                                    className={`mt-1.5 text-base font-black leading-snug sm:text-lg ${locked ? 'text-slate-500' : 'text-[#0F1B33]'} ${isPremiumBlocked ? 'cursor-pointer' : ''}`}
+                                    onClick={isPremiumBlocked ? () => setPremiumPopupChapter(chapter) : undefined}
+                                >
                                     {shortChapterTitle(chapter.title)}
                                 </h4>
 
@@ -192,12 +224,27 @@ export function StoryJourneyPanel({ siteCode, className = '', questSteps, points
                                         {previousLabel ? `trạm ${previousLabel}` : 'ở trạm trước'}, ngay tại di tích.
                                     </p>
                                 )}
-                                {locked && chapter.lockReason !== 'SEQUENCE' && (
-                                    <p className="mt-1 text-sm text-slate-500">Nội dung chương này dành cho Premium hoặc Journey Pass.</p>
+                                {isPremiumBlocked && (
+                                    <p
+                                        className="mt-1 cursor-pointer text-sm text-slate-500"
+                                        onClick={() => setPremiumPopupChapter(chapter)}
+                                    >
+                                        Nội dung chương này dành cho Premium hoặc Journey Pass. <span className="font-bold text-[#0275FB]">Nâng cấp →</span>
+                                    </p>
                                 )}
 
                                 <div className="mt-3 flex flex-wrap gap-2">
                                     {!done && (
+                                        isPremiumBlocked ? (
+                                        <button
+                                            type="button"
+                                            onClick={() => setPremiumPopupChapter(chapter)}
+                                            data-testid={`story-chapter-${chapter.chapterNumber}-scan`}
+                                            className="inline-flex min-h-[36px] items-center gap-1.5 rounded-xl bg-[#FDC908] px-3 text-xs font-black text-[#0F1B33] cursor-pointer"
+                                        >
+                                            <MaterialIcon name="qr_code_scanner" className="text-sm" /> Quét QR tại trạm
+                                        </button>
+                                        ) : (
                                         <Link
                                             to={scanHref}
                                             data-testid={`story-chapter-${chapter.chapterNumber}-scan`}
@@ -205,7 +252,18 @@ export function StoryJourneyPanel({ siteCode, className = '', questSteps, points
                                         >
                                             <MaterialIcon name="qr_code_scanner" className="text-sm" /> Quét QR tại trạm
                                         </Link>
+                                        )
                                     )}
+                                    {isPremiumBlocked ? (
+                                    <button
+                                        type="button"
+                                        onClick={() => setPremiumPopupChapter(chapter)}
+                                        data-testid={`story-chapter-${chapter.chapterNumber}-media`}
+                                        className="inline-flex min-h-[36px] items-center gap-1.5 rounded-xl bg-[#0275FB] px-3 text-xs font-black text-white cursor-pointer"
+                                    >
+                                        <MaterialIcon name="photo_library" className="text-sm" /> Xem trước trạm
+                                    </button>
+                                    ) : (
                                     <Link
                                         to={stationHref}
                                         data-testid={`story-chapter-${chapter.chapterNumber}-media`}
@@ -213,6 +271,7 @@ export function StoryJourneyPanel({ siteCode, className = '', questSteps, points
                                     >
                                         <MaterialIcon name="photo_library" className="text-sm" /> {locked ? 'Xem trước trạm' : 'Xem trạm'}
                                     </Link>
+                                    )}
                                     {done && gameHref && (
                                         <Link
                                             to={gameHref}
@@ -245,6 +304,13 @@ export function StoryJourneyPanel({ siteCode, className = '', questSteps, points
                     )
                 })}
             </ol>
+            <PremiumContentModal
+                open={premiumPopupChapter !== null}
+                onClose={() => setPremiumPopupChapter(null)}
+                title={premiumPopupChapter ? `Chương ${premiumPopupChapter.chapterNumber}: ${shortChapterTitle(premiumPopupChapter.title)}` : 'Nội dung Premium'}
+                next={premiumPopupChapter ? `/sites/${encodeURIComponent(siteCode)}/stations/${encodeURIComponent(premiumPopupChapter.stationCode)}/media` : undefined}
+                authenticated={isAuthenticated}
+            />
             <footer className="border-t border-slate-100 bg-[#F7FAFF] px-5 py-3 text-xs text-slate-500 sm:px-6">
                 Chưa tới di tích?{' '}
                 <Link to={pricingHref} className="font-black text-[#0275FB]">

@@ -25,8 +25,11 @@ test('every inventoried public media key has a same-origin R2 rewrite', () => {
   }
 });
 
-test('mixed assets keep their model and Vite build paths outside media rewrites', () => {
-  for (const path of ['/assets/artifacts/hat.glb', '/assets/hat.mind', '/assets/index-a1b2c3.js', '/artifacts', '/artifacts/artifact-id']) {
+test('runtime models use R2 while Vite chunks and app routes stay local', () => {
+  for (const path of ['/assets/hat.glb', '/assets/artifacts/rifle.glb', '/assets/artifacts/compass.glb', '/vendor/mediapipe/vision_wasm_internal.wasm', '/vendor/ar/aframe-1.5.0.min.js']) {
+    assert.ok(rewriteFor(path), path);
+  }
+  for (const path of ['/assets/hat.mind', '/assets/index-a1b2c3.js', '/artifacts', '/artifacts/artifact-id']) {
     assert.equal(rewriteFor(path), undefined, path);
   }
   const spaFallback = config.rewrites.at(-1).source;

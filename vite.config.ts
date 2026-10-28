@@ -43,7 +43,11 @@ export default defineConfig(({ command }) => ({
           /^\/(audio|images|badges|brand|depth|huy|mascot|minigames)\//,
           /^\/artifacts\/cu-chi\//,
           /^\/assets\/ar-targets\//,
-          /^\/assets\/artifacts\/[^/]+\.webp$/,
+          /^\/assets\/artifacts\//,
+          /^\/assets\/(cu-chi-targets|targets)\.mind$/,
+          /^\/assets\/(hat|lamp|lamp-web)\.glb$/,
+          /^\/vendor\//,
+          /^\/ar\/cu-chi\//,
           /^\/assets\/target-(hat|lamp)\.png$/,
           /^\/(favicon\.svg|icons\.svg|mascot-2\.png)$/,
           /^\/__\/auth\//,
@@ -83,6 +87,15 @@ export default defineConfig(({ command }) => ({
         target: 'https://media.timelens.asia', changeOrigin: true, secure: true,
       },
       '^/artifacts/cu-chi/': {
+        target: 'https://media.timelens.asia', changeOrigin: true, secure: true,
+      },
+      '^/vendor/': {
+        target: 'https://media.timelens.asia', changeOrigin: true, secure: true,
+      },
+      '^/ar/cu-chi/(posters|targets)/': {
+        target: 'https://media.timelens.asia', changeOrigin: true, secure: true,
+      },
+      '^/assets/(artifacts/|cu-chi-targets\\.mind$|targets\\.mind$|hat\\.glb$|lamp(-web)?\\.glb$)': {
         target: 'https://media.timelens.asia', changeOrigin: true, secure: true,
       },
       '^/assets/(ar-targets/|artifacts/[^/]+\\.webp$|target-(hat|lamp)\\.png$)': {

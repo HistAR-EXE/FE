@@ -104,6 +104,9 @@ export function TimelineExplorerView({
   onChapterFinished,
 }: Props) {
   const [era, setEra] = useState<EraValue>(initialEra ?? 1948)
+  useEffect(() => {
+    if (!isPremium && era !== 2026) { setEra(2026); onEraChange?.(2026) }
+  }, [isPremium, era, onEraChange])
   const [index, setIndex] = useState(() => {
     const i = initialMomentId ? ERA_STORIES[initialEra ?? 1948].moments.findIndex((m) => m.id === initialMomentId) : -1
     return Math.max(0, i)

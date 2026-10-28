@@ -228,8 +228,6 @@ export const billingApi = {
     contactEmail: string
     organizationId?: string
   }) => getData<OrgBillingStatus>(httpClient.post('/api/billing/org/subscribe', payload)),
-  createOrgTrial: (payload: { orgName: string; contactEmail?: string }) =>
-    getData<OrgBillingStatus>(httpClient.post('/api/billing/org/trial', payload)),
   getStatus: () => getData<BillingStatus>(httpClient.get('/api/billing/status')),
   getPublicPricing: () => getData<BillingPublicPricing>(httpClient.get('/api/billing/public-pricing')),
   getMeQuota: () => getData<MeQuotaStatus>(httpClient.get('/api/me/quota')),

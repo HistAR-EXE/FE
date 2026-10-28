@@ -4,6 +4,8 @@ import { lazy, Suspense, useCallback, useRef, useState } from 'react'
 import { AppLayout } from '../components/layout/AppLayout'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { useAuth } from '../shared/auth/useAuth'
+import { hasPremiumAccess } from '../shared/access/contentAccess'
+import { PremiumContentModal } from '../components/monetization/PremiumContentModal'
 import { useVisitSessionForLocation } from '../features/visit/VisitSessionProvider'
 import { CU_CHI_LOCATION_ID } from '../shared/config/constants'
 import { exploreApi } from '../features/explore/api'
@@ -29,7 +31,8 @@ export function BattleDioramaPage() {
     const activeLocationId = locationId ?? CU_CHI_LOCATION_ID
 
     // Vẫn giữ lại tracking session người dùng truy cập địa điểm
-    const { isAuthenticated } = useAuth()
+    const { isAuthenticated, user } = useAuth()
+    const [premiumOpen, setPremiumOpen] = useState(false)
     useVisitSessionForLocation(activeLocationId, isAuthenticated)
     const [saveFailed, setSaveFailed] = useState(false)
     const saving = useRef(false)
@@ -70,6 +73,7 @@ export function BattleDioramaPage() {
             mobileTitle="Tái hiện lịch sử"
             showCta={false}
         >
+            <PremiumContentModal open={premiumOpen} onClose={() => setPremiumOpen(false)} title="Phim 3D cần Premium" authenticated={isAuthenticated} />
             <main className="flex-1 flex flex-col relative mt-14 md:mt-0 h-[calc(100dvh-3.5rem)] md:h-screen pb-16 md:pb-0 bg-[#f2f7ff] text-[#0F1B33] font-sans selection:bg-[#FDC908] selection:text-[#0F1B33]">
                 <style>
                     {`
@@ -251,7 +255,7 @@ export function BattleDioramaPage() {
                                     {/* THẺ 01: SA BÀN TƯƠNG TÁC */}
                                     <button
                                         type="button"
-                                        onClick={() => setExperience('diorama')}
+                                        onClick={() => isAuthenticated ? setExperience('diorama') : setPremiumOpen(true)}
                                         className="group rounded-[2.2rem] border-2 border-[#0275FB]/18 hover:border-[#FDC908] bg-white p-4 sm:p-5 text-left transition-all duration-300 shadow-[0_18px_45px_rgba(2,117,251,0.08)] hover:shadow-[0_22px_55px_rgba(2,117,251,0.16)] hover:-translate-y-1 flex flex-col justify-between cursor-pointer focus-visible:outline-4 focus-visible:outline-[#0275FB]"
                                     >
                                         <div>
@@ -317,7 +321,7 @@ export function BattleDioramaPage() {
                                     {/* THẺ 02: PHIM 3D CỦ CHI */}
                                     <button
                                         type="button"
-                                        onClick={() => setExperience('film')}
+                                        onClick={() => isAuthenticated && hasPremiumAccess(user) ? setExperience('film') : setPremiumOpen(true)}
                                         className="group rounded-[2.2rem] border-2 border-[#0275FB]/18 hover:border-[#FDC908] bg-white p-4 sm:p-5 text-left transition-all duration-300 shadow-[0_18px_45px_rgba(2,117,251,0.08)] hover:shadow-[0_22px_55px_rgba(2,117,251,0.16)] hover:-translate-y-1 flex flex-col justify-between cursor-pointer focus-visible:outline-4 focus-visible:outline-[#0275FB]"
                                     >
                                         <div>
@@ -354,6 +358,7 @@ export function BattleDioramaPage() {
                                                 <h2 className="text-2xl sm:text-3xl font-black text-[#0F1B33] group-hover:text-[#0275FB] transition-colors tracking-tight">
                                                     Phim 3D Củ Chi
                                                 </h2>
+                                                {!hasPremiumAccess(user) && <span className="mt-2 inline-flex rounded-full bg-slate-900 px-3 py-1 text-xs font-bold text-white">Premium · Xem trước</span>}
                                                 <p className="mt-2.5 text-sm sm:text-[15px] font-medium leading-relaxed text-slate-600">
                                                     Phim 1080p được nâng cấp từ nguồn 720p. Xem theo nhịp của bạn, tiếp tục bất cứ lúc nào.
                                                 </p>

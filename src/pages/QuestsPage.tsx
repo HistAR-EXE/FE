@@ -30,6 +30,7 @@ import { useUserProgress } from '../shared/context/UserProgressProvider'
 import { pickQuestCover } from '../shared/media/resolveMedia'
 import { SmartImage } from '../shared/ui/SmartImage'
 import { useToast } from '../shared/ui/toast/useToast'
+import { PremiumContentModal } from '../components/monetization/PremiumContentModal'
 
 const TRACKS: { id: QuestTrack; icon: string; hint: string }[] = [
     { id: 'ONLINE', icon: 'public', hint: 'Làm từ xa: tour 360°, Cổng thời gian, Chrono' },
@@ -50,6 +51,7 @@ export function QuestsPage() {
     const [quests, setQuests] = useState<QuestV2Card[]>([])
     const [loading, setLoading] = useState(true)
     const [startingId, setStartingId] = useState<string | null>(null)
+    const [premiumQuest, setPremiumQuest] = useState<QuestV2Card | null>(null)
     const reconciledFor = useRef<string | null>(null)
 
     useEffect(() => {
@@ -263,6 +265,7 @@ export function QuestsPage() {
                                     locationLocked={locationLocked}
                                     starting={startingId === quest.id}
                                     onStart={handleStart}
+                                    onPremiumLock={setPremiumQuest}
                                 />
                             ))}
                         </div>
@@ -298,6 +301,13 @@ export function QuestsPage() {
                     )}
                 </main>
             </div>
+            <PremiumContentModal
+                open={premiumQuest !== null}
+                onClose={() => setPremiumQuest(null)}
+                title={premiumQuest?.title ?? 'Nội dung Premium'}
+                next={premiumQuest ? `/quests/${premiumQuest.id}` : undefined}
+                authenticated={isAuthenticated}
+            />
         </AppLayout>
     )
 }
@@ -309,6 +319,7 @@ function QuestCard({
     locationLocked,
     starting,
     onStart,
+    onPremiumLock,
 }: {
     quest: QuestV2Card
     index: number
@@ -316,6 +327,7 @@ function QuestCard({
     locationLocked: boolean
     starting: boolean
     onStart: (quest: QuestV2Card, event: MouseEvent) => void
+    onPremiumLock: (quest: QuestV2Card) => void
 }) {
     const cover = pickQuestCover(quest.coverImage, locationCover, quest.title, index)
     const { requiredDone, requiredTotal, optionalTotal } = quest.progress
@@ -334,11 +346,14 @@ function QuestCard({
         )
     }
 
+    const isPremiumLocked = quest.status === 'LOCKED' && quest.lock?.reason === 'PREMIUM'
+
     return (
         <Link
             to={`/quests/${quest.id}`}
             data-testid="quest-card"
             data-status={quest.status}
+            onClick={isPremiumLocked ? (e) => { e.preventDefault(); onPremiumLock(quest) } : undefined}
             className={`group relative flex flex-col overflow-hidden rounded-3xl border-2 bg-white shadow-[0_18px_44px_-16px_rgba(2,117,251,0.35)] transition-all duration-300 hover:-translate-y-1 hover:border-[#0275FB]/60 sm:flex-row ${
                 quest.status === 'COMPLETED' ? 'border-emerald-300' : quest.status === 'LOCKED' ? 'border-slate-200' : 'border-[#0275FB]/15'
             }`}

@@ -7,12 +7,14 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { EraLockedModal } from '../components/monetization/EraLockedModal'
+import { PremiumContentModal } from '../components/monetization/PremiumContentModal'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { analyticsApi } from '../features/analytics/api'
 import { collectionApi } from '../features/collection/api'
 import { ArtifactViewerModal } from '../features/gamification/ArtifactViewerModal'
 import { gamificationApi, type NarrativeInvestigation } from '../features/gamification/api'
-import { DISCOVERY_RECORDED_EVENT } from '../features/gamification/discoveryRouting'
+import { DISCOVERY_RECORDED_EVENT, discoveryDeepLink } from '../features/gamification/discoveryRouting'
+import { questLockKeyLabel } from '../features/gamification/questLockPresentation'
 import { NarrativeInvestigationBoard } from '../features/gamification/NarrativeInvestigationBoard'
 import { QuestBackdrop } from '../features/gamification/QuestBackdrop'
 import { questStepAction } from '../features/gamification/questStepAction'
@@ -59,6 +61,7 @@ export function QuestDetailPage() {
     const [starting, setStarting] = useState(false)
     const [artifactStep, setArtifactStep] = useState<QuestV2Step | null>(null)
     const [paywallEra, setPaywallEra] = useState<number | null>(null)
+    const [premiumPopup, setPremiumPopup] = useState(false)
     const [callOffer, setCallOffer] = useState(false)
     const reconciled = useRef(false)
 
@@ -227,6 +230,10 @@ export function QuestDetailPage() {
             )
     }
 
+    useEffect(() => {
+        if (quest?.lock?.reason === 'PREMIUM') setPremiumPopup(true)
+    }, [quest?.lock?.reason])
+
     if (questId && !isDevMinigameQuestVisible(questId)) {
         return (
             <AppLayout hideTopNav mobileBackTo="/quests" mobileTitle="Nhiệm vụ">
@@ -281,6 +288,7 @@ export function QuestDetailPage() {
                                 starting={starting}
                                 onStart={startQuest}
                                 onOpenArtifact={setArtifactStep}
+                                onPremiumPopup={() => setPremiumPopup(true)}
                             />
 
                             {callOffer && (
@@ -376,6 +384,14 @@ export function QuestDetailPage() {
                 <ArtifactViewerModal step={artifactStep} locationId={locationId} onClose={() => setArtifactStep(null)} />
             )}
 
+            <PremiumContentModal
+                open={premiumPopup}
+                onClose={() => setPremiumPopup(false)}
+                title={quest?.title ?? 'Nội dung Premium'}
+                next={`/quests/${questId ?? ''}`}
+                authenticated={isAuthenticated}
+            />
+
             <EraLockedModal
                 open={paywallEra !== null}
                 onClose={() => setPaywallEra(null)}
@@ -434,6 +450,7 @@ function StatusPanel({
     starting,
     onStart,
     onOpenArtifact,
+    onPremiumPopup,
 }: {
     quest: QuestV2Card
     steps: QuestV2Step[]
@@ -441,6 +458,7 @@ function StatusPanel({
     starting: boolean
     onStart: () => void
     onOpenArtifact: (step: QuestV2Step) => void
+    onPremiumPopup?: () => void
 }) {
     const { requiredDone, requiredTotal, optionalDone, optionalTotal } = quest.progress
     const pct = requiredTotal > 0 ? Math.round((requiredDone / requiredTotal) * 100) : 0
@@ -454,6 +472,7 @@ function StatusPanel({
                         <MaterialIcon name="lock" className="text-xl text-[#0275FB]" /> Nhiệm vụ đang khóa
                     </p>
                     <p className="mt-1 text-sm text-slate-600">{quest.lock.message}</p>
+                    {quest.lock.reason === 'PREMIUM' && <button type="button" onClick={() => onPremiumPopup?.()} className="mt-3 inline-flex min-h-[44px] items-center rounded-xl bg-blue-600 px-4 text-sm font-bold text-white">Xem gói Premium</button>}
                     {quest.lock.afterQuest && (
                         <Link
                             to={`/quests/${quest.lock.afterQuest.id}`}
@@ -463,14 +482,23 @@ function StatusPanel({
                         </Link>
                     )}
                     {quest.lock.keys.length > 0 && (
-                        <ul className="mt-3 space-y-1.5">
-                            {quest.lock.keys.map((key) => (
-                                <li key={key.key} className="flex items-center gap-2 text-sm">
+                        <ul className="mt-3 space-y-3">
+                            {quest.lock.keys.map((key, index) => (
+                                <li key={key.key} className="flex items-start gap-3 text-sm">
                                     <MaterialIcon
                                         name={key.done ? 'check_circle' : 'radio_button_unchecked'}
-                                        className={`text-lg ${key.done ? 'text-emerald-600' : 'text-slate-400'}`}
+                                        className={`mt-0.5 text-lg ${key.done ? 'text-emerald-600' : 'text-slate-400'}`}
                                     />
-                                    <span className={key.done ? 'text-slate-500 line-through' : 'font-bold text-[#0F1B33]'}>{key.label}</span>
+                                    <div className="min-w-0">
+                                        <p className={key.done ? 'text-slate-500 line-through' : 'font-bold text-[#0F1B33]'}>
+                                            {questLockKeyLabel(key, quest.locationId, index)}
+                                        </p>
+                                        {!key.done && key.key.startsWith('scene:') && (
+                                            <Link to={discoveryDeepLink(quest.locationId, key.key)} className="mt-1 inline-flex min-h-8 items-center gap-1 font-bold text-[#0275FB] hover:underline">
+                                                Khám phá cảnh 360° <MaterialIcon name="arrow_forward" className="text-base" />
+                                            </Link>
+                                        )}
+                                    </div>
                                 </li>
                             ))}
                         </ul>

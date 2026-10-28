@@ -3,6 +3,10 @@ import { useState, useMemo, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom' // THÊM DÒNG NÀY
 import { AppLayout } from '../components/layout/AppLayout'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
+import { useAuth } from '../shared/auth/useAuth'
+import { hasPremiumAccess } from '../shared/access/contentAccess'
+import { isFreeArtifact } from '../shared/access/premiumContentPolicy'
+import { PremiumContentModal } from '../components/monetization/PremiumContentModal'
 
 type CategoryFilter = 'all' | ArtifactCategory
 
@@ -319,6 +323,8 @@ function SketchfabLazyThumbnail({ sketchfabId, alt }: { sketchfabId: string; alt
 
 export function ArtifactsPage() {
     const navigate = useNavigate()
+    const { isAuthenticated, user } = useAuth()
+    const [lockedArtifact, setLockedArtifact] = useState<string | null>(null)
     const artifacts = MOCK_ARTIFACTS
 
     // 1. Đọc trạng thái bộ lọc từ bộ nhớ tạm (nếu có)
@@ -344,6 +350,10 @@ export function ArtifactsPage() {
 
     // 4. Hàm "chốt" vị trí cuộn chuột ngay trước khi nhảy sang trang Chi tiết
     const handleViewDetail = (id: string) => {
+        if (!isAuthenticated || (!hasPremiumAccess(user) && !isFreeArtifact(id))) {
+            setLockedArtifact(id)
+            return
+        }
         sessionStorage.setItem('artifact_scroll', window.scrollY.toString())
         navigate(`/artifacts/${id}`)
     }
@@ -362,6 +372,7 @@ export function ArtifactsPage() {
             mobileBackTo="/explore"
             mobileTitle="Bảo Tàng 3D"
         >
+            <PremiumContentModal open={lockedArtifact !== null} onClose={() => setLockedArtifact(null)} title="Mô hình này cần Premium" next={lockedArtifact ? `/artifacts/${lockedArtifact}` : undefined} authenticated={isAuthenticated} />
             <main className="bg-[#f2f7ff] bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-50/80 via-[#f2f7ff] to-blue-100/40 min-h-screen w-full text-slate-800 font-sans selection:bg-[#FDC908] selection:text-[#0275FB] pb-24 relative overflow-hidden">
 
                 {/* ========================================= */}
@@ -550,6 +561,7 @@ export function ArtifactsPage() {
                                                 <MaterialIcon name={catInfo.icon} className={`text-[12px] ${catInfo.color}`} />
                                                 <span className={`text-[10px] font-black uppercase tracking-widest ${catInfo.color}`}>{catInfo.label}</span>
                                             </div>
+                                            {!hasPremiumAccess(user) && !isFreeArtifact(artifact.id) && <span className="absolute right-4 top-4 z-20 rounded-full bg-slate-900 px-3 py-1 text-xs font-bold text-white">Premium · Xem trước</span>}
 
                                             <SketchfabLazyThumbnail sketchfabId={artifact.sketchfabId} alt={artifact.name} />
                                             <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />

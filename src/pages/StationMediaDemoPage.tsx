@@ -1,18 +1,16 @@
 // src/pages/StationMediaDemoPage.tsx
 // Trang một trạm trong "Hành trình 6 trạm": ảnh thật, thuyết minh đọc to, chương truyện, mini-game trạm.
-// Video/soundscape trên R2 chỉ hiện khi tệp thực sự có; chưa có thì ẩn, không báo lỗi.
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
+import { PremiumContentModal } from '../components/monetization/PremiumContentModal'
 import { QuestBackLink } from '../features/gamification/QuestBackLink'
 import { getPublishedRoleTemplates } from '../features/heritage-studio/roleTemplates'
 import type { HeritageStationCode } from '../features/heritage-studio/types'
 import { ReportContentButton } from '../components/feedback/ReportContentModal'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { QuestBackdrop } from '../features/gamification/QuestBackdrop'
-import { SoundscapePlayer } from '../features/media/SoundscapePlayer'
-import { VerticalVideoPlayer } from '../features/media/VerticalVideoPlayer'
 import { getSeededMinigameId, minigameApi, type Minigame } from '../features/minigames/api'
 import { stationsApi, type StationInfo } from '../features/stations/api'
 import { shortChapterTitle, stationMedia, type StationPhoto } from '../features/stations/stationMedia'
@@ -25,58 +23,50 @@ import {
 } from '../features/stations/stationRoutes'
 import { storyApi, type StoryChapter } from '../features/story/api'
 import { useNarration } from '../features/time-portal/timeline/useNarration'
-import { emitEvent } from '../lib/pilotEvents'
 import { setActiveStationCode } from '../lib/stationSafety'
 import { isPilotSiteCode, locationIdFromSiteCode } from '../shared/config/constants'
-import { resolveMediaUrl } from '../shared/config/env'
+import { canAccessStoryPremium } from '../shared/access/contentAccess'
+import { useAuth } from '../shared/auth/useAuth'
 
 const STATIONS = ['ST01', 'ST02', 'ST03', 'ST04', 'ST05', 'ST06'] as const
 const ONSITE_QUEST_BY_SITE: Record<string, string> = { 'cu-chi': '33333333-3333-3333-3333-333333333340' }
 
-function stationMediaPath(site: string, stationCode: string, kind: 'video' | 'audio') {
-    return `/media/${site}/${stationCode.toLowerCase()}/${kind}/${kind === 'video' ? 'intro.mp4' : 'ambient.mp3'}`
-}
-
-/** Tệp media có thật không (tránh hiện trình phát báo lỗi 404). Trang HTML trả về thay tệp cũng tính là không có. */
-function useMediaAvailable(path: string) {
-    const [available, setAvailable] = useState(false)
-    useEffect(() => {
-        let cancelled = false
-        setAvailable(false)
-        const url = resolveMediaUrl(path)
-        if (!url) return
-        fetch(url, { method: 'HEAD' })
-            .then((response) => {
-                const type = response.headers.get('content-type') ?? ''
-                if (!cancelled) setAvailable(response.ok && !type.includes('text/html'))
-            })
-            .catch(() => undefined)
-        return () => {
-            cancelled = true
-        }
-    }, [path])
-    return available
-}
-
 export function StationMediaDemoPage() {
+    const { code = 'ST01', siteCode: siteParam } = useParams<{ code: string; siteCode?: string }>()
+    const { user, isAuthenticated, isLoading } = useAuth()
+    const [popupOpen, setPopupOpen] = useState(true)
+    const site = isPilotSiteCode(siteParam) ? siteParam.trim().toLowerCase() : 'cu-chi'
+    const stationCode = code.toUpperCase()
+    const premiumStation = site === 'cu-chi' && /^ST0[3-6]$/.test(stationCode)
+    useEffect(() => setPopupOpen(true), [site, stationCode])
+    if (isLoading) return <AppLayout hideTopNav><main className="p-8" role="status">Đang kiểm tra quyền truy cập…</main></AppLayout>
+    if (premiumStation && !canAccessStoryPremium(user, site)) {
+        return <AppLayout hideTopNav className="min-h-screen !bg-[#DCEBFF] text-[#0F1B33]">
+            <main className="mx-auto max-w-2xl space-y-5 p-6">
+                <QuestBackLink to="/quests" label="Hành trình 6 trạm" />
+                <h1 className="text-2xl font-black">Trạm {stationCode} cần nâng cấp</h1>
+                <p>Bạn có thể xem trạm ST01–ST02 miễn phí. Nâng cấp để vào nội dung trạm này.</p>
+                <button type="button" onClick={() => setPopupOpen(true)} className="rounded-xl bg-[#0275FB] px-5 py-3 font-bold text-white">Xem gói Premium</button>
+            </main>
+            <PremiumContentModal open={popupOpen} onClose={() => setPopupOpen(false)} title={`Trạm ${stationCode}`} authenticated={isAuthenticated} />
+        </AppLayout>
+    }
+    return <StationMediaContent />
+}
+
+function StationMediaContent() {
     const { code = 'ST01', siteCode: siteParam } = useParams<{ code: string; siteCode?: string }>()
     const site = isPilotSiteCode(siteParam) ? siteParam.trim().toLowerCase() : 'cu-chi'
     const stationCode = STATIONS.includes(code.toUpperCase() as (typeof STATIONS)[number]) ? code.toUpperCase() : 'ST01'
     const locationId = locationIdFromSiteCode(site)
     const media = stationMedia(site, stationCode)
     const fallbackName = stationDisplayName(stationCode, site)
-    const videoPath = stationMediaPath(site, stationCode, 'video')
-    const audioPath = stationMediaPath(site, stationCode, 'audio')
-    const hasVideo = useMediaAvailable(videoPath)
-    const hasAudio = useMediaAvailable(audioPath)
     const [station, setStation] = useState<StationInfo | null>(null)
     const [chapter, setChapter] = useState<StoryChapter | null>(null)
     const [storyLoading, setStoryLoading] = useState(true)
     const [storyError, setStoryError] = useState(false)
     const [viewer, setViewer] = useState<number | null>(null)
     const [stationGame, setStationGame] = useState<Minigame | null>(null)
-    const videoEmitted = useRef(false)
-    const audioEmitted = useRef(false)
     const narration = useNarration()
     const gameId = getSeededMinigameId(site, stationCode)
     const onsiteQuest = ONSITE_QUEST_BY_SITE[site]
@@ -90,8 +80,6 @@ export function StationMediaDemoPage() {
 
     useEffect(() => {
         setActiveStationCode(stationCode)
-        videoEmitted.current = false
-        audioEmitted.current = false
         setViewer(null)
         setStation(null)
         setChapter(null)
@@ -327,35 +315,6 @@ export function StationMediaDemoPage() {
                                     </span>
                                 </Link>
                             </div>
-
-                            {(hasVideo || hasAudio) && (
-                                <section id="media" className="scroll-mt-24 space-y-4 rounded-3xl bg-[#0F1B33] p-4 text-white">
-                                    {hasVideo && (
-                                        <div
-                                            onPlayCapture={() => {
-                                                if (videoEmitted.current) return
-                                                videoEmitted.current = true
-                                                emitEvent('video_played', { stationCode, payload: { path: videoPath, siteCode: site } })
-                                            }}
-                                        >
-                                            <p className="mb-2 text-[11px] font-black uppercase tracking-widest text-[#FDC908]">Video giới thiệu</p>
-                                            <VerticalVideoPlayer data-testid="station-intro-video" src={videoPath} poster={hero} />
-                                        </div>
-                                    )}
-                                    {hasAudio && (
-                                        <div
-                                            onPlayCapture={() => {
-                                                if (audioEmitted.current) return
-                                                audioEmitted.current = true
-                                                emitEvent('audio_played', { stationCode, payload: { path: audioPath, siteCode: site } })
-                                            }}
-                                        >
-                                            <p className="mb-2 text-[11px] font-black uppercase tracking-widest text-[#FDC908]">Âm thanh trạm</p>
-                                            <SoundscapePlayer src={audioPath} />
-                                        </div>
-                                    )}
-                                </section>
-                            )}
 
                             <div className="px-1">
                                 <ReportContentButton stationCode={stationCode} context={`station:${site}`} />

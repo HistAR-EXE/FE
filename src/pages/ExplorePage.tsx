@@ -21,6 +21,9 @@ import mascotImg from '../assets/mascot.png'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { buildChatPath, saveSelectedLocationId } from '../features/chat/chatRoute'
 import { useAppMode } from '../shared/context/useAppMode'
+import { hasPremiumAccess } from '../shared/access/contentAccess'
+import { isPremiumDiscovery } from '../shared/access/premiumContentPolicy'
+import { PremiumContentModal } from '../components/monetization/PremiumContentModal'
 
 // ============================================================================
 // PHẦN 1: KIỂU DỮ LIỆU ĐỒNG BỘ BACKEND, KHO SỬ LIỆU & HUY HIỆU
@@ -665,6 +668,11 @@ export function ExplorePage() {
     }, [mode, setMode])
     const { showToast } = useToast()
     const [profile, setProfile] = useState<ProfileMe | null>(null)
+    const [premiumOpen, setPremiumOpen] = useState(false)
+    const canOpenDiscovery = (key: string) => {
+        if (isPremiumDiscovery(key) && !hasPremiumAccess(user)) { setPremiumOpen(true); return false }
+        return true
+    }
 
     const [categoryFilter, setCategoryFilter] = useState<StoryCategory>('all')
     const [activeDepthId, setActiveDepthId] = useState<string>(
@@ -869,6 +877,7 @@ export function ExplorePage() {
     // Không cập nhật thành tích trước khi server chấm và commit thành công.
     const recordDiscoveryKey = useCallback(
         async (key: string, actionLabel: string, answer?: number): Promise<boolean | null> => {
+            if (isPremiumDiscovery(key) && !hasPremiumAccess(user)) { setPremiumOpen(true); return null }
             if (!userId || submittingRef.current) return null
             const owner = userId
             const epoch = accountEpoch.current
@@ -900,7 +909,7 @@ export function ExplorePage() {
                     setIsSubmitting(false)
                 }
             }
-        }, [userId, applySnapshot, showToast]
+        }, [userId, user, applySnapshot, showToast]
     )
 
     // =========================================================================
@@ -999,6 +1008,7 @@ export function ExplorePage() {
     }
 
     const handleOpenCipher = (cipher: CipherItem) => {
+        if (!canOpenDiscovery(cipher.discoveryKey)) return
         ++cipherViewVersion.current
         setActiveCipher(cipher)
         setSelectedCipherOption(null)
@@ -1014,6 +1024,7 @@ export function ExplorePage() {
     }
 
     const handleOpenDossier = (dossier: StoryDossier) => {
+        if (!canOpenDiscovery(dossier.discoveryKey)) return
         ++dossierViewVersion.current
         if (!activeDossier) {
             exploreScrollYRef.current = window.scrollY
@@ -1047,6 +1058,7 @@ export function ExplorePage() {
     }
 
     const handleVerifyClue = (clue: EvidenceClue) => {
+        if (!canOpenDiscovery(clue.discoveryKey)) return
         setActiveClueCode(clue.code)
         if (!unlockedKeys.includes(clue.discoveryKey)) {
             void recordDiscoveryKey(clue.discoveryKey, `Ghi nhận chứng cứ ${clue.code}`)
@@ -1054,6 +1066,7 @@ export function ExplorePage() {
     }
 
     const handleConcludeInvestigation = () => {
+        if (!canOpenDiscovery(CONCLUSION_DISCOVERY_KEY)) return
         if (verifiedClueCodes.length < INVESTIGATION_CLUES.length || investigationConcluded) return
         void recordDiscoveryKey(CONCLUSION_DISCOVERY_KEY, 'Hoàn tất Hồ sơ Điều tra Củ Chi')
     }
@@ -1076,6 +1089,7 @@ export function ExplorePage() {
         } else if (path === 'ciphers' && target) {
             const cipher = SECRET_CIPHERS.find(item => item.discoveryKey === `cipher:${target}`)
             if (!cipher) return
+            if (!canOpenDiscovery(cipher.discoveryKey)) return
             ++cipherViewVersion.current
             setActiveCipher(cipher)
             setSelectedCipherOption(null)
@@ -1083,6 +1097,7 @@ export function ExplorePage() {
         } else if (path === 'dossiers' && target) {
             const dossier = STORY_DOSSIERS.find(item => item.discoveryKey === `dossier:${target}`)
             if (!dossier) return
+            if (!canOpenDiscovery(dossier.discoveryKey)) return
             const archive = document.getElementById('honors-dossiers')
             exploreScrollYRef.current = archive ? archive.getBoundingClientRect().top + window.scrollY : window.scrollY
             ++dossierViewVersion.current
@@ -1093,6 +1108,7 @@ export function ExplorePage() {
         } else if (path === 'evidence' && target && target !== 'conclusion') {
             const clue = INVESTIGATION_CLUES.find(item => item.discoveryKey === `clue:${target}`)
             if (!clue) return
+            if (!canOpenDiscovery(clue.discoveryKey)) return
             setActiveClueCode(clue.code)
         }
         appliedHonorsLink.current = identity
@@ -1363,6 +1379,7 @@ export function ExplorePage() {
 
     return (
         <AppLayout activeBorder="right" mobileTitle="Khám phá">
+            <PremiumContentModal open={premiumOpen} onClose={() => setPremiumOpen(false)} title="Nội dung khám phá này cần Premium" />
             <main className="bg-[#f2f7ff] bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-50/80 via-[#f2f7ff] to-[#FFFBEB]/60 min-h-screen w-full text-[#0F1B33] font-sans selection:bg-[#FDC908] selection:text-[#0F1B33] pb-24 relative overflow-hidden">
 
                 {isSubmitting && <p role="status" className="fixed bottom-5 left-1/2 -translate-x-1/2 z-[60] rounded-full bg-slate-900 text-white px-5 py-3 shadow-lg">Đang xác nhận kết quả…</p>}
@@ -2032,9 +2049,11 @@ export function ExplorePage() {
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             {SECRET_CIPHERS.map((cipher) => {
                                 const isUnlocked = unlockedKeys.includes(cipher.discoveryKey)
+                                const premiumLocked = isPremiumDiscovery(cipher.discoveryKey) && !hasPremiumAccess(user)
                                 return (
                                     <div
                                         key={cipher.id}
+                                        data-premium-locked={premiumLocked}
                                         role="button"
                                         tabIndex={0}
                                         aria-label={`Mở mật thư ${cipher.codeName}`}
@@ -2061,7 +2080,7 @@ export function ExplorePage() {
                                                     }`}
                                                 >
                                                     <MaterialIcon name={isUnlocked ? 'verified' : 'lock'} className="text-xs" />
-                                                    {isUnlocked ? 'ĐÃ GIẢI MẬT' : 'TÀI LIỆU MẬT'}
+                                                    {premiumLocked ? 'PREMIUM · XEM TRƯỚC' : isUnlocked ? 'ĐÃ GIẢI MẬT' : 'TÀI LIỆU MẬT'}
                                                 </span>
                                                 <span className="text-xs font-black text-[#0275FB] bg-[#EAF3FF] px-2.5 py-1 rounded-full">
                                                     +{cipher.xpReward} XP
@@ -2170,10 +2189,12 @@ export function ExplorePage() {
                             <div className="lg:col-span-5 space-y-3">
                                 {INVESTIGATION_CLUES.map((clue) => {
                                     const isVerified = unlockedKeys.includes(clue.discoveryKey)
+                                    const premiumLocked = isPremiumDiscovery(clue.discoveryKey) && !hasPremiumAccess(user)
                                     const isCurrent = activeClueCode === clue.code
                                     return (
                                         <button
                                             key={clue.code}
+                                            data-premium-locked={premiumLocked}
                                             type="button"
                                             onClick={() => handleVerifyClue(clue)}
                                             className={`w-full text-left p-4 rounded-2xl border-2 transition-all cursor-pointer flex items-start justify-between gap-3 ${
@@ -2196,7 +2217,7 @@ export function ExplorePage() {
                                                 </div>
                                                 <div>
                                                     <span className="text-[10px] font-black uppercase tracking-wider text-[#0275FB]">
-                                                        {clue.code} · {clue.typeLabel}
+                                                        {clue.code} · {clue.typeLabel}{premiumLocked ? ' · PREMIUM' : ''}
                                                     </span>
                                                     <h4 className="text-sm font-black text-[#0F1B33] mt-0.5">{clue.title}</h4>
                                                 </div>
@@ -2256,13 +2277,13 @@ export function ExplorePage() {
                                     ) : (
                                         <button
                                             type="button"
-                                            disabled={verifiedClueCodes.length < INVESTIGATION_CLUES.length || isSubmitting}
+                                            disabled={(hasPremiumAccess(user) && verifiedClueCodes.length < INVESTIGATION_CLUES.length) || isSubmitting}
                                             onClick={handleConcludeInvestigation}
                                             className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#FDC908] to-[#FDB900] hover:scale-[1.01] disabled:opacity-45 text-[#0F1B33] font-black text-xs sm:text-sm uppercase tracking-wider transition-all cursor-pointer shadow-md flex items-center justify-center gap-2"
                                         >
                                             <MaterialIcon name="verified" className="text-lg text-[#0275FB]" />
                                             <span>
-                                                {verifiedClueCodes.length < INVESTIGATION_CLUES.length
+                                                {!hasPremiumAccess(user) ? 'Premium · Xem điều kiện mở kết luận' : verifiedClueCodes.length < INVESTIGATION_CLUES.length
                                                     ? `Hãy bấm xem đủ 4 mảnh chứng cứ bên trái (${verifiedClueCodes.length}/4) để mở Kết luận`
                                                     : 'Tổng Hợp 4 Chứng Cứ & Công Bố Kết Luận Điều Tra (+100 XP)'}
                                             </span>
@@ -2315,9 +2336,11 @@ export function ExplorePage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-7">
                             {filteredDossiers.map((dossier) => {
                                 const isDone = unlockedKeys.includes(dossier.discoveryKey)
+                                const premiumLocked = isPremiumDiscovery(dossier.discoveryKey) && !hasPremiumAccess(user)
                                 return (
                                     <article
                                         key={dossier.id}
+                                        data-premium-locked={premiumLocked}
                                         role="button"
                                         tabIndex={0}
                                         aria-label={`Mở hồ sơ ${dossier.code}`}
@@ -2330,6 +2353,7 @@ export function ExplorePage() {
                                         }}
                                         className="bg-white border-2 border-white hover:border-[#0275FB]/50 rounded-[2rem] overflow-hidden shadow-[0_12px_35px_rgba(2,117,251,0.07)] hover:shadow-[0_24px_50px_rgba(2,117,251,0.16)] hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between group cursor-pointer"
                                     >
+                                        {premiumLocked && <span className="bg-slate-900 px-4 py-2 text-xs font-bold text-white">Premium · Xem trước</span>}
                                         <div>
                                             <div className="h-52 relative overflow-hidden bg-slate-100">
                                                 <img

@@ -28,6 +28,15 @@
     { "source": "/mascot/:path*", "destination": "https://media.timelens.asia/mascot/:path*" },
     { "source": "/minigames/:path*", "destination": "https://media.timelens.asia/minigames/:path*" },
     { "source": "/assets/ar-targets/:path*", "destination": "https://media.timelens.asia/assets/ar-targets/:path*" },
+    { "source": "/assets/artifacts/:path*", "destination": "https://media.timelens.asia/assets/artifacts/:path*" },
+    { "source": "/assets/cu-chi-targets.mind", "destination": "https://media.timelens.asia/assets/cu-chi-targets.mind" },
+    { "source": "/assets/targets.mind", "destination": "https://media.timelens.asia/assets/targets.mind" },
+    { "source": "/assets/hat.glb", "destination": "https://media.timelens.asia/assets/hat.glb" },
+    { "source": "/assets/lamp.glb", "destination": "https://media.timelens.asia/assets/lamp.glb" },
+    { "source": "/assets/lamp-web.glb", "destination": "https://media.timelens.asia/assets/lamp-web.glb" },
+    { "source": "/vendor/:path*", "destination": "https://media.timelens.asia/vendor/:path*" },
+    { "source": "/ar/cu-chi/posters/:path*", "destination": "https://media.timelens.asia/ar/cu-chi/posters/:path*" },
+    { "source": "/ar/cu-chi/targets/:path*", "destination": "https://media.timelens.asia/ar/cu-chi/targets/:path*" },
     { "source": "/assets/target-hat.png", "destination": "https://media.timelens.asia/assets/target-hat.png" },
     { "source": "/assets/target-lamp.png", "destination": "https://media.timelens.asia/assets/target-lamp.png" },
     { "source": "/assets/artifacts/binoculars.webp", "destination": "https://media.timelens.asia/assets/artifacts/binoculars.webp" },
@@ -48,7 +57,7 @@
       "destination": "https://histar-a08c1.firebaseapp.com/__/auth/:path*"
     },
     {
-      "source": "/((?!assets/|videos/cu-chi/|films/|audio/|images/|artifacts/cu-chi/|badges/|brand/|depth/|huy/|mascot/|media/|minigames/|favicon\\.svg$|icons\\.svg$|mascot-2\\.png$|vendor/ar/|ar\\.html$|ar-runtime\\.js$|ar-catalog\\.json$).*)",
+      "source": "/((?!assets/|videos/cu-chi/|films/|audio/|images/|artifacts/cu-chi/|badges/|brand/|depth/|huy/|mascot/|media/|minigames/|favicon\\.svg$|icons\\.svg$|mascot-2\\.png$|vendor/|ar/cu-chi/|ar\\.html$|ar-runtime\\.js$|ar-catalog\\.json$).*)",
       "destination": "/index.html"
     }
   ],
