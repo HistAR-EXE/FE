@@ -79,7 +79,7 @@ export function TimePortalPage() {
   /**
    * Ghi nhận bước nhiệm vụ khi người dùng thật sự xem nội dung:
    * `era:<năm>` khi xem hết một chương Dòng thời gian, `xuanay:<điểm>` khi tự kéo so sánh Xưa & Nay.
-   * BE vẫn chặn 1948/1968 nếu tài khoản không có Premium.
+   * BE vẫn chặn 1948/1968/1975 nếu tài khoản không có Premium.
    */
   const recordViewed = useCallback(
     (recordKey: string) => {

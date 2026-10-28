@@ -83,6 +83,7 @@ const LEAD_PACKAGE_OPTIONS = [
   { value: 'TRAVEL', label: 'Du lịch' },
   { value: 'ONE_TIME', label: 'One-time' },
   { value: 'OPEX', label: 'OPEX' },
+  { value: 'UNDECIDED', label: 'Cần tư vấn phương án' },
 ] as const
 
 const INVOICE_PLAN_OPTIONS = [
@@ -1475,7 +1476,7 @@ export function AdminBillingPage() {
                               >
                                 <div className="flex items-center justify-between gap-2">
                                   <span className="rounded bg-surface-container-high px-2 py-0.5 font-code-sm text-code-sm text-on-surface-variant">
-                                    {item.packageType || 'B2B'}
+                                    {LEAD_PACKAGE_OPTIONS.find((option) => option.value === item.packageType)?.label || item.packageType || 'B2B'}
                                   </span>
                                   <span className="font-code-sm text-code-sm text-outline">
                                     {relativeTime(item.createdAt)}
@@ -1486,7 +1487,7 @@ export function AdminBillingPage() {
                                     {item.siteName}
                                   </h3>
                                   <p className="font-body-sm text-body-sm text-outline">
-                                    {item.interestSiteCode || 'Yêu cầu thương mại'}
+                                    {item.organizationName || item.interestSiteCode || 'Yêu cầu thương mại'}
                                   </p>
                                   {item.organizationId && (
                                     <Link
@@ -1513,6 +1514,13 @@ export function AdminBillingPage() {
                                       <span>{item.contactPhone}</span>
                                     </div>
                                   )}
+                                  {item.contactRole && <p className="text-outline">Chức vụ: {item.contactRole}</p>}
+                                </div>
+                                <div className="space-y-1 text-xs text-on-surface-variant">
+                                  {item.siteLocation && <p>Địa điểm: {item.siteLocation}</p>}
+                                  {item.targetStart && <p>Dự kiến: {item.targetStart}</p>}
+                                  {item.availableMaterials && <p className="whitespace-pre-wrap">Tư liệu: {item.availableMaterials}</p>}
+                                  {item.message && <p className="whitespace-pre-wrap">Mục tiêu: {item.message}</p>}
                                 </div>
                                 <label className="block font-body-sm text-body-sm text-on-surface-variant">
                                   Ghi chú quản trị
@@ -1583,6 +1591,13 @@ export function AdminBillingPage() {
                               <p className="text-sm text-on-surface-variant">
                                 {item.contactName} · {item.contactEmail}
                               </p>
+                              {item.organizationName && <p className="text-sm text-on-surface-variant">Đơn vị: {item.organizationName}</p>}
+                              {item.contactRole && <p className="text-sm text-on-surface-variant">Chức vụ: {item.contactRole}</p>}
+                              {item.contactPhone && <p className="text-sm text-on-surface-variant">Điện thoại: {item.contactPhone}</p>}
+                              {item.siteLocation && <p className="text-sm text-on-surface-variant">Địa điểm: {item.siteLocation}</p>}
+                              {item.targetStart && <p className="text-sm text-on-surface-variant">Dự kiến: {item.targetStart}</p>}
+                              {item.availableMaterials && <p className="whitespace-pre-wrap text-sm text-on-surface-variant">Tư liệu: {item.availableMaterials}</p>}
+                              {item.message && <p className="whitespace-pre-wrap text-sm text-on-surface-variant">Mục tiêu: {item.message}</p>}
                               {item.organizationId && (
                                 <Link
                                   to={`/admin/organizations?orgId=${encodeURIComponent(item.organizationId)}`}

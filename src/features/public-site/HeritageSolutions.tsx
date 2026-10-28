@@ -17,7 +17,7 @@ const steps = [
 
 export function HeritageSolutions() {
   return <>
-    <section id="heritage" className="pub-section pub-dark pub-reveal">
+    <section id="heritage" className="pub-section pub-reveal">
       <div className="tl-container heritage-intro">
         <div><p className="tl-eyebrow">03 / GIẢI PHÁP SỐ HÓA DI SẢN · B2B2C</p><h2 className="tl-section-title">Giữ bản sắc điểm đến.<br /><em>Mở thêm cách kể chuyện.</em></h2><p className="pub-lead">Dành cho ban quản lý di tích, bảo tàng và đơn vị du lịch văn hóa muốn kết nối tư liệu, không gian thực và trải nghiệm số trên cùng một hành trình.</p><div className="heritage-actions"><Link to="/checkout/b2b2c" className="tl-button" data-testid="pricing-b2b2c-link">Trao đổi phương án hợp tác <span aria-hidden="true">↗</span></Link><a href="#services" className="heritage-service-link">Khám phá dịch vụ ↓</a></div></div>
         <aside className="heritage-brief"><SolutionIcon name="museum" /><h3>Mỗi di tích, một phạm vi phù hợp.</h3><p>Bắt đầu từ câu chuyện và tư liệu của đơn vị. Lựa chọn các hạng mục cần thiết, thử nghiệm trước khi mở rộng.</p><dl><div><dt>Trọng tâm</dt><dd>Nội dung · Trải nghiệm · Vận hành</dd></div><div><dt>Điểm khởi đầu</dt><dd>Củ Chi là pilot trọng tâm của TimeLens</dd></div><div><dt>Chi phí</dt><dd>Báo giá theo phạm vi được thống nhất</dd></div></dl></aside>

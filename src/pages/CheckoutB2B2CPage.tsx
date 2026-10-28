@@ -8,7 +8,7 @@ import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
 import { useToast } from '../shared/ui/toast/useToast'
 import { images } from '../assets/images'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
-import { CU_CHI_LOCATION_ID, PILOT_SITES } from '../shared/config/constants'
+import { CU_CHI_LOCATION_ID } from '../shared/config/constants'
 
 export function CheckoutB2B2CPage() {
     const navigate = useNavigate()
@@ -16,27 +16,29 @@ export function CheckoutB2B2CPage() {
     const [loading, setLoading] = useState(false)
     const [submitted, setSubmitted] = useState(false)
     const [form, setForm] = useState({
+        organizationName: '',
         siteName: '',
+        siteLocation: '',
         contactName: '',
+        contactRole: '',
         contactEmail: '',
         contactPhone: '',
-        packageType: 'ONE_TIME' as 'ONE_TIME' | 'OPEX',
+        packageType: 'UNDECIDED' as 'ONE_TIME' | 'OPEX' | 'UNDECIDED',
+        availableMaterials: '',
+        targetStart: '',
         message: '',
         website: '',
-        interestSiteCode: 'cu-chi' as
-            | 'cu-chi'
-            | 'hoang-thanh-thang-long'
-            | 'dai-noi-hue',
     })
 
     const onSubmit = async (e: FormEvent) => {
         e.preventDefault()
+        const organizationName = form.organizationName.trim()
         const siteName = form.siteName.trim()
         const contactName = form.contactName.trim()
         const contactEmail = form.contactEmail.trim()
-        if (!siteName || !contactName || !contactEmail) {
+        if (!organizationName || !siteName || !contactName || !contactEmail) {
             showToast({
-                message: 'Vui lòng điền tên di tích, họ tên và email liên hệ.',
+                message: 'Vui lòng điền tên đơn vị, pilot site, người liên hệ và email.',
                 type: 'error',
             })
             return
@@ -54,18 +56,22 @@ export function CheckoutB2B2CPage() {
         try {
             setLoading(true)
             await billingApi.submitB2b2cInquiry({
+                organizationName,
                 siteName,
+                siteLocation: form.siteLocation.trim() || undefined,
                 contactName,
+                contactRole: form.contactRole.trim() || undefined,
                 contactEmail,
                 contactPhone: form.contactPhone.trim() || undefined,
                 packageType: form.packageType,
+                availableMaterials: form.availableMaterials.trim() || undefined,
+                targetStart: form.targetStart.trim() || undefined,
                 message: form.message.trim() || undefined,
                 website: form.website.trim() || undefined,
-                interestSiteCode: form.interestSiteCode,
             })
             setSubmitted(true)
             showToast({
-                message: 'Đã gửi yêu cầu. Đội ngũ sẽ phản hồi trong 02 ngày làm việc.',
+                message: 'Đã gửi yêu cầu. Đội ngũ sẽ liên hệ để tư vấn.',
                 type: 'success',
             })
         } catch (err) {
@@ -80,7 +86,7 @@ export function CheckoutB2B2CPage() {
 
     return (
         <AuthLayout>
-            <div className="relative z-10 flex h-screen flex-col overflow-hidden bg-[#07132C] font-sans text-white selection:bg-[#FDC908] selection:text-[#0F1B33]">
+            <div className="relative z-10 flex min-h-screen flex-col bg-[#07132C] font-sans text-white selection:bg-[#FDC908] selection:text-[#0F1B33]">
                 {/* NỀN HIỆU ỨNG TỔNG THỂ CỦA TRANG THEO CHUẨN TIMELENS */}
                 <div className="pointer-events-none fixed absolute inset-0 z-0">
                     <div
@@ -132,17 +138,16 @@ export function CheckoutB2B2CPage() {
                   DÀNH CHO BAN QUẢN LÝ DI TÍCH
                 </span>
                                 <h1 className="font-['Montserrat'] text-3xl font-black leading-tight tracking-tight text-white drop-shadow-md md:text-4xl">
-                                    Đăng Ký Khảo Sát <br />
-                                    Số Hóa Không Gian
+                                    Gửi Nhu Cầu Tư Vấn <br />
+                                    Số Hóa Di Sản
                                 </h1>
                             </div>
 
                             <p className="mb-6 text-sm font-medium leading-relaxed text-blue-100">
                                 Nâng tầm điểm đến của bạn với công nghệ Panorama 360°, Tour
                                 WebAR và Trợ lý AI tương tác. Đội ngũ chuyên gia từ{' '}
-                                <strong>HistAR Team</strong> sẽ phân tích và phản hồi báo giá
-                                tùy chỉnh trong vòng{' '}
-                                <strong className="text-[#FDC908]">02 ngày làm việc</strong>.
+                                <strong>HistAR Team</strong> sẽ xem xét nhu cầu và liên hệ để thống nhất
+                                phạm vi khảo sát, phương án triển khai và đề xuất phù hợp.
                             </p>
 
                             <div className="space-y-3">
@@ -202,7 +207,7 @@ export function CheckoutB2B2CPage() {
                                             Dự Án One-time (Mua Đứt)
                                         </p>
                                         <p className="mt-0.5 text-[9.5px] font-black uppercase tracking-wider text-[#93C5FD]">
-                                            TỪ 50.000.000 VNĐ / SITE
+                                            PHẠM VI &amp; CHI PHÍ ĐƯỢC TƯ VẤN RIÊNG
                                         </p>
                                     </div>
                                 </div>
@@ -228,14 +233,14 @@ export function CheckoutB2B2CPage() {
                                     <p className="mb-8 max-w-md text-sm font-medium leading-relaxed text-blue-100">
                                         Cảm ơn bạn đã tin tưởng TimeLens. Hồ sơ yêu cầu số hóa của
                                         bạn đã được ghi nhận. Chuyên gia của chúng tôi sẽ liên hệ
-                                        qua Email / Số điện thoại trong vòng 48 giờ tới.
+                                        qua email hoặc số điện thoại bạn đã cung cấp.
                                     </p>
-                                    <Link to="/home" className="w-full max-w-[260px]">
+                                    <Link to="/heritage-portfolio" className="w-full max-w-[260px]">
                                         <Button
                                             type="button"
                                             className="h-12 w-full cursor-pointer items-center justify-center rounded-xl border-2 border-white/30 bg-white/10 text-xs font-black uppercase tracking-widest text-white transition-all hover:border-[#FDC908] hover:bg-[#FDC908] hover:text-[#0F1B33]"
                                         >
-                                            Quay Về Trang Chủ
+                                            Về Giải Pháp Di Sản
                                         </Button>
                                     </Link>
                                 </div>
@@ -257,45 +262,48 @@ export function CheckoutB2B2CPage() {
                                         aria-hidden
                                     />
 
-                                    <label className="block space-y-1.5">
-                    <span className="text-[10px] font-black uppercase tracking-wider text-blue-200">
-                      Pilot site quan tâm{' '}
-                        <span className="text-[#FDC908]">*</span>
-                    </span>
-                                        <select
-                                            required
-                                            value={form.interestSiteCode}
-                                            onChange={(e) =>
-                                                setForm((f) => ({
-                                                    ...f,
-                                                    interestSiteCode: e.target.value as typeof f.interestSiteCode,
-                                                }))
-                                            }
-                                            className="w-full appearance-none rounded-xl border border-white/20 bg-[#0F1B33]/80 px-4 py-3 text-sm font-bold text-white shadow-inner transition-colors focus:border-[#0275FB] focus:outline-none"
-                                            data-testid="b2b2c-interest-site"
-                                        >
-                                            {PILOT_SITES.map((s) => (
-                                                <option key={s.siteCode} value={s.siteCode}>
-                                                    {s.region} · {s.name}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </label>
-
                                     <div className="grid gap-4 md:grid-cols-2">
                                         <label className="block space-y-1.5">
                       <span className="text-[10px] font-black uppercase tracking-wider text-blue-200">
-                        Tên Di Tích / Bảo Tàng{' '}
+                        Tên đơn vị / cơ quan{' '}
                           <span className="text-[#FDC908]">*</span>
                       </span>
                                             <input
                                                 required
+                                                maxLength={255}
+                                                value={form.organizationName}
+                                                onChange={(e) => setForm((f) => ({ ...f, organizationName: e.target.value }))}
+                                                className="w-full rounded-xl border border-white/20 bg-[#0F1B33]/80 px-4 py-3 text-sm font-semibold text-white shadow-inner transition-colors placeholder:font-medium placeholder:text-blue-300/50 focus:border-[#0275FB] focus:outline-none"
+                                                placeholder="VD: Ban quản lý di tích huyện Củ Chi"
+                                            />
+                                        </label>
+                                        <label className="block space-y-1.5">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-blue-200">
+                        Pilot site / điểm đến quan tâm <span className="text-[#FDC908]">*</span>
+                      </span>
+                                            <input
+                                                required
+                                                maxLength={255}
                                                 value={form.siteName}
                                                 onChange={(e) =>
                                                     setForm((f) => ({ ...f, siteName: e.target.value }))
                                                 }
                                                 className="w-full rounded-xl border border-white/20 bg-[#0F1B33]/80 px-4 py-3 text-sm font-semibold text-white shadow-inner transition-colors placeholder:font-medium placeholder:text-blue-300/50 focus:border-[#0275FB] focus:outline-none"
-                                                placeholder="VD: Bảo Tàng Chứng Tích Chiến Tranh"
+                                                placeholder="VD: Địa đạo Củ Chi, khu Bến Đình"
+                                                data-testid="b2b2c-interest-site"
+                                            />
+                                        </label>
+                                    </div>
+
+                                    <div className="grid gap-4 md:grid-cols-2">
+                                        <label className="block space-y-1.5">
+                                            <span className="text-[10px] font-black uppercase tracking-wider text-blue-200">Tỉnh/thành, địa chỉ điểm đến</span>
+                                            <input
+                                                maxLength={255}
+                                                value={form.siteLocation}
+                                                onChange={(e) => setForm((f) => ({ ...f, siteLocation: e.target.value }))}
+                                                className="w-full rounded-xl border border-white/20 bg-[#0F1B33]/80 px-4 py-3 text-sm font-semibold text-white shadow-inner focus:border-[#0275FB] focus:outline-none"
+                                                placeholder="VD: TP. Hồ Chí Minh"
                                             />
                                         </label>
                                         <label className="block space-y-1.5">
@@ -305,6 +313,7 @@ export function CheckoutB2B2CPage() {
                       </span>
                                             <input
                                                 required
+                                                maxLength={255}
                                                 value={form.contactName}
                                                 onChange={(e) =>
                                                     setForm((f) => ({
@@ -320,12 +329,23 @@ export function CheckoutB2B2CPage() {
 
                                     <div className="grid gap-4 md:grid-cols-2">
                                         <label className="block space-y-1.5">
+                                            <span className="text-[10px] font-black uppercase tracking-wider text-blue-200">Chức vụ / bộ phận liên hệ</span>
+                                            <input
+                                                maxLength={160}
+                                                value={form.contactRole}
+                                                onChange={(e) => setForm((f) => ({ ...f, contactRole: e.target.value }))}
+                                                className="w-full rounded-xl border border-white/20 bg-[#0F1B33]/80 px-4 py-3 text-sm font-semibold text-white shadow-inner focus:border-[#0275FB] focus:outline-none"
+                                                placeholder="VD: Phòng truyền thông"
+                                            />
+                                        </label>
+                                        <label className="block space-y-1.5">
                       <span className="text-[10px] font-black uppercase tracking-wider text-blue-200">
                         Địa Chỉ Email <span className="text-[#FDC908]">*</span>
                       </span>
                                             <input
                                                 required
                                                 type="email"
+                                                maxLength={255}
                                                 value={form.contactEmail}
                                                 onChange={(e) =>
                                                     setForm((f) => ({
@@ -343,6 +363,7 @@ export function CheckoutB2B2CPage() {
                       </span>
                                             <input
                                                 type="tel"
+                                                maxLength={64}
                                                 value={form.contactPhone}
                                                 onChange={(e) =>
                                                     setForm((f) => ({
@@ -354,42 +375,67 @@ export function CheckoutB2B2CPage() {
                                                 placeholder="090 123 4567"
                                             />
                                         </label>
+                                        <label className="block space-y-1.5">
+                                            <span className="text-[10px] font-black uppercase tracking-wider text-blue-200">Thời điểm dự kiến triển khai</span>
+                                            <input
+                                                maxLength={80}
+                                                value={form.targetStart}
+                                                onChange={(e) => setForm((f) => ({ ...f, targetStart: e.target.value }))}
+                                                className="w-full rounded-xl border border-white/20 bg-[#0F1B33]/80 px-4 py-3 text-sm font-semibold text-white shadow-inner focus:border-[#0275FB] focus:outline-none"
+                                                placeholder="VD: Quý III/2027 hoặc chưa xác định"
+                                            />
+                                        </label>
                                     </div>
 
                                     <label className="block space-y-1.5">
                     <span className="text-[10px] font-black uppercase tracking-wider text-blue-200">
-                      Gói Hình Thức Triển Khai
+                      Hình thức hợp tác mong muốn
                     </span>
                                         <select
                                             value={form.packageType}
                                             onChange={(e) =>
                                                 setForm((f) => ({
                                                     ...f,
-                                                    packageType: e.target.value as 'ONE_TIME' | 'OPEX',
+                                                    packageType: e.target.value as typeof f.packageType,
                                                 }))
                                             }
                                             className="w-full appearance-none rounded-xl border border-white/20 bg-[#0F1B33]/80 px-4 py-3 text-sm font-bold text-white shadow-inner transition-colors focus:border-[#0275FB] focus:outline-none"
                                         >
+                                            <option value="UNDECIDED">Cần tư vấn để chọn phương án phù hợp</option>
                                             <option value="ONE_TIME">
-                                                Dự Án One-time (Mua Đứt) — Từ 50.000.000 VNĐ / Site
+                                                Triển khai theo dự án (đầu tư một lần)
                                             </option>
                                             <option value="OPEX">
-                                                Dự Án OpEx (Thuê Bao Hàng Năm) — Gói Toàn Diện 250 Triệu
+                                                Hợp tác vận hành theo năm (OpEx)
                                             </option>
                                         </select>
                                     </label>
 
                                     <label className="block space-y-1.5">
+                                        <span className="text-[10px] font-black uppercase tracking-wider text-blue-200">Tư liệu số hiện có</span>
+                                        <textarea
+                                            maxLength={4000}
+                                            rows={2}
+                                            value={form.availableMaterials}
+                                            onChange={(e) => setForm((f) => ({ ...f, availableMaterials: e.target.value }))}
+                                            className="custom-scrollbar w-full rounded-xl border border-white/20 bg-[#0F1B33]/80 px-4 py-3 text-sm font-semibold text-white shadow-inner focus:border-[#0275FB] focus:outline-none"
+                                            placeholder="VD: ảnh tư liệu, video, bản đồ, mô hình 3D; hoặc chưa có"
+                                        />
+                                    </label>
+
+                                    <label className="block space-y-1.5">
                     <span className="text-[10px] font-black uppercase tracking-wider text-blue-200">
-                      Ghi Chú Yêu Cầu / Quy Mô Dự Kiến
+                      Mục tiêu trải nghiệm và quy mô dự kiến
                     </span>
                                         <textarea
+                                            maxLength={4000}
+                                            rows={3}
                                             value={form.message}
                                             onChange={(e) =>
                                                 setForm((f) => ({ ...f, message: e.target.value }))
                                             }
                                             className="custom-scrollbar min-h-[70px] w-full resize-none rounded-xl border border-white/20 bg-[#0F1B33]/80 px-4 py-3 text-sm font-semibold text-white shadow-inner transition-colors placeholder:font-medium placeholder:text-blue-300/50 focus:border-[#0275FB] focus:outline-none"
-                                            placeholder="Cung cấp thêm thông tin về diện tích, số lượng hiện vật..."
+                                            placeholder="VD: tour 360 cho khách tham quan, AR tại 5 điểm, số lượng hiện vật cần số hóa..."
                                         />
                                     </label>
 

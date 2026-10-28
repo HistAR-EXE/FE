@@ -13,7 +13,7 @@ import { analyticsApi } from '../features/analytics/api'
 import { collectionApi } from '../features/collection/api'
 import { ArtifactViewerModal } from '../features/gamification/ArtifactViewerModal'
 import { gamificationApi, type NarrativeInvestigation } from '../features/gamification/api'
-import { DISCOVERY_RECORDED_EVENT, discoveryDeepLink } from '../features/gamification/discoveryRouting'
+import { DISCOVERY_RECORDED_EVENT } from '../features/gamification/discoveryRouting'
 import { questLockKeyLabel } from '../features/gamification/questLockPresentation'
 import { NarrativeInvestigationBoard } from '../features/gamification/NarrativeInvestigationBoard'
 import { QuestBackdrop } from '../features/gamification/QuestBackdrop'
@@ -491,13 +491,8 @@ function StatusPanel({
                                     />
                                     <div className="min-w-0">
                                         <p className={key.done ? 'text-slate-500 line-through' : 'font-bold text-[#0F1B33]'}>
-                                            {questLockKeyLabel(key, quest.locationId, index)}
+                                            {questLockKeyLabel(key, index)}
                                         </p>
-                                        {!key.done && key.key.startsWith('scene:') && (
-                                            <Link to={discoveryDeepLink(quest.locationId, key.key)} className="mt-1 inline-flex min-h-8 items-center gap-1 font-bold text-[#0275FB] hover:underline">
-                                                Khám phá cảnh 360° <MaterialIcon name="arrow_forward" className="text-base" />
-                                            </Link>
-                                        )}
                                     </div>
                                 </li>
                             ))}

@@ -789,13 +789,15 @@ export function ChatPage() {
 
     useEffect(() => {
         if (autoSentQuestPrompt.current || params.get('autoSend') !== '1' || !questPrompt) return
+        // Quest dialogue needs an explicit send; opening a link is not participation.
+        if (questRecordKey?.startsWith('dialogue:')) return
         if (messageHasSaBanCode(questPrompt) || !resolvedCharacterId || !chatContextReady || busy) return
         autoSentQuestPrompt.current = true
         const nextParams = new URLSearchParams(params)
         nextParams.delete('autoSend')
         setSearchParams(nextParams, { replace: true })
         void send(questPrompt)
-    }, [busy, chatContextReady, params, questPrompt, resolvedCharacterId, send, setSearchParams])
+    }, [busy, chatContextReady, params, questPrompt, questRecordKey, resolvedCharacterId, send, setSearchParams])
 
     const stopDictation = () => {
         dictateStopRef.current?.()
@@ -1430,7 +1432,7 @@ export function ChatPage() {
                         )}
 
                         {questRecordKey?.startsWith('dialogue:') && <p className="mb-2 text-xs text-slate-600">
-                            Để xác nhận nhiệm vụ, hãy gửi đầy đủ câu hỏi gợi ý và chờ phản hồi của hệ thống.
+                            Để hoàn thành bước này, hãy tự bấm Gửi câu hỏi gợi ý và chờ Chrono trả lời. Chỉ hội thoại đã lưu với đúng câu hỏi mới được ghi nhận.
                             {questPrompt && <button type="button" onClick={() => setInput(questPrompt)} className="ml-2 font-bold text-blue-700 underline">Dùng câu gợi ý</button>}
                         </p>}
                         <div className="relative flex items-center bg-[#F2F7FF] rounded-full border-2 border-[#0275FB]/25 focus-within:border-[#0275FB] focus-within:bg-white focus-within:ring-4 focus-within:ring-[#0275FB]/15 transition-all p-1.5 pl-5 shadow-sm">

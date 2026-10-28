@@ -36,3 +36,36 @@ test('billing route keeps payment channel filter and CSV export wired', async ({
   await expect(page.getByText('HISTAR-E2E-PAYMENT')).toBeVisible()
   expect(DISPOSABLE_ADMIN.paymentId).toBe('histar-e2e-payment')
 })
+
+test('CRM shows the pilot consultation brief and contact details to admin', async ({ page }) => {
+  await page.route('**/api/admin/b2b2c-inquiries**', async (route) => route.fulfill({
+    json: {
+      success: true,
+      data: {
+        items: [{
+          id: '11111111-1111-1111-1111-111111111111',
+          siteName: 'Khu di tích Nhà tù Hỏa Lò',
+          organizationName: 'Ban quản lý di tích Hà Nội',
+          contactName: 'Nguyễn Thị Lan',
+          contactEmail: 'lan@example.vn',
+          contactPhone: '0901234567',
+          contactRole: 'Phòng truyền thông',
+          siteLocation: 'Hà Nội',
+          availableMaterials: 'Ảnh tư liệu và bản đồ cũ',
+          targetStart: 'Quý III/2027',
+          packageType: 'UNDECIDED',
+          message: 'Tour tự hướng dẫn',
+          status: 'NEW',
+          createdAt: '2026-10-28T00:00:00Z',
+        }],
+        page: 0, size: 100, totalItems: 1, totalPages: 1,
+      },
+    },
+  }))
+  await page.goto('/admin/billing')
+  await expect(page.getByText('Khu di tích Nhà tù Hỏa Lò').first()).toBeVisible()
+  await expect(page.getByText('Ban quản lý di tích Hà Nội').first()).toBeVisible()
+  await expect(page.getByText('Ảnh tư liệu và bản đồ cũ').first()).toBeVisible()
+  await expect(page.getByText('Quý III/2027').first()).toBeVisible()
+  await expect(page.getByText('0901234567').first()).toBeVisible()
+})

@@ -3,16 +3,18 @@
 
 import { timePortalPath } from '../../shared/config/locationSlug'
 import type { QuestV2Step } from './questsV2Api'
-import { TRAM_XA_PANORAMA_ID } from './saBanFragment'
+import { SA_BAN_FRAGMENT_CODE, SA_BAN_QUEST_KEY } from './saBanFragment'
 
 export type QuestStepAction =
     | { kind: 'link'; href: string; label: string; icon: string }
     /** Hiện vật xem ngay trong trang (khung xem hiện vật), ghi nhận sau vài giây. */
     | { kind: 'artifact'; label: string; icon: string }
     | { kind: 'premium'; label: string; icon: string; era: number | null }
+    | { kind: 'unavailable'; label: string; icon: string }
 
 const ICONS: Record<string, string> = {
     tour: '360',
+    quiz: 'quiz',
     portal: 'history',
     artifact: 'museum',
     dialogue: 'forum',
@@ -41,21 +43,24 @@ export function questStepAction(
     if (step.minigameId) {
         return { kind: 'link', href: `/quests/${ctx.questId}/play/${step.minigameId}`, label: label('Chơi thử thách'), icon }
     }
+    if (step.key === SA_BAN_QUEST_KEY) {
+        const params = new URLSearchParams({
+            locationId: ctx.locationId,
+            persona: 'chrono',
+            questRecord: SA_BAN_QUEST_KEY,
+            questPrompt: SA_BAN_FRAGMENT_CODE,
+            autoSend: '1',
+        })
+        return { kind: 'link', href: `/chat?${params}`, label: label('Giải câu hỏi Sa bàn'), icon: 'quiz' }
+    }
 
     switch (step.actionType) {
         case 'artifact':
             return { kind: 'artifact', label: label('Xem hiện vật'), icon }
         case 'tour': {
-            const params = new URLSearchParams({ questRecord: step.key })
-            if (step.key === 'tour:sa-ban') {
-                params.set('view', 'illustrated')
-            } else if (step.key === 'tour:tram-xa') {
-                params.set('panorama', TRAM_XA_PANORAMA_ID)
-                params.set('view', 'panorama')
-            } else if (step.key.startsWith('scene:')) {
-                params.set('panorama', step.key.slice('scene:'.length))
-            }
-            return { kind: 'link', href: `/tour/360/${ctx.locationId}?${params}`, label: label('Vào tour 360°'), icon }
+            // The current tour is a third-party iframe. It does not report
+            // scene changes, so a tour-only step cannot be verified.
+            return { kind: 'unavailable', label: 'Bước tour đang được cập nhật', icon: 'info' }
         }
         case 'portal': {
             const era = step.portalEra ?? (step.key.startsWith('era:') ? Number(step.key.slice(4)) : 2026)
@@ -73,7 +78,6 @@ export function questStepAction(
                 persona: 'chrono',
                 questRecord: step.key,
                 questId: ctx.questId,
-                autoSend: '1',
             })
             if (step.chatPrompt) params.set('questPrompt', step.chatPrompt)
             return { kind: 'link', href: `/chat?${params}`, label: label('Hỏi Chrono'), icon }

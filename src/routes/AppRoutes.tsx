@@ -117,6 +117,7 @@ export function AppRoutes() {
                         <Route path="/time-portal/:locationId/ar" element={<LegacyTimePortalArRedirect />} />
                         <Route path="/heritage-portfolio" element={<HeritagePortfolioPage />} />
                         <Route path="/pricing" element={<PricingPage />} />
+                        <Route path="/checkout/b2b2c" element={<CheckoutB2B2CPage />} />
 
                         {/* Auth — guest only */}
                         <Route element={<AuthRoute />}>
@@ -145,7 +146,6 @@ export function AppRoutes() {
                             <Route path="/settings" element={<SettingsPage />} />
                             <Route path="/checkout/b2c" element={<CheckoutB2CPage />} />
                             <Route path="/checkout/b2b" element={<CheckoutB2BPage />} />
-                            <Route path="/checkout/b2b2c" element={<CheckoutB2B2CPage />} />
 
                             <Route element={<EmailVerifiedRoute />}>
                                 {/* Chuyển hướng các route cũ đã gỡ bỏ về Explore */}

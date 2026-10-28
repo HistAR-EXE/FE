@@ -71,6 +71,13 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'], baseURL: FE_URL },
     },
 
+    {
+      name: 'b2g-inquiry-ui',
+      testDir: './tests/ui',
+      testMatch: /b2g-inquiry\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'], baseURL: FE_URL },
+    },
+
     // FE-only site workspace gate: mocked /api, no BE dependency.
     {
       name: 'site-workspace-ui',

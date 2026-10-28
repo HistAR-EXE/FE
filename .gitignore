@@ -32,6 +32,7 @@ dist-ssr
 !/tests/ui/chat-stream-contract.spec.ts
 !/tests/ui/chat-failure-retry.spec.ts
 !/tests/ui/station-header.spec.ts
+!/tests/ui/b2g-inquiry.spec.ts
 !/tests/api/
 /tests/api/*
 !/tests/api/admin-console.spec.ts

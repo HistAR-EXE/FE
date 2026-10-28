@@ -212,6 +212,11 @@ function StepButton({
             </button>
         )
     }
+    if (action.kind === 'unavailable') {
+        return <span role="status" className="inline-flex min-h-[40px] items-center gap-2 rounded-xl bg-amber-50 px-3 text-xs font-bold text-amber-800">
+            <MaterialIcon name={action.icon} className="text-lg" /> {label}
+        </span>
+    }
     if (action.kind === 'artifact') {
         return (
             <button type="button" onClick={onArtifact} className={className}>

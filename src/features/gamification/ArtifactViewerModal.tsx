@@ -67,7 +67,7 @@ export function ArtifactViewerModal({ step, locationId, onClose }: Props) {
 
     // Đếm ngược khi khung đang mở và đã tải xong; xong thì ghi nhận một lần.
     useEffect(() => {
-        if (loading || !isAuthenticated || !online || recordState === 'done' || recordState === 'saving') return
+        if (loading || !artifact || !isAuthenticated || !online || recordState === 'done' || recordState === 'saving') return
         setRecordState('counting')
         let left = VIEW_SECONDS
         setSecondsLeft(left)
@@ -94,7 +94,7 @@ export function ArtifactViewerModal({ step, locationId, onClose }: Props) {
         }, 1000)
         return () => window.clearInterval(timer)
         // recordState cố ý không nằm trong deps: chỉ bắt đầu đếm một lần sau khi tải xong.
-    }, [loading, isAuthenticated, online, locationId, step.key])
+    }, [loading, artifact, isAuthenticated, online, locationId, step.key])
 
     const title = artifact?.name ?? step.title
     const image = artifact?.imageUrl || step.previewImage || undefined
@@ -152,7 +152,9 @@ export function ArtifactViewerModal({ step, locationId, onClose }: Props) {
                 </div>
 
                 <div className="shrink-0 border-t border-slate-100 bg-[#F2F7FF] px-5 py-3 sm:px-6">
-                    <RecordStatus state={recordState} secondsLeft={secondsLeft} isAuthenticated={isAuthenticated} online={online} />
+                    {!loading && !artifact
+                        ? <p role="alert" className="text-xs font-bold text-red-600">Không tải được hiện vật của bước này. Vui lòng thử lại sau.</p>
+                        : <RecordStatus state={recordState} secondsLeft={secondsLeft} isAuthenticated={isAuthenticated} online={online} />}
                 </div>
             </div>
         </div>,

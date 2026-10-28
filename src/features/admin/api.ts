@@ -89,6 +89,11 @@ export type AdminOrganizationSummary = {
 export type AdminB2b2cInquiry = {
   id: string
   siteName: string
+  organizationName?: string | null
+  contactRole?: string | null
+  siteLocation?: string | null
+  availableMaterials?: string | null
+  targetStart?: string | null
   contactName: string
   contactEmail: string
   contactPhone: string | null

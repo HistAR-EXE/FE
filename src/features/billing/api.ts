@@ -132,11 +132,16 @@ export type OrgVolumePreview = {
 }
 
 export type B2b2cInquiryPayload = {
+  organizationName: string
   siteName: string
+  siteLocation?: string
   contactName: string
+  contactRole?: string
   contactEmail: string
   contactPhone?: string
-  packageType: 'ONE_TIME' | 'OPEX'
+  packageType: 'ONE_TIME' | 'OPEX' | 'UNDECIDED'
+  availableMaterials?: string
+  targetStart?: string
   message?: string
   website?: string
   interestSiteCode?: 'cu-chi' | 'hoang-thanh-thang-long' | 'dai-noi-hue'
