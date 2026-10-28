@@ -34,7 +34,7 @@ test('only final output is uploaded and heritage mode never sends a frame id', (
 })
 
 test('share page exposes station return and Cedar Falls return only for that source', () => {
-  const source = readFileSync(new URL('../src/pages/SharePage.tsx', import.meta.url), 'utf8')
+  const source = readFileSync(new URL('../src/features/photo-flow/PhotoSharePanel.tsx', import.meta.url), 'utf8')
   assert.match(source, /Về Sa bàn Cedar Falls/)
   assert.match(source, /entrySource === 'battle-diorama'/)
   assert.match(source, /buildStationPagePath\(stationContext\)/)

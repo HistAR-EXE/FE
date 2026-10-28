@@ -1,3 +1,5 @@
+> Update: Journey Wrapped, standalone Study Groups and My Squad are retired. See [retirement scope](2026-10-27-retired-account-features.md). Teacher-managed field-trip groups remain supported.
+
 # Teacher, Profile and Settings workspaces (2026-10-27)
 
 Bright blue/white account workspaces share accessible controls, responsive layouts and independent API loading/error states. Profile has overview, per-location journey/achievements, entitlement sources and personal information. Settings has account editing, real authentication/security links, personal/organization plans and history, classroom membership, local consent preferences and current-session logout. Quests no longer show the redundant top Explore button.

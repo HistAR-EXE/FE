@@ -1,10 +1,1368 @@
-.profile-workspace{--pf-blue:#0075ff;--pf-ink:#10233f;--pf-muted:#60738c;background:#eef5ff!important;color:var(--pf-ink)}
-.pf-main{width:100%;max-width:1440px;margin:auto;padding:48px clamp(18px,4vw,64px) 64px;font-family:inherit;overflow-wrap:anywhere}.pf-main *{box-sizing:border-box}.pf-page-heading,.pf-section-heading,.pf-card-heading,.pf-actions,.pf-pills{display:flex;align-items:center;gap:14px}.pf-page-heading,.pf-section-heading{justify-content:space-between;flex-wrap:wrap}.pf-page-heading{margin-bottom:28px}.pf-kicker{font-size:11px;letter-spacing:.14em;font-weight:800;color:#0864d9}.pf-main h1{font-size:clamp(32px,4vw,48px);line-height:1.15;font-weight:850;margin:8px 0}.pf-main h1 span{color:var(--pf-blue)}.pf-main h2{font-size:23px;font-weight:800;line-height:1.3;margin:8px 0}.pf-main h3{font-weight:750;margin:8px 0}.pf-main p{color:var(--pf-muted);line-height:1.7;margin:8px 0}.pf-button,.pf-form button[type=submit]{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 20px;background:var(--pf-blue);color:white;border:1px solid var(--pf-blue);border-radius:14px;font-weight:750;cursor:pointer;text-decoration:none;transition:background .2s,transform .2s}.pf-button:hover{background:#005fdb;transform:translateY(-1px)}.pf-button.secondary{background:white;border-color:#c5dcff;color:#0065db}.pf-button.secondary:hover{background:#edf5ff}.pf-main :focus-visible{outline:3px solid #f7b600;outline-offset:4px}.pf-text-button{display:inline-flex;align-items:center;gap:6px;color:#0065dc;font-weight:700;margin-top:14px;cursor:pointer}.pf-hero{display:grid;grid-template-columns:1.4fr 1fr;gap:32px;padding:32px;border:1px solid #c9dfff;border-radius:26px;background:linear-gradient(115deg,#fff 40%,#e2eeff);box-shadow:0 16px 48px #1568c20a}.pf-identity{display:flex;align-items:center;gap:24px;min-width:0}.pf-avatar{width:112px;height:112px;flex-shrink:0;border:5px solid white;outline:1px solid #b8d6ff;border-radius:30px;overflow:hidden;display:grid;place-items:center;background:#dcecff;color:#0864d9;font-size:36px;font-weight:850;box-shadow:0 8px 30px #0c65ce18}.pf-avatar img{width:100%;height:100%;object-fit:cover}.pf-identity h2{font-size:28px;margin:10px 0 2px}.pf-email{font-size:14px}.pf-verification{display:flex;gap:5px;align-items:center;font-size:12px;color:#8d6510}.pf-verification.verified{color:#147659}.pf-verification .material-symbols-outlined{font-size:16px}.pf-pill{display:inline-flex;align-items:center;background:#edf2f8;color:#4c607a;font-size:12px;font-weight:750;border-radius:30px;padding:5px 10px}.pf-pill.blue{background:#dcecff;color:#005ecf}.pf-pill.green{background:#ddf5eb;color:#13734e}.pf-level{border-left:1px solid #cbdcf3;padding-left:32px;align-self:center}.pf-level>strong{display:block;font-size:20px;margin:8px 0}.pf-level>strong span{font-size:14px;font-weight:600}.pf-xp{font-size:28px;font-weight:850;color:#0569e6}.pf-xp span{font-size:13px;color:var(--pf-muted);font-weight:500}.pf-level small{font-size:12px;color:var(--pf-muted)}.pf-meter{height:9px;border-radius:20px;background:#e5edf8;overflow:hidden;margin:14px 0}.pf-meter>span{height:100%;display:block;background:#087aff;border-radius:inherit}.pf-meter.gold>span{background:#f7b800}.pf-tabs{display:flex;gap:6px;border-bottom:1px solid #cbdcf4;margin:30px 0;overflow-x:auto}.pf-tabs button{flex-shrink:0;padding:17px 18px;color:#5c708a;border-bottom:3px solid transparent;font-weight:700;cursor:pointer;white-space:nowrap}.pf-tabs button[aria-selected=true]{color:#006bea;border-color:#0075ff;background:#ffffff70}.pf-tab-content{display:grid;gap:24px;animation:pf-enter .28s ease-out}.pf-card{min-width:0;border:1px solid #d3e2f6;border-radius:22px;padding:26px;background:white;box-shadow:0 8px 30px #1e5d9c05}.pf-columns{display:grid;grid-template-columns:1fr 1fr;gap:22px}.pf-card-heading{margin-bottom:16px;color:#086adc}.pf-card-heading h2{color:var(--pf-ink);font-size:20px}.pf-section-heading{margin-bottom:4px}.pf-section-heading p{max-width:700px;font-size:14px}.pf-metrics{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px}.pf-metric{background:white;border:1px solid #d3e2f6;border-radius:20px;padding:20px}.pf-metric-icon{display:inline-flex;background:#e9f3ff;padding:9px;border-radius:12px;color:#0075ff}.pf-metric>strong{display:block;font-size:34px;font-weight:850;margin-top:14px}.pf-metric h3{font-size:14px}.pf-metric p{font-size:12px}.pf-facts{margin:0}.pf-fact{padding:14px 0;border-bottom:1px solid #edf1f7}.pf-fact:last-child{border-bottom:0}.pf-fact dt{font-size:12px;color:var(--pf-muted);margin-bottom:5px}.pf-fact dd{font-size:15px;font-weight:700;margin:0}.pf-fact small{font-size:12px;color:#147659}.pf-next-step{background:linear-gradient(135deg,#e7f2ff,#fffbe2)}.pf-actions{flex-wrap:wrap;margin-top:20px}.pf-footnote{font-size:12px!important}.pf-empty{padding:28px;text-align:center;background:#f6f9fe;border:1px dashed #ccdff8;border-radius:16px}.pf-empty>.material-symbols-outlined{font-size:36px;color:#6196d8}.pf-empty.compact{padding:14px}.pf-notice{display:flex;align-items:flex-start;gap:12px;background:#edf6ff;border:1px solid #c5dfff;border-radius:16px;padding:18px}.pf-notice.error{background:#fff3ef;border-color:#f4cdc1;color:#a13c24}.pf-notice p{font-size:14px;margin:3px 0}.pf-notice>.material-symbols-outlined{color:#0575e7}.pf-loading{padding:28px;text-align:center}.pf-skeleton{display:block;height:12px;background:linear-gradient(90deg,#dce8f8,#f3f7fd,#dce8f8);border-radius:12px;width:65%;margin:auto}.pf-updating{font-size:12px}.pf-site-picker{display:flex;align-items:center;flex-wrap:wrap;gap:14px;padding:20px;background:#dfedff;border-radius:18px}.pf-site-picker label{font-weight:750}.pf-site-picker select{max-width:100%;min-width:180px;padding:10px;background:white;border:1px solid #b6d3fb;border-radius:10px;color:var(--pf-ink)}.pf-site-picker>span{font-size:12px;color:var(--pf-muted)}.pf-progress-block{background:#f4f8ff;border-radius:14px;padding:20px}.pf-progress-block h3{display:flex;gap:8px;align-items:center}.pf-progress-block strong{font-size:30px;color:#056bde}.pf-progress-block p{font-size:12px}.pf-quest-list,.pf-system-badges,.pf-pass-list{list-style:none;padding:0;margin:0}.pf-quest-list li,.pf-pass-list li{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 0;border-bottom:1px solid #e5edf8}.pf-quest-list small,.pf-pass-list small{display:block;color:var(--pf-muted);font-size:12px;margin-top:5px}.pf-checkbox{display:flex;gap:8px;font-size:13px;align-items:center}.pf-stamps{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin-top:20px}.pf-stamp{border:1px solid #d3e2f6;border-radius:18px;overflow:hidden}.pf-stamp>img,.pf-stamp>.pf-image-fallback{width:100%;height:150px;object-fit:cover}.pf-stamp>div:not(.pf-image-fallback){padding:20px}.pf-stamp strong{display:block;margin:8px 0 14px;font-size:14px}.pf-stamp p{font-size:12px}.pf-image-fallback{display:grid;place-items:center;background:#e8f1ff;color:#5f93d5}.pf-badges{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.pf-badge{border:1px solid #e0e7f1;background:#f7f9fc;border-radius:18px;padding:16px;display:grid;text-align:center;gap:8px;justify-items:center;cursor:pointer}.pf-badge img,.pf-badge>.pf-image-fallback{width:110px;height:110px;object-fit:contain;filter:grayscale(1);opacity:.6}.pf-badge.earned{background:#fffbdf;border-color:#f4d361}.pf-badge.earned img{filter:none;opacity:1}.pf-badge span{font-size:12px;color:var(--pf-muted)}.pf-badge-count{margin-bottom:18px!important}.pf-system-badges{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.pf-system-badges li{display:flex;align-items:center;gap:8px;background:#f4f8ff;padding:14px;border-radius:12px;font-size:13px}.pf-system-badges li span:last-child{margin-left:auto;color:var(--pf-muted)}.pf-quota-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.pf-quota-grid>div{padding:18px;background:#f1f7ff;border-radius:14px}.pf-quota-grid span{display:block;font-size:12px;color:var(--pf-muted)}.pf-quota-grid strong{display:block;font-size:21px;margin-top:10px}.pf-creations{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-top:18px}.pf-creations>a{overflow:hidden;border:1px solid #d3e2f6;border-radius:16px}.pf-creations img,.pf-creations .pf-image-fallback{width:100%;height:180px;object-fit:cover}.pf-creations a>div:last-child{padding:14px}.pf-creations small,.pf-creations a>div:last-child span{display:block;margin-top:6px;font-size:12px;color:var(--pf-muted)}.pf-form{background:#f6f9ff!important;border-color:#d3e2f6!important}.pf-form label{display:block;margin:16px 0;font-size:13px}.pf-form label>span{color:#4c607a}.pf-form input{display:block;width:100%;border:1px solid #bfd4ed;border-radius:10px;background:white;color:var(--pf-ink);padding:12px;margin-top:7px}.pf-form h2{font-size:18px}.pf-badge-dialog{color:#10233f;max-width:min(90vw,480px);width:480px;max-height:90dvh;padding:32px;border:1px solid #c5dcff;border-radius:24px;background:white;text-align:center;overflow:auto}.pf-badge-dialog::backdrop{background:#071d3b99;backdrop-filter:blur(5px)}.pf-badge-dialog>img{width:150px;height:150px;object-fit:contain;margin:0 auto 20px}.pf-badge-dialog h2{font-size:24px;font-weight:800;margin:18px 0}.pf-badge-dialog p{color:#60738c;margin:16px 0}.pf-dialog-close{position:absolute;right:16px;top:16px;cursor:pointer}.pf-badge-dialog>.pf-button{margin-top:20px}
-@keyframes pf-enter{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-@media(max-width:1100px){.pf-metrics{grid-template-columns:repeat(3,minmax(0,1fr))}.pf-hero{grid-template-columns:1fr}.pf-level{border-left:0;border-top:1px solid #cbdcf3;padding:22px 0 0}.pf-columns{gap:16px}.pf-main{padding-top:30px}}
-@media(max-width:650px){.pf-main{padding:24px 16px 40px}.pf-page-heading{gap:16px}.pf-page-heading>.pf-button{padding:9px 12px}.pf-hero{padding:22px;gap:20px}.pf-identity{flex-direction:column;align-items:flex-start;gap:16px}.pf-avatar{width:88px;height:88px;border-radius:24px}.pf-identity h2{font-size:25px}.pf-columns,.pf-stamps,.pf-quota-grid{grid-template-columns:1fr}.pf-metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.pf-metric{padding:16px}.pf-metric>strong{font-size:30px}.pf-card{padding:20px;border-radius:18px}.pf-tabs{margin:24px 0;gap:0}.pf-tabs button{padding:15px 12px;font-size:13px}.pf-badges{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.pf-badge{padding:12px}.pf-badge img{width:85px;height:85px}.pf-system-badges,.pf-creations{grid-template-columns:1fr}.pf-section-heading h2{font-size:21px}.pf-quest-list li{align-items:flex-start;flex-direction:column}.pf-button{font-size:13px}.pf-site-picker select{width:100%}}
-@media(prefers-reduced-motion:reduce){.pf-tab-content{animation:none}.pf-button{transition:none}.pf-button:hover{transform:none}}
-/* AppLayout's fixed background uses the global dark palette; override only this page. */
-.profile-workspace>.fixed.inset-0{background:linear-gradient(150deg,#e7f1ff 0%,#f4f8ff 65%,#fffdf1 100%)!important}
-@media(max-width:650px){.pf-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));overflow:visible;gap:4px}.pf-tabs button{white-space:normal;padding:13px 8px;border-radius:10px 10px 0 0}}
-.pf-creation{border:1px solid #d3e2f6;border-radius:16px;overflow:hidden;background:white}.pf-creation>a{display:block}.pf-creation a>div:last-child{padding:14px}.pf-creation-actions{padding:14px;display:flex;gap:8px;flex-wrap:wrap;border-top:1px solid #e1eaf6}.pf-creation-actions p{width:100%;font-size:13px}.pf-delete-creation{margin:0 14px 14px;color:#ab392a}
+/* src/features/profile/profile.css */
+.profile-workspace {
+    --pf-blue: #0275fb;
+    --pf-blue-dark: #014296;
+    --pf-yellow: #fdc908;
+    --pf-ink: #0f1b33;
+    --pf-muted: #475569;
+    background:
+            radial-gradient(ellipse at 88% 10%, rgba(2, 117, 251, 0.14) 0%, transparent 50%),
+            radial-gradient(ellipse at 12% 6%, rgba(253, 201, 8, 0.2) 0%, transparent 45%),
+            linear-gradient(180deg, #f8fbff 0%, #f2f7ff 100%) !important;
+    color: var(--pf-ink);
+    font-family: 'Be Vietnam Pro', sans-serif;
+}
+
+/* Override AppLayout dark background on Profile workspace */
+.profile-workspace > .fixed.inset-0 {
+    background:
+            radial-gradient(ellipse at 85% 12%, rgba(2, 117, 251, 0.14) 0%, transparent 52%),
+            radial-gradient(ellipse at 14% 8%, rgba(253, 201, 8, 0.2) 0%, transparent 48%),
+            linear-gradient(160deg, #eef5ff 0%, #f4f8ff 65%, #fffbeb 100%) !important;
+}
+
+.pf-main {
+    width: 100%;
+    max-width: 1400px;
+    margin: auto;
+    padding: 36px clamp(16px, 3.5vw, 56px) 84px;
+    font-family: inherit;
+    overflow-wrap: anywhere;
+}
+
+.pf-main * {
+    box-sizing: border-box;
+}
+
+.pf-page-heading,
+.pf-section-heading,
+.pf-card-heading,
+.pf-actions,
+.pf-pills {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.pf-page-heading,
+.pf-section-heading {
+    justify-content: space-between;
+    flex-wrap: wrap;
+}
+
+/* ========================================================================== */
+/* 1. HEADER ĐẦU TRANG (.pf-page-heading)                                     */
+/* ========================================================================== */
+.pf-page-heading {
+    margin-bottom: 24px;
+    padding: 22px 28px;
+    border-radius: 28px;
+    background: rgba(255, 255, 255, 0.94);
+    border: 2px solid rgba(2, 117, 251, 0.16);
+    box-shadow: 0 14px 36px rgba(2, 117, 251, 0.06);
+    backdrop-filter: blur(14px);
+}
+
+.pf-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 10.5px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    font-weight: 900;
+    color: var(--pf-blue);
+    background: #eaf3ff;
+    border: 1.5px solid rgba(2, 117, 251, 0.22);
+    padding: 5px 13px;
+    border-radius: 999px;
+}
+
+.pf-kicker::before {
+    content: '';
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--pf-yellow);
+    box-shadow: 0 0 0 3px rgba(253, 201, 8, 0.32);
+    flex-shrink: 0;
+}
+
+.pf-main h1 {
+    font-family: Montserrat, 'Be Vietnam Pro', sans-serif;
+    font-size: clamp(28px, 3.2vw, 44px);
+    line-height: 1.12;
+    letter-spacing: -0.04em;
+    font-weight: 900;
+    color: var(--pf-ink);
+    margin: 10px 0 4px;
+}
+
+.pf-main h1 span {
+    color: var(--pf-blue);
+}
+
+.pf-main h2 {
+    font-family: Montserrat, 'Be Vietnam Pro', sans-serif;
+    font-size: clamp(20px, 2vw, 24px);
+    font-weight: 900;
+    letter-spacing: -0.025em;
+    line-height: 1.28;
+    color: var(--pf-ink);
+    margin: 8px 0 6px;
+}
+
+.pf-main h3 {
+    font-family: Montserrat, 'Be Vietnam Pro', sans-serif;
+    font-weight: 800;
+    color: var(--pf-ink);
+    margin: 6px 0;
+}
+
+.pf-main p {
+    color: var(--pf-muted);
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.7;
+    margin: 6px 0;
+}
+
+/* ========================================================================== */
+/* 2. HỆ THỐNG NÚT BẤM (.pf-button & .pf-text-button)                         */
+/* ========================================================================== */
+.pf-button,
+.pf-form button[type='submit'] {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 22px;
+    background: linear-gradient(135deg, #0275fb 0%, #015cc8 100%);
+    color: #ffffff;
+    border: 2px solid rgba(255, 255, 255, 0.25);
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 900;
+    cursor: pointer;
+    text-decoration: none;
+    box-shadow: 0 10px 24px rgba(2, 117, 251, 0.25);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.pf-button:hover,
+.pf-form button[type='submit']:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.06);
+    box-shadow: 0 14px 30px rgba(2, 117, 251, 0.35);
+}
+
+.pf-button.secondary {
+    background: #ffffff;
+    border: 1.5px solid rgba(2, 117, 251, 0.25);
+    color: var(--pf-blue);
+    box-shadow: 0 6px 18px rgba(15, 27, 51, 0.05);
+}
+
+.pf-button.secondary:hover {
+    background: #eaf3ff;
+    border-color: var(--pf-blue);
+}
+
+.pf-main :focus-visible {
+    outline: 3px solid var(--pf-yellow);
+    outline-offset: 3px;
+}
+
+.pf-text-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--pf-blue);
+    font-size: 13px;
+    font-weight: 900;
+    margin-top: 14px;
+    padding: 8px 14px;
+    border-radius: 12px;
+    background: #f2f7ff;
+    border: 1px solid rgba(2, 117, 251, 0.2);
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.pf-text-button:hover {
+    background: var(--pf-blue);
+    color: #ffffff;
+    transform: translateX(2px);
+}
+
+/* ========================================================================== */
+/* 3. HERO ĐỊNH DANH & CẤP ĐỘ HÀNH TRÌNH (.pf-hero)                           */
+/* ========================================================================== */
+.pf-hero {
+    position: relative;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: 1.25fr 1fr;
+    gap: 28px;
+    padding: clamp(24px, 3vw, 34px);
+    border: 3px solid var(--pf-yellow);
+    border-radius: 32px;
+    background: linear-gradient(135deg, #0353b8 0%, #0275fb 52%, #014296 100%);
+    box-shadow:
+            0 0 0 5px #ffffff,
+            0 24px 55px rgba(2, 117, 251, 0.24);
+    color: #ffffff;
+    isolation: isolate;
+}
+
+.pf-hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+            linear-gradient(to right, rgba(255, 255, 255, 0.07) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(255, 255, 255, 0.07) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.pf-hero::after {
+    content: '';
+    position: absolute;
+    width: 380px;
+    height: 380px;
+    top: -160px;
+    right: -80px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(253, 201, 8, 0.3) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.pf-identity {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    min-width: 0;
+}
+
+.pf-avatar {
+    width: 112px;
+    height: 112px;
+    min-width: 112px;
+    flex-shrink: 0;
+    border: 3.5px solid var(--pf-yellow);
+    outline: 4px solid rgba(255, 255, 255, 0.22);
+    border-radius: 28px;
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(135deg, #fff2c3 0%, #fdc908 100%);
+    color: var(--pf-ink);
+    font-family: Montserrat, sans-serif;
+    font-size: 38px;
+    font-weight: 900;
+    box-shadow: 0 14px 32px rgba(7, 19, 44, 0.4);
+}
+
+.pf-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.pf-identity h2 {
+    font-size: clamp(24px, 2.5vw, 34px);
+    color: #ffffff;
+    margin: 10px 0 4px;
+    text-shadow: 0 2px 12px rgba(7, 19, 44, 0.3);
+}
+
+.pf-email {
+    font-size: 14px;
+    font-weight: 600;
+    color: #dbeafe !important;
+    margin: 0 0 10px !important;
+}
+
+.pf-verification {
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+    padding: 5px 13px;
+    border-radius: 999px;
+    background: rgba(255, 251, 235, 0.16);
+    border: 1px solid rgba(253, 201, 8, 0.65);
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #fff2c3;
+}
+
+.pf-verification.verified {
+    background: rgba(16, 185, 129, 0.24);
+    border-color: rgba(110, 231, 183, 0.8);
+    color: #ecfdf5;
+}
+
+.pf-verification .material-symbols-outlined {
+    font-size: 16px;
+}
+
+/* Hệ thống Huy hiệu Nhãn (.pf-pill) */
+.pf-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    color: #334155;
+    font-size: 11.5px;
+    font-weight: 800;
+    border-radius: 999px;
+    padding: 5px 12px;
+}
+
+.pf-hero .pf-pill {
+    background: rgba(15, 27, 51, 0.65);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: #fff2c3;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.pf-pill.blue {
+    background: linear-gradient(135deg, #fff2c3 0%, #fdc908 100%) !important;
+    border-color: #ffffff !important;
+    color: #0f1b33 !important;
+    font-weight: 900;
+    box-shadow: 0 4px 14px rgba(253, 201, 8, 0.32);
+}
+
+.pf-pill.green {
+    background: #dcfce7;
+    border-color: #86efac;
+    color: #166534;
+    font-weight: 800;
+}
+
+/* Khối Cấp độ & XP bên phải Hero */
+.pf-level {
+    position: relative;
+    z-index: 1;
+    padding: 22px 26px;
+    border-radius: 24px;
+    background: rgba(7, 19, 44, 0.76);
+    border: 2px solid rgba(253, 201, 8, 0.85);
+    backdrop-filter: blur(14px);
+    box-shadow: 0 18px 40px rgba(7, 19, 44, 0.35);
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.pf-level .pf-kicker {
+    background: rgba(253, 201, 8, 0.16);
+    border-color: rgba(253, 201, 8, 0.5);
+    color: var(--pf-yellow);
+    width: fit-content;
+}
+
+.pf-level > strong {
+    display: block;
+    font-family: Montserrat, 'Be Vietnam Pro', sans-serif;
+    font-size: 22px;
+    font-weight: 900;
+    color: #ffffff;
+    margin: 10px 0 4px;
+}
+
+.pf-level > strong span {
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff2c3;
+}
+
+.pf-xp {
+    font-family: Montserrat, sans-serif;
+    font-size: 30px;
+    font-weight: 900;
+    color: var(--pf-yellow);
+    line-height: 1.15;
+}
+
+.pf-xp span {
+    font-family: 'Be Vietnam Pro', sans-serif;
+    font-size: 12px;
+    color: #dbeafe;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.pf-level small {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #cbd5e1;
+}
+
+/* Thanh Tiến Độ (.pf-meter) */
+.pf-meter {
+    height: 11px;
+    border-radius: 999px;
+    background: #e2e8f0;
+    overflow: hidden;
+    margin: 12px 0;
+    padding: 2px;
+}
+
+.pf-hero .pf-meter {
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+.pf-meter > span {
+    height: 100%;
+    display: block;
+    background: linear-gradient(90deg, #0275fb 0%, #38bdf8 100%);
+    border-radius: inherit;
+    transition: width 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.pf-hero .pf-meter > span,
+.pf-meter.gold > span {
+    background: linear-gradient(90deg, #fdc908 0%, #ffe066 55%, #f59e0b 100%);
+    box-shadow: 0 0 12px rgba(253, 201, 8, 0.55);
+}
+
+/* ========================================================================== */
+/* 4. THANH CHUYỂN 4 TAB BENTO DOCK (.pf-tabs)                                */
+/* ========================================================================== */
+.pf-tabs {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+    padding: 8px;
+    margin: 24px 0;
+    border-radius: 22px;
+    background: #ffffff;
+    border: 2px solid rgba(2, 117, 251, 0.16);
+    box-shadow: 0 14px 34px rgba(2, 117, 251, 0.07);
+}
+
+.pf-tabs button {
+    min-height: 50px;
+    padding: 12px 16px;
+    border-radius: 15px;
+    border: 1.5px solid transparent;
+    background: #f8fbff;
+    color: #475569;
+    font-size: 13.5px;
+    font-weight: 800;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+}
+
+.pf-tabs button:hover {
+    color: var(--pf-blue);
+    background: #eaf3ff;
+    border-color: rgba(2, 117, 251, 0.24);
+}
+
+.pf-tabs button[aria-selected='true'] {
+    background: linear-gradient(135deg, #042a6b 0%, #0275fb 60%, #014296 100%);
+    color: #ffffff;
+    border-color: var(--pf-yellow);
+    box-shadow: 0 10px 24px rgba(2, 117, 251, 0.26);
+    transform: translateY(-1px);
+}
+
+/* ========================================================================== */
+/* 5. BỐ CỤC TAB, THẺ BENTO & 5 CHỈ SỐ TỔNG QUAN (.pf-card, .pf-metrics)      */
+/* ========================================================================== */
+.pf-tab-content {
+    display: grid;
+    gap: 24px;
+    animation: pf-enter 0.28s ease-out;
+}
+
+.pf-card {
+    min-width: 0;
+    border: 2px solid rgba(2, 117, 251, 0.15);
+    border-radius: 28px;
+    padding: 28px;
+    background: #ffffff;
+    box-shadow: 0 16px 40px rgba(2, 117, 251, 0.06);
+}
+
+.pf-columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 22px;
+}
+
+.pf-card-heading {
+    margin-bottom: 18px;
+    padding-bottom: 14px;
+    border-bottom: 1.5px solid #e2e8f0;
+    color: var(--pf-blue);
+}
+
+.pf-card-heading .material-symbols-outlined {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    flex-shrink: 0;
+    border-radius: 12px;
+    background: #eaf3ff;
+    border: 1.5px solid rgba(2, 117, 251, 0.2);
+    color: var(--pf-blue);
+    font-size: 20px;
+}
+
+.pf-card-heading h2 {
+    color: var(--pf-ink);
+    font-size: 20px;
+    margin: 0;
+}
+
+.pf-section-heading {
+    margin-bottom: 4px;
+}
+
+.pf-section-heading p {
+    max-width: 720px;
+    font-size: 14px;
+}
+
+/* Lưới 5 Chỉ Số Tổng Quan (.pf-metrics) */
+.pf-metrics {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.pf-metric {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    border: 2px solid rgba(2, 117, 251, 0.15);
+    border-radius: 24px;
+    padding: 22px 20px;
+    box-shadow: 0 12px 30px rgba(2, 117, 251, 0.05);
+    transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
+}
+
+.pf-metric:hover {
+    transform: translateY(-4px);
+    border-color: var(--pf-yellow);
+    box-shadow: 0 18px 38px rgba(2, 117, 251, 0.12);
+}
+
+.pf-metric-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 46px;
+    height: 46px;
+    min-width: 46px;
+    flex-shrink: 0;
+    background: linear-gradient(135deg, #0353b8 0%, #0275fb 100%);
+    border: 2px solid var(--pf-yellow);
+    border-radius: 14px;
+    color: var(--pf-yellow);
+    box-shadow: 0 8px 18px rgba(2, 117, 251, 0.2);
+}
+
+.pf-metric > strong {
+    display: block;
+    font-family: Montserrat, sans-serif;
+    font-size: 34px;
+    font-weight: 900;
+    color: var(--pf-blue);
+    letter-spacing: -0.03em;
+    line-height: 1.15;
+    margin-top: 16px;
+}
+
+.pf-metric h3 {
+    font-size: 14px;
+    font-weight: 900;
+    color: var(--pf-ink);
+    margin: 6px 0 4px;
+}
+
+.pf-metric p {
+    font-size: 12px;
+    color: var(--pf-muted);
+    margin: 0;
+}
+
+/* Danh sách Thông tin (.pf-facts) */
+.pf-facts {
+    margin: 0;
+}
+
+.pf-fact {
+    padding: 13px 0;
+    border-bottom: 1.5px solid #f1f5f9;
+}
+
+.pf-fact:last-child {
+    border-bottom: 0;
+}
+
+.pf-fact dt {
+    font-size: 11.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #64748b;
+    margin-bottom: 4px;
+}
+
+.pf-fact dd {
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--pf-ink);
+    margin: 0;
+}
+
+.pf-fact small {
+    display: inline-block;
+    margin-top: 3px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #059669;
+}
+
+/* Thẻ Hành Động Tiếp Theo (.pf-next-step) */
+.pf-next-step {
+    background: linear-gradient(145deg, #f2f7ff 0%, #ffffff 55%, #fffbeb 100%);
+    border-color: var(--pf-yellow);
+    box-shadow: 0 18px 42px rgba(253, 201, 8, 0.14);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.pf-actions {
+    flex-wrap: wrap;
+    margin-top: 18px;
+}
+
+.pf-footnote {
+    font-size: 12px !important;
+    color: #64748b !important;
+}
+
+/* ========================================================================== */
+/* 6. TAB HÀNH TRÌNH & THÀNH TÍCH (.pf-site-picker, .pf-stamps, .pf-badges)   */
+/* ========================================================================== */
+.pf-site-picker {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 14px;
+    padding: 18px 24px;
+    background: linear-gradient(135deg, #042a6b 0%, #0275fb 60%, #014296 100%);
+    border: 2.5px solid var(--pf-yellow);
+    border-radius: 24px;
+    color: #ffffff;
+    box-shadow: 0 14px 34px rgba(2, 117, 251, 0.2);
+}
+
+.pf-site-picker label {
+    font-size: 12px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #fff2c3;
+}
+
+.pf-site-picker select {
+    max-width: 100%;
+    min-width: 220px;
+    padding: 10px 16px;
+    background: #ffffff;
+    border: 2px solid var(--pf-yellow);
+    border-radius: 14px;
+    color: var(--pf-ink);
+    font-size: 13.5px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.pf-site-picker > span {
+    margin-left: auto;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: rgba(15, 27, 51, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    font-size: 12px;
+    font-weight: 800;
+    color: #fff2c3;
+}
+
+/* Khối Tiến Độ Khám Phá & Cổ Vật */
+.pf-progress-block {
+    background: linear-gradient(160deg, #f8fbff 0%, #ffffff 100%);
+    border: 2px solid rgba(2, 117, 251, 0.14);
+    border-radius: 22px;
+    padding: 22px 24px;
+}
+
+.pf-progress-block:nth-child(2) {
+    background: linear-gradient(160deg, #fffbeb 0%, #ffffff 100%);
+    border-color: rgba(253, 201, 8, 0.65);
+}
+
+.pf-progress-block h3 {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    font-size: 15px;
+    font-weight: 900;
+    margin-top: 0;
+}
+
+.pf-progress-block h3 .material-symbols-outlined {
+    color: var(--pf-blue);
+}
+
+.pf-progress-block strong {
+    display: block;
+    font-family: Montserrat, sans-serif;
+    font-size: 32px;
+    font-weight: 900;
+    color: var(--pf-blue);
+    margin-top: 8px;
+}
+
+.pf-progress-block p {
+    font-size: 12.5px;
+    margin-bottom: 0;
+}
+
+/* Danh sách Nhiệm Vụ & Vé Di Tích */
+.pf-quest-list,
+.pf-system-badges,
+.pf-pass-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.pf-quest-list li,
+.pf-pass-list li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 16px 18px;
+    margin-bottom: 10px;
+    border-radius: 18px;
+    background: #f8fbff;
+    border: 1.5px solid rgba(2, 117, 251, 0.12);
+}
+
+.pf-quest-list li:last-child,
+.pf-pass-list li:last-child {
+    margin-bottom: 0;
+}
+
+.pf-quest-list small,
+.pf-pass-list small {
+    display: block;
+    color: var(--pf-muted);
+    font-size: 12px;
+    font-weight: 600;
+    margin-top: 4px;
+}
+
+.pf-checkbox {
+    display: inline-flex;
+    gap: 8px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: #f2f7ff;
+    border: 1.5px solid rgba(2, 117, 251, 0.2);
+    font-size: 12.5px;
+    font-weight: 800;
+    color: var(--pf-ink);
+    align-items: center;
+    cursor: pointer;
+}
+
+/* Con Dấu Hộ Chiếu Di Sản (.pf-stamps) */
+.pf-stamps {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+    margin-top: 20px;
+}
+
+.pf-stamp {
+    border: 2px solid rgba(2, 117, 251, 0.16);
+    border-radius: 22px;
+    overflow: hidden;
+    background: #ffffff;
+    box-shadow: 0 12px 28px rgba(15, 27, 51, 0.05);
+    transition: transform 0.22s ease, border-color 0.22s ease;
+}
+
+.pf-stamp:hover {
+    transform: translateY(-3px);
+    border-color: var(--pf-yellow);
+}
+
+.pf-stamp > img,
+.pf-stamp > .pf-image-fallback {
+    width: 100%;
+    height: 165px;
+    object-fit: cover;
+}
+
+.pf-stamp > div:not(.pf-image-fallback) {
+    padding: 20px 22px;
+}
+
+.pf-stamp strong {
+    display: block;
+    margin: 6px 0 12px;
+    font-size: 13.5px;
+    font-weight: 800;
+    color: var(--pf-blue);
+}
+
+.pf-stamp p {
+    font-size: 12px;
+    margin: 2px 0;
+}
+
+.pf-image-fallback {
+    display: grid;
+    place-items: center;
+    background: #eaf3ff;
+    color: var(--pf-blue);
+}
+
+/* Bộ Sưu Tập Huy Hiệu Giải Mã Củ Chi (.pf-badges) */
+.pf-badge-count {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: #fffbeb;
+    border: 1.5px solid var(--pf-yellow);
+    color: #92400e !important;
+    font-size: 12.5px !important;
+    font-weight: 900 !important;
+    margin-bottom: 18px !important;
+}
+
+.pf-badges {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.pf-badge {
+    border: 2px solid #e2e8f0;
+    background: #f8fafc;
+    border-radius: 22px;
+    padding: 20px 16px;
+    display: grid;
+    text-align: center;
+    gap: 8px;
+    justify-items: center;
+    cursor: pointer;
+    transition: all 0.22s ease;
+}
+
+.pf-badge:hover {
+    transform: translateY(-4px);
+    border-color: var(--pf-blue);
+    background: #ffffff;
+    box-shadow: 0 14px 32px rgba(2, 117, 251, 0.1);
+}
+
+.pf-badge img,
+.pf-badge > .pf-image-fallback {
+    width: 108px;
+    height: 108px;
+    object-fit: contain;
+    filter: grayscale(1);
+    opacity: 0.55;
+    transition: transform 0.25s ease, filter 0.25s ease, opacity 0.25s ease;
+}
+
+.pf-badge:hover img {
+    transform: scale(1.05);
+}
+
+.pf-badge.earned {
+    background: linear-gradient(160deg, #fffbeb 0%, #ffffff 100%);
+    border-color: var(--pf-yellow);
+    box-shadow: 0 14px 32px rgba(253, 201, 8, 0.18);
+}
+
+.pf-badge.earned img {
+    filter: none;
+    opacity: 1;
+}
+
+.pf-badge strong {
+    font-size: 14.5px;
+    font-weight: 900;
+    color: var(--pf-ink);
+}
+
+.pf-badge span {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--pf-muted);
+}
+
+.pf-badge.earned span {
+    color: #b45309;
+}
+
+/* Huy hiệu hệ thống */
+.pf-system-badges {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.pf-system-badges li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #f8fbff;
+    border: 1.5px solid rgba(2, 117, 251, 0.14);
+    padding: 15px 18px;
+    border-radius: 16px;
+    font-size: 13.5px;
+    font-weight: 700;
+}
+
+.pf-system-badges li .material-symbols-outlined {
+    color: var(--pf-blue);
+}
+
+.pf-system-badges li span:last-child {
+    margin-left: auto;
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--pf-muted);
+}
+
+/* ========================================================================== */
+/* 7. HẠN MỨC TỔ CHỨC, SÁNG TẠO, FORM & HỘP THOẠI HUY HIỆU                   */
+/* ========================================================================== */
+.pf-quota-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.pf-quota-grid > div {
+    padding: 20px;
+    background: linear-gradient(160deg, #f2f7ff 0%, #ffffff 100%);
+    border: 1.5px solid rgba(2, 117, 251, 0.16);
+    border-radius: 18px;
+}
+
+.pf-quota-grid span {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--pf-muted);
+}
+
+.pf-quota-grid strong {
+    display: block;
+    font-family: Montserrat, sans-serif;
+    font-size: 24px;
+    font-weight: 900;
+    color: var(--pf-blue);
+    margin-top: 8px;
+}
+
+.pf-empty {
+    padding: 32px 24px;
+    text-align: center;
+    background: #f8fbff;
+    border: 2px dashed rgba(2, 117, 251, 0.24);
+    border-radius: 20px;
+}
+
+.pf-empty > .material-symbols-outlined {
+    font-size: 38px;
+    color: var(--pf-blue);
+}
+
+.pf-empty.compact {
+    padding: 18px;
+}
+
+.pf-notice {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    background: linear-gradient(90deg, #eaf3ff 0%, #f8fbff 100%);
+    border: 1.5px solid rgba(2, 117, 251, 0.24);
+    border-left: 4px solid var(--pf-blue);
+    border-radius: 18px;
+    padding: 18px 20px;
+}
+
+.pf-notice.error {
+    background: #fff1f2;
+    border-color: #fecdd3;
+    border-left-color: #e11d48;
+    color: #9f1239;
+}
+
+.pf-notice p {
+    font-size: 13.5px;
+    margin: 3px 0;
+}
+
+.pf-notice > .material-symbols-outlined {
+    color: var(--pf-blue);
+    flex-shrink: 0;
+}
+
+.pf-loading {
+    padding: 32px;
+    text-align: center;
+}
+
+.pf-skeleton {
+    display: block;
+    height: 12px;
+    background: linear-gradient(90deg, #dbeafe, #f1f5f9, #dbeafe);
+    border-radius: 12px;
+    width: 65%;
+    margin: auto;
+}
+
+.pf-updating {
+    font-size: 12px;
+}
+
+/* Sáng tạo của người dùng (.pf-creations) */
+.pf-creations {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+    margin-top: 18px;
+}
+
+.pf-creations > a,
+.pf-creation {
+    overflow: hidden;
+    border: 2px solid rgba(2, 117, 251, 0.15);
+    border-radius: 20px;
+    background: #ffffff;
+    transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.pf-creations > a:hover,
+.pf-creation:hover {
+    transform: translateY(-3px);
+    border-color: var(--pf-yellow);
+}
+
+.pf-creations img,
+.pf-creations .pf-image-fallback {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+}
+
+.pf-creations a > div:last-child,
+.pf-creation a > div:last-child {
+    padding: 16px;
+}
+
+.pf-creations small,
+.pf-creations a > div:last-child span {
+    display: block;
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--pf-muted);
+}
+
+.pf-creation > a {
+    display: block;
+}
+
+.pf-creation-actions {
+    padding: 14px 16px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    border-top: 1px solid #e2e8f0;
+}
+
+.pf-creation-actions p {
+    width: 100%;
+    font-size: 13px;
+}
+
+.pf-delete-creation {
+    margin: 0 16px 16px;
+    color: #dc2626;
+    font-weight: 800;
+}
+
+/* Biểu mẫu chỉnh sửa (.pf-form) */
+.pf-form {
+    background: #f8fbff !important;
+    border-color: rgba(2, 117, 251, 0.2) !important;
+}
+
+.pf-form label {
+    display: block;
+    margin: 16px 0;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.pf-form label > span {
+    color: #334155;
+}
+
+.pf-form input {
+    display: block;
+    width: 100%;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 12px;
+    background: #ffffff;
+    color: var(--pf-ink);
+    font-size: 14px;
+    font-weight: 600;
+    padding: 12px 14px;
+    margin-top: 6px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.pf-form input:focus {
+    outline: none;
+    border-color: var(--pf-blue);
+    box-shadow: 0 0 0 3px rgba(2, 117, 251, 0.15);
+}
+
+.pf-form h2 {
+    font-size: 18px;
+}
+
+/* Hộp thoại chi tiết Huy hiệu (.pf-badge-dialog) */
+.pf-badge-dialog {
+    color: var(--pf-ink);
+    max-width: min(92vw, 480px);
+    width: 480px;
+    max-height: 90dvh;
+    padding: 34px 30px;
+    border: 3px solid var(--pf-yellow);
+    border-radius: 28px;
+    background: #ffffff;
+    text-align: center;
+    overflow: auto;
+    box-shadow: 0 28px 65px rgba(7, 19, 44, 0.45);
+}
+
+.pf-badge-dialog::backdrop {
+    background: rgba(7, 19, 44, 0.72);
+    backdrop-filter: blur(6px);
+}
+
+.pf-badge-dialog > img {
+    width: 148px;
+    height: 148px;
+    object-fit: contain;
+    margin: 0 auto 18px;
+}
+
+.pf-badge-dialog h2 {
+    font-size: 24px;
+    font-weight: 900;
+    margin: 14px 0 10px;
+}
+
+.pf-badge-dialog p {
+    color: var(--pf-muted);
+    margin: 12px 0;
+}
+
+.pf-dialog-close {
+    position: absolute;
+    right: 16px;
+    top: 16px;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 1.5px solid #e2e8f0;
+    background: #f8fafc;
+    color: var(--pf-ink);
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+}
+
+.pf-dialog-close:hover {
+    border-color: var(--pf-blue);
+    color: var(--pf-blue);
+}
+
+.pf-badge-dialog > .pf-button {
+    margin-top: 18px;
+    width: 100%;
+}
+
+@keyframes pf-enter {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+/* ========================================================================== */
+/* RESPONSIVE BREAKPOINTS                                                     */
+/* ========================================================================== */
+@media (max-width: 1100px) {
+    .pf-metrics {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .pf-hero {
+        grid-template-columns: 1fr;
+    }
+
+    .pf-tabs {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .pf-columns {
+        gap: 16px;
+    }
+
+    .pf-main {
+        padding-top: 28px;
+    }
+}
+
+@media (max-width: 650px) {
+    .pf-main {
+        padding: 20px 14px 64px;
+    }
+
+    .pf-page-heading {
+        padding: 18px 20px;
+        gap: 14px;
+    }
+
+    .pf-hero {
+        padding: 20px;
+        gap: 20px;
+        border-radius: 26px;
+    }
+
+    .pf-identity {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+
+    .pf-avatar {
+        width: 88px;
+        height: 88px;
+        min-width: 88px;
+        border-radius: 22px;
+    }
+
+    .pf-columns,
+    .pf-stamps,
+    .pf-quota-grid,
+    .pf-system-badges,
+    .pf-creations {
+        grid-template-columns: 1fr;
+    }
+
+    .pf-metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .pf-metric {
+        padding: 16px;
+    }
+
+    .pf-metric > strong {
+        font-size: 28px;
+    }
+
+    .pf-card {
+        padding: 20px;
+        border-radius: 22px;
+    }
+
+    .pf-tabs {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px;
+    }
+
+    .pf-tabs button {
+        white-space: normal;
+        padding: 12px 10px;
+        font-size: 12.5px;
+    }
+
+    .pf-badges {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .pf-badge img {
+        width: 84px;
+        height: 84px;
+    }
+
+    .pf-site-picker select {
+        width: 100%;
+    }
+
+    .pf-site-picker > span {
+        margin-left: 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pf-tab-content {
+        animation: none;
+    }
+    .pf-button,
+    .pf-metric,
+    .pf-badge {
+        transition: none;
+    }
+    .pf-button:hover,
+    .pf-metric:hover,
+    .pf-badge:hover {
+        transform: none;
+    }
+}

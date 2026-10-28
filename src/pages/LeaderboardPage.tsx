@@ -932,14 +932,6 @@ export function LeaderboardPage() {
                                 >
                                     Thử lại bảng vinh danh
                                 </button>
-                                {groupId && (
-                                    <Link
-                                        to="/groups"
-                                        className="px-5 py-3 rounded-2xl border-2 border-[#0275FB]/25 text-[#0275FB] font-black text-xs uppercase tracking-wider hover:bg-[#EAF3FF]"
-                                    >
-                                        Kiểm tra nhóm của tôi
-                                    </Link>
-                                )}
                             </div>
                         </section>
                     )}

@@ -162,10 +162,6 @@ async function mockFieldTrips(page: Page, options: MockOptions = {}) {
         daysUntilExpiry: 20,
       })
     }
-    if (path === '/api/groups/mine') {
-      calls.groupMine += 1
-      return ok([])
-    }
 
     if (path === '/api/teacher/field-trips' && method === 'GET') return ok(state.trips)
     if (path === '/api/teacher/field-trips' && method === 'POST') {

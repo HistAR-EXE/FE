@@ -72,7 +72,7 @@ const experiences = [
         icon: '⚑',
         tag: '06 / MỖI KHÁM PHÁ, MỘT DẤU ẤN',
         title: 'Mang theo những điều bạn đã khám phá.',
-        text: 'Giải câu đố, khám phá các trạm, tích lũy điểm và huy hiệu. Cùng nhóm hoặc biệt đội lưu lại hành trình và chia sẻ những dấu mốc của mình.',
+        text: 'Giải câu đố, khám phá các trạm, tích lũy điểm và huy hiệu. Lưu lại tiến độ trong hồ sơ và chia sẻ những dấu mốc của mình.',
         image: '/images/landing/features-v1/quests.png',
         caption: 'Nhiệm vụ — khám phá và tích lũy XP',
         route: '/quests',
