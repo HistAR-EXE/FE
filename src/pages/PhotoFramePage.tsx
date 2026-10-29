@@ -949,6 +949,7 @@ function PhotoFrameEditor({
                                     setHeritagePreview({ ready: false, error: null })
                                 }}
                                 aria-pressed={photoMode === 'original'}
+                                aria-label="Ảnh gốc"
                                 className={`min-w-0 rounded-2xl border-2 px-4 py-3 text-xs sm:text-sm font-black transition-all cursor-pointer ${
                                     photoMode === 'original'
                                         ? 'border-[#0275FB] bg-[#EAF3FF] text-[#0275FB] shadow-xs'
@@ -962,6 +963,7 @@ function PhotoFrameEditor({
                                 type="button"
                                 disabled={!hasHeritageRoles}
                                 aria-pressed={photoMode === 'heritage'}
+                                aria-label="Hóa thân 1968"
                                 onClick={() => {
                                     setPhotoMode('heritage')
                                     setVariant('story')
