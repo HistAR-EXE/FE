@@ -1038,7 +1038,7 @@ export function AdminUsersPage() {
                 </colgroup>
                 <thead>
                   <tr className="users-table-head select-none bg-surface-container-lowest font-label-sm text-label-sm uppercase tracking-wider text-outline">
-                    <th className="w-10 px-3 py-3 sm:px-space-md">
+                    <th className="w-10 px-3 py-3 text-center sm:px-space-md">
                       <input
                         type="checkbox"
                         aria-label="Chọn tất cả trên trang"
@@ -1073,7 +1073,7 @@ export function AdminUsersPage() {
                             : 'hover:bg-surface-container/50'
                         }`}
                       >
-                        <td className="px-3 py-3 sm:px-space-md">
+                        <td className="px-3 py-3 text-center sm:px-space-md">
                           <input
                             type="checkbox"
                             aria-label={`Chọn ${user.email}`}

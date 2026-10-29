@@ -1428,7 +1428,7 @@ export function AdminOrganizationsPage() {
                           <colgroup><col className="w-12" /><col className="w-[18rem]" /><col className="w-[12rem]" /><col className="w-[9rem]" /><col className="w-[9rem]" /><col className="w-[12rem]" /></colgroup>
                           <thead>
                             <tr className="org-roster-head bg-surface-container-lowest font-code-sm text-code-sm uppercase tracking-wider text-outline">
-                              <th className="w-10 rounded-l-lg px-3 py-2.5">
+                              <th className="w-10 rounded-l-lg px-3 py-2.5 text-center">
                                 <input
                                   type="checkbox"
                                   aria-label="Chọn tất cả trên trang"
@@ -1466,7 +1466,7 @@ export function AdminOrganizationsPage() {
                                   key={member.userId}
                                   className="transition-colors hover:bg-surface-container"
                                 >
-                                  <td className="px-3 py-3">
+                                  <td className="px-3 py-3 text-center">
                                     <input
                                       type="checkbox"
                                       aria-label={`Chọn ${member.displayName}`}

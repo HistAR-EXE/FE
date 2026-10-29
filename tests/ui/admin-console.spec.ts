@@ -244,7 +244,7 @@ test('billing chart switches views and monthly ranges without changing its sourc
     await chart.getByRole('button', { name: view }).click()
     await expect(chart.getByRole('button', { name: view })).toHaveAttribute('aria-pressed', 'true')
   }
-  for (const range of ['3 tháng', '6 tháng', 'Toàn bộ']) {
+  for (const range of ['1 tháng', '3 tháng', '6 tháng', '1 năm', 'Khác']) {
     await period.getByRole('button', { name: range }).click()
     await expect(period.getByRole('button', { name: range })).toHaveAttribute('aria-pressed', 'true')
   }
