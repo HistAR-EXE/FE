@@ -7,11 +7,13 @@ type AdminModalProps = {
   onClose: () => void
   children: ReactNode
   wide?: boolean
+  extraWide?: boolean
   /** Icon next to title (Material Symbol name) */
   icon?: string
+  initialFocusSelector?: string
 }
 
-export function AdminModal({ title, subtitle, onClose, children, wide, icon }: AdminModalProps) {
+export function AdminModal({ title, subtitle, onClose, children, wide, extraWide, icon, initialFocusSelector }: AdminModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null)
   const dialogRef = useRef<HTMLDivElement>(null)
   const onCloseRef = useRef(onClose)
@@ -38,7 +40,8 @@ export function AdminModal({ title, subtitle, onClose, children, wide, icon }: A
     }
     document.body.style.overflow = 'hidden'
     const focusable = () => Array.from(dialog?.querySelectorAll<HTMLElement>('button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])') ?? [])
-    focusable()[0]?.focus()
+    ;(initialFocusSelector ? dialog?.querySelector<HTMLElement>(initialFocusSelector) : null)?.focus()
+    if (!dialog?.contains(document.activeElement)) focusable()[0]?.focus()
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         event.preventDefault()
@@ -60,17 +63,17 @@ export function AdminModal({ title, subtitle, onClose, children, wide, icon }: A
       inerted.forEach(({ element, wasInert }) => { if (!wasInert) element.removeAttribute('inert') })
       previouslyFocused?.focus()
     }
-  }, [])
+  }, [initialFocusSelector])
 
   return (
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-[#0F1B33]/55 p-4 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
         ref={dialogRef}
-        className={`pointer-events-auto flex max-h-[min(90vh,44rem)] w-full min-w-0 flex-col overflow-hidden rounded-2xl border border-outline-variant bg-surface-container-low text-on-surface shadow-[0_25px_50px_-12px_rgba(0,0,0,0.85)] ${wide ? 'max-w-xl' : 'max-w-lg'}`}
+        className={`pointer-events-auto flex max-h-[min(90vh,44rem)] w-full min-w-0 flex-col overflow-hidden rounded-2xl border border-outline-variant bg-surface-container-low text-on-surface shadow-[0_25px_50px_-12px_rgba(15,27,51,0.24)] ${extraWide ? 'max-w-4xl' : wide ? 'max-w-xl' : 'max-w-lg'}`}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"

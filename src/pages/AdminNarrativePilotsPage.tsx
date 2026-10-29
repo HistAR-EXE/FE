@@ -602,7 +602,7 @@ export function AdminNarrativePilotsPage() {
 
   return (
     <section
-      className="flex w-full flex-col pb-20"
+      className="admin-page admin-narrative-page flex w-full flex-col pb-20"
       aria-busy={loading || detailLoading}
     >
       <AdminPageHeader
@@ -622,7 +622,7 @@ export function AdminNarrativePilotsPage() {
               <MaterialIcon name="refresh" className="text-[16px]" /> Tải lại
             </button>
             <Link to="/admin/audit" className={btnGhost}>
-              <MaterialIcon name="history" className="text-[16px]" /> Nhật ký Audit
+              <MaterialIcon name="history" className="text-[16px]" /> Nhật ký kiểm toán
             </Link>
             <button
               type="button"
@@ -640,14 +640,14 @@ export function AdminNarrativePilotsPage() {
                 ? "Đang tạo…"
                 : detail?.draft
                   ? "Mở bản nháp"
-                  : "Khởi tạo Pilot mới"}
+                  : "Tạo kịch bản mới"}
             </button>
           </div>
         }
       />
 
       <form
-        className="mb-space-lg flex flex-col gap-space-md rounded-xl bg-surface-container-low px-4 py-space-md shadow-md xl:flex-row xl:items-center xl:justify-between"
+        className="narrative-filter mb-space-lg flex flex-col gap-space-md rounded-xl px-4 py-space-md xl:flex-row xl:items-center xl:justify-between"
         onSubmit={(event) => {
           event.preventDefault();
           updateFilters({ q: search.trim() });
@@ -663,7 +663,7 @@ export function AdminNarrativePilotsPage() {
               aria-label="Tìm pilot cốt truyện"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Tìm quest hoặc kịch bản cốt truyện…"
+              placeholder="Tìm nhiệm vụ hoặc kịch bản…"
               className="w-full rounded-lg bg-surface-container-lowest py-2 pl-9 pr-4 font-body-sm text-body-sm text-on-surface placeholder:text-outline focus:bg-surface-container-high focus:outline-none"
             />
           </div>
@@ -738,11 +738,11 @@ export function AdminNarrativePilotsPage() {
       )}
       {!loading && !loadError && result && result.items.length > 0 && (
         <div className="grid grid-cols-1 items-start gap-space-md xl:grid-cols-12">
-          <aside className="flex min-w-0 flex-col gap-space-sm xl:col-span-4 xl:sticky xl:top-20 xl:self-start">
+          <aside className="narrative-list flex min-w-0 flex-col gap-space-sm xl:col-span-4 xl:sticky xl:top-20 xl:self-start">
             <div className="flex items-center justify-between px-space-sm">
               <div className="flex items-center gap-space-xs">
                 <h2 className="font-headline-sm text-headline-sm text-on-surface">
-                  Danh sách Quest Pilot
+                  Kịch bản đang quản lý
                 </h2>
                 <span className="rounded-full bg-surface-container-high px-2 py-0.5 font-code-sm text-code-sm text-primary">
                   {openCount} đang mở
@@ -766,7 +766,7 @@ export function AdminNarrativePilotsPage() {
                     type="button"
                     onClick={() => setSelectedQuestId(pilot.questId)}
                     aria-pressed={selected}
-                    className={`group relative w-full overflow-hidden rounded-xl p-space-md text-left transition-all ${
+                    className={`narrative-pilot-card group relative w-full overflow-hidden rounded-xl p-space-md text-left transition-all ${
                       selected
                         ? "bg-surface-container-high shadow-md"
                         : "bg-surface-container-low shadow-sm hover:bg-surface-container"
@@ -814,7 +814,7 @@ export function AdminNarrativePilotsPage() {
                       className={`mb-2.5 flex flex-wrap items-center gap-1.5 ${selected ? "pl-2" : ""}`}
                     >
                       <span className="rounded bg-primary-container/15 px-2 py-0.5 font-label-sm text-label-sm text-primary">
-                        AR Quest
+                        Nhiệm vụ AR
                       </span>
                       <span className="flex items-center gap-0.5 rounded bg-surface-container-lowest px-2 py-0.5 font-label-sm text-label-sm text-outline">
                         <MaterialIcon name="location_on" className="text-[12px]" />
@@ -822,7 +822,7 @@ export function AdminNarrativePilotsPage() {
                       </span>
                     </div>
                     <div
-                      className={`flex items-center justify-between rounded-lg bg-surface-container-lowest/40 p-2 font-body-sm text-body-sm text-outline ${selected ? "pl-2" : ""}`}
+                      className={`narrative-list-status flex items-center justify-between rounded-lg p-2 font-body-sm text-body-sm text-outline ${selected ? "pl-2" : ""}`}
                     >
                       <StatusBadge
                         label={
@@ -860,7 +860,7 @@ export function AdminNarrativePilotsPage() {
             />
           </aside>
 
-          <main className="flex min-w-0 flex-col gap-space-md xl:col-span-8">
+          <main className="narrative-detail flex min-w-0 flex-col gap-space-md xl:col-span-8">
             {detailLoading && <AdminLoading label="Đang tải chi tiết pilot" />}
             {!detailLoading && detailError && (
               <AdminErrorState
@@ -870,7 +870,7 @@ export function AdminNarrativePilotsPage() {
             )}
             {!detailLoading && !detailError && detail && (
               <>
-                <div className="flex flex-col gap-space-md rounded-xl bg-surface-container-low p-space-lg shadow-md">
+                <div className="narrative-overview flex flex-col gap-space-md rounded-xl p-space-lg">
                   <div className="flex flex-col justify-between gap-space-md lg:flex-row lg:items-center">
                     <div className="flex min-w-0 flex-col gap-1">
                       <div className="flex flex-wrap items-center gap-space-sm">
@@ -931,10 +931,10 @@ export function AdminNarrativePilotsPage() {
                           action.action === "resume" && resumeBlocked
                             ? publishedReadiness?.items
                                 .filter((item) => !item.passed)
-                                .map((item) => item.message)
+                                .map(readinessMessage)
                                 .join(" ")
                             : blockingItems
-                                .map((item) => item.message)
+                                .map(readinessMessage)
                                 .join(" ");
                         return (
                           <button
@@ -963,34 +963,26 @@ export function AdminNarrativePilotsPage() {
                   </div>
 
                   <div className="grid grid-cols-2 gap-space-sm pt-space-sm sm:grid-cols-4">
-                    <div className="flex flex-col rounded-lg bg-surface-container p-space-sm">
-                      <span className="font-label-sm text-label-sm uppercase text-outline">
-                        Số node kịch bản
-                      </span>
+                    <div className="narrative-metric flex flex-col rounded-lg p-space-sm" data-tone="blue">
+                      <span className="narrative-metric-label"><MaterialIcon name="account_tree" className="text-[18px]" /> Bước kịch bản</span>
                       <span className="mt-0.5 font-headline-md text-headline-md text-on-surface">
                         {nodeCount || "—"}
                       </span>
                     </div>
-                    <div className="flex flex-col rounded-lg bg-surface-container p-space-sm">
-                      <span className="font-label-sm text-label-sm uppercase text-outline">
-                        Nguồn & trích dẫn
-                      </span>
+                    <div className="narrative-metric flex flex-col rounded-lg p-space-sm" data-tone="teal">
+                      <span className="narrative-metric-label"><MaterialIcon name="menu_book" className="text-[18px]" /> Nguồn & trích dẫn</span>
                       <span className="mt-0.5 font-headline-md text-headline-md text-secondary">
                         {sourceCount || "—"}
                       </span>
                     </div>
-                    <div className="flex flex-col rounded-lg bg-surface-container p-space-sm">
-                      <span className="font-label-sm text-label-sm uppercase text-outline">
-                        Evidence nodes
-                      </span>
+                    <div className="narrative-metric flex flex-col rounded-lg p-space-sm" data-tone="violet">
+                      <span className="narrative-metric-label"><MaterialIcon name="fact_check" className="text-[18px]" /> Bước thu thập chứng cứ</span>
                       <span className="mt-0.5 font-headline-md text-headline-md text-tertiary">
                         {evidenceCount || "—"}
                       </span>
                     </div>
-                    <div className="flex flex-col rounded-lg bg-surface-container p-space-sm">
-                      <span className="font-label-sm text-label-sm uppercase text-outline">
-                        Điểm thưởng hoàn tất
-                      </span>
+                    <div className="narrative-metric flex flex-col rounded-lg p-space-sm" data-tone="gold">
+                      <span className="narrative-metric-label"><MaterialIcon name="stars" className="text-[18px]" /> Điểm thưởng hoàn tất</span>
                       <span className="mt-0.5 font-headline-md text-headline-md text-primary">
                         {rewardXpDisplay > 0 ? `+${rewardXpDisplay} XP` : "—"}
                       </span>
@@ -1005,7 +997,7 @@ export function AdminNarrativePilotsPage() {
                     ) && (
                       <p className="rounded-lg border border-outline-variant bg-tertiary/10 px-3 py-2 font-body-sm text-body-sm text-tertiary">
                         Hành động đang khóa:{" "}
-                        {blockingItems[0]?.message ?? "Độ sẵn sàng chưa đạt."}
+                        {blockingItems[0] ? readinessMessage(blockingItems[0]) : "Độ sẵn sàng chưa đạt."}
                       </p>
                     )}
                   {resumeBlocked &&
@@ -1015,7 +1007,8 @@ export function AdminNarrativePilotsPage() {
                       <p className="rounded-lg border border-outline-variant bg-tertiary/10 px-3 py-2 font-body-sm text-body-sm text-tertiary">
                         Không thể tiếp tục phiên bản đã phát hành:{" "}
                         {publishedReadiness?.items.find((item) => !item.passed)
-                          ?.message ?? "Độ sẵn sàng chưa đạt."}
+                          ? readinessMessage(publishedReadiness.items.find((item) => !item.passed)!)
+                          : "Độ sẵn sàng chưa đạt."}
                       </p>
                     )}
                 </div>
@@ -1035,7 +1028,7 @@ export function AdminNarrativePilotsPage() {
                 <div
                   role="tablist"
                   aria-label="Chi tiết pilot cốt truyện"
-                  className="flex items-center gap-1 overflow-x-auto rounded-xl bg-surface-container-lowest p-1.5 shadow-sm"
+                  className="narrative-tabs flex items-center gap-1 overflow-x-auto rounded-xl p-1.5"
                 >
                   {tabs.map((tab, index) => (
                     <button
@@ -1094,6 +1087,7 @@ export function AdminNarrativePilotsPage() {
                         }));
                       }}
                       onReview={submitReview}
+                      onOpenGraph={() => setTab("graph")}
                       gateErrors={gateErrors}
                       locationData={locations.find((l) => l.id === detail.locationId)}
                       onToggleAr={async (isArAvailable) => {
@@ -1110,10 +1104,10 @@ export function AdminNarrativePilotsPage() {
                   {activeTab === "graph" && graph && (
                     <>
                       <QuestNodeFlow graph={graph} />
-                      <div className="rounded-xl bg-surface-container-low p-space-md shadow-sm">
+                      <div className="narrative-editor-panel rounded-xl p-space-md">
                         <EditorHeader
-                          title="Sơ đồ bản nháp có cấu trúc"
-                          detail="Mỗi node dùng đúng trường runtime; choice chỉ trỏ đến node tồn tại."
+                          title="Chỉnh sửa các bước kịch bản"
+                          detail="Chọn một bước để xem và chỉnh nội dung. Chỉ liên kết đến bước đã có."
                           onSave={saveDraft}
                           saving={working === "save"}
                           disabled={!draft || Boolean(working)}
@@ -1126,13 +1120,13 @@ export function AdminNarrativePilotsPage() {
                           />
                         ) : (
                           <AdminEmptyState
-                            title="Chưa có draft"
-                            detail="Tạo một draft để chỉnh graph mà không ảnh hưởng bản đang phát hành."
+                            title="Chưa có bản nháp"
+                            detail="Tạo bản nháp để chỉnh kịch bản mà không ảnh hưởng phiên bản đang phát hành."
                           />
                         )}
                         <details className="mt-4 rounded-xl bg-surface-container p-3">
                           <summary className="cursor-pointer font-label-sm text-label-sm font-bold text-on-surface-variant">
-                            Bản xuất dữ liệu chỉ đọc
+                            Xem dữ liệu gốc của kịch bản
                           </summary>
                           <pre className="mt-3 max-h-80 overflow-auto whitespace-pre-wrap font-code-sm text-code-sm text-on-surface-variant">
                             {JSON.stringify(graph, null, 2)}
@@ -1171,7 +1165,7 @@ export function AdminNarrativePilotsPage() {
                         onChange={setGraph}
                       />
                       <SaveButton
-                        label="Lưu reward"
+                        label="Lưu phần thưởng"
                         disabled={
                           !draft ||
                           Boolean(working) ||
@@ -1260,13 +1254,35 @@ function SaveButton({
 
 function readinessTitle(code: string) {
   const map: Record<string, string> = {
-    FEATURE_FLAG: "Cờ tính năng narrative",
-    REVIEW_APPROVED: "Trạng thái duyệt bản nháp",
-    LOCALE_VI: "Locale tiếng Việt",
+    FEATURE_FLAG: "Tính năng cốt truyện",
+    REVIEW_APPROVED: "Bản nháp đã được duyệt",
+    LOCALE_VI: "Nội dung tiếng Việt",
     GRAPH_VALID: "Cấu trúc sơ đồ",
     SOURCE_PRESENT: "Nguồn & trích dẫn",
+    DESTINATION_QUEST: "Nhiệm vụ tại điểm đến",
+    DESTINATION_LOCATION: "Địa điểm của nhiệm vụ",
+    MEDIA_READY: "Hình ảnh tại điểm đến",
+    LOCALE_READY: "Bản tiếng Việt tại điểm đến",
+    CONTENT_REFERENCE_READY: "Liên kết nội dung điểm đến",
   };
   return map[code] ?? code.replaceAll("_", " ");
+}
+
+function readinessMessage(item: NarrativeReadiness["items"][number]) {
+  const messages: Record<string, [string, string]> = {
+    FEATURE_FLAG: ["Tính năng đã bật", "Cần bật tính năng cốt truyện trên máy chủ"],
+    REVIEW_APPROVED: ["Bản nháp đã được duyệt", "Cần duyệt bản nháp trước khi phát hành"],
+    LOCALE_VI: ["Bản tiếng Việt đã được duyệt", "Cần duyệt bản tiếng Việt"],
+    GRAPH_VALID: ["Các bước kịch bản hợp lệ", "Cần kiểm tra và sửa cấu trúc kịch bản"],
+    SOURCE_PRESENT: ["Đã có nguồn tham khảo", "Cần thêm ít nhất một nguồn tham khảo"],
+    DESTINATION_QUEST: ["Đã tìm thấy nhiệm vụ", "Chưa tìm thấy nhiệm vụ tại điểm đến"],
+    DESTINATION_LOCATION: ["Đã tìm thấy địa điểm", "Chưa tìm thấy địa điểm của nhiệm vụ"],
+    MEDIA_READY: ["Đã có hình ảnh", "Cần bổ sung hình ảnh tại điểm đến"],
+    LOCALE_READY: ["Bản tiếng Việt đã sẵn sàng", "Cần hoàn thành bản tiếng Việt"],
+    CONTENT_REFERENCE_READY: ["Liên kết nội dung hợp lệ", "Cần kiểm tra liên kết nội dung điểm đến"],
+  };
+  const message = messages[item.code];
+  return message ? message[item.passed ? 0 : 1] : item.message;
 }
 
 const READINESS_GROUPS: Array<{
@@ -1276,17 +1292,17 @@ const READINESS_GROUPS: Array<{
 }> = [
   {
     id: "system",
-    title: "Hệ thống & cờ tính năng",
+    title: "Cấu hình hệ thống",
     codes: ["FEATURE_FLAG"],
   },
   {
     id: "review",
-    title: "Thẩm định & locale",
+    title: "Duyệt nội dung",
     codes: ["REVIEW_APPROVED", "LOCALE_VI"],
   },
   {
     id: "structure",
-    title: "Cấu trúc sơ đồ & nguồn",
+    title: "Kịch bản & nguồn",
     codes: ["GRAPH_VALID", "SOURCE_PRESENT"],
   },
 ];
@@ -1305,19 +1321,19 @@ function QuestNodeFlow({ graph }: { graph: NarrativeGraphAdmin }) {
   if (!graph.nodes.length) {
     return (
       <AdminEmptyState
-        title="Chưa có node"
-        detail="Sơ đồ kịch bản sẽ hiện khi draft có nodes."
+        title="Chưa có bước kịch bản"
+        detail="Tạo bản nháp và thêm bước để xem sơ đồ."
       />
     );
   }
   return (
-    <div className="rounded-xl bg-surface-container-low p-space-md shadow-sm">
+    <div className="narrative-flow-panel rounded-xl bg-surface-container-low p-space-md shadow-sm">
       <div className="mb-3 flex items-center justify-between gap-2">
         <h3 className="font-headline-sm text-headline-sm text-on-surface">
-          Sơ đồ Kịch bản Điều hướng
+          Sơ đồ các bước kịch bản
         </h3>
         <span className="font-code-sm text-code-sm text-outline">
-          {graph.nodes.length} node
+          {graph.nodes.length} bước
         </span>
       </div>
       <div className="flex items-stretch gap-0 overflow-x-auto pb-2">
@@ -1367,11 +1383,11 @@ function QuestNodeFlow({ graph }: { graph: NarrativeGraphAdmin }) {
       </div>
       {selected && (
         <p className="mt-3 rounded-lg bg-surface-container px-3 py-2 font-body-sm text-body-sm text-on-surface-variant">
-          Node được chọn:{" "}
+          Bước đang xem:{" "}
           <span className="font-semibold text-on-surface">
             {selected.title?.trim() || selected.code}
           </span>{" "}
-          · type: {selected.type}
+          · {nodeTypeLabel(selected.type)}
           {selected.prompt ? ` · ${selected.prompt}` : ""}
         </p>
       )}
@@ -1383,17 +1399,19 @@ function ReadinessGroupCard({
   title,
   items,
   graph,
+  onOpenGraph,
 }: {
   title: string;
   items: NarrativeReadiness["items"];
   graph: NarrativeGraphAdmin | null;
+  onOpenGraph: () => void;
 }) {
   const passed = items.filter((item) => item.passed).length;
   const total = items.length;
   const allPassed = total > 0 && passed === total;
   const pct = total > 0 ? Math.round((passed / total) * 100) : 0;
   return (
-    <div className="flex flex-col justify-between rounded-xl bg-surface-container-low p-space-md shadow-sm">
+    <div className="narrative-check-card flex flex-col justify-between rounded-xl p-space-md">
       <div>
         <div className="mb-3 flex items-center justify-between gap-2">
           <span className="font-headline-sm text-headline-sm text-on-surface">
@@ -1432,19 +1450,22 @@ function ReadinessGroupCard({
                       {readinessTitle(item.code)}
                     </span>
                     <span className="block text-on-surface-variant">
-                      {item.message}
+                      {readinessMessage(item)}
                     </span>
+                    {!item.passed && item.code === "GRAPH_VALID" && item.message && (
+                      <details className="mt-1 text-xs text-on-surface-variant">
+                        <summary className="cursor-pointer font-semibold text-primary">Xem lỗi chi tiết</summary>
+                        <p className="mt-1 break-words">{item.message}</p>
+                      </details>
+                    )}
                     {!item.passed &&
                       item.nodeCode &&
                       graph?.nodes.some(
                         (node) => node.code === item.nodeCode,
                       ) && (
-                        <a
-                          href={`#node-${item.nodeCode}`}
-                          className="mt-1 inline-block font-label-sm text-label-sm font-bold text-primary"
-                        >
-                          Mở node {item.nodeCode}
-                        </a>
+                        <button type="button" onClick={onOpenGraph} className="mt-1 inline-block font-label-sm text-label-sm font-bold text-primary hover:underline">
+                          Mở tab Sơ đồ để sửa bước {item.nodeCode}
+                        </button>
                       )}
                   </span>
                 </span>
@@ -1493,6 +1514,7 @@ function ReadinessTab({
   working,
   onNoteChange,
   onReview,
+  onOpenGraph,
   gateErrors,
   locationData,
   onToggleAr,
@@ -1505,10 +1527,12 @@ function ReadinessTab({
   working: string | null;
   onNoteChange: (value: string) => void;
   onReview: (decision: "APPROVED" | "REJECTED") => Promise<void>;
+  onOpenGraph: () => void;
   gateErrors: StructuredGateError[];
   locationData: Location | undefined;
   onToggleAr: (isArAvailable: boolean) => Promise<void>;
 }) {
+  const [showChecks, setShowChecks] = useState(false);
   const status = detail.draft?.reviewStatus ?? detail.reviewStatus;
   const passedCount = readiness?.items.filter((item) => item.passed).length ?? 0;
   const totalCount = readiness?.items.length ?? 0;
@@ -1525,9 +1549,9 @@ function ReadinessTab({
         >
           <MaterialIcon name="toggle_off" />
           <div>
-            <p className="font-headline-sm text-on-surface">Global flag đang tắt</p>
+            <p className="font-headline-sm text-on-surface">Tính năng cốt truyện đang tắt</p>
             <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant">
-              Cấu hình deployment này chỉ đọc. Bật flag ở backend rồi tải lại trang.
+              Bật tính năng trên máy chủ rồi tải lại trang để tiếp tục.
             </p>
           </div>
         </div>
@@ -1542,7 +1566,7 @@ function ReadinessTab({
               : ""}
           </h3>
           <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant">
-            Ma trận phát hành — chỉ dữ liệu readiness từ API.
+            Kiểm tra những điều kiện cần hoàn tất trước khi phát hành.
           </p>
         </div>
         {readiness && (
@@ -1558,10 +1582,36 @@ function ReadinessTab({
 
       {!readiness ? (
         <p className="font-body-sm text-body-sm text-on-surface-variant">
-          Chưa có dữ liệu readiness.
+          Chưa có dữ liệu kiểm tra.
         </p>
       ) : (
-        <div className="grid grid-cols-1 gap-space-md md:grid-cols-3">
+        <div className="narrative-readiness-summary rounded-xl border border-amber-200 p-4">
+          <p className="font-semibold text-on-surface">
+            {readiness.ready ? "Kịch bản đã sẵn sàng phát hành" : `Còn ${totalCount - passedCount} điều kiện cần xử lý`}
+          </p>
+          {!readiness.ready && (
+            <ul className="mt-2 space-y-1 text-sm text-on-surface-variant">
+              {readiness.items.filter((item) => !item.passed).slice(0, 2).map((item, index) => (
+                <li key={`${item.code}-${index}`} className="flex items-start gap-2">
+                  <MaterialIcon name="error_outline" className="mt-0.5 shrink-0 text-[17px] text-amber-700" />
+                  <span>{readinessMessage(item)}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+          <button
+            type="button"
+            aria-expanded={showChecks}
+            onClick={() => setShowChecks((current) => !current)}
+            className="narrative-more-button mt-3"
+          >
+            {showChecks ? "Thu gọn điều kiện" : `Xem thêm ${totalCount} điều kiện`}
+            <MaterialIcon name={showChecks ? "expand_less" : "expand_more"} className="text-[20px]" />
+          </button>
+        </div>
+      )}
+
+      {showChecks && readiness && <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           {READINESS_GROUPS.map((group) => (
             <ReadinessGroupCard
               key={group.id}
@@ -1570,6 +1620,7 @@ function ReadinessTab({
                 group.codes.includes(item.code),
               )}
               graph={graph}
+              onOpenGraph={onOpenGraph}
             />
           ))}
           {leftover.length > 0 && (
@@ -1577,19 +1628,19 @@ function ReadinessTab({
               title="Mục khác"
               items={leftover}
               graph={graph}
+              onOpenGraph={onOpenGraph}
             />
           )}
-        </div>
-      )}
+        </div>}
 
-      <section className="rounded-xl bg-surface-container-low p-space-md shadow-sm" aria-labelledby="narrative-destinations-title">
+      {showChecks && <section className="narrative-destinations-panel rounded-xl bg-surface-container-low p-space-md shadow-sm" aria-labelledby="narrative-destinations-title">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h3 id="narrative-destinations-title" className="font-headline-md text-headline-md text-on-surface">
-              Checklist điểm đến narrative
+              Kiểm tra điểm đến
             </h3>
             <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant">
-              Xác nhận mỗi điểm đến runtime có node tương ứng trước khi phát hành.
+              Xác nhận mỗi điểm đến có bước kịch bản tương ứng trước khi phát hành.
             </p>
           </div>
           <span className="ops-pill ops-pill-neutral">{destinations.filter((item) => item.isReady).length}/{destinations.length} điểm đến</span>
@@ -1616,18 +1667,18 @@ function ReadinessTab({
             </a>
           ))}
         </div>
-      </section>
+      </section>}
 
       {/* AR Availability — BE source of truth, bridging NarrativeReadiness + is_ar_available */}
       {locationData && (
-        <section className="rounded-xl bg-surface-container-low p-space-md shadow-sm" aria-labelledby="ar-availability-title">
+        <section className="narrative-map-panel rounded-xl bg-surface-container-low p-space-md shadow-sm" aria-labelledby="ar-availability-title">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h3 id="ar-availability-title" className="font-headline-md text-headline-md text-on-surface">
-                Phát hành ra map
+                Hiển thị trên bản đồ
               </h3>
               <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant">
-                Bật để điểm đến hiện trên bản đồ với badge AR. Tắt không xoá dữ liệu.
+                Bật để điểm đến hiện trên bản đồ AR. Tắt sẽ giữ nguyên dữ liệu.
               </p>
             </div>
             <span className={locationData.isArAvailable ? "ops-pill ops-pill-success" : "ops-pill ops-pill-neutral"}>
@@ -1644,24 +1695,24 @@ function ReadinessTab({
                 onClick={() => onToggleAr(false)}
               >
                 <MaterialIcon name="public_off" />
-                Ẩn khỏi map
+                Ẩn khỏi bản đồ
               </button>
             ) : (
               <button
                 type="button"
                 className="ops-btn ops-btn-primary"
                 disabled={working !== null || !readiness?.ready}
-                title={!readiness?.ready ? "Cần hoàn thành readiness checklist trước" : undefined}
+                title={!readiness?.ready ? "Cần hoàn tất các điều kiện trước" : undefined}
                 onClick={() => onToggleAr(true)}
               >
                 <MaterialIcon name="public" />
-                Phát hành ra map
+                Hiển thị trên bản đồ
               </button>
             )}
           </div>
           {!readiness?.ready && !locationData.isArAvailable && (
             <p className="mt-2 font-body-sm text-body-sm text-on-surface-variant">
-              Hoàn thành readiness checklist để mở khoá nút Phát hành.
+              Hoàn tất các điều kiện để có thể hiển thị trên bản đồ.
             </p>
           )}
         </section>
@@ -1669,7 +1720,7 @@ function ReadinessTab({
 
       {gateErrors.length > 0 && (
         <section role="alert" className="rounded-xl border border-error/30 bg-error-container/20 p-space-md">
-          <h3 className="font-headline-sm text-headline-sm text-error">Gate phát hành bị chặn</h3>
+          <h3 className="font-headline-sm text-headline-sm text-error">Chưa thể phát hành</h3>
           <ul className="mt-2 space-y-2">
             {gateErrors.map((error) => (
               <li key={`${error.code}-${error.field ?? ""}-${error.destination ?? ""}`} className="font-body-sm text-body-sm text-on-surface">
@@ -1681,16 +1732,16 @@ function ReadinessTab({
         </section>
       )}
 
-      {graph && <QuestNodeFlow graph={graph} />}
+      {showChecks && graph && <QuestNodeFlow graph={graph} />}
 
-      <div className="rounded-xl bg-surface-container-low p-space-md shadow-sm">
+      <div className="narrative-review-panel rounded-xl bg-surface-container-low p-space-md shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h3 className="font-headline-md text-headline-md text-on-surface">
               Duyệt bản nháp
             </h3>
             <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant">
-              Review và rollout là hai trạng thái độc lập. Chỉ locale vi là bắt buộc.
+              Duyệt nội dung tiếng Việt trước khi phát hành kịch bản.
             </p>
           </div>
           <StatusBadge
@@ -1700,7 +1751,7 @@ function ReadinessTab({
           />
         </div>
         <label className="mt-4 block font-label-sm text-label-sm text-outline">
-          Ghi chú review (tối thiểu 10 ký tự)
+          Ghi chú duyệt (tối thiểu 10 ký tự)
           <textarea
             rows={4}
             value={note}
@@ -1747,7 +1798,7 @@ function HistoryTab({ events }: { events: AdminAuditEvent[] }) {
     <div>
       <h3 className="font-headline-md text-headline-md text-on-surface">Lịch sử kiểm toán</h3>
       <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant">
-        Một nguồn duy nhất từ admin audit; event trùng ID đã được loại bỏ.
+        Các thay đổi khi duyệt, tạo bản nháp và phát hành được ghi tại đây.
       </p>
       <ol className="mt-4 space-y-2">
         {events.map((event) => (

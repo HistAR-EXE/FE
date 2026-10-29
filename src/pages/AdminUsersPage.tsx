@@ -46,8 +46,8 @@ function downloadBlob(blob: Blob, filename: string) {
   URL.revokeObjectURL(url)
 }
 
-/** Stitch users table: 5 rows per page (same as audit / billing ledger) */
-const USERS_PAGE_SIZE = 5
+/** Keep the user directory dense enough for routine administration. */
+const USERS_PAGE_SIZE = 10
 
 /** Display order matches Stitch wireframe (admin → auditor → editor → explorer). */
 const ROLES: AdminRole[] = ['ADMIN', 'TEACHER', 'ORG_MEMBER', 'USER']
@@ -66,7 +66,7 @@ const ROLE_META: Record<
     badgeTone: 'error',
   },
   TEACHER: {
-    label: 'Chuyên gia / Giáo viên (Historical Auditor)',
+    label: 'Chuyên gia / Giáo viên',
     shortLabel: 'Chuyên gia thẩm định',
     icon: 'history_edu',
     description:
@@ -118,7 +118,7 @@ function formatCount(value: number) {
 function tierLabel(tier?: string | null) {
   if (!tier) return '—'
   if (tier === 'PREMIUM') return 'PREMIUM'
-  if (tier === 'FREE') return 'FREE BASIC'
+  if (tier === 'FREE') return 'Miễn phí'
   return tier
 }
 
@@ -588,16 +588,16 @@ export function AdminUsersPage() {
       : null
 
   return (
-    <section className="flex w-full min-w-0 max-w-full flex-col pb-16" aria-busy={loading}>
+    <section className="admin-page admin-users-page flex w-full min-w-0 max-w-full flex-col pb-16" aria-busy={loading}>
       <AdminPageHeader
-        eyebrow="MODULE: IAM_USERS · /admin/users"
+        eyebrow="KHÁCH HÀNG & DOANH THU / TÀI KHOẢN"
         title="Quản lý Người dùng"
         description="Quản trị hồ sơ tài khoản, phân quyền và trạng thái xác minh theo dữ liệu API HistAR."
         actions={
           <div className="flex max-w-full flex-wrap items-center gap-3">
             <button
               type="button"
-              className={btnGhost}
+              className={`${btnGhost} users-header-action users-header-action--export`}
               disabled={saving}
               onClick={() => void exportCsv()}
             >
@@ -610,14 +610,14 @@ export function AdminUsersPage() {
                   ? `/admin/audit?entityType=USER&entityId=${encodeURIComponent(selectedUser.id)}`
                   : '/admin/audit'
               }
-              className={btnGhost}
+              className={`${btnGhost} users-header-action users-header-action--audit`}
             >
               <MaterialIcon name="security" className="text-[18px]" />
-              Audit Log
+              Nhật ký kiểm toán
             </Link>
             <button
               type="button"
-              className="ops-btn-primary"
+              className="ops-btn-primary users-header-action users-header-action--invite"
               onClick={() => {
                 setInviteEmail('')
                 setInviteName('')
@@ -635,7 +635,7 @@ export function AdminUsersPage() {
       />
 
       <div className="mb-6 grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <div className="relative flex min-h-[7.5rem] flex-col justify-between gap-3 overflow-hidden rounded-xl border border-outline-variant/40 bg-surface-container-low p-4 shadow-sm">
+        <div className="users-stat-card relative flex min-h-[7.5rem] flex-col justify-between gap-3 overflow-hidden rounded-xl border border-outline-variant/40 bg-surface-container-low p-4 shadow-sm" data-tone="blue">
           <div className="flex items-center justify-between gap-3">
             <span className="font-body-md text-body-md font-medium text-on-surface-variant">
               Tổng tài khoản
@@ -651,7 +651,7 @@ export function AdminUsersPage() {
             Tổng từ API danh sách người dùng
           </span>
         </div>
-        <div className="relative flex min-h-[7.5rem] flex-col justify-between gap-3 overflow-hidden rounded-xl border border-outline-variant/40 bg-surface-container-low p-4 shadow-sm">
+        <div className="users-stat-card relative flex min-h-[7.5rem] flex-col justify-between gap-3 overflow-hidden rounded-xl border border-outline-variant/40 bg-surface-container-low p-4 shadow-sm" data-tone="teal">
           <div className="flex items-center justify-between gap-3">
             <span className="font-body-md text-body-md font-medium text-on-surface-variant">
               Tài khoản Premium
@@ -665,7 +665,7 @@ export function AdminUsersPage() {
           </p>
           <span className="font-code-sm text-code-sm text-outline">Gói PREMIUM</span>
         </div>
-        <div className="relative flex min-h-[7.5rem] flex-col justify-between gap-3 overflow-hidden rounded-xl border border-outline-variant/40 bg-surface-container-low p-4 shadow-sm">
+        <div className="users-stat-card relative flex min-h-[7.5rem] flex-col justify-between gap-3 overflow-hidden rounded-xl border border-outline-variant/40 bg-surface-container-low p-4 shadow-sm" data-tone="violet">
           <div className="flex items-center justify-between gap-3">
             <span className="font-body-md text-body-md font-medium text-on-surface-variant">
               Đã xác minh email
@@ -689,7 +689,7 @@ export function AdminUsersPage() {
             </div>
           </div>
         </div>
-        <div className="relative flex min-h-[7.5rem] flex-col justify-between gap-3 overflow-hidden rounded-xl border border-outline-variant/40 bg-surface-container-low p-4 shadow-sm">
+        <div className="users-stat-card relative flex min-h-[7.5rem] flex-col justify-between gap-3 overflow-hidden rounded-xl border border-outline-variant/40 bg-surface-container-low p-4 shadow-sm" data-tone="coral">
           <div className="flex items-center justify-between gap-3">
             <span className="font-body-md text-body-md font-medium text-on-surface-variant">
               Chưa xác minh
@@ -708,7 +708,7 @@ export function AdminUsersPage() {
       </div>
 
       {!appEnv.demoMode && (
-        <section className="mb-6 overflow-hidden rounded-xl border border-outline-variant/50 bg-surface-container-low shadow-sm">
+        <section className="users-demo-panel mb-6 overflow-hidden rounded-xl border border-outline-variant/50 bg-surface-container-low shadow-sm">
           <div className="flex flex-col gap-4 p-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex min-w-0 items-start gap-3">
               <div className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${demoEnvironment?.enabled ? 'bg-primary-container text-primary' : 'bg-surface-container-highest text-outline'}`}>
@@ -770,7 +770,7 @@ export function AdminUsersPage() {
       )}
 
       {demoDataset && demoDataset.enabled && (
-        <section className="mb-6 overflow-hidden rounded-xl border border-amber-500/30 bg-amber-500/5 shadow-sm">
+        <section className="users-demo-data mb-6 overflow-hidden rounded-xl border border-amber-500/30 bg-amber-500/5 shadow-sm">
           <div className="flex flex-col gap-3 border-b border-amber-500/20 p-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="font-headline-md text-headline-md font-bold text-on-surface">Dữ liệu demo</p>
@@ -823,7 +823,7 @@ export function AdminUsersPage() {
           event.preventDefault()
           updateParam('q', search.trim())
         }}
-        className="mb-6 flex min-w-0 flex-col gap-3 rounded-xl border border-outline-variant/40 bg-surface-container-low p-4 shadow-sm"
+        className="users-filter-panel mb-6 flex min-w-0 flex-col gap-3 rounded-xl border border-outline-variant/40 bg-surface-container-low p-4 shadow-sm"
       >
         <div className="flex min-w-0 flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-center">
           <div className="relative min-w-0 flex-1 basis-[14rem]">
@@ -879,7 +879,7 @@ export function AdminUsersPage() {
             className={`min-w-0 flex-1 basis-[8rem] lg:max-w-[11rem] ${inputClass}`}
           >
             <option value="">Trạng thái (Tất cả)</option>
-            <option value="ACTIVE">ACTIVE</option>
+            <option value="ACTIVE">Hoạt động</option>
             <option value="SUSPENDED">SUSPENDED</option>
           </select>
           <div className="flex shrink-0 gap-3">
@@ -945,7 +945,7 @@ export function AdminUsersPage() {
       )}
       {!loading && !error && result && result.items.length > 0 && (
         <>
-          <div className="flex w-full min-w-0 max-w-full flex-col overflow-hidden rounded-xl bg-surface-container-low shadow-sm">
+          <div className="users-table-panel flex w-full min-w-0 max-w-full flex-col overflow-hidden rounded-xl bg-surface-container-low shadow-sm">
             {selectedIds.length > 0 && (
               <div className="flex min-w-0 flex-wrap items-center justify-between gap-3 bg-surface-container px-space-md py-2 font-body-sm text-body-sm text-on-surface sm:px-space-lg">
                 <div className="flex min-w-0 flex-wrap items-center gap-space-md">
@@ -1030,26 +1030,31 @@ export function AdminUsersPage() {
             )}
 
             <div className="min-w-0 max-w-full overflow-x-auto overscroll-x-contain">
-              <table className="w-full min-w-[52rem] border-collapse text-left">
+              <table className="admin-users-table w-full min-w-[94rem] table-fixed border-collapse text-left">
+                <colgroup>
+                  <col className="w-12" /><col className="w-[15rem]" /><col className="w-[18rem]" />
+                  <col className="w-[10rem]" /><col className="w-[8rem]" /><col className="w-[9rem]" />
+                  <col className="w-[11rem]" /><col className="w-[8rem]" /><col className="w-[15rem]" />
+                </colgroup>
                 <thead>
-                  <tr className="select-none bg-surface-container-lowest font-label-sm text-label-sm uppercase tracking-wider text-outline">
+                  <tr className="users-table-head select-none bg-surface-container-lowest font-label-sm text-label-sm uppercase tracking-wider text-outline">
                     <th className="w-10 px-3 py-3 sm:px-space-md">
                       <input
                         type="checkbox"
                         aria-label="Chọn tất cả trên trang"
                         checked={result.items.every((item) => selectedIds.includes(item.id))}
                         onChange={toggleSelectAll}
-                        className="cursor-pointer accent-[var(--ops-primary,#4edea3)]"
+                        className="cursor-pointer accent-[var(--ops-primary,#0159bd)]"
                       />
                     </th>
                     <th className="min-w-[11rem] px-3 py-3 sm:px-space-md">Người dùng</th>
                     <th className="min-w-[10rem] px-3 py-3 sm:px-space-md">Email &amp; Liên hệ</th>
-                    <th className="min-w-[8rem] px-3 py-3 sm:px-space-md">Trạng thái xác minh</th>
-                    <th className="min-w-[6.5rem] px-3 py-3 sm:px-space-md">Tài khoản</th>
-                    <th className="min-w-[7rem] px-3 py-3 sm:px-space-md">Gói dịch vụ</th>
-                    <th className="min-w-[8.5rem] px-3 py-3 sm:px-space-md">Vai trò hiện hành</th>
-                    <th className="min-w-[5.5rem] px-3 py-3 sm:px-space-md">Tham gia</th>
-                    <th className="sticky right-0 z-[1] min-w-[5rem] bg-surface-container-lowest px-3 py-3 text-right sm:px-space-md">
+                    <th className="px-3 py-3 text-center sm:px-space-md">Xác minh</th>
+                    <th className="px-3 py-3 text-center sm:px-space-md">Tài khoản</th>
+                    <th className="px-3 py-3 text-center sm:px-space-md">Gói dịch vụ</th>
+                    <th className="px-3 py-3 text-center sm:px-space-md">Vai trò</th>
+                    <th className="px-3 py-3 text-center sm:px-space-md">Ngày tham gia</th>
+                    <th className="sticky right-0 z-[1] bg-surface-container-lowest px-3 py-3 text-center sm:px-space-md">
                       Thao tác
                     </th>
                   </tr>
@@ -1062,9 +1067,9 @@ export function AdminUsersPage() {
                     return (
                       <tr
                         key={user.id}
-                        className={`transition-all ${
+                        className={`users-table-row transition-all ${
                           selected
-                            ? 'bg-surface-container/70 shadow-[inset_2px_0_0_0_#4edea3]'
+                            ? 'bg-surface-container/70 shadow-[inset_2px_0_0_0_#0275fb]'
                             : 'hover:bg-surface-container/50'
                         }`}
                       >
@@ -1074,10 +1079,10 @@ export function AdminUsersPage() {
                             aria-label={`Chọn ${user.email}`}
                             checked={selected}
                             onChange={() => toggleSelect(user.id)}
-                            className="cursor-pointer accent-[var(--ops-primary,#4edea3)]"
+                            className="cursor-pointer accent-[var(--ops-primary,#0159bd)]"
                           />
                         </td>
-                        <td className="max-w-[14rem] px-3 py-3 sm:px-space-md">
+                        <td className="overflow-hidden px-3 py-3 sm:px-space-md">
                           <div className="flex min-w-0 items-center gap-space-sm">
                             <div
                               className={`grid h-9 w-9 shrink-0 place-items-center rounded-full font-label-md text-label-md font-bold ${
@@ -1090,7 +1095,7 @@ export function AdminUsersPage() {
                             </div>
                             <div className="min-w-0">
                               <div className="flex min-w-0 items-center gap-1.5">
-                                <span className="truncate font-headline-sm text-headline-sm font-semibold text-on-surface">
+                                <span className="truncate font-body-md text-body-md font-semibold text-on-surface" title={user.displayName || undefined}>
                                   {user.displayName || 'Không có tên'}
                                 </span>
                                 {user.emailVerified && (
@@ -1106,9 +1111,9 @@ export function AdminUsersPage() {
                             </div>
                           </div>
                         </td>
-                        <td className="max-w-[12rem] px-3 py-3 sm:px-space-md">
+                        <td className="overflow-hidden px-3 py-3 sm:px-space-md">
                           <div className="flex min-w-0 flex-col">
-                            <span className="truncate font-body-sm text-body-sm text-on-surface">
+                            <span className="truncate font-body-sm text-body-sm text-on-surface" title={user.email}>
                               {user.email}
                             </span>
                             <span className="font-code-sm text-code-sm text-outline">
@@ -1116,7 +1121,7 @@ export function AdminUsersPage() {
                             </span>
                           </div>
                         </td>
-                        <td className="px-3 py-3 sm:px-space-md">
+                        <td className="px-3 py-3 text-center sm:px-space-md">
                           {user.emailVerified ? (
                             <span className="inline-flex max-w-full items-center gap-1 truncate rounded-full bg-primary/10 px-2 py-1 font-label-sm text-label-sm font-medium text-primary">
                               <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
@@ -1129,18 +1134,18 @@ export function AdminUsersPage() {
                             </span>
                           )}
                         </td>
-                        <td className="px-3 py-3 sm:px-space-md">
+                        <td className="px-3 py-3 text-center sm:px-space-md">
                           {accountStatusOf(user) === 'SUSPENDED' ? (
                             <span className="inline-flex items-center gap-1 rounded-full bg-error/15 px-2 py-1 font-label-sm text-label-sm font-semibold text-error">
-                              SUSPENDED
+                              Tạm khóa
                             </span>
                           ) : (
                             <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-1 font-label-sm text-label-sm font-semibold text-primary">
-                              ACTIVE
+                              Hoạt động
                             </span>
                           )}
                         </td>
-                        <td className="px-3 py-3 sm:px-space-md">
+                        <td className="px-3 py-3 text-center sm:px-space-md">
                           <span
                             className={`inline-flex items-center gap-1 rounded-full px-2 py-1 font-label-sm text-label-sm font-semibold ${
                               user.tier === 'PREMIUM'
@@ -1156,7 +1161,7 @@ export function AdminUsersPage() {
                             {tierLabel(user.tier)}
                           </span>
                         </td>
-                        <td className="px-3 py-3 sm:px-space-md">
+                        <td className="px-3 py-3 text-center sm:px-space-md">
                           <span
                             className={`inline-flex max-w-[11rem] items-center gap-2 truncate rounded-lg px-2.5 py-1.5 font-label-sm text-label-sm ${
                               user.role === 'ADMIN'
@@ -1175,13 +1180,13 @@ export function AdminUsersPage() {
                             <span className="truncate">{meta.shortLabel}</span>
                           </span>
                         </td>
-                        <td className="whitespace-nowrap px-3 py-3 sm:px-space-md">
+                        <td className="whitespace-nowrap px-3 py-3 text-center sm:px-space-md">
                           <span className="font-code-sm text-code-sm text-on-surface">
                             {new Date(user.createdAt).toLocaleDateString('vi-VN')}
                           </span>
                         </td>
                         <td
-                          className={`sticky right-0 z-[1] px-3 py-3 text-right sm:px-space-md ${
+                          className={`sticky right-0 z-[1] px-3 py-3 text-center sm:px-space-md ${
                             selected ? 'bg-surface-container' : 'bg-surface-container-low'
                           }`}
                         >
@@ -1205,7 +1210,7 @@ export function AdminUsersPage() {
                               </option>
                             ))}
                           </select>
-                          <div className="flex items-center justify-end gap-0.5">
+                          <div className="admin-table-actions">
                             <button
                               type="button"
                               title={isSelf ? 'Không thể tự đổi vai trò' : 'Thay đổi vai trò'}
@@ -1427,7 +1432,7 @@ export function AdminUsersPage() {
                       key={item}
                       className={`flex min-w-0 cursor-pointer items-start gap-3 rounded-xl p-3.5 transition-all ${
                         active
-                          ? 'bg-surface-container shadow-[0_0_0_1.5px_#4edea3]'
+                          ? 'bg-surface-container shadow-[0_0_0_1.5px_#0275fb]'
                           : 'bg-surface-container-lowest hover:bg-surface-container-high'
                       }`}
                     >
@@ -1436,7 +1441,7 @@ export function AdminUsersPage() {
                         name="new_role"
                         checked={active}
                         onChange={() => setTarget({ ...target, role: item })}
-                        className="mt-1 shrink-0 accent-[var(--ops-primary,#4edea3)]"
+                        className="mt-1 shrink-0 accent-[var(--ops-primary,#0159bd)]"
                       />
                       <div className="flex min-w-0 flex-1 flex-col gap-1">
                         <div className="flex min-w-0 flex-wrap items-center gap-2">
@@ -1521,7 +1526,7 @@ export function AdminUsersPage() {
                 rows={3}
                 maxLength={256}
                 placeholder="Nhập lý do thăng cấp hoặc phân quyền bổ nhiệm…"
-                className="w-full min-w-0 resize-none rounded-lg bg-surface-container-lowest p-3 font-body-sm text-body-sm text-on-surface placeholder:text-outline focus:bg-surface-container focus:outline-none focus:shadow-[0_0_0_2px_rgba(78,222,163,0.3)]"
+                className="w-full min-w-0 resize-none rounded-lg border border-outline-variant bg-surface-container-lowest p-3 font-body-sm text-body-sm text-on-surface placeholder:text-outline focus:bg-surface-container focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
 
@@ -1530,7 +1535,7 @@ export function AdminUsersPage() {
                 <input
                   type="checkbox"
                   defaultChecked
-                  className="mt-0.5 shrink-0 accent-[var(--ops-primary,#4edea3)]"
+                  className="mt-0.5 shrink-0 accent-[var(--ops-primary,#0159bd)]"
                 />
                 <span className="font-body-sm text-body-sm text-on-surface">
                   Gửi email thông báo bổ nhiệm và yêu cầu kích hoạt bảo mật 2FA bắt buộc
@@ -1541,10 +1546,10 @@ export function AdminUsersPage() {
                   type="checkbox"
                   defaultChecked
                   disabled
-                  className="mt-0.5 shrink-0 accent-[var(--ops-primary,#4edea3)]"
+                  className="mt-0.5 shrink-0 accent-[var(--ops-primary,#0159bd)]"
                 />
                 <span className="font-body-sm text-body-sm text-on-surface">
-                  Ghi nhận hành động vào Nhật ký kiểm toán bảo mật (Audit Trail Compliance)
+                  Ghi nhận hành động vào Nhật ký kiểm toán
                 </span>
               </label>
             </div>
@@ -1566,7 +1571,7 @@ export function AdminUsersPage() {
                   saving || reason.trim().length < 10 || target.role === target.user.role
                 }
                 onClick={() => void saveRole()}
-                className="ops-btn-primary shadow-[0_0_20px_-2px_rgba(16,185,129,0.4)] disabled:opacity-50"
+                className="ops-btn-primary disabled:opacity-50"
               >
                 <MaterialIcon name="verified" className="text-[18px]" />
                 {saving ? 'Đang lưu…' : 'Xác nhận thay đổi vai trò'}

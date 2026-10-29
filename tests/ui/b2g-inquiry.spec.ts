@@ -7,7 +7,7 @@ test('guest can send a free-text pilot-site consultation request', async ({ page
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ data: { id: '11111111-1111-1111-1111-111111111111', status: 'NEW', createdAt: new Date().toISOString() } }),
+      body: JSON.stringify({ success: true, data: { id: '11111111-1111-1111-1111-111111111111', status: 'NEW', createdAt: new Date().toISOString() } }),
     })
   })
 
@@ -22,6 +22,7 @@ test('guest can send a free-text pilot-site consultation request', async ({ page
   await page.getByRole('button', { name: /Gửi Yêu Cầu Khảo Sát/i }).click()
 
   await expect(page.getByRole('heading', { name: /Gửi Yêu Cầu Thành Công/i })).toBeVisible()
+  await expect(page.getByText('11111111-1111-1111-1111-111111111111')).toBeVisible()
   expect(payload).toMatchObject({
     organizationName: 'Ban quản lý di tích Hà Nội',
     siteName: 'Khu di tích Nhà tù Hỏa Lò',

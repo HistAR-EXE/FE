@@ -17,7 +17,7 @@ const RETENTION_DAYS = 30
 
 const TYPES: Array<{ value: AdminContentType | ''; label: string; code: string }> = [
   { value: '', label: 'Mọi loại', code: '' },
-  { value: 'DISCOVERY_POINT', label: 'Điểm khám phá', code: 'POI' },
+  { value: 'DISCOVERY_POINT', label: 'Điểm khám phá', code: 'Điểm' },
   { value: 'ARTIFACT', label: 'Hiện vật', code: 'ART' },
   { value: 'QUEST', label: 'Nhiệm vụ', code: 'QST' },
 ]
@@ -283,7 +283,7 @@ export function AdminTrashPage() {
   const hasActiveFilters = Boolean(state.q || state.type)
 
   return (
-    <section className="flex w-full flex-col space-y-space-lg pb-16" aria-busy={loading || busy}>
+    <section className="admin-page flex w-full flex-col space-y-space-lg pb-16" aria-busy={loading || busy}>
       <AdminPageHeader
         eyebrow="/admin/trash · Lưu trữ xóa mềm 30 ngày"
         title="Thùng rác hệ thống & Khôi phục dữ liệu"
@@ -508,7 +508,7 @@ export function AdminTrashPage() {
                           )}
                         </td>
                         <td className="px-space-md py-3.5 text-right">
-                          <div className="flex items-center justify-end gap-2">
+                          <div className="admin-table-actions">
                             <button
                               type="button"
                               disabled={busy}

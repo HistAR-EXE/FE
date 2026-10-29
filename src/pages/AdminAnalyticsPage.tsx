@@ -23,7 +23,7 @@ const RANGE_OPTIONS = [
 const btnGhost =
   'inline-flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg bg-surface-container-high px-3 font-headline-sm text-sm text-on-surface hover:bg-surface-container-highest disabled:opacity-50'
 const btnPrimary =
-  'inline-flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg bg-primary-container px-3 font-headline-sm text-sm font-bold text-on-primary-container shadow-[0_0_16px_rgba(78,222,163,0.3)] hover:opacity-95 disabled:opacity-50'
+  'inline-flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg bg-primary-container px-3 font-headline-sm text-sm font-bold text-on-primary-container hover:opacity-95 disabled:opacity-50'
 const selectClass =
   'rounded-lg border-0 bg-surface-container-high px-3 py-1.5 pr-8 font-headline-sm text-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary'
 
@@ -138,7 +138,6 @@ export function AdminAnalyticsPage() {
         if (!locationId && items[0]) update('locationId', items[0].id)
       })
       .catch(() => setLocations([]))
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- seed location once when list loads
   }, [])
 
   const load = useCallback(async () => {
@@ -265,11 +264,11 @@ export function AdminAnalyticsPage() {
   }, [activity])
 
   return (
-    <section className="flex w-full max-w-7xl flex-col pb-16" aria-busy={bootLoading || refreshing}>
-      <div className="flex flex-col gap-space-md py-space-lg">
+    <section className="admin-page flex w-full max-w-7xl flex-col pb-16" aria-busy={bootLoading || refreshing}>
+      <div className="admin-page-header flex flex-col gap-space-md py-space-lg">
         <div className="flex flex-wrap items-center justify-between gap-space-sm">
           <div className="flex items-center gap-2">
-            <span className="font-code-sm text-code-sm uppercase tracking-wider text-outline">ADMIN CORE</span>
+            <span className="font-code-sm text-code-sm uppercase tracking-wider text-outline">QUẢN TRỊ</span>
             <span className="text-xs text-outline">/</span>
             <span className="font-code-sm text-code-sm uppercase tracking-wider text-outline">GIÁM SÁT</span>
             <span className="text-xs text-outline">/</span>
@@ -279,7 +278,7 @@ export function AdminAnalyticsPage() {
           </div>
           <div className="flex items-center gap-2 rounded-full bg-surface-container px-2.5 py-1 text-on-surface-variant">
             <span className="h-2 w-2 animate-pulse rounded-full bg-primary-container" />
-            <span className="font-code-sm text-code-sm">Telemetric Engine: ONLINE</span>
+            <span className="font-code-sm text-code-sm">Đang theo dõi số liệu</span>
             {syncedAt && (
               <>
                 <span className="text-xs text-outline">•</span>
@@ -295,8 +294,8 @@ export function AdminAnalyticsPage() {
               Phân tích số liệu di tích &amp; Trải nghiệm du khách
             </h1>
             <p className="font-body-md text-body-md leading-relaxed text-on-surface-variant">
-              Hệ thống theo dõi luồng tương tác thực tế, phân tích chuyển đổi từ online sang onsite, phễu hoàn
-              thành quest AR và chất lượng phiên trải nghiệm. Số liệu dưới ngưỡng riêng tư được ẩn thay vì hiện 0.
+              Hệ thống theo dõi hoạt động thực tế, phân tích hành trình từ trải nghiệm trực tuyến đến tham quan tại di tích và mức độ hoàn
+              thành nhiệm vụ AR và chất lượng phiên trải nghiệm. Số liệu dưới ngưỡng riêng tư được ẩn thay vì hiện 0.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-space-sm">
@@ -307,15 +306,15 @@ export function AdminAnalyticsPage() {
               onClick={() => {
                 if (!overview) return
                 exportAnalyticsCsv(overview, locationName, range)
-                showToast({ message: 'Đã xuất CSV từ dữ liệu analytics đang xem.', type: 'success' })
+                showToast({ message: 'Đã xuất CSV từ số liệu đang xem.', type: 'success' })
               }}
             >
               <MaterialIcon name="download" className="text-[18px] text-primary" />
-              Xuất báo cáo BI
+              Xuất báo cáo số liệu
             </button>
             <button type="button" className={btnPrimary} disabled={refreshing || !locationId} onClick={() => void load()}>
               <MaterialIcon name="sync" className={`text-[18px] ${refreshing ? 'animate-spin' : ''}`} />
-              Làm mới dữ liệu (Live Sync)
+              Làm mới dữ liệu
             </button>
           </div>
         </div>
@@ -332,6 +331,7 @@ export function AdminAnalyticsPage() {
               onChange={(event) => update('locationId', event.target.value)}
               className={selectClass}
             >
+              <option value="" disabled>Chọn địa điểm</option>
               {locations.map((item) => (
                 <option key={item.id} value={item.id}>
                   {item.name}
@@ -366,7 +366,7 @@ export function AdminAnalyticsPage() {
       {bootLoading && <AdminLoading label="Đang tải phân tích" />}
 
       {!bootLoading && !locationId && (
-        <AdminEmptyState title="Chưa chọn địa điểm" detail="Chọn địa điểm để tải số liệu analytics." />
+        <AdminEmptyState title="Chưa chọn địa điểm" detail="Chọn địa điểm để tải số liệu phân tích." />
       )}
 
       {!bootLoading && locationId && (
@@ -421,7 +421,7 @@ export function AdminAnalyticsPage() {
                 <p className="mt-1 font-code-sm text-code-sm text-outline">
                   {overview?.questCompletedSuppressed
                     ? privacyCopy(true)
-                    : `${formatCount(overview?.questCompletedCount)} quest hoàn tất`}
+                    : `${formatCount(overview?.questCompletedCount)} nhiệm vụ hoàn tất`}
                 </p>
               </div>
               <div className="w-full space-y-1">
@@ -436,7 +436,7 @@ export function AdminAnalyticsPage() {
 
             <article className="flex min-h-[148px] flex-col justify-between rounded-xl bg-surface-container-low p-space-lg shadow-sm transition-all hover:bg-surface-container">
               <div className="flex items-center justify-between">
-                <span className="font-body-md text-body-md text-on-surface-variant">Chuyển đổi Online → Onsite</span>
+                <span className="font-body-md text-body-md text-on-surface-variant">Từ khám phá trực tuyến đến tham quan tại chỗ</span>
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-surface-container text-tertiary">
                   <MaterialIcon name="pin_drop" className="text-[18px]" />
                 </div>
@@ -450,13 +450,13 @@ export function AdminAnalyticsPage() {
                 <p className="mt-1 font-code-sm text-code-sm text-outline">
                   {overview?.onlineToOnsite.suppressed
                     ? privacyCopy(true)
-                    : `${formatCount(overview?.onlineToOnsite.usersDiscoveryThenCheckin)} khám phá → check-in`}
+                    : `${formatCount(overview?.onlineToOnsite.usersDiscoveryThenCheckin)} khách khám phá rồi quét mã tại điểm`}
                 </p>
               </div>
               <div className="flex items-center gap-1.5">
                 {[
                   { label: 'Khám phá', value: overview?.onlineToOnsite.usersWithDiscovery },
-                  { label: 'Check-in', value: overview?.onlineToOnsite.usersWithCheckin },
+                  { label: 'Quét mã', value: overview?.onlineToOnsite.usersWithCheckin },
                   { label: 'Cả hai', value: overview?.onlineToOnsite.usersDiscoveryThenCheckin },
                 ].map((cell) => (
                   <div key={cell.label} className="flex-1 rounded bg-surface-container-high p-1 text-center">
@@ -489,7 +489,7 @@ export function AdminAnalyticsPage() {
               <p className="font-code-sm text-code-sm text-outline">
                 {overview?.sessionQuality.suppressed
                   ? privacyCopy(true)
-                  : `${formatSuppressedMetric(overview?.sessionQuality.avgDiscoveriesPerSession, false)} khám phá/phiên · NPS ${formatCount(activity?.npsSubmitted)}`}
+                  : `${formatSuppressedMetric(overview?.sessionQuality.avgDiscoveriesPerSession, false)} lượt khám phá/phiên · ${formatCount(activity?.npsSubmitted)} lượt đánh giá`}
               </p>
             </article>
           </div>
@@ -504,11 +504,11 @@ export function AdminAnalyticsPage() {
                 <div className="flex items-center gap-2">
                   <span className="h-2.5 w-2.5 rounded-full bg-primary" />
                   <h2 id="analytics-Phễu nhiệm vụ" className="font-headline-sm text-headline-sm text-on-surface">
-                    Phễu nhiệm vụ khám phá (Quest Funnel)
+                    Tiến độ hoàn thành nhiệm vụ
                   </h2>
                 </div>
                 <span className="font-code-sm text-code-sm text-outline">
-                  {(overview?.questFunnel.length ?? 0).toLocaleString('vi-VN')} quest
+                  {(overview?.questFunnel.length ?? 0).toLocaleString('vi-VN')} nhiệm vụ
                 </span>
               </div>
               {overviewError ? (
@@ -570,16 +570,16 @@ export function AdminAnalyticsPage() {
                 <div className="mb-3 flex items-center gap-2">
                   <MaterialIcon name="warning" className="text-[20px] text-error" />
                   <h2 id="analytics-Điểm rời hành trình" className="font-headline-sm text-headline-sm text-on-surface">
-                    Điểm rời hành trình (Drop-off)
+                    Điểm khách dừng hành trình
                   </h2>
                 </div>
                 <p className="mb-space-md font-body-sm text-body-sm text-on-surface-variant">
-                  {overview?.journeyNote || 'Các điểm POI có tỷ lệ rời hành trình cao nhất trong khoảng đã chọn.'}
+                  Các điểm khám phá có nhiều du khách dừng hành trình trong khoảng thời gian đã chọn.
                 </p>
                 {overviewError ? (
                   <AdminErrorState message={overviewError} onRetry={() => void load()} />
                 ) : dropRows.length === 0 ? (
-                  <AdminEmptyState title="Chưa có drop-off" detail="Không đủ mẫu để hiển thị điểm rời." />
+                  <AdminEmptyState title="Chưa có dữ liệu" detail="Chưa đủ lượt tham quan để xác định điểm dừng hành trình." />
                 ) : (
                   <div className="space-y-3">
                     {dropRows.map((item, index) => (
@@ -599,13 +599,12 @@ export function AdminAnalyticsPage() {
                             }`}
                           >
                             {typeof item.dropOffPct === 'number'
-                              ? `-${item.dropOffPct.toLocaleString('vi-VN', { maximumFractionDigits: 1 })}% Drop`
-                              : 'Drop'}
+                              ? `Giảm ${item.dropOffPct.toLocaleString('vi-VN', { maximumFractionDigits: 1 })}%`
+                              : 'Chưa có tỷ lệ'}
                           </span>
                         </div>
                         <p className="font-body-sm text-body-sm text-outline">
-                          Khóa POI <span className="font-code-sm">{item.unlockKey}</span> ·{' '}
-                          {formatCount(item.sessionCount)} phiên dừng tại điểm này.
+                          {formatCount(item.sessionCount)} lượt dừng tại điểm này.
                         </p>
                         <div className="mt-2.5 flex items-center justify-between font-code-sm text-[11px] text-on-surface-variant">
                           <span>Đã tác động: {formatCount(item.sessionCount)} khách</span>
@@ -622,8 +621,8 @@ export function AdminAnalyticsPage() {
               <div className="mt-4 flex items-start gap-2.5 rounded-lg bg-primary-container/10 p-3">
                 <MaterialIcon name="auto_awesome" className="mt-0.5 shrink-0 text-[18px] text-primary" />
                 <p className="font-body-sm text-body-sm text-on-surface-variant">
-                  <span className="font-semibold text-primary">Gợi ý Ops: </span>
-                  Ưu tiên hiệu chỉnh marker / GPS tại các POI drop-off cao trước khi mở rộng chiến dịch.
+                  <span className="font-semibold text-primary">Gợi ý vận hành: </span>
+                  Ưu tiên kiểm tra vị trí và định vị tại những điểm du khách rời hành trình nhiều.
                 </p>
               </div>
             </section>
@@ -633,29 +632,29 @@ export function AdminAnalyticsPage() {
           <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-12">
             <section
               className="flex flex-col rounded-xl bg-surface-container-low p-space-lg shadow-sm lg:col-span-7"
-              aria-labelledby="analytics-Mở khóa POI"
+              aria-labelledby="analytics-top-pois"
             >
               <div className="mb-space-md flex items-center justify-between gap-2">
                 <div>
-                  <h2 id="analytics-Mở khóa POI" className="font-headline-sm text-headline-sm text-on-surface">
-                    Điểm di tích (POI) được check-in nhiều nhất
+                  <h2 id="analytics-top-pois" className="font-headline-sm text-headline-sm text-on-surface">
+                    Điểm di tích được ghi nhận nhiều nhất
                   </h2>
-                  <p className="font-code-sm text-code-sm text-outline">Mở khóa POI · xếp hạng theo lượt unlock hợp lệ</p>
+                  <p className="font-code-sm text-code-sm text-outline">Xếp hạng theo lượt mở điểm hợp lệ</p>
                 </div>
                 <span className="rounded-full bg-surface-container px-2.5 py-1 font-code-sm text-code-sm text-primary">
-                  Top {topPois.length} POI
+                  {topPois.length} điểm nổi bật
                 </span>
               </div>
               {overviewError ? (
                 <AdminErrorState message={overviewError} onRetry={() => void load()} />
               ) : topPois.length === 0 ? (
-                <AdminEmptyState title="Chưa có POI" detail="Không có lượt mở khóa trong khoảng đã chọn." />
+                <AdminEmptyState title="Chưa có điểm khám phá" detail="Không có lượt mở khóa trong khoảng đã chọn." />
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left">
                     <thead>
                       <tr className="bg-surface-container-lowest font-label-sm text-label-sm uppercase text-outline">
-                        <th className="rounded-l-lg px-3 py-2.5">Tên điểm POI</th>
+                        <th className="rounded-l-lg px-3 py-2.5">Tên điểm khám phá</th>
                         <th className="px-3 py-2.5 text-right">Lượt quét AR</th>
                         <th className="px-3 py-2.5 text-right">Dừng trung bình</th>
                         <th className="rounded-r-lg px-3 py-2.5 text-center">Mức hấp dẫn</th>
@@ -676,7 +675,7 @@ export function AdminAnalyticsPage() {
                                 </div>
                                 <div>
                                   <div className="font-headline-sm text-headline-sm text-on-surface">{item.name}</div>
-                                  <div className="font-code-sm text-code-sm text-outline">{item.unlockKey}</div>
+                                  <div className="sr-only">Mã điểm: {item.unlockKey}</div>
                                 </div>
                               </div>
                             </td>
@@ -706,7 +705,7 @@ export function AdminAnalyticsPage() {
               <div className="mb-2 flex items-center justify-between gap-2">
                 <div>
                   <h2 className="font-headline-sm text-headline-sm text-on-surface">Mật độ theo giờ trong tuần</h2>
-                  <p className="font-code-sm text-code-sm text-outline">00:00 - 23:00 · 24 khung giờ (API thật)</p>
+                  <p className="font-body-sm text-body-sm text-outline">Mức độ hoạt động trong từng giờ, từ 00:00 đến 23:00</p>
                 </div>
                 <div className="flex items-center gap-1.5 font-code-sm text-[10px] text-outline">
                   <span>Thấp</span>
@@ -780,7 +779,7 @@ export function AdminAnalyticsPage() {
                                         ? 'bg-primary/60'
                                         : intensity < 0.9
                                           ? 'bg-primary/80'
-                                          : 'bg-primary shadow-[0_0_8px_rgba(16,185,129,0.4)]'
+                                          : 'bg-primary'
                               return (
                                 <div
                                   key={`${dayIndex}-${slotIndex}`}
@@ -813,7 +812,7 @@ export function AdminAnalyticsPage() {
             <section className="flex flex-col rounded-xl bg-surface-container-low p-space-lg shadow-sm lg:col-span-6">
               <div className="mb-space-md flex items-center justify-between">
                 <h2 className="font-headline-sm text-headline-sm text-on-surface">Nguồn thu hút tương tác ban đầu</h2>
-                <span className="font-code-sm text-code-sm text-outline">Pilot sự kiện pilot KPI</span>
+                <span className="font-code-sm text-code-sm text-outline">Theo dõi hoạt động thử nghiệm</span>
               </div>
               {activityError ? (
                 <AdminErrorState message={activityError} onRetry={() => void load()} />
@@ -895,7 +894,7 @@ export function AdminAnalyticsPage() {
                 <MaterialIcon name="security" className="mt-0.5 shrink-0 text-[20px] text-primary" />
                 <div className="space-y-1">
                   <div className="font-label-sm text-label-sm font-semibold text-primary">
-                    Privacy Threshold Active (K-Anonymity Guard)
+                    Đang bảo vệ dữ liệu cá nhân
                   </div>
                   <p className="font-body-sm text-body-sm leading-tight text-outline">
                     {privacyCopy(overview?.sessionQuality.suppressed) ??

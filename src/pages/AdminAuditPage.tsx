@@ -10,38 +10,43 @@ import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
 import { useToast } from '../shared/ui/toast/useToast'
 
 const inputClass =
-  'w-full rounded-lg border-0 bg-surface-container px-3 py-1.5 text-xs text-on-surface placeholder:text-outline focus:outline-none focus:ring-1 focus:ring-primary'
+  'h-10 w-full min-w-0 rounded-lg border border-outline-variant bg-white px-3 text-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:ring-2 focus:ring-primary'
 const selectClass =
-  'w-full appearance-none rounded-lg border-0 bg-surface-container px-3 py-1.5 pr-8 text-xs text-on-surface focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer'
+  'h-10 w-full min-w-0 cursor-pointer appearance-none rounded-lg border border-outline-variant bg-white px-3 pr-8 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary'
 const btnGhost =
   'inline-flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg bg-surface-container-high px-2.5 text-xs font-semibold text-on-surface hover:bg-surface-variant disabled:opacity-50'
 const btnPrimary =
-  'inline-flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg bg-primary-container px-2.5 text-xs font-bold text-on-primary-container shadow-[0_0_12px_rgba(78,222,163,0.25)] hover:opacity-95 disabled:opacity-50'
+  'inline-flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg bg-primary-container px-2.5 text-xs font-bold text-on-primary-container hover:opacity-95 disabled:opacity-50'
 
 const ENTITY_OPTIONS = [
   { value: '', label: 'Tất cả loại đối tượng' },
   { value: 'DISCOVERY_POINT', label: 'Điểm khám phá' },
   { value: 'ARTIFACT', label: 'Hiện vật' },
   { value: 'QUEST', label: 'Nhiệm vụ' },
-  { value: 'NARRATIVE_INVESTIGATION', label: 'Cốt truyện / Pilot' },
+  { value: 'NARRATIVE_INVESTIGATION', label: 'Cốt truyện thử nghiệm' },
   { value: 'ORGANIZATION', label: 'Tổ chức' },
-  { value: 'USER', label: 'Người dùng & IAM' },
+  { value: 'USER', label: 'Người dùng và quyền truy cập' },
   { value: 'CONTENT_REPORT', label: 'Báo cáo nội dung' },
   { value: 'BILLING_SETTINGS', label: 'Cấu hình thanh toán' },
-  { value: 'B2B2C_INQUIRY', label: 'Lead B2B' },
+  { value: 'B2B2C_INQUIRY', label: 'Yêu cầu tư vấn tổ chức' },
 ] as const
 
 const ACTION_OPTIONS = [
   { value: '', label: 'Tất cả hành động' },
-  { value: 'CREATED', label: 'CREATED' },
-  { value: 'UPDATED', label: 'UPDATED' },
-  { value: 'SOFT_DELETED', label: 'SOFT_DELETED' },
-  { value: 'RESTORED', label: 'RESTORED' },
-  { value: 'REVIEWED', label: 'REVIEWED' },
-  { value: 'STATUS_UPDATED', label: 'STATUS_UPDATED' },
-  { value: 'SETTINGS_UPDATED', label: 'SETTINGS_UPDATED' },
-  { value: 'ORG_INVITE_GENERATED', label: 'ORG_INVITE_GENERATED' },
+  { value: 'CREATED', label: 'Đã tạo' },
+  { value: 'UPDATED', label: 'Đã cập nhật' },
+  { value: 'SOFT_DELETED', label: 'Đã chuyển vào thùng rác' },
+  { value: 'RESTORED', label: 'Đã khôi phục' },
+  { value: 'REVIEWED', label: 'Đã xét duyệt' },
+  { value: 'STATUS_UPDATED', label: 'Đã đổi trạng thái' },
+  { value: 'SETTINGS_UPDATED', label: 'Đã đổi cài đặt' },
+  { value: 'ORG_INVITE_GENERATED', label: 'Đã tạo lời mời tổ chức' },
+  { value: 'ORG_AR_CARDS_ISSUED', label: 'Đã cấp thẻ AR cho tổ chức' },
+  { value: 'USERS_EXPORTED', label: 'Đã xuất danh sách người dùng' },
 ] as const
+
+const actionLabel = (action: string) => ACTION_OPTIONS.find((option) => option.value === action)?.label ?? action.replaceAll('_', ' ').toLowerCase()
+const entityLabel = (entity: string) => ENTITY_OPTIONS.find((option) => option.value === entity)?.label ?? entity.replaceAll('_', ' ').toLowerCase()
 
 /** Stitch audit table: 5 rows per page */
 const AUDIT_PAGE_SIZE = 5
@@ -327,7 +332,7 @@ export function AdminAuditPage() {
   const pageTo = result ? result.page * result.size + result.items.length : 0
 
   return (
-    <section className="flex w-full max-w-7xl flex-col pb-16" aria-busy={loading}>
+    <section className="admin-page flex w-full max-w-7xl flex-col pb-16" aria-busy={loading}>
       {verifiedBanner && (
         <div
           className={`relative mb-space-md overflow-hidden rounded-xl px-space-md py-2 shadow-lg ${
@@ -344,15 +349,15 @@ export function AdminAuditPage() {
               />
               <div>
                 <p className="text-xs font-bold">
-                  {integrityValid === false ? 'Integrity thất bại' : 'Integrity SHA-256'}
+                  {integrityValid === false ? 'Kiểm tra toàn vẹn thất bại' : 'Đã kiểm tra tính toàn vẹn'}
                 </p>
-                <p className="text-[11px] opacity-90">{integritySummary ?? 'Đã kiểm tra chuỗi hash trên máy chủ.'}</p>
+                <p className="text-[11px] opacity-90">{integritySummary ?? 'Đã kiểm tra dữ liệu trên máy chủ.'}</p>
               </div>
             </div>
             <button
               type="button"
               onClick={() => setVerifiedBanner(false)}
-              className="rounded-lg p-1 hover:bg-black/20"
+              className="rounded-lg p-1 hover:bg-surface-container-high"
               aria-label="Đóng thông báo"
             >
               <MaterialIcon name="close" className="text-[16px]" />
@@ -361,11 +366,11 @@ export function AdminAuditPage() {
         </div>
       )}
 
-      <div className="flex flex-col gap-space-sm py-space-sm">
+      <div className="admin-page-header flex flex-col gap-space-sm py-space-sm">
         <div className="flex flex-col justify-between gap-space-sm xl:flex-row xl:items-end">
           <div className="max-w-4xl space-y-1">
             <div className="flex items-center gap-1 text-[11px] uppercase tracking-wider text-outline">
-              <span>ADMIN CORE</span>
+              <span>QUẢN TRỊ</span>
               <MaterialIcon name="chevron_right" className="text-[12px]" />
               <span>GIÁM SÁT</span>
               <MaterialIcon name="chevron_right" className="text-[12px]" />
@@ -376,13 +381,12 @@ export function AdminAuditPage() {
                 Nhật ký kiểm toán &amp; Giám sát tuân thủ
               </h1>
               <span className="inline-flex items-center gap-1 rounded-full bg-surface-container-high px-2 py-0.5 text-[11px] font-semibold text-primary">
-                <span className="h-1.5 w-1.5 animate-ping rounded-full bg-primary" />
-                SOC2 / ISO 27001
+                <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                Theo dõi thay đổi
               </span>
             </div>
             <p className="max-w-3xl text-xs leading-relaxed text-on-surface-variant">
-              Tra cứu thay đổi quản trị theo đối tượng, người thực hiện và hành động. Dữ liệu lấy trực tiếp từ API
-              audit — không dùng mock Stitch.
+              Tra cứu thay đổi quản trị theo đối tượng, người thực hiện và hành động.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -418,7 +422,7 @@ export function AdminAuditPage() {
                 className="inline-flex items-center gap-1 rounded-full bg-surface-container-high px-2.5 py-1 font-code-sm text-[11px] text-primary"
                 onClick={() => updateParam('entityId', '')}
               >
-                entityId: {shortHash(entityIdParam)}
+                Đối tượng: {shortHash(entityIdParam)}
                 <MaterialIcon name="close" className="text-[14px]" />
               </button>
             )}
@@ -428,7 +432,7 @@ export function AdminAuditPage() {
                 className="inline-flex items-center gap-1 rounded-full bg-surface-container-high px-2.5 py-1 font-code-sm text-[11px] text-primary"
                 onClick={() => updateParam('actorId', '')}
               >
-                actorId: {shortHash(actorId)}
+                Người thực hiện: {shortHash(actorId)}
                 <MaterialIcon name="close" className="text-[14px]" />
               </button>
             )}
@@ -462,7 +466,7 @@ export function AdminAuditPage() {
               <span className="text-xl font-bold text-tertiary">{kpis.sensitive}</span>
               <span className="text-[11px] text-on-surface-variant">lần ghi nhận</span>
             </div>
-            <div className="mt-0.5 truncate text-[11px] text-outline">DELETE / ROLE / STATUS trên trang đang xem</div>
+            <div className="mt-0.5 text-xs text-on-surface-variant">Xóa, đổi vai trò hoặc trạng thái trên trang này</div>
           </div>
 
           <div className="relative flex flex-col justify-between overflow-hidden rounded-xl bg-surface-container-low p-3 shadow-sm">
@@ -476,21 +480,20 @@ export function AdminAuditPage() {
               <span className="text-xl font-bold text-primary">{kpis.withIp}</span>
               <span className="text-[11px] text-primary">bản ghi</span>
             </div>
-            <div className="mt-0.5 truncate text-[11px] text-outline">clientIp trong metadata audit</div>
+            <div className="mt-0.5 text-xs text-on-surface-variant">Có thông tin địa chỉ truy cập</div>
           </div>
 
           <div className="relative flex flex-col justify-between overflow-hidden rounded-xl bg-surface-container-low p-3 shadow-sm">
             <div className="mb-1 flex items-center justify-between">
-              <span className="text-xs text-on-surface-variant">Chứng thực tuân thủ</span>
+              <span className="text-xs text-on-surface-variant">Theo dõi thay đổi</span>
               <div className="flex h-6 w-6 items-center justify-center rounded-md bg-surface-container text-secondary">
                 <MaterialIcon name="verified" className="text-[14px]" />
               </div>
             </div>
             <div className="flex items-baseline gap-1.5">
-              <span className="text-xl font-bold text-on-surface">ISO/SOC2</span>
-              <span className="text-[11px] text-secondary">Active</span>
+              <span className="text-xl font-bold text-on-surface">Đang hoạt động</span>
             </div>
-            <div className="mt-0.5 truncate text-[11px] text-outline">Khung tuân thủ vận hành HistAR Admin</div>
+            <div className="mt-0.5 text-xs text-on-surface-variant">Xem và kiểm tra lịch sử thao tác quản trị</div>
           </div>
         </div>
       </div>
@@ -502,17 +505,17 @@ export function AdminAuditPage() {
           applySearch()
         }}
       >
-        <div className="grid grid-cols-1 items-end gap-2 sm:grid-cols-2 lg:grid-cols-12">
-          <div className="relative lg:col-span-3">
+        <div className="grid grid-cols-1 items-end gap-3 sm:grid-cols-2 lg:grid-cols-6">
+          <div className="relative lg:col-span-2">
             <MaterialIcon
               name="tag"
               className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[16px] text-outline"
             />
             <input
-              aria-label="Tìm theo entity ID"
+              aria-label="Tìm theo mã đối tượng"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Tìm Entity ID..."
+              placeholder="Tìm mã đối tượng..."
               className={`${inputClass} pl-9`}
             />
           </div>
@@ -545,7 +548,7 @@ export function AdminAuditPage() {
           </div>
           <div className="relative lg:col-span-2">
             <select
-              aria-label="Hành động audit"
+              aria-label="Hành động quản trị"
               value={action}
               onChange={(event) => updateParam('action', event.target.value)}
               className={selectClass}
@@ -561,8 +564,8 @@ export function AdminAuditPage() {
               className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[14px] text-outline"
             />
           </div>
-          <div className="flex gap-2 lg:col-span-2">
-            <label className="min-w-0 flex-1 text-[10px] font-semibold uppercase tracking-wide text-outline">
+          <div className="flex min-w-0 gap-2 lg:col-span-3">
+            <label className="min-w-0 flex-1 text-xs font-semibold text-on-surface-variant">
               Từ ngày
               <input
                 type="date"
@@ -571,7 +574,7 @@ export function AdminAuditPage() {
                 className={`mt-0.5 ${inputClass}`}
               />
             </label>
-            <label className="min-w-0 flex-1 text-[10px] font-semibold uppercase tracking-wide text-outline">
+            <label className="min-w-0 flex-1 text-xs font-semibold text-on-surface-variant">
               Đến ngày
               <input
                 type="date"
@@ -610,15 +613,16 @@ export function AdminAuditPage() {
         </div>
       </form>
 
-      {loading && <AdminLoading label="Đang tải lịch sử audit" />}
+      {loading && <AdminLoading label="Đang tải lịch sử thao tác" />}
       {!loading && error && <AdminErrorState message={error} onRetry={load} />}
       {!loading && !error && result?.items.length === 0 && (
-        <AdminEmptyState title="Chưa có audit event" detail="Không có sự kiện nào phù hợp với bộ lọc." />
+        <AdminEmptyState title="Chưa có thao tác nào" detail="Không có sự kiện nào phù hợp với bộ lọc." />
       )}
       {!loading && !error && result && result.items.length > 0 && (
         <div className="mb-space-md overflow-hidden rounded-xl bg-surface-container-low shadow-sm">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
+            <table className="admin-audit-table w-full min-w-[72rem] table-fixed text-left text-xs">
+              <colgroup><col className="w-[12rem]" /><col className="w-[14rem]" /><col className="w-[12rem]" /><col className="w-[17rem]" /><col className="w-[10rem]" /><col className="w-[9rem]" /></colgroup>
               <thead>
                 <tr className="bg-surface-container-lowest text-[11px] font-semibold uppercase tracking-wider text-outline">
                   <th className="whitespace-nowrap px-3 py-2">Thời điểm (UTC+7)</th>
@@ -626,7 +630,7 @@ export function AdminAuditPage() {
                   <th className="whitespace-nowrap px-3 py-2">Hành động</th>
                   <th className="whitespace-nowrap px-3 py-2">Đối tượng ảnh hưởng</th>
                   <th className="whitespace-nowrap px-3 py-2">Địa chỉ IP &amp; Vị trí</th>
-                  <th className="whitespace-nowrap px-3 py-2 text-right">Chi tiết</th>
+                  <th className="whitespace-nowrap px-3 py-2 text-center">Chi tiết</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-surface-container-high/40">
@@ -654,20 +658,20 @@ export function AdminAuditPage() {
                           </div>
                         </div>
                       </td>
-                      <td className="whitespace-nowrap px-3 py-1.5">
+                      <td className="px-3 py-1.5">
                         <span
-                          className={`inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-semibold ${actionTone(event.action)}`}
+                          className={`inline-flex max-w-full items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-semibold leading-snug ${actionTone(event.action)}`}
                         >
-                          <span className="h-1 w-1 rounded-full bg-current" />
-                          {event.action}
+                          <span className="h-1 w-1 shrink-0 rounded-full bg-current" />
+                          {actionLabel(event.action)}
                         </span>
                       </td>
-                      <td className="whitespace-nowrap px-3 py-1.5">
-                        <div className="flex items-center gap-1.5">
-                          <span className="rounded bg-surface-container-high px-1.5 py-0.5 font-mono text-[10px] font-semibold text-on-surface">
-                            {event.entityType}
+                      <td className="overflow-hidden px-3 py-1.5">
+                        <div className="flex min-w-0 flex-col items-start gap-0.5">
+                          <span className="rounded bg-surface-container-high px-1.5 py-0.5 text-[11px] font-semibold text-on-surface">
+                            {entityLabel(event.entityType)}
                           </span>
-                          <span className="max-w-[140px] truncate font-mono text-[10px] text-primary" title={event.entityId}>
+                          <span className="max-w-full truncate font-mono text-[10px] text-primary" title={event.entityId}>
                             {event.entityId}
                           </span>
                         </div>
@@ -678,8 +682,8 @@ export function AdminAuditPage() {
                           <span className="text-[10px] text-outline">{location ?? 'Không có vị trí'}</span>
                         </div>
                       </td>
-                      <td className="whitespace-nowrap px-3 py-1.5 text-right">
-                        <button type="button" className="inline-flex items-center gap-1 rounded-lg bg-surface-container px-2 py-1 text-[11px] font-semibold text-on-surface transition-all hover:bg-surface-variant" onClick={function () { setSelected(event) }}>Xem chi tiết</button>
+                      <td className="whitespace-nowrap px-3 py-1.5 text-center">
+                        <button type="button" className="admin-table-action gap-1 text-[11px]" onClick={function () { setSelected(event) }}>Xem chi tiết</button>
                       </td>
                     </tr>
                   )
@@ -706,17 +710,26 @@ export function AdminAuditPage() {
 
       {selected && (
         <AdminModal
-          title={`Đối soát thay đổi: ${selected.action}`}
-          subtitle={`${selected.entityType} · ${selected.entityId} · ${formatOccurredAt(selected.occurredAt)}`}
+          title="Chi tiết thao tác"
+          subtitle={`${actionLabel(selected.action)} · ${formatOccurredAt(selected.occurredAt)}`}
           icon="difference"
-          wide
+          extraWide
           onClose={() => setSelected(null)}
         >
-          <div className="space-y-4 text-sm">
-            <dl className="grid gap-3 sm:grid-cols-2">
+          <div className="space-y-5 text-sm">
+            <div className="rounded-xl border border-primary/25 bg-primary/5 p-4">
+              <div className="flex items-start gap-3">
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary/15 text-primary"><MaterialIcon name="history" className="text-[20px]" /></span>
+                <div className="min-w-0">
+                  <p className="font-headline-sm text-base font-bold text-on-surface">{actionLabel(selected.action)}</p>
+                  <p className="mt-1 text-on-surface-variant">{entityLabel(selected.entityType)} · {formatOccurredAt(selected.occurredAt)}</p>
+                </div>
+              </div>
+            </div>
+            <dl className="grid gap-2.5 sm:grid-cols-2 [&>div]:min-w-0 [&>div]:rounded-xl [&>div]:border [&>div]:border-outline-variant/60 [&>div]:bg-white [&>div]:p-3 [&_dt]:mb-1 [&_dt]:text-xs [&_dt]:font-semibold [&_dt]:uppercase [&_dt]:tracking-wide [&_dd]:font-medium">
               <div>
                 <dt className="text-on-surface-variant">Người thực hiện</dt>
-                <dd className="text-on-surface">
+                <dd className="break-words text-on-surface">
                   {selected.actorName ?? 'Không có tên'} · {selected.actorEmailMasked ?? selected.actorId}
                 </dd>
               </div>
@@ -726,12 +739,12 @@ export function AdminAuditPage() {
               </div>
               <div>
                 <dt className="text-on-surface-variant">Hành động</dt>
-                <dd className="text-on-surface">{selected.action}</dd>
+                <dd className="text-on-surface">{actionLabel(selected.action)}</dd>
               </div>
               <div>
                 <dt className="text-on-surface-variant">Đối tượng</dt>
                 <dd className="text-on-surface">
-                  {selected.entityType} · {selected.entityId}
+                  {entityLabel(selected.entityType)}<br /><span className="break-all font-mono text-xs text-primary">{selected.entityId}</span>
                 </dd>
               </div>
               <div>
@@ -753,39 +766,41 @@ export function AdminAuditPage() {
                 <dd className="text-on-surface">{selected.reason ?? '—'}</dd>
               </div>
               <div className="sm:col-span-2">
-                <dt className="text-on-surface-variant">Hash SHA-256</dt>
+                <dt className="text-on-surface-variant">Mã kiểm tra tính toàn vẹn</dt>
                 <dd className="break-all font-mono text-[12px] text-on-surface" title={selected.eventHash ?? undefined}>
                   {selected.eventHash ?? '—'}
                 </dd>
                 {selected.prevEventHash && (
                   <p className="mt-1 break-all font-mono text-[11px] text-outline" title={selected.prevEventHash}>
-                    prev: {shortHash(selected.prevEventHash)}
+                    Mã bản ghi trước: {shortHash(selected.prevEventHash)}
                   </p>
                 )}
               </div>
             </dl>
-            <div>
-              <h3 className="mb-2 font-bold text-on-surface">Trước thay đổi</h3>
-              <pre className="max-h-48 overflow-auto whitespace-pre-wrap rounded-lg bg-surface-container-high p-3 text-[13px] text-on-surface-variant">
-                {(() => {
-                  const before = snapshotFromEvent(selected, 'before')
-                  return before ? JSON.stringify(before, null, 2) : 'Không có dữ liệu trước thay đổi.'
-                })()}
-              </pre>
-            </div>
-            <div>
-              <h3 className="mb-2 font-bold text-on-surface">Sau thay đổi</h3>
-              <pre className="max-h-48 overflow-auto whitespace-pre-wrap rounded-lg bg-surface-container-high p-3 text-[13px] text-on-surface-variant">
-                {(() => {
-                  const after = snapshotFromEvent(selected, 'after')
-                  return after ? JSON.stringify(after, null, 2) : 'Không có dữ liệu sau thay đổi.'
-                })()}
-              </pre>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="min-w-0 rounded-xl border border-outline-variant/60 bg-surface-container-low p-3">
+                <h3 className="mb-2 flex items-center gap-2 font-bold text-on-surface"><span className="h-2 w-2 rounded-full bg-outline" />Trước thay đổi</h3>
+                <pre className="max-h-48 overflow-auto whitespace-pre-wrap break-all rounded-lg bg-white p-3 text-[13px] text-on-surface-variant">
+                  {(() => {
+                    const before = snapshotFromEvent(selected, 'before')
+                    return before ? JSON.stringify(before, null, 2) : 'Không có dữ liệu trước thay đổi.'
+                  })()}
+                </pre>
+              </div>
+              <div className="min-w-0 rounded-xl border border-primary/25 bg-primary/5 p-3">
+                <h3 className="mb-2 flex items-center gap-2 font-bold text-on-surface"><span className="h-2 w-2 rounded-full bg-primary" />Sau thay đổi</h3>
+                <pre className="max-h-48 overflow-auto whitespace-pre-wrap break-all rounded-lg bg-white p-3 text-[13px] text-on-surface-variant">
+                  {(() => {
+                    const after = snapshotFromEvent(selected, 'after')
+                    return after ? JSON.stringify(after, null, 2) : 'Không có dữ liệu sau thay đổi.'
+                  })()}
+                </pre>
+              </div>
             </div>
             {selected.metadata && (
-              <details>
-                <summary className="cursor-pointer font-bold text-on-surface">Dữ liệu kỹ thuật</summary>
-                <pre className="mt-2 max-h-72 overflow-auto whitespace-pre-wrap rounded-lg bg-surface-container-high p-3 text-[13px] text-on-surface-variant">
+              <details className="rounded-xl border border-outline-variant/60 bg-white p-3">
+                <summary className="cursor-pointer font-semibold text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">Dữ liệu kỹ thuật</summary>
+                <pre className="mt-3 max-h-72 overflow-auto whitespace-pre-wrap break-all rounded-lg bg-surface-container-high p-3 text-[13px] text-on-surface-variant">
                   {JSON.stringify(selected.metadata, null, 2)}
                 </pre>
               </details>

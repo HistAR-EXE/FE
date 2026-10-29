@@ -44,7 +44,7 @@ const inputClass =
 const btnGhost =
   'inline-flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg bg-surface-container-high px-3 font-headline-sm text-sm text-on-surface hover:bg-surface-container-highest disabled:opacity-50'
 const btnPrimary =
-  'inline-flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg bg-primary-container px-3 font-headline-sm text-sm font-bold text-on-primary-container shadow-[0_0_16px_rgba(78,222,163,0.3)] hover:opacity-95 disabled:opacity-50'
+  'inline-flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg bg-primary-container px-3 font-headline-sm text-sm font-bold text-on-primary-container hover:opacity-95 disabled:opacity-50'
 const btnTab =
   'inline-flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 font-headline-sm text-sm transition-all'
 
@@ -89,7 +89,7 @@ function planLabel(org: AdminOrganizationSummary) {
 function statusMeta(status?: string | null) {
   const key = (status ?? '').toUpperCase()
   if (key === 'ACTIVE' || key === 'ĐANG HOẠT ĐỘNG') {
-    return { label: 'Đang hoạt động', tone: 'primary' as const }
+    return { label: 'Đang hoạt động', tone: 'active' as const }
   }
   if (key === 'INACTIVE' || key === 'NGỪNG HOẠT ĐỘNG') {
     return { label: 'Ngừng hoạt động', tone: 'muted' as const }
@@ -425,7 +425,7 @@ export function AdminOrganizationsPage() {
   const issueArCards = async () => {
     if (!orgId) return
     const targetLabel =
-      selectedIds.length > 0 ? `${selectedIds.length} thành viên đã chọn` : 'toàn bộ roster ACTIVE'
+      selectedIds.length > 0 ? `${selectedIds.length} thành viên đã chọn` : 'toàn bộ thành viên đang hoạt động'
     if (!window.confirm(`Cấp thẻ AR cho ${targetLabel}?`)) return
     setSaving(true)
     try {
@@ -624,7 +624,7 @@ export function AdminOrganizationsPage() {
     try {
       const blob = await adminApi.exportOrgRosterCsv(orgId)
       downloadBlob(blob, `org-roster-${orgId.slice(0, 8)}.csv`)
-      showToast({ message: 'Đã xuất roster CSV (mở được bằng Excel).', type: 'success' })
+      showToast({ message: 'Đã xuất danh sách thành viên CSV (mở được bằng Excel).', type: 'success' })
     } catch (cause) {
       showToast({ message: getFriendlyErrorMessage(cause, 'quest'), type: 'error' })
     } finally {
@@ -698,7 +698,7 @@ export function AdminOrganizationsPage() {
     filteredRoster.length > 0 && filteredRoster.every((m) => selectedIds.includes(m.userId))
 
   return (
-    <section className="flex w-full min-w-0 flex-col pb-8" aria-busy={loading || detailLoading || saving}>
+    <section className="admin-page admin-organizations-page flex w-full min-w-0 flex-col pb-8" aria-busy={loading || detailLoading || saving}>
       <input
         ref={importInputRef}
         type="file"
@@ -707,14 +707,14 @@ export function AdminOrganizationsPage() {
         onChange={(event) => void onImportFile(event.target.files?.[0] ?? null)}
       />
       <AdminPageHeader
-        eyebrow="/admin/organizations · Quy mô đối tác di sản"
-        title="Quản trị Tổ chức & Cơ quan Liên kết"
+        eyebrow="Khách hàng và doanh thu · Đối tác di sản"
+        title="Tổ chức và cơ quan liên kết"
         description="Quản trị các cơ quan đối tác, trường học, bảo tàng và doanh nghiệp liên kết trải nghiệm AR di sản — dữ liệu từ máy chủ."
         actions={
           <>
             <button
               type="button"
-              className={btnGhost}
+              className={`${btnGhost} org-header-action org-header-action--export`}
               disabled={!orgId || saving}
               onClick={() => void exportRoster()}
             >
@@ -723,14 +723,14 @@ export function AdminOrganizationsPage() {
             </button>
             <button
               type="button"
-              className={btnGhost}
+              className={`${btnGhost} org-header-action org-header-action--sync`}
               disabled={!orgId || saving}
               onClick={() => void syncCrm()}
             >
               <MaterialIcon name="sync" className="text-[18px] text-outline" />
               Đồng bộ CRM
             </button>
-            <button type="button" className={btnPrimary} onClick={openCreateOrg}>
+            <button type="button" className={`${btnPrimary} org-header-action org-header-action--create`} onClick={openCreateOrg}>
               <MaterialIcon name="add_business" className="text-[18px]" />
               + Thêm tổ chức mới
             </button>
@@ -741,11 +741,11 @@ export function AdminOrganizationsPage() {
       <div className="mt-2 grid grid-cols-12 items-start gap-4 xl:gap-6">
         {/* LEFT: Partner directory */}
         <aside className="col-span-12 flex min-w-0 flex-col gap-4 xl:col-span-4">
-          <div className="space-y-3 rounded-xl bg-surface-container-low p-3.5 shadow-sm">
+          <div className="org-directory-panel space-y-3 rounded-xl bg-surface-container-low p-3.5 shadow-sm">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <MaterialIcon name="domain" className="text-[18px] text-primary" />
-                <span className="font-headline-sm text-headline-sm text-on-surface">Danh mục Đối tác</span>
+                <span className="font-headline-sm text-base font-bold text-on-surface">Danh mục đối tác</span>
               </div>
               <span className="rounded-full bg-surface-container-highest px-2 py-0.5 font-code-sm text-code-sm text-primary">
                 {formatCount(planFacets.all)} ĐỐI TÁC
@@ -796,16 +796,16 @@ export function AdminOrganizationsPage() {
                 <div className="flex flex-wrap items-center gap-3">
                   {[
                     { value: '', label: 'Tất cả', dot: 'bg-outline' },
-                    { value: 'ACTIVE', label: 'Hoạt động', dot: 'bg-primary' },
+                    { value: 'ACTIVE', label: 'Hoạt động', dot: 'bg-emerald-600' },
                     { value: 'INACTIVE', label: 'Ngừng', dot: 'bg-outline' },
                   ].map((item) => (
                     <button
                       key={item.value || 'all-status'}
                       type="button"
                       onClick={() => updateParam('status', item.value)}
-                      className={`inline-flex items-center gap-1.5 font-code-sm text-code-sm ${
+                      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-body-sm text-sm ${
                         status === item.value ? 'text-primary' : 'text-outline hover:text-on-surface'
-                      }`}
+                      } ${status === item.value ? 'bg-primary/10 font-semibold' : 'bg-white'}`}
                     >
                       <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${item.dot}`} />
                       {item.label}
@@ -859,9 +859,9 @@ export function AdminOrganizationsPage() {
                       key={org.id}
                       type="button"
                       onClick={() => updateParam('orgId', org.id)}
-                      className={`w-full overflow-hidden rounded-xl p-3.5 text-left transition-all ${
+                      className={`org-list-card w-full overflow-hidden rounded-xl p-3.5 text-left transition-all ${
                         isSelected
-                          ? 'border-l-[3px] border-l-primary bg-surface-container-high pl-[calc(0.875rem-1px)] shadow-md'
+                          ? 'is-selected border-l-[3px] border-l-primary bg-surface-container-high pl-[calc(0.875rem-1px)] shadow-md'
                           : 'border-l-[3px] border-l-transparent bg-surface-container-low hover:bg-surface-container'
                       }`}
                     >
@@ -891,11 +891,7 @@ export function AdminOrganizationsPage() {
                                 </span>
                               )}
                             </div>
-                            <h3
-                              className={`mt-0.5 truncate font-headline-sm tracking-tight text-on-surface ${
-                                isSelected ? 'text-body-lg font-semibold' : 'text-body-md'
-                              }`}
-                            >
+                            <h3 className="mt-0.5 line-clamp-2 font-headline-sm text-base font-bold leading-snug text-on-surface">
                               {org.name}
                             </h3>
                             <div className="mt-1 flex flex-wrap items-center gap-2 font-body-sm text-body-sm text-outline">
@@ -911,13 +907,14 @@ export function AdminOrganizationsPage() {
                         </div>
                         <span
                           className={`inline-flex shrink-0 items-center rounded-full px-2 py-0.5 font-label-sm text-code-sm ${
-                            meta.tone === 'primary'
-                              ? 'bg-primary/15 text-primary'
+                            meta.tone === 'active'
+                              ? 'bg-emerald-50 text-emerald-800'
                               : meta.tone === 'tertiary'
                                 ? 'bg-tertiary/15 text-tertiary'
                                 : 'bg-surface-container-high text-outline'
                           }`}
                         >
+                          <span className={`mr-1.5 h-1.5 w-1.5 rounded-full ${meta.tone === 'active' ? 'bg-emerald-600' : 'bg-slate-400'}`} />
                           {meta.label}
                         </span>
                       </div>
@@ -955,11 +952,11 @@ export function AdminOrganizationsPage() {
           )}
           {!detailLoading && !detailError && data && selectedOrg && (
             <>
-              <div className="relative overflow-hidden rounded-2xl bg-surface-container-low p-5 shadow-md sm:p-6">
+              <div className="org-detail-card relative overflow-hidden rounded-2xl bg-surface-container-low p-5 shadow-md sm:p-6">
                 <div className="pointer-events-none absolute -right-16 -top-16 h-80 w-80 rounded-full bg-primary/10 blur-3xl" />
                 <div className="relative z-10 flex flex-col justify-between gap-4 md:flex-row md:items-center">
                   <div className="flex items-start gap-4 md:items-center">
-                    <div className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-surface-container text-primary shadow-[0_0_24px_rgba(78,222,163,0.15)]">
+                    <div className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl border border-outline-variant bg-surface-container-high text-primary">
                       <MaterialIcon name="account_balance" className="text-[36px]" />
                     </div>
                     <div className="min-w-0">
@@ -969,8 +966,8 @@ export function AdminOrganizationsPage() {
                         </span>
                         <span
                           className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 font-label-sm text-code-sm ${
-                            statusMeta(selectedOrg.status).tone === 'primary'
-                              ? 'bg-primary/15 text-primary'
+                            statusMeta(selectedOrg.status).tone === 'active'
+                              ? 'bg-emerald-50 text-emerald-800'
                               : 'bg-surface-container-high text-outline'
                           }`}
                         >
@@ -995,7 +992,7 @@ export function AdminOrganizationsPage() {
                   <div className="flex shrink-0 flex-wrap items-center gap-2">
                     <button
                       type="button"
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-surface-container text-on-surface hover:bg-surface-container-high"
+                      className="org-detail-action org-detail-action--edit inline-flex h-9 w-9 items-center justify-center rounded-lg bg-surface-container text-on-surface hover:bg-surface-container-high"
                       onClick={openEditOrg}
                       aria-label="Chỉnh sửa hồ sơ"
                     >
@@ -1003,7 +1000,7 @@ export function AdminOrganizationsPage() {
                     </button>
                     <button
                       type="button"
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-surface-container text-on-surface hover:bg-surface-container-high"
+                      className="org-detail-action org-detail-action--share inline-flex h-9 w-9 items-center justify-center rounded-lg bg-surface-container text-on-surface hover:bg-surface-container-high"
                       disabled={saving}
                       onClick={() => void shareInvite()}
                       aria-label="Chia sẻ mã mời"
@@ -1012,7 +1009,7 @@ export function AdminOrganizationsPage() {
                     </button>
                     <button
                       type="button"
-                      className={`${btnGhost} text-primary`}
+                      className={`${btnGhost} org-detail-action org-detail-action--member`}
                       onClick={() => {
                         setMemberEmail('')
                         setMemberDisplayName('')
@@ -1025,7 +1022,7 @@ export function AdminOrganizationsPage() {
                     </button>
                     <button
                       type="button"
-                      className={btnGhost}
+                      className={`${btnGhost} org-detail-action org-detail-action--card`}
                       disabled={saving || !orgId}
                       onClick={() => void issueArCards()}
                     >
@@ -1036,7 +1033,7 @@ export function AdminOrganizationsPage() {
                 </div>
 
                 <div className="mt-5 grid grid-cols-1 gap-3 border-t border-surface-container-high/40 pt-5 sm:grid-cols-2 lg:grid-cols-4">
-                  <div className="flex flex-col justify-between rounded-xl bg-surface-container/70 p-3">
+                  <div className="org-metric-card flex flex-col justify-between rounded-xl bg-surface-container/70 p-3" data-tone="blue">
                     <div className="flex items-center justify-between">
                       <span className="font-body-sm text-body-sm text-outline">Nhiệm vụ học tập</span>
                       <MaterialIcon name="task_alt" className="text-[18px] text-primary" />
@@ -1052,12 +1049,12 @@ export function AdminOrganizationsPage() {
                         />
                       </div>
                       <span className="mt-1 block font-body-sm text-[11px] text-outline">
-                        Hoàn thành quest (máy chủ)
+                        Hoàn thành nhiệm vụ
                       </span>
                     </div>
                   </div>
 
-                  <div className="flex flex-col justify-between rounded-xl bg-surface-container/70 p-3">
+                  <div className="org-metric-card flex flex-col justify-between rounded-xl bg-surface-container/70 p-3" data-tone="teal">
                     <div className="flex items-center justify-between">
                       <span className="font-body-sm text-body-sm text-outline">Hành trình Di sản AR</span>
                       <MaterialIcon name="explore" className="text-[18px] text-secondary" />
@@ -1083,7 +1080,7 @@ export function AdminOrganizationsPage() {
                     </div>
                   </div>
 
-                  <div className="flex flex-col justify-between rounded-xl bg-surface-container/70 p-3">
+                  <div className="org-metric-card flex flex-col justify-between rounded-xl bg-surface-container/70 p-3" data-tone="gold">
                     <div className="flex items-center justify-between">
                       <span className="font-body-sm text-body-sm text-outline">Tổng XP tích lũy</span>
                       <MaterialIcon name="social_leaderboard" className="text-[18px] text-tertiary" />
@@ -1099,12 +1096,12 @@ export function AdminOrganizationsPage() {
                         </span>
                       </div>
                       <span className="mt-1 block font-body-sm text-[11px] text-outline">
-                        Tổng từ roster hiện tại
+                        Tổng điểm của thành viên
                       </span>
                     </div>
                   </div>
 
-                  <div className="flex flex-col justify-between rounded-xl bg-surface-container/70 p-3">
+                  <div className="org-metric-card flex flex-col justify-between rounded-xl bg-surface-container/70 p-3" data-tone="violet">
                     <div className="flex items-center justify-between">
                       <span className="font-body-sm text-body-sm text-outline">Ghi chú vận hành</span>
                       <MaterialIcon name="flag" className="text-[18px] text-on-surface-variant" />
@@ -1134,7 +1131,7 @@ export function AdminOrganizationsPage() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 border-b border-surface-container-high/60 pb-2">
+              <div className="org-detail-tabs flex items-center gap-3 border-b border-surface-container-high/60 pb-2">
                 <nav
                   aria-label="Chi tiết tổ chức"
                   className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto pb-0.5 [scrollbar-width:thin]"
@@ -1196,13 +1193,13 @@ export function AdminOrganizationsPage() {
                   onClick={() => importInputRef.current?.click()}
                 >
                   <MaterialIcon name="file_upload" className="text-[16px]" />
-                  <span className="hidden sm:inline">Import Excel</span>
+                  <span className="hidden sm:inline">Nhập từ Excel</span>
                   <span className="sm:hidden">Import</span>
                 </button>
               </div>
 
               {activeTab === 'contract' && (
-                <div className="rounded-2xl bg-surface-container-low p-4 shadow-sm sm:p-5">
+                <div className="org-tab-panel rounded-2xl bg-surface-container-low p-4 shadow-sm sm:p-5" data-tone="gold">
                   <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                     <h3 className="font-headline-sm text-headline-sm text-on-surface">Hợp đồng & giấy phép</h3>
                     <button type="button" className={btnPrimary} disabled={saving} onClick={openContractCreate}>
@@ -1231,10 +1228,11 @@ export function AdminOrganizationsPage() {
                               <td className="py-2">{c.title}</td>
                               <td className="py-2">{c.status}</td>
                               <td className="py-2">{c.licenseSeats ?? '—'}</td>
-                              <td className="py-2 text-right">
+                              <td className="py-2">
+                                <div className="admin-table-actions">
                                 <button
                                   type="button"
-                                  className="text-primary hover:underline"
+                                  className="admin-table-action"
                                   onClick={() => {
                                     setContractForm({
                                       title: c.title,
@@ -1255,7 +1253,7 @@ export function AdminOrganizationsPage() {
                                 {c.status !== 'CANCELLED' && (
                                   <button
                                     type="button"
-                                    className="ml-3 text-error hover:underline"
+                                    className="admin-table-action"
                                     disabled={saving}
                                     onClick={() =>
                                       void (async () => {
@@ -1279,6 +1277,7 @@ export function AdminOrganizationsPage() {
                                     Hủy
                                   </button>
                                 )}
+                                </div>
                               </td>
                             </tr>
                           ))}
@@ -1290,7 +1289,7 @@ export function AdminOrganizationsPage() {
               )}
 
               {activeTab === 'report' && (
-                <div className="rounded-2xl bg-surface-container-low p-4 shadow-sm sm:p-5">
+                <div className="org-tab-panel rounded-2xl bg-surface-container-low p-4 shadow-sm sm:p-5" data-tone="teal">
                   <h3 className="mb-3 font-headline-sm text-headline-sm text-on-surface">
                     Báo cáo ngoại khóa AR (30 ngày)
                   </h3>
@@ -1303,11 +1302,11 @@ export function AdminOrganizationsPage() {
                           ['Thành viên', arReport.memberCount],
                           ['Check-in', arReport.checkins],
                           ['Phiên visit', arReport.visitSessions],
-                          ['Onsite', arReport.onsiteSessions],
+                          ['Tại di tích', arReport.onsiteSessions],
                           ['Discoveries', arReport.discoveries],
-                          ['Quest xong', arReport.questCompletions],
+                          ['Nhiệm vụ hoàn thành', arReport.questCompletions],
                         ].map(([label, value]) => (
-                          <div key={String(label)} className="rounded-xl bg-surface-container/70 p-3">
+                          <div key={String(label)} className="rounded-xl bg-surface-container/70 p-3 text-center">
                             <p className="font-body-sm text-body-sm text-outline">{label}</p>
                             <p className="mt-1 font-headline-lg text-headline-lg font-bold text-on-surface">
                               {formatCount(Number(value))}
@@ -1334,7 +1333,7 @@ export function AdminOrganizationsPage() {
               )}
 
               {activeTab === 'logs' && (
-                <div className="rounded-2xl bg-surface-container-low p-4 shadow-sm sm:p-5">
+                <div className="org-tab-panel rounded-2xl bg-surface-container-low p-4 shadow-sm sm:p-5" data-tone="violet">
                   <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                     <h3 className="font-headline-sm text-headline-sm text-on-surface">Nhật ký tổ chức</h3>
                     {orgId && (
@@ -1385,11 +1384,11 @@ export function AdminOrganizationsPage() {
               )}
 
               {activeTab === 'roster' && (
-                <div className="rounded-2xl bg-surface-container-low p-4 shadow-sm sm:p-5">
+                <div className="org-tab-panel org-roster-panel rounded-2xl bg-surface-container-low p-4 shadow-sm sm:p-5" data-tone="blue">
                   {roster.length === 0 ? (
                     <AdminEmptyState
                       title="Chưa có thành viên"
-                      detail="Roster của tổ chức đang trống."
+                      detail="Tổ chức này chưa có thành viên."
                     />
                   ) : (
                     <>
@@ -1425,9 +1424,10 @@ export function AdminOrganizationsPage() {
                       </div>
 
                       <div className="min-w-0 overflow-x-auto">
-                        <table className="w-full min-w-[48rem] border-collapse text-left">
+                        <table className="org-roster-table w-full min-w-[58rem] table-fixed border-collapse text-left">
+                          <colgroup><col className="w-12" /><col className="w-[18rem]" /><col className="w-[12rem]" /><col className="w-[9rem]" /><col className="w-[9rem]" /><col className="w-[12rem]" /></colgroup>
                           <thead>
-                            <tr className="bg-surface-container-lowest font-code-sm text-code-sm uppercase tracking-wider text-outline">
+                            <tr className="org-roster-head bg-surface-container-lowest font-code-sm text-code-sm uppercase tracking-wider text-outline">
                               <th className="w-10 rounded-l-lg px-3 py-2.5">
                                 <input
                                   type="checkbox"
@@ -1451,10 +1451,10 @@ export function AdminOrganizationsPage() {
                                 />
                               </th>
                               <th className="px-3 py-2.5">Thành viên & Định danh</th>
-                              <th className="px-3 py-2.5">Vai trò trong Org</th>
-                              <th className="px-3 py-2.5">Cấp bậc AR</th>
+                              <th className="px-3 py-2.5 text-center">Vai trò trong tổ chức</th>
+                              <th className="px-3 py-2.5 text-center">Cấp độ AR</th>
                               <th className="px-3 py-2.5 text-right">Tổng XP</th>
-                              <th className="rounded-r-lg px-3 py-2.5">Tiến độ Quests</th>
+                              <th className="rounded-r-lg px-3 py-2.5 text-center">Tiến độ nhiệm vụ</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-surface-container-high/30 font-body-sm text-body-sm">
@@ -1475,42 +1475,42 @@ export function AdminOrganizationsPage() {
                                       className="accent-primary"
                                     />
                                   </td>
-                                  <td className="px-3 py-3">
+                                  <td className="overflow-hidden px-3 py-3">
                                     <div className="flex items-center gap-3">
                                       <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/20 font-headline-sm font-bold text-primary">
                                         {initials(member.displayName || member.email)}
                                       </div>
                                       <div className="min-w-0 flex flex-col">
-                                        <span className="truncate font-headline-sm text-body-md font-semibold text-on-surface">
+                                        <span className="truncate font-headline-sm text-body-md font-semibold text-on-surface" title={member.displayName || 'Không có tên'}>
                                           {member.displayName || 'Không có tên'}
                                         </span>
-                                        <span className="truncate font-code-sm text-code-sm text-outline">
+                                        <span className="truncate font-code-sm text-code-sm text-outline" title={member.email}>
                                           {member.email}
                                         </span>
                                       </div>
                                     </div>
                                   </td>
-                                  <td className="px-3 py-3">
+                                  <td className="px-3 py-3 text-center">
                                     <span
                                       className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 font-label-sm text-code-sm ${badge.className}`}
                                     >
                                       {badge.icon && (
                                         <MaterialIcon name={badge.icon} className="text-[13px]" />
                                       )}
-                                      {member.orgRole}
+                                      {member.orgRole === 'teacher' ? 'Giáo viên' : member.orgRole === 'student' ? 'Học sinh' : member.orgRole === 'admin' ? 'Quản trị viên' : member.orgRole}
                                     </span>
                                   </td>
-                                  <td className="px-3 py-3">
-                                    <span className="font-medium text-on-surface">Level {member.level}</span>
+                                  <td className="px-3 py-3 text-center">
+                                    <span className="font-medium text-on-surface">Cấp {member.level}</span>
                                   </td>
                                   <td className="px-3 py-3 text-right font-code-sm text-code-sm font-bold text-primary">
                                     {formatCount(member.totalPoints)} XP
                                   </td>
                                   <td className="px-3 py-3">
-                                    <div className="flex w-28 flex-col gap-1">
+                                    <div className="mx-auto flex w-full max-w-[10rem] flex-col gap-1">
                                       <div className="flex items-center justify-between font-code-sm text-code-sm">
                                         <span className="text-on-surface">
-                                          {formatCount(member.questsCompleted)} quests
+                                          {formatCount(member.questsCompleted)} nhiệm vụ
                                         </span>
                                         <span className="font-semibold text-primary">{pct}%</span>
                                       </div>
@@ -1607,8 +1607,8 @@ export function AdminOrganizationsPage() {
                   onChange={(event) => setOrgPlanType(event.target.value)}
                   className={inputClass}
                 >
-                  <option value="STANDARD">STANDARD</option>
-                  <option value="ORG_BASIC">ORG_BASIC</option>
+                  <option value="STANDARD">Tiêu chuẩn</option>
+                  <option value="ORG_BASIC">Cơ bản</option>
                   <option value="PREMIUM">PREMIUM</option>
                 </select>
               </label>
@@ -1619,8 +1619,8 @@ export function AdminOrganizationsPage() {
                   onChange={(event) => setOrgStatus(event.target.value)}
                   className={inputClass}
                 >
-                  <option value="ACTIVE">ACTIVE</option>
-                  <option value="INACTIVE">INACTIVE</option>
+                  <option value="ACTIVE">Đang hoạt động</option>
+                  <option value="INACTIVE">Ngừng hoạt động</option>
                 </select>
               </label>
             </div>
@@ -1698,7 +1698,7 @@ export function AdminOrganizationsPage() {
       {memberModalOpen && (
         <AdminModal
           title="Thêm thành viên vào tổ chức"
-          subtitle="Provision / enroll roster member"
+          subtitle="Thêm thành viên vào tổ chức"
           icon="person_add"
           onClose={() => !saving && setMemberModalOpen(false)}
         >
@@ -1796,8 +1796,8 @@ export function AdminOrganizationsPage() {
                   onChange={(event) => setContractForm((c) => ({ ...c, planType: event.target.value }))}
                   className={inputClass}
                 >
-                  <option value="STANDARD">STANDARD</option>
-                  <option value="ORG_BASIC">ORG_BASIC</option>
+                  <option value="STANDARD">Tiêu chuẩn</option>
+                  <option value="ORG_BASIC">Cơ bản</option>
                   <option value="PREMIUM">PREMIUM</option>
                 </select>
               </label>
@@ -1809,7 +1809,7 @@ export function AdminOrganizationsPage() {
                   className={inputClass}
                 >
                   <option value="DRAFT">DRAFT</option>
-                  <option value="ACTIVE">ACTIVE</option>
+                  <option value="ACTIVE">Đang hoạt động</option>
                   <option value="EXPIRED">EXPIRED</option>
                   <option value="CANCELLED">CANCELLED</option>
                 </select>
@@ -1869,7 +1869,7 @@ export function AdminOrganizationsPage() {
           subtitle={
             selectedIds.length > 0
               ? `${selectedIds.length} thành viên đã chọn`
-              : 'Toàn bộ roster ACTIVE'
+              : 'Toàn bộ thành viên đang hoạt động'
           }
           icon="verified"
           onClose={() => !saving && setCertModalOpen(false)}

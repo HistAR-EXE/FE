@@ -12,7 +12,7 @@ export function AdminLoading({ label = 'Đang tải dữ liệu…' }: { label?:
 }
 
 export function AdminSkeleton({ className = 'h-12' }: { className?: string }) {
-  return <div aria-hidden="true" className={`animate-pulse rounded-lg bg-surface-container-high ${className}`} />
+  return <div aria-hidden="true" className={`rounded-lg bg-surface-container-high ${className}`} />
 }
 
 export function AdminErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {

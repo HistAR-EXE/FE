@@ -1,8 +1,20 @@
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
+import { formatRevenueTick, getRevenueAxis } from '../src/pages/revenueAxis.ts'
 
 const read = (path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8')
+
+test('revenue chart picks five readable intervals above the highest bar', () => {
+  assert.deepEqual(getRevenueAxis([200_000, 450_000, 300_000]), {
+    maximum: 500_000,
+    ticks: [0, 100_000, 200_000, 300_000, 400_000, 500_000],
+  })
+  assert.deepEqual(getRevenueAxis([5_000_000, 23_000_000]).ticks, [0, 5_000_000, 10_000_000, 15_000_000, 20_000_000, 25_000_000])
+  assert.deepEqual(getRevenueAxis([0, 0]), { maximum: 0, ticks: [0] })
+  assert.equal(formatRevenueTick(500_000), '500 nghìn')
+  assert.equal(formatRevenueTick(25_000_000), '25 triệu')
+})
 
 test('demo builds show a global, unmistakable data label', async () => {
   const [app, banner] = await Promise.all([
@@ -33,15 +45,15 @@ test('dashboard separates operational and commercial data with accessible revenu
   const source = await read('src/pages/AdminDashboardPage.tsx')
   for (const marker of [
     'Doanh thu thực thu tháng này',
-    'So với tháng trước',
-    'MRR ước tính',
-    'Pilot đang hoạt động',
+    'Thay đổi so với tháng trước',
+    'Doanh thu định kỳ tháng',
+    'Kịch bản đang hoạt động',
     'Bản nháp đang mở',
     'Chờ duyệt',
     'Báo cáo đang mở',
     'Thùng rác',
-    'Doanh thu B2C',
-    'Doanh thu B2B',
+    'Khách cá nhân',
+    'Tổ chức',
     'Cập nhật lúc',
     'Đỉnh',
     'Bảng số liệu',
@@ -129,7 +141,7 @@ test('narrative admin exposes destination readiness, rollback, and structured ga
     read('src/shared/api/contracts.ts'),
   ])
   for (const marker of [
-    'Checklist điểm đến narrative',
+    'Kiểm tra điểm đến',
     'Tour 360°',
     'Phỏng vấn AI',
     'Đối chiếu nguồn',
@@ -240,13 +252,13 @@ test('billing has three real-data regions with paged payments and inquiry CRM', 
     'Cài đặt & CRM',
     'AdminChart',
     'Doanh thu thực thu',
-    'MRR ước tính',
-    'ARR ước tính',
+    'Doanh thu định kỳ tháng',
+    'Doanh thu định kỳ năm',
     'Độ phủ',
     'Đang trả phí',
     'adminNotes',
-    'Phễu yêu cầu thương mại',
-    'Kanban board',
+    'Yêu cầu tư vấn số hóa di sản',
+    'Bảng giai đoạn',
     'Xuất đối soát CSV',
   ]) {
     assert.match(page, new RegExp(marker))
@@ -338,13 +350,12 @@ test('analytics uses URL location and range with independent accessible sections
     'useSearchParams',
     'locationId',
     'range',
-    'Mở khóa POI',
-    'Phễu nhiệm vụ',
-    'Điểm rời hành trình',
+    'Điểm di tích được ghi nhận nhiều nhất',
+    'Tiến độ hoàn thành nhiệm vụ',
+    'Điểm khách dừng hành trình',
     'Chất lượng phiên',
     'Ẩn để bảo vệ riêng tư',
-    'Quest Funnel',
-    'Live Sync',
+    'Làm mới dữ liệu',
     'Mật độ theo giờ trong tuần',
     'Đỉnh sáng',
     'Đỉnh chiều',

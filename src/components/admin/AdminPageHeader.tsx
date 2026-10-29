@@ -12,11 +12,11 @@ export function AdminPageHeader({
   actions?: ReactNode
 }) {
   return (
-    <header className="mb-6 flex min-w-0 flex-col gap-4 pt-2 lg:flex-row lg:items-end lg:justify-between">
+    <header className="admin-page-header mb-6 flex min-w-0 flex-col gap-4 pt-2 lg:flex-row lg:items-end lg:justify-between">
       <div className="flex min-w-0 flex-1 flex-col gap-1.5">
         {eyebrow && (
           <div className="flex min-w-0 items-center gap-2">
-            <span className="inline-flex h-2 w-2 shrink-0 animate-ping rounded-full bg-primary" />
+            <span className="inline-flex h-2 w-2 shrink-0 rounded-full bg-primary" />
             <span className="truncate font-label-sm text-label-sm uppercase tracking-wider text-primary">{eyebrow}</span>
           </div>
         )}

@@ -15,6 +15,7 @@ export function CheckoutB2B2CPage() {
     const { showToast } = useToast()
     const [loading, setLoading] = useState(false)
     const [submitted, setSubmitted] = useState(false)
+    const [inquiryId, setInquiryId] = useState<string | null>(null)
     const [form, setForm] = useState({
         organizationName: '',
         siteName: '',
@@ -55,7 +56,7 @@ export function CheckoutB2B2CPage() {
         }
         try {
             setLoading(true)
-            await billingApi.submitB2b2cInquiry({
+            const receipt = await billingApi.submitB2b2cInquiry({
                 organizationName,
                 siteName,
                 siteLocation: form.siteLocation.trim() || undefined,
@@ -69,6 +70,10 @@ export function CheckoutB2B2CPage() {
                 message: form.message.trim() || undefined,
                 website: form.website.trim() || undefined,
             })
+            if (!receipt?.id || receipt.status !== 'NEW') {
+                throw new Error('Máy chủ chưa xác nhận yêu cầu tư vấn. Vui lòng thử lại.')
+            }
+            setInquiryId(receipt.id)
             setSubmitted(true)
             showToast({
                 message: 'Đã gửi yêu cầu. Đội ngũ sẽ liên hệ để tư vấn.',
@@ -235,6 +240,11 @@ export function CheckoutB2B2CPage() {
                                         bạn đã được ghi nhận. Chuyên gia của chúng tôi sẽ liên hệ
                                         qua email hoặc số điện thoại bạn đã cung cấp.
                                     </p>
+                                    {inquiryId && (
+                                        <p className="mb-6 max-w-full break-all rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-xs text-blue-100">
+                                            Mã yêu cầu: <strong className="text-white">{inquiryId}</strong>
+                                        </p>
+                                    )}
                                     <Link to="/heritage-portfolio" className="w-full max-w-[260px]">
                                         <Button
                                             type="button"

@@ -10,7 +10,7 @@ type AdminStatusBadgeProps = {
 
 const toneClasses = {
   neutral: 'border-outline-variant bg-surface-container-high text-on-surface-variant',
-  success: 'border-primary/30 bg-primary-container/20 text-primary',
+  success: 'border-emerald-300 bg-emerald-50 text-emerald-700',
   warning: 'border-tertiary/40 bg-tertiary/10 text-tertiary',
   danger: 'border-error/40 bg-error-container/40 text-error',
 } as const

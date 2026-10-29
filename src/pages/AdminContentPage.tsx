@@ -175,8 +175,8 @@ export function AdminContentPage() {
     { id: 'discovery', label: 'Điểm khám phá', icon: 'location_on', count: discoveryPage?.totalItems },
     { id: 'artifacts', label: 'Hiện vật', icon: 'museum', count: artifactPage?.totalItems },
     { id: 'quests', label: 'Nhiệm vụ', icon: 'flag', count: questPage?.totalItems },
-    { id: 'panoramas', label: 'Panorama 360°', icon: '360', count: panoramas.length },
-    { id: 'stations', label: 'Trạm pilot', icon: 'qr_code_2' },
+    { id: 'panoramas', label: 'Ảnh tham quan 360°', icon: '360', count: panoramas.length },
+    { id: 'stations', label: 'Trạm trải nghiệm', icon: 'qr_code_2' },
     { id: 'reports', label: 'Báo sai dữ liệu', icon: 'report', danger: true },
   ]
 
@@ -203,7 +203,7 @@ export function AdminContentPage() {
   })()
 
   const listTitle =
-    tab === 'discovery' ? 'Danh sách POI hiển thị'
+    tab === 'discovery' ? 'Danh sách điểm khám phá'
       : tab === 'artifacts' ? 'Danh sách hiện vật'
         : tab === 'quests' ? 'Danh sách nhiệm vụ'
           : tab === 'panoramas' ? 'Danh sách panorama 360°'
@@ -368,13 +368,13 @@ export function AdminContentPage() {
     : '—'
 
   return (
-    <section className="flex w-full flex-col space-y-space-lg pb-20" aria-busy={loading && showListChrome}>
+    <section className="admin-page flex w-full flex-col space-y-space-lg pb-20" aria-busy={loading && showListChrome}>
       <AdminPageHeader
         eyebrow="Vận hành / Di sản & nội dung"
         title="Quản lý Nội dung khám phá"
         description={
           selectedLocation
-            ? `Đồng bộ POI, hiện vật, nhiệm vụ và panorama cho ${selectedLocation.name}.`
+            ? `Quản lý điểm khám phá, hiện vật, nhiệm vụ và ảnh toàn cảnh cho ${selectedLocation.name}.`
             : 'Tạo và chỉnh sửa nội dung khám phá theo địa điểm di sản.'
         }
         actions={
@@ -396,6 +396,7 @@ export function AdminContentPage() {
             onChange={(e) => updateListUrl({ locationId: e.target.value, page: '' })}
             className={inputClass}
           >
+            <option value="" disabled>Chọn địa điểm</option>
             {locations.map((loc) => (
               <option key={loc.id} value={loc.id}>
                 {loc.name}{loc.city ? ` (${loc.city})` : ''}
@@ -439,7 +440,7 @@ export function AdminContentPage() {
           <div className="flex items-end lg:col-span-12">
             <span
               className={eraCount.sufficient ? 'ops-pill ops-pill-success' : 'ops-pill ops-pill-danger'}
-              title="Mỗi di tích cần ≥3 thời kỳ (era)"
+              title="Mỗi di tích cần ít nhất 3 thời kỳ"
             >
               <MaterialIcon name="timeline" className="text-[12px]" />
               {eraCount.eraCount}/3 thời kỳ (era)
@@ -490,7 +491,7 @@ export function AdminContentPage() {
               colWidths={['34%', '14%', '36%', '16%']}
               headers={['Tên điểm', 'Loại', 'Trạng thái gắn', '']}
               emptyTitle="Chưa có điểm khám phá"
-              emptyDetail="Thêm POI cho địa điểm này hoặc đổi bộ lọc tìm kiếm."
+              emptyDetail="Thêm điểm khám phá cho địa điểm này hoặc đổi bộ lọc tìm kiếm."
               rows={discovery.map((p) => {
                 const unlock = parseUnlockKey(p.unlockKey)
                 return {
@@ -630,12 +631,12 @@ export function AdminContentPage() {
             <div className="ops-card space-y-3 p-4">
               <div className="flex items-center justify-between gap-2">
                 <h3 className="min-w-0 truncate font-headline-sm text-headline-sm text-on-surface">Tổng quan địa điểm</h3>
-                <span className="ops-pill ops-pill-success shrink-0">LIVE</span>
+                <span className="ops-pill ops-pill-success shrink-0">Đang hoạt động</span>
               </div>
               <p className="truncate font-body-sm text-body-sm text-on-surface-variant" title={siteLabel}>{siteLabel}</p>
               <dl className="grid grid-cols-2 gap-2">
                 {[
-                  ['POI', discoveryPage?.totalItems ?? '—'],
+                  ['Điểm khám phá', discoveryPage?.totalItems ?? '—'],
                   ['Hiện vật', artifactPage?.totalItems ?? '—'],
                   ['Nhiệm vụ', questPage?.totalItems ?? '—'],
                   ['Panorama', panoramas.length],
@@ -661,7 +662,7 @@ export function AdminContentPage() {
                   </p>
                 )
               ) : (
-                <p className="font-body-sm text-body-sm text-outline">Chưa có dữ liệu era cho địa điểm này.</p>
+                <p className="font-body-sm text-body-sm text-outline">Chưa có dữ liệu thời kỳ cho địa điểm này.</p>
               )}
               <button
                 type="button"
@@ -681,7 +682,7 @@ export function AdminContentPage() {
 
       {modal?.kind === 'discovery' && (
         <AdminModal
-          title={modal.mode === 'create' ? 'Thêm điểm khám phá (POI)' : 'Cập nhật điểm khám phá (POI)'}
+          title={modal.mode === 'create' ? 'Thêm điểm khám phá' : 'Cập nhật điểm khám phá'}
           onClose={() => setModal(null)}
         >
           <DiscoveryPointForm
@@ -906,7 +907,7 @@ function ContentTable({
     return <AdminEmptyState title={emptyTitle ?? 'Chưa có dữ liệu'} detail={emptyDetail ?? 'Chưa có bản ghi cho địa điểm này.'} />
   }
   return (
-    <div className="min-w-0 overflow-hidden rounded-xl bg-surface-container-low shadow-sm">
+    <div className="min-w-0 overflow-x-auto rounded-xl border border-outline-variant bg-surface-container-low shadow-sm" role="region" tabIndex={0} aria-label="Bảng nội dung, có thể cuộn ngang để xem thêm cột">
       <table className="ops-table w-full text-left font-body-md text-body-md">
         {colWidths && (
           <colgroup>
@@ -933,7 +934,7 @@ function ContentTable({
                 </td>
               ))}
               <td className="px-2 py-2.5 align-middle sm:px-3">
-                <div className="flex items-center justify-end gap-1">
+                <div className="admin-table-actions">
                   {row.onEdit && (
                     <button
                       type="button"
@@ -1061,7 +1062,7 @@ function DiscoveryPointForm({
       <FormField label="Tên *">
         <TextInput value={name} onChange={(e) => setName(e.target.value)} required />
       </FormField>
-      <FormField label="unlock_key *" hint="VD: scene:xxx, era:1948, artifact:xxx">
+      <FormField label="Mã mở khóa *" hint="Ví dụ: mã cảnh, thời kỳ hoặc hiện vật theo quy tắc hệ thống">
         <TextInput value={unlockKey} onChange={(e) => setUnlockKey(e.target.value)} required />
       </FormField>
       <div className="grid grid-cols-2 gap-sm">

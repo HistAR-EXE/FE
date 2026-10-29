@@ -57,7 +57,7 @@ export function CrossSegmentOverview() {
         error: null,
       })
     } catch {
-      setData((prev) => ({ ...prev, loading: false, error: 'Không tải được dữ liệu cross-segment' }))
+      setData((prev) => ({ ...prev, loading: false, error: 'Không tải được số liệu theo nhóm khách hàng.' }))
     }
   }, [])
 
@@ -120,7 +120,7 @@ export function CrossSegmentOverview() {
     return (
       <div className="flex items-center gap-2 rounded-xl bg-surface-container-low p-space-lg">
         <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-        <span className="font-body-md text-body-md text-outline">Đang phân tích cross-segment...</span>
+        <span className="font-body-md text-body-md text-outline">Đang tổng hợp theo nhóm khách hàng...</span>
       </div>
     )
   }
@@ -139,8 +139,8 @@ export function CrossSegmentOverview() {
   const SEGMENT_CARDS = [
     {
       key: 'b2c',
-      label: 'B2C Cá nhân',
-      sublabel: 'Freemium + Premium',
+      label: 'Khách cá nhân',
+      sublabel: 'Tài khoản miễn phí và trả phí',
       icon: 'person',
       color: 'text-primary',
       bgColor: 'bg-primary/10',
@@ -154,8 +154,8 @@ export function CrossSegmentOverview() {
     },
     {
       key: 'b2b',
-      label: 'B2B Trường học',
-      sublabel: 'Micro · Standard · Premium',
+      label: 'Trường học',
+      sublabel: 'Các gói dành cho tổ chức',
       icon: 'school',
       color: 'text-secondary',
       bgColor: 'bg-secondary/10',
@@ -169,8 +169,8 @@ export function CrossSegmentOverview() {
     },
     {
       key: 'b2b2c',
-      label: 'B2B2C Di sản',
-      sublabel: 'Heritage Digitization',
+      label: 'Đối tác di sản',
+      sublabel: 'Tư vấn số hóa di sản',
       icon: 'account_balance',
       color: 'text-tertiary',
       bgColor: 'bg-tertiary/10',
@@ -191,7 +191,7 @@ export function CrossSegmentOverview() {
         <div className="flex items-center gap-2">
           <MaterialIcon name="hub" className="text-[20px] text-primary" />
           <h2 id="cross-segment-title" className="font-headline-md text-headline-md text-on-surface">
-            Phân tích Cross-Segment
+            Phân tích theo nhóm khách hàng
           </h2>
         </div>
         <button
@@ -210,7 +210,8 @@ export function CrossSegmentOverview() {
           <Link
             key={seg.key}
             to={seg.link}
-            className="group flex flex-col gap-3 rounded-xl bg-surface-container-low p-space-md shadow-sm transition-all hover:shadow-md"
+            data-dashboard-segment={seg.key}
+            className="dashboard-segment-card group flex flex-col gap-3 rounded-xl bg-surface-container-low p-space-md shadow-sm transition-all hover:shadow-md"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -251,10 +252,10 @@ export function CrossSegmentOverview() {
 
       {/* B2B2C Pipeline funnel */}
       {segments.b2b2c.total > 0 && (
-        <div className="rounded-xl bg-surface-container-low p-space-md shadow-sm">
+        <div className="dashboard-pipeline rounded-xl bg-surface-container-low p-space-md shadow-sm">
           <div className="mb-3 flex items-center gap-2">
             <MaterialIcon name="filter_alt" className="text-[18px] text-tertiary" />
-            <h3 className="font-headline-sm text-headline-sm text-on-surface">Pipeline B2B2C</h3>
+            <h3 className="font-headline-sm text-headline-sm text-on-surface">Tiến độ tư vấn di sản</h3>
           </div>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {[
@@ -263,7 +264,7 @@ export function CrossSegmentOverview() {
               { label: 'Chuyển đổi', value: segments.b2b2c.converted, icon: 'check_circle', tone: 'text-secondary' },
               { label: 'Từ chối', value: segments.b2b2c.rejected, icon: 'cancel', tone: 'text-error' },
             ].map((stage) => (
-              <div key={stage.label} className="flex flex-col items-center gap-1 rounded-lg bg-surface-container p-3">
+              <div key={stage.label} className="dashboard-stage flex flex-col items-center gap-1 rounded-lg bg-surface-container p-3">
                 <MaterialIcon name={stage.icon} className={`text-[24px] ${stage.tone}`} />
                 <span className="font-headline-lg text-headline-lg text-on-surface">{stage.value}</span>
                 <span className="font-code-sm text-code-sm text-outline">{stage.label}</span>
@@ -274,10 +275,10 @@ export function CrossSegmentOverview() {
       )}
 
       {/* Referral cross-segment stats */}
-      <div className="rounded-xl bg-surface-container-low p-space-md shadow-sm">
+      <div className="dashboard-referrals rounded-xl bg-surface-container-low p-space-md shadow-sm">
         <div className="mb-3 flex items-center gap-2">
           <MaterialIcon name="share" className="text-[18px] text-primary" />
-          <h3 className="font-headline-sm text-headline-sm text-on-surface">Referral Cross-Segment</h3>
+          <h3 className="font-headline-sm text-headline-sm text-on-surface">Giới thiệu người dùng</h3>
           <span className="font-code-sm text-code-sm text-outline">(30 ngày gần nhất)</span>
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -287,7 +288,7 @@ export function CrossSegmentOverview() {
             { label: 'Lượt truy cập', value: segments.referral.totalVisits, icon: 'visibility' },
             { label: 'Người dùng mới', value: segments.referral.totalUnique, icon: 'person_add' },
           ].map((stat) => (
-            <div key={stat.label} className="flex items-center gap-3 rounded-lg bg-surface-container p-3">
+            <div key={stat.label} className="dashboard-referral-stat flex items-center gap-3 rounded-lg bg-surface-container p-3">
               <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary/10">
                 <MaterialIcon name={stat.icon} className="text-[18px] text-primary" />
               </div>

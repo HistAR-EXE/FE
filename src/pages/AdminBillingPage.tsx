@@ -3,9 +3,13 @@ import { Link, useSearchParams } from 'react-router-dom'
 import {
   Area,
   AreaChart,
+  Bar,
+  BarChart,
   CartesianGrid,
   Cell,
+  ComposedChart,
   Legend,
+  Line,
   Pie,
   PieChart,
   Tooltip,
@@ -13,6 +17,7 @@ import {
   YAxis,
 } from 'recharts'
 import { AdminChart } from '../components/admin/AdminChart'
+import { AdminInfoHint } from '../components/admin/AdminInfoHint'
 import { useAdminChartAnimation } from '../components/admin/adminChartMotion'
 import { AdminEmptyState, AdminErrorState, AdminLoading } from '../components/admin/AdminAsyncState'
 import { AdminModal } from '../components/admin/AdminModal'
@@ -71,9 +76,9 @@ const PAYMENT_CHIPS = [
   { id: 'VOIDED', label: 'Đã hủy', status: 'VOIDED' },
 ] as const
 
-const PLAN_COLORS = ['#4edea3', '#4cd7f6', '#ffb95f', '#c4a7ff', '#f87171']
+const PLAN_COLORS = ['#0275fb', '#0f766e', '#c38d00', '#7555a8', '#b42318']
 const ROUTE = '/admin/billing'
-const chartTip = { background: '#1c1b1d', border: '1px solid #3c4a42', borderRadius: 8 }
+const chartTip = { background: '#ffffff', color: '#0f1b33', border: '1px solid #c8d8ef', borderRadius: 8, boxShadow: '0 8px 24px rgba(15,27,51,0.12)' }
 
 const LEAD_PACKAGE_OPTIONS = [
   { value: 'EDU_K12', label: 'Giáo dục K12' },
@@ -115,13 +120,14 @@ const emptyInvoiceForm = () => ({
 const inputClass =
   'w-full rounded-lg border border-outline-variant bg-surface-container-lowest px-3 py-2 font-code-sm text-code-sm text-on-surface placeholder:text-outline focus:outline-none focus:ring-1 focus:ring-primary'
 const btnGhost =
-  'inline-flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg bg-surface-container px-3 font-headline-sm text-sm text-on-surface hover:bg-surface-container-high disabled:opacity-50'
+  'inline-flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg border border-primary/35 bg-white px-3 font-headline-sm text-sm font-semibold text-primary hover:bg-primary/5 disabled:opacity-50'
 const btnPrimary =
-  'inline-flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg bg-primary-container px-3 font-headline-sm text-sm font-bold text-on-primary-container shadow-[0_0_16px_rgba(78,222,163,0.3)] hover:opacity-95 disabled:opacity-50'
+  'inline-flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg border border-primary bg-primary-container px-3 font-headline-sm text-sm font-bold text-on-primary-container hover:bg-primary-container/90 disabled:opacity-50'
 const btnSecondary =
-  'inline-flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg bg-secondary px-3 font-headline-sm text-sm font-semibold text-on-secondary hover:opacity-90 disabled:opacity-50'
+  'inline-flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg border border-secondary bg-secondary px-3 font-headline-sm text-sm font-semibold text-on-secondary hover:opacity-90 disabled:opacity-50'
 
-type ChartPeriod = 'week' | 'month' | 'quarter'
+type ChartPeriod = 'one-month' | 'three-months' | 'six-months' | 'year' | 'custom'
+type ChartView = 'area' | 'bar' | 'combined'
 type PipelineView = 'kanban' | 'matrix'
 type PaymentFacetCounts = {
   all: number
@@ -158,8 +164,8 @@ function paymentStatusMeta(status: string) {
 
 function channelLabel(channel?: string | null) {
   const key = (channel ?? '').trim().toUpperCase()
-  if (key === 'B2B') return { label: 'B2B hợp đồng', color: 'bg-secondary' }
-  if (key === 'B2C') return { label: 'B2C Quest', color: 'bg-primary' }
+  if (key === 'B2B') return { label: 'Hợp đồng tổ chức', color: 'bg-secondary' }
+  if (key === 'B2C') return { label: 'Khách cá nhân', color: 'bg-primary' }
   return { label: channel?.trim() || 'Không rõ cổng', color: 'bg-outline' }
 }
 
@@ -234,10 +240,15 @@ export function AdminBillingPage() {
   const channel = params.get('channel') ?? ''
   const inquiryPage = Math.max(Number(params.get('inquiryPage') ?? '1') - 1, 0)
   const inquiryStatus = params.get('inquiryStatus') ?? ''
+  const inquiryQuery = params.get('inquiryQuery') ?? ''
+  const pipelineDeepLink = params.get('tab') === 'pipeline'
   const [overview, setOverview] = useState<AdminBillingOverview | null>(null)
   const [payments, setPayments] = useState<PageResponse<AdminRecentPayment> | null>(null)
   const [inquiries, setInquiries] = useState<PageResponse<AdminB2b2cInquiry> | null>(null)
   const [pipelineItems, setPipelineItems] = useState<AdminB2b2cInquiry[]>([])
+  const [pipelineLoading, setPipelineLoading] = useState(false)
+  const [pipelineError, setPipelineError] = useState<string | null>(null)
+  const [inquirySearch, setInquirySearch] = useState(inquiryQuery)
   const [settings, setSettings] = useState<AdminBillingSettings | null>(null)
   const [price, setPrice] = useState('')
   const [chatLimit, setChatLimit] = useState(10)
@@ -248,7 +259,15 @@ export function AdminBillingPage() {
   const [paymentsLoading, setPaymentsLoading] = useState(false)
   const [inquiriesLoading, setInquiriesLoading] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [chartPeriod, setChartPeriod] = useState<ChartPeriod>('month')
+  const [chartPeriod, setChartPeriod] = useState<ChartPeriod>('six-months')
+  const [chartFrom, setChartFrom] = useState('')
+  const [chartTo, setChartTo] = useState('')
+  const [customRevenue, setCustomRevenue] = useState<AdminBillingOverview['monthlyRevenue'] | null>(null)
+  const [customRevenueLoading, setCustomRevenueLoading] = useState(false)
+  const [customRevenueError, setCustomRevenueError] = useState<string | null>(null)
+  const [customRevenueRequest, setCustomRevenueRequest] = useState(0)
+  const [chartView, setChartView] = useState<ChartView>('area')
+  const [expandedLeadIds, setExpandedLeadIds] = useState<string[]>([])
   const [pipelineView, setPipelineView] = useState<PipelineView>('kanban')
   const [paymentFacets, setPaymentFacets] = useState<PaymentFacetCounts>({
     all: 0,
@@ -284,7 +303,7 @@ export function AdminBillingPage() {
         if (value) next.set(key, value)
         else next.delete(key)
         if (key === 'paymentStatus' || key === 'channel') next.delete('paymentPage')
-        if (key === 'inquiryStatus') next.delete('inquiryPage')
+        if (key === 'inquiryStatus' || key === 'inquiryQuery') next.delete('inquiryPage')
         return next
       },
       { replace: true },
@@ -399,6 +418,8 @@ export function AdminBillingPage() {
   }, [channel])
 
   const loadPipeline = useCallback(async () => {
+    setPipelineLoading(true)
+    setPipelineError(null)
     try {
       const first = await adminApi.listB2b2cInquiries({ page: 0, size: 100 })
       let items = [...first.items]
@@ -411,8 +432,10 @@ export function AdminBillingPage() {
         for (const page of rest) items = items.concat(page.items)
       }
       setPipelineItems(items.filter((item) => item.status.toUpperCase() !== 'LOST'))
-    } catch {
-      setPipelineItems([])
+    } catch (cause) {
+      setPipelineError(getFriendlyErrorMessage(cause, 'quest'))
+    } finally {
+      setPipelineLoading(false)
     }
   }, [])
 
@@ -443,6 +466,7 @@ export function AdminBillingPage() {
         page: inquiryPage,
         size: 20,
         status: inquiryStatus || undefined,
+        q: inquiryQuery || undefined,
       })
       setInquiries(next)
     } catch (cause) {
@@ -451,7 +475,7 @@ export function AdminBillingPage() {
     } finally {
       setInquiriesLoading(false)
     }
-  }, [inquiryPage, inquiryStatus])
+  }, [inquiryPage, inquiryStatus, inquiryQuery])
 
   const loadShell = useCallback(async () => {
     setErrors((v) => ({ ...v, overview: null, settings: null }))
@@ -479,6 +503,21 @@ export function AdminBillingPage() {
   }, [userId])
 
   useEffect(() => {
+    if (chartPeriod !== 'custom' || customRevenue) return
+    let cancelled = false
+    setCustomRevenueLoading(true)
+    setCustomRevenueError(null)
+    void adminApi.billingOverview(36).then((data) => {
+      if (!cancelled) setCustomRevenue(data.monthlyRevenue)
+    }).catch((cause: unknown) => {
+      if (!cancelled) setCustomRevenueError(getFriendlyErrorMessage(cause, 'quest'))
+    }).finally(() => {
+      if (!cancelled) setCustomRevenueLoading(false)
+    })
+    return () => { cancelled = true }
+  }, [chartPeriod, customRevenue, customRevenueRequest])
+
+  useEffect(() => {
     let cancelled = false
     ;(async () => {
       setBootLoading(true)
@@ -489,7 +528,6 @@ export function AdminBillingPage() {
     return () => {
       cancelled = true
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- shell + pipeline boot once
   }, [])
 
   // Filter/page changes only refresh the matching section (no full-page unmount).
@@ -500,6 +538,24 @@ export function AdminBillingPage() {
   useEffect(() => {
     void loadInquiries()
   }, [loadInquiries])
+
+  useEffect(() => {
+    const refresh = () => {
+      if (document.visibilityState !== 'visible') return
+      void loadInquiries()
+      void loadPipeline()
+    }
+    window.addEventListener('focus', refresh)
+    return () => window.removeEventListener('focus', refresh)
+  }, [loadInquiries, loadPipeline])
+
+  useEffect(() => {
+    if (bootLoading || !pipelineDeepLink) return
+    const frame = requestAnimationFrame(() =>
+      document.getElementById('billing-pipeline')?.scrollIntoView({ block: 'start' }),
+    )
+    return () => cancelAnimationFrame(frame)
+  }, [bootLoading, pipelineDeepLink])
 
   useEffect(() => {
     void loadPaymentFacets()
@@ -541,7 +597,7 @@ export function AdminBillingPage() {
     }
   }
 
-  const saveInquiry = async (item: AdminB2b2cInquiry, status: string) => {
+  const saveInquiry = async (item: AdminB2b2cInquiry, status: string): Promise<boolean> => {
     const adminNotes = notes[item.id] ?? item.adminNotes ?? ''
     try {
       await adminApi.updateB2b2cInquiryStatus(item.id, status, adminNotes.trim() || null)
@@ -550,12 +606,34 @@ export function AdminBillingPage() {
       }
       void loadInquiries()
       void loadPipeline()
+      return true
     } catch (cause) {
       if (userId && typeof sessionStorage !== 'undefined' && shouldPreserveAdminDraft(cause)) {
         writeAdminDraft(sessionStorage, userId, ROUTE, `inquiry:${item.id}`, { status, adminNotes })
       }
       showToast({ message: getFriendlyErrorMessage(cause, 'quest'), type: 'error' })
+      return false
     }
+  }
+
+  const flushLeadNotes = async (items: AdminB2b2cInquiry[]) => {
+    const unique = [...new Map(items.map((item) => [item.id, item])).values()]
+    const dirty = unique.filter((item) => notes[item.id] !== undefined && notes[item.id] !== (item.adminNotes ?? ''))
+    if (!dirty.length) return true
+    const results = await Promise.all(dirty.map((item) => saveInquiry(item, item.status)))
+    return results.every(Boolean)
+  }
+
+  const toggleLead = async (item: AdminB2b2cInquiry) => {
+    const expanded = expandedLeadIds.includes(item.id)
+    if (expanded && !(await flushLeadNotes([item]))) return
+    setExpandedLeadIds((current) => expanded ? current.filter((id) => id !== item.id) : [...current, item.id])
+  }
+
+  const switchPipelineView = async (view: PipelineView) => {
+    if (view === pipelineView) return
+    if (!(await flushLeadNotes([...pipelineItems, ...(inquiries?.items ?? [])]))) return
+    setPipelineView(view)
   }
 
   const exportFilteredPayments = async () => {
@@ -604,19 +682,22 @@ export function AdminBillingPage() {
   }
 
   const chartMonths = useMemo(() => {
-    const rows = overview?.monthlyRevenue ?? []
-    if (chartPeriod === 'week') return rows.slice(-3)
-    if (chartPeriod === 'month') return rows.slice(-6)
-    return rows
-  }, [chartPeriod, overview?.monthlyRevenue])
+    const rows = chartPeriod === 'custom' ? customRevenue ?? [] : overview?.monthlyRevenue ?? []
+    if (chartPeriod === 'one-month') return rows.slice(-1)
+    if (chartPeriod === 'three-months') return rows.slice(-3)
+    if (chartPeriod === 'six-months') return rows.slice(-6)
+    if (chartPeriod === 'year') return rows.slice(-12)
+    if (!chartFrom || !chartTo || chartFrom > chartTo) return []
+    return rows.filter((row) => row.month.slice(0, 7) >= chartFrom.slice(0, 7) && row.month.slice(0, 7) <= chartTo.slice(0, 7))
+  }, [chartPeriod, chartFrom, chartTo, overview?.monthlyRevenue, customRevenue])
 
   const channelTotals = useMemo(() => {
-    const rows = overview?.monthlyRevenue ?? []
+    const rows = chartMonths
     return {
       b2c: rows.reduce((sum, row) => sum + (row.b2cRevenueVnd || 0), 0),
       b2b: rows.reduce((sum, row) => sum + (row.b2bRevenueVnd || 0), 0),
     }
-  }, [overview?.monthlyRevenue])
+  }, [chartMonths])
 
   const momDelta = useMemo(() => {
     if (!overview) return null
@@ -672,26 +753,23 @@ export function AdminBillingPage() {
     return map
   }, [pipelineItems])
 
-  const matrixItems = useMemo(() => {
-    if (!inquiryStatus) return pipelineItems
-    return pipelineItems.filter((item) => item.status.toUpperCase() === inquiryStatus.toUpperCase())
-  }, [inquiryStatus, pipelineItems])
+  const matrixItems = inquiries?.items ?? []
 
   return (
     <section
-      className="flex w-full max-w-[1600px] flex-col gap-6 pb-16"
+      className="admin-page admin-billing-page flex w-full max-w-[1600px] flex-col gap-6 pb-16"
       aria-busy={bootLoading || paymentsLoading || inquiriesLoading}
     >
       {/* Header ribbon */}
-      <div className="flex flex-col justify-between gap-4 rounded-xl bg-surface-container-low p-5 shadow-md lg:flex-row lg:items-center lg:gap-6 lg:p-6">
+      <div className="admin-page-header flex flex-col justify-between gap-4 rounded-xl bg-surface-container-low p-5 shadow-md lg:flex-row lg:items-center lg:gap-6 lg:p-6">
         <div className="flex flex-col space-y-1">
           <div className="flex items-center gap-space-sm">
             <span className="rounded bg-primary-container/20 px-2 py-0.5 font-code-sm text-code-sm uppercase tracking-wider text-primary">
-              Financial core / Live ledger
+              Thanh toán và doanh thu
             </span>
             {overview?.updatedAt && (
               <span className="font-code-sm text-code-sm text-outline">
-                Sync: {new Date(overview.updatedAt).toLocaleString('vi-VN')}
+                Cập nhật: {new Date(overview.updatedAt).toLocaleString('vi-VN')}
               </span>
             )}
           </div>
@@ -701,6 +779,14 @@ export function AdminBillingPage() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-space-sm self-start lg:self-center">
+          <button
+            type="button"
+            className={btnSecondary}
+            onClick={() => document.getElementById('billing-pipeline')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+          >
+            <MaterialIcon name="contact_mail" className="text-[16px]" />
+            Yêu cầu tư vấn di sản
+          </button>
           <button
             type="button"
             className={btnGhost}
@@ -729,10 +815,10 @@ export function AdminBillingPage() {
             {errors.overview ? (
               <AdminErrorState message={errors.overview} onRetry={() => void loadShell()} />
             ) : overview ? (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+              <div className="admin-billing-kpis grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
                 <article className="flex min-h-[148px] min-w-0 flex-col justify-between rounded-xl bg-surface-container-low p-4 shadow-sm transition-all hover:bg-surface-container">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="truncate font-label-md text-label-md uppercase tracking-wider text-on-surface-variant">
+                    <span className="font-label-md text-label-md uppercase tracking-wider text-on-surface-variant">
                       Doanh thu thực thu
                     </span>
                     <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary-container/15 text-primary">
@@ -740,17 +826,17 @@ export function AdminBillingPage() {
                     </span>
                   </div>
                   <div className="my-3 min-w-0">
-                    <div className="truncate font-headline-lg text-headline-lg font-bold tracking-tight text-on-surface">
+                    <div className="admin-billing-kpi-value font-headline-lg text-headline-lg font-bold tracking-tight text-on-surface">
                       {money(overview.actualRevenueMonthVnd)}
                     </div>
-                    <div className="font-code-sm text-code-sm text-outline">Kỳ tháng hiện tại (Net)</div>
+                    <div className="font-code-sm text-code-sm text-outline">Thực thu trong tháng hiện tại</div>
                   </div>
                   <div className="flex items-center justify-between pt-1">
                     <span className="inline-flex items-center gap-0.5 font-code-sm text-code-sm font-semibold text-primary">
                       <MaterialIcon name="trending_up" className="text-[14px]" />
                       {overview.monthOverMonthPct == null
                         ? '—'
-                        : `${overview.monthOverMonthPct > 0 ? '+' : ''}${overview.monthOverMonthPct}% MoM`}
+                        : `${overview.monthOverMonthPct > 0 ? '+' : ''}${overview.monthOverMonthPct}%`}
                     </span>
                     <svg className="h-5 w-14 text-primary opacity-80" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 56 20">
                       <path d={sparkPath(sparkValues)} strokeLinecap="round" strokeLinejoin="round" />
@@ -768,14 +854,14 @@ export function AdminBillingPage() {
                     </span>
                   </div>
                   <div className="my-3">
-                    <div className="font-headline-lg text-headline-lg font-bold tracking-tight text-secondary">
+                    <div className="admin-billing-kpi-value font-headline-lg text-headline-lg font-bold tracking-tight text-secondary">
                       {momDelta == null ? 'Không có dữ liệu' : `${momDelta >= 0 ? '+' : ''}${money(momDelta)}`}
                     </div>
-                    <div className="font-code-sm text-code-sm text-outline">Net growth delta</div>
+                    <div className="font-code-sm text-code-sm text-outline">Chênh lệch doanh thu thực thu</div>
                   </div>
                   <div className="pt-1 font-code-sm text-code-sm font-medium text-secondary">
                     {overview.monthOverMonthPct == null
-                      ? 'Chưa có % MoM'
+                      ? 'Chưa có tỷ lệ so sánh'
                       : overview.monthOverMonthPct >= 0
                         ? `Tăng ${overview.monthOverMonthPct}% so với tháng trước`
                         : `Giảm ${Math.abs(overview.monthOverMonthPct)}% so với tháng trước`}
@@ -785,20 +871,20 @@ export function AdminBillingPage() {
                 <article className="flex min-h-[148px] min-w-0 flex-col justify-between rounded-xl bg-surface-container-low p-4 shadow-sm transition-all hover:bg-surface-container">
                   <div className="flex items-center justify-between">
                     <span className="font-label-md text-label-md uppercase tracking-wider text-on-surface-variant">
-                      MRR ước tính
+                      Doanh thu định kỳ tháng
                     </span>
                     <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-surface-container-high text-primary">
                       <MaterialIcon name="autorenew" className="text-[16px]" />
                     </span>
                   </div>
                   <div className="my-3">
-                    <div className="font-headline-lg text-headline-lg font-bold tracking-tight text-on-surface">
+                    <div className="admin-billing-kpi-value font-headline-lg text-headline-lg font-bold tracking-tight text-on-surface">
                       {money(overview.estimatedMrrVnd)}
                     </div>
-                    <div className="font-code-sm text-code-sm text-outline">Subscription run-rate</div>
+                    <div className="font-code-sm text-code-sm text-outline">Ước tính từ thuê bao đang hoạt động</div>
                   </div>
                   <div className="flex items-center justify-between pt-1 font-code-sm text-code-sm text-on-surface-variant">
-                    <span>ARR ước tính</span>
+                    <span>Ước tính năm</span>
                     <span className="font-semibold text-on-surface">{moneyShort(overview.estimatedArrVnd)}</span>
                   </div>
                 </article>
@@ -806,20 +892,20 @@ export function AdminBillingPage() {
                 <article className="flex min-h-[148px] min-w-0 flex-col justify-between rounded-xl bg-surface-container-low p-4 shadow-sm transition-all hover:bg-surface-container">
                   <div className="flex items-center justify-between">
                     <span className="font-label-md text-label-md uppercase tracking-wider text-on-surface-variant">
-                      ARR ước tính
+                      Doanh thu định kỳ năm
                     </span>
                     <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-surface-container-high text-tertiary">
                       <MaterialIcon name="account_balance" className="text-[16px]" />
                     </span>
                   </div>
                   <div className="my-3">
-                    <div className="font-headline-lg text-headline-lg font-bold tracking-tight text-on-surface">
+                    <div className="admin-billing-kpi-value font-headline-lg text-headline-lg font-bold tracking-tight text-on-surface">
                       {money(overview.estimatedArrVnd)}
                     </div>
                     <div className="font-code-sm text-code-sm text-outline">Dự phóng chu kỳ 12 tháng</div>
                   </div>
                   <div className="pt-1 font-code-sm text-code-sm text-tertiary">
-                    Độ phủ MRR:{' '}
+                    Độ đầy đủ của số liệu:{' '}
                     {overview.revenueCoveragePct == null ? 'Không có dữ liệu' : `${overview.revenueCoveragePct}%`}
                   </div>
                 </article>
@@ -834,8 +920,8 @@ export function AdminBillingPage() {
                     </span>
                   </div>
                   <div className="my-3">
-                    <div className="font-headline-lg text-headline-lg font-bold tracking-tight text-on-surface">
-                      {formatCount(overview.activePaidSubscriptions)} TK
+                    <div className="admin-billing-kpi-value font-headline-lg text-headline-lg font-bold tracking-tight text-on-surface">
+                      {formatCount(overview.activePaidSubscriptions)} tài khoản
                     </div>
                     <div className="font-code-sm text-code-sm text-outline">
                       Độ phủ:{' '}
@@ -862,51 +948,72 @@ export function AdminBillingPage() {
           {overview && (
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
               <div className="lg:col-span-8">
-                <div className="flex h-full flex-col gap-4 rounded-xl bg-surface-container-low p-5 shadow-md lg:p-6">
-                  <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
-                    <div>
+                <div className="admin-billing-chart flex h-full flex-col gap-4 rounded-xl bg-surface-container-low p-5 shadow-md lg:p-6">
+                  <div className="flex flex-col gap-3">
+                    <div className="min-w-0">
                       <span className="font-label-sm text-label-sm font-semibold uppercase tracking-wider text-primary">
-                        Telemetry doanh thu
+                        Doanh thu theo nhóm khách hàng
                       </span>
                       <h2 className="font-headline-md text-headline-md text-on-surface">
-                        B2C Quest Tickets vs B2B Hợp Đồng Tổ Chức
+                        Khách cá nhân và hợp đồng tổ chức
                       </h2>
                     </div>
-                    <div className="flex flex-wrap items-center gap-space-sm">
+                    <div className="flex min-w-0 flex-wrap items-center gap-space-sm">
                       <div className="flex items-center gap-1.5">
                         <span className="h-2.5 w-2.5 rounded-full bg-primary" />
-                        <span className="font-label-sm text-label-sm text-on-surface-variant">B2C</span>
+                        <span className="font-label-sm text-label-sm text-on-surface-variant">Cá nhân</span>
                       </div>
                       <div className="ml-2 flex items-center gap-1.5">
                         <span className="h-2.5 w-2.5 rounded-full bg-secondary" />
-                        <span className="font-label-sm text-label-sm text-on-surface-variant">B2B</span>
+                        <span className="font-label-sm text-label-sm text-on-surface-variant">Tổ chức</span>
                       </div>
-                      <div className="ml-2 flex rounded-lg bg-surface-container p-1 font-code-sm text-code-sm text-on-surface-variant">
+                      <div className="admin-billing-segment" role="group" aria-label="Kiểu biểu đồ doanh thu">
+                        {([['area', 'Miền'], ['bar', 'Cột'], ['combined', 'Kết hợp']] as const).map(([id, label]) => (
+                          <button key={id} type="button" aria-pressed={chartView === id} onClick={() => setChartView(id)}>{label}</button>
+                        ))}
+                      </div>
+                      <div className="admin-billing-segment" role="group" aria-label="Khoảng thời gian doanh thu">
                         {(
                           [
-                            ['week', 'Tuần'],
-                            ['month', 'Tháng'],
-                            ['quarter', 'Quý'],
+                            ['one-month', '1 tháng'],
+                            ['three-months', '3 tháng'],
+                            ['six-months', '6 tháng'],
+                            ['year', '1 năm'],
+                            ['custom', 'Khác'],
                           ] as const
                         ).map(([id, label]) => (
                           <button
                             key={id}
                             type="button"
                             onClick={() => setChartPeriod(id)}
-                            className={`cursor-pointer rounded px-2 py-0.5 ${
-                              chartPeriod === id
-                                ? 'bg-surface-container-highest font-semibold text-on-surface'
-                                : 'hover:text-on-surface'
-                            }`}
+                            aria-pressed={chartPeriod === id}
                           >
                             {label}
                           </button>
                         ))}
                       </div>
                     </div>
+                    {chartPeriod === 'custom' && (
+                      <div className="admin-billing-date-range flex flex-wrap items-end gap-3 rounded-xl border border-primary/20 bg-white p-3">
+                        <label className="flex min-w-[150px] flex-1 flex-col gap-1 text-sm font-semibold text-on-surface-variant">
+                          Từ ngày
+                          <input type="date" value={chartFrom} min={customRevenue?.[0]?.month ? `${customRevenue[0].month.slice(0, 7)}-01` : undefined} max={chartTo || undefined} onChange={(event) => setChartFrom(event.target.value)} className={inputClass} />
+                        </label>
+                        <label className="flex min-w-[150px] flex-1 flex-col gap-1 text-sm font-semibold text-on-surface-variant">
+                          Đến ngày
+                          <input type="date" value={chartTo} min={chartFrom || (customRevenue?.[0]?.month ? `${customRevenue[0].month.slice(0, 7)}-01` : undefined)} onChange={(event) => setChartTo(event.target.value)} className={inputClass} />
+                        </label>
+                        <p className="w-full text-xs text-on-surface-variant">Số liệu được tổng hợp theo tháng, tối đa 36 tháng gần nhất; khoảng ngày đã chọn sẽ hiển thị các tháng giao với khoảng đó.</p>
+                        {chartFrom && chartTo && chartFrom > chartTo && <p className="w-full text-sm text-error">Ngày kết thúc phải sau ngày bắt đầu.</p>}
+                      </div>
+                    )}
                   </div>
 
-                  {chartMonths.length > 0 ? (
+                  {chartPeriod === 'custom' && customRevenueLoading ? (
+                    <AdminLoading />
+                  ) : chartPeriod === 'custom' && customRevenueError ? (
+                    <AdminErrorState message={customRevenueError} onRetry={() => setCustomRevenueRequest((value) => value + 1)} />
+                  ) : chartMonths.length > 0 ? (
                     <AdminChart
                       bare
                       title="Doanh thu theo kênh"
@@ -914,32 +1021,32 @@ export function AdminBillingPage() {
                       rows={chartMonths as Array<Record<string, unknown>>}
                       columns={[
                         { key: 'month', label: 'Tháng' },
-                        { key: 'b2cRevenueVnd', label: 'B2C', format: (v) => money(Number(v)) },
-                        { key: 'b2bRevenueVnd', label: 'B2B', format: (v) => money(Number(v)) },
+                        { key: 'b2cRevenueVnd', label: 'Cá nhân', format: (v) => money(Number(v)) },
+                        { key: 'b2bRevenueVnd', label: 'Tổ chức', format: (v) => money(Number(v)) },
                       ]}
                       height={280}
                     >
-                      <AreaChart data={chartMonths}>
+                      {chartView === 'area' ? <AreaChart data={chartMonths}>
                         <defs>
                           <linearGradient id="b2cAreaGrad" x1="0" x2="0" y1="0" y2="1">
-                            <stop offset="0%" stopColor="#4edea3" stopOpacity={0.35} />
-                            <stop offset="100%" stopColor="#4edea3" stopOpacity={0} />
+                            <stop offset="0%" stopColor="#0275fb" stopOpacity={0.2} />
+                            <stop offset="100%" stopColor="#0275fb" stopOpacity={0} />
                           </linearGradient>
                           <linearGradient id="b2bAreaGrad" x1="0" x2="0" y1="0" y2="1">
-                            <stop offset="0%" stopColor="#4cd7f6" stopOpacity={0.3} />
-                            <stop offset="100%" stopColor="#4cd7f6" stopOpacity={0} />
+                            <stop offset="0%" stopColor="#0f766e" stopOpacity={0.18} />
+                            <stop offset="100%" stopColor="#0f766e" stopOpacity={0} />
                           </linearGradient>
                         </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2c" />
-                        <XAxis dataKey="month" stroke="#86948a" tick={{ fontSize: 11 }} />
-                        <YAxis stroke="#86948a" tick={{ fontSize: 11 }} tickFormatter={(v) => moneyShort(Number(v))} />
+                        <CartesianGrid strokeDasharray="3 3" stroke="#dceaff" />
+                        <XAxis dataKey="month" stroke="#52627d" tick={{ fontSize: 13 }} />
+                        <YAxis stroke="#52627d" tick={{ fontSize: 13 }} tickFormatter={(v) => moneyShort(Number(v))} />
                         <Tooltip contentStyle={chartTip} formatter={(v) => money(Number(v))} />
                         <Legend />
                         <Area
                           type="monotone"
                           dataKey="b2bRevenueVnd"
-                          name="B2B"
-                          stroke="#4cd7f6"
+                          name="Tổ chức"
+                          stroke="#0f766e"
                           fill="url(#b2bAreaGrad)"
                           strokeWidth={2.5}
                           {...motion}
@@ -947,33 +1054,49 @@ export function AdminBillingPage() {
                         <Area
                           type="monotone"
                           dataKey="b2cRevenueVnd"
-                          name="B2C"
-                          stroke="#4edea3"
+                          name="Cá nhân"
+                          stroke="#0275fb"
                           fill="url(#b2cAreaGrad)"
                           strokeWidth={2.5}
                           {...motion}
                         />
-                      </AreaChart>
+                      </AreaChart> : chartView === 'bar' ? <BarChart data={chartMonths}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#dceaff" />
+                        <XAxis dataKey="month" stroke="#52627d" tick={{ fontSize: 13 }} />
+                        <YAxis stroke="#52627d" tick={{ fontSize: 13 }} tickFormatter={(v) => moneyShort(Number(v))} />
+                        <Tooltip contentStyle={chartTip} formatter={(v) => money(Number(v))} />
+                        <Legend />
+                        <Bar dataKey="b2cRevenueVnd" name="Cá nhân" fill="#0275fb" radius={[4, 4, 0, 0]} {...motion} />
+                        <Bar dataKey="b2bRevenueVnd" name="Tổ chức" fill="#0f766e" radius={[4, 4, 0, 0]} {...motion} />
+                      </BarChart> : <ComposedChart data={chartMonths}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#dceaff" />
+                        <XAxis dataKey="month" stroke="#52627d" tick={{ fontSize: 13 }} />
+                        <YAxis stroke="#52627d" tick={{ fontSize: 13 }} tickFormatter={(v) => moneyShort(Number(v))} />
+                        <Tooltip contentStyle={chartTip} formatter={(v) => money(Number(v))} />
+                        <Legend />
+                        <Bar dataKey="b2cRevenueVnd" name="Cá nhân" fill="#0275fb" radius={[4, 4, 0, 0]} {...motion} />
+                        <Line type="monotone" dataKey="b2bRevenueVnd" name="Tổ chức" stroke="#0f766e" strokeWidth={3} dot={{ r: 4 }} {...motion} />
+                      </ComposedChart>}
                     </AdminChart>
                   ) : (
-                    <AdminEmptyState title="Chưa có chuỗi doanh thu" detail="API overview chưa trả monthlyRevenue." />
+                    <AdminEmptyState title={chartPeriod === 'custom' && (!chartFrom || !chartTo) ? 'Chọn khoảng ngày' : 'Không có doanh thu trong khoảng đã chọn'} detail={chartPeriod === 'custom' && (!chartFrom || !chartTo) ? 'Chọn ngày bắt đầu và kết thúc để xem biểu đồ.' : 'Thử chọn khoảng thời gian khác hoặc kiểm tra dữ liệu doanh thu theo tháng.'} />
                   )}
 
                   <div className="grid grid-cols-1 gap-2 border-t border-surface-container-high/40 pt-4 sm:grid-cols-3">
                     <div className="rounded-lg bg-surface-container p-2">
-                      <span className="font-code-sm text-code-sm text-outline">B2C doanh thu thực</span>
+                      <span className="font-code-sm text-code-sm text-outline">Doanh thu khách cá nhân</span>
                       <div className="font-headline-sm text-headline-sm font-semibold text-primary">
                         {money(channelTotals.b2c)}
                       </div>
                     </div>
                     <div className="rounded-lg bg-surface-container p-2">
-                      <span className="font-code-sm text-code-sm text-outline">B2B hợp đồng đã đối soát</span>
+                      <span className="font-code-sm text-code-sm text-outline">Hợp đồng tổ chức đã đối soát</span>
                       <div className="font-headline-sm text-headline-sm font-semibold text-secondary">
                         {money(channelTotals.b2b)}
                       </div>
                     </div>
                     <div className="rounded-lg bg-surface-container p-2">
-                      <span className="font-code-sm text-code-sm text-outline">Tỷ trọng kênh (B2B / tổng)</span>
+                      <span className="font-code-sm text-code-sm text-outline">Tỷ trọng doanh thu tổ chức</span>
                       <div className="font-headline-sm text-headline-sm font-semibold text-on-surface">
                         {channelTotals.b2c + channelTotals.b2b > 0
                           ? `${Math.round((channelTotals.b2b / (channelTotals.b2c + channelTotals.b2b)) * 1000) / 10}% B2B`
@@ -984,7 +1107,7 @@ export function AdminBillingPage() {
                 </div>
               </div>
 
-              <div className="flex min-h-full flex-col justify-between gap-4 rounded-xl bg-surface-container-low p-5 shadow-md lg:col-span-4 lg:p-6">
+              <div className="admin-billing-donut flex min-h-full flex-col justify-between gap-4 rounded-xl bg-surface-container-low p-5 shadow-md lg:col-span-4 lg:p-6">
                 <div>
                   <div className="flex items-center justify-between pb-2">
                     <span className="font-label-sm text-label-sm font-semibold uppercase tracking-wider text-primary">
@@ -992,10 +1115,10 @@ export function AdminBillingPage() {
                     </span>
                     <MaterialIcon name="pie_chart" className="text-[18px] text-outline" />
                   </div>
-                  <h2 className="font-headline-md text-headline-md text-on-surface">Phân bổ doanh thu theo gói</h2>
-                  <p className="pt-1 font-body-sm text-body-sm text-outline">
-                    Đóng góp giá trị giao dịch theo phân khúc hợp đồng
-                  </p>
+                  <div className="flex flex-wrap items-center gap-1">
+                    <h2 className="font-headline-md text-headline-md text-on-surface">Phân bổ doanh thu theo gói</h2>
+                    <AdminInfoHint label="phân bổ doanh thu">Đóng góp giá trị giao dịch theo từng phân khúc hợp đồng.</AdminInfoHint>
+                  </div>
                 </div>
 
                 {planSlices.length > 0 ? (
@@ -1024,9 +1147,6 @@ export function AdminBillingPage() {
                         <span className="font-headline-lg text-headline-lg font-bold leading-none text-on-surface">
                           100%
                         </span>
-                        <span className="font-code-sm text-code-sm uppercase tracking-wider text-outline">
-                          Allocation
-                        </span>
                       </div>
                     </div>
                     <div className="space-y-space-xs pt-1">
@@ -1053,7 +1173,7 @@ export function AdminBillingPage() {
                 ) : (
                   <AdminEmptyState
                     title="Chưa có phân bổ theo gói"
-                    detail="API overview chưa trả planRevenue — chỉ hiển thị khi máy chủ cung cấp."
+                    detail="Máy chủ chưa có số liệu phân bổ doanh thu theo gói."
                   />
                 )}
               </div>
@@ -1063,21 +1183,21 @@ export function AdminBillingPage() {
           {/* Giao dịch + Cài đặt */}
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-12 lg:items-start">
             <section
-              className="flex flex-col gap-4 rounded-xl bg-surface-container-low p-5 shadow-md lg:col-span-8 lg:p-6"
+              className="admin-billing-payments flex flex-col gap-4 rounded-xl bg-surface-container-low p-5 shadow-md lg:col-span-8 lg:p-6"
               aria-labelledby="billing-payments"
             >
               <div className="flex flex-col justify-between gap-space-sm sm:flex-row sm:items-center">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="h-2 w-2 animate-pulse rounded-full bg-primary" />
+                    <span className="h-2 w-2 rounded-full bg-primary" />
                     <span className="font-label-sm text-label-sm font-semibold uppercase tracking-wider text-primary">
-                      Khu vực A · Live audit
+                      Khu vực A · Giao dịch
                     </span>
                   </div>
-                  <h2 id="billing-payments" className="font-headline-md text-headline-md text-on-surface">
-                    Giao dịch
-                  </h2>
-                  <p className="font-body-sm text-body-sm text-on-surface-variant">Sổ nhật ký giao dịch gần nhất</p>
+                  <div className="flex flex-wrap items-center gap-1">
+                    <h2 id="billing-payments" className="font-headline-md text-headline-md text-on-surface">Giao dịch</h2>
+                    <AdminInfoHint label="giao dịch">Danh sách giao dịch gần nhất; bộ lọc áp dụng cho cả bảng và tệp xuất.</AdminInfoHint>
+                  </div>
                 </div>
                 <button
                   type="button"
@@ -1106,7 +1226,8 @@ export function AdminBillingPage() {
                         key={chip.id || 'all'}
                         type="button"
                         onClick={() => update('paymentStatus', chip.status)}
-                        className={`cursor-pointer rounded-lg px-3 py-1 font-label-md text-label-md transition-all ${
+                        aria-pressed={active}
+                        className={`admin-billing-filter cursor-pointer rounded-lg px-3 py-1 font-label-md text-label-md transition-all ${
                           active
                             ? 'bg-primary-container font-semibold text-on-primary-container shadow-sm'
                             : 'bg-surface-container-high/60 text-on-surface-variant hover:text-on-surface'
@@ -1143,16 +1264,17 @@ export function AdminBillingPage() {
                   <div
                     className={`w-full overflow-x-auto transition-opacity ${paymentsLoading ? 'opacity-60' : 'opacity-100'}`}
                   >
-                    <table className="w-full border-collapse text-left">
+                    <table className="admin-billing-ledger w-full min-w-[1050px] table-fixed border-collapse text-left">
+                      <colgroup><col className="w-[160px]" /><col className="w-[230px]" /><col className="w-[160px]" /><col className="w-[145px]" /><col className="w-[110px]" /><col className="w-[150px]" /><col className="w-[125px]" /></colgroup>
                       <thead>
                         <tr className="bg-surface-container-lowest font-code-sm text-code-sm uppercase tracking-wider text-outline">
-                          <th className="rounded-l-lg px-3 py-2.5">Mã GD</th>
+                          <th className="rounded-l-lg px-3 py-2.5">Mã giao dịch</th>
                           <th className="px-3 py-2.5">Người thanh toán</th>
                           <th className="px-3 py-2.5 text-right">Số tiền</th>
                           <th className="px-3 py-2.5">Cổng/Kênh</th>
                           <th className="px-3 py-2.5 text-center">Trạng thái</th>
                           <th className="px-3 py-2.5 text-right">Thời gian</th>
-                          <th className="rounded-r-lg px-3 py-2.5 text-right">Thao tác</th>
+                          <th className="rounded-r-lg px-3 py-2.5 text-center">Thao tác</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-surface-container-high/40">
@@ -1165,12 +1287,12 @@ export function AdminBillingPage() {
                               key={item.id ?? item.orderCode ?? index}
                               className="h-12 transition-colors hover:bg-surface-container"
                             >
-                              <td className="px-3 py-2 font-code-sm text-code-sm font-semibold text-primary">
+                              <td className="break-all px-3 py-2 font-code-sm text-code-sm font-semibold text-primary">
                                 {item.orderCode}
                               </td>
                               <td className="px-3 py-2">
-                                <div className="flex min-w-[160px] flex-col">
-                                  <span className="truncate font-headline-sm text-headline-sm font-medium text-on-surface">
+                                <div className="flex min-w-0 flex-col">
+                                  <span className="truncate font-body-sm text-body-sm font-medium text-on-surface" title={email}>
                                     {email}
                                   </span>
                                   {item.transferContent && (
@@ -1200,7 +1322,7 @@ export function AdminBillingPage() {
                                 {new Date(item.createdAt).toLocaleString('vi-VN')}
                               </td>
                               <td className="px-3 py-2">
-                                <div className="flex min-w-max justify-end gap-1.5">
+                                <div className="admin-table-actions">
                                   {getPaymentActionsForStatus(item.status).map((action) => (
                                     <button
                                       key={action}
@@ -1243,22 +1365,20 @@ export function AdminBillingPage() {
 
             {/* Cài đặt & CRM */}
             <section
-              className="flex flex-col justify-between gap-4 rounded-xl bg-surface-container-low p-5 shadow-md lg:col-span-4 lg:p-6"
+              className="admin-billing-settings flex flex-col justify-between gap-4 rounded-xl bg-surface-container-low p-5 shadow-md lg:col-span-4 lg:p-6"
               aria-labelledby="billing-settings-crm"
             >
               <div>
                 <div className="flex items-center justify-between pb-2">
                   <span className="font-label-sm text-label-sm font-semibold uppercase tracking-wider text-primary">
-                    Khu vực B · Rate limits
+                    Khu vực B · Thiết lập
                   </span>
                   <MaterialIcon name="tune" className="text-[20px] text-outline" />
                 </div>
-                <h2 id="billing-settings-crm" className="font-headline-md text-headline-md text-on-surface">
-                  Billing settings
-                </h2>
-                <p className="pt-1 font-body-sm text-body-sm text-on-surface-variant">
-                  Điều chỉnh giá Premium B2C và hạn mức thuyết minh AI free.
-                </p>
+                <div className="flex flex-wrap items-center gap-1">
+                  <h2 id="billing-settings-crm" className="font-headline-md text-headline-md text-on-surface">Thiết lập thanh toán</h2>
+                  <AdminInfoHint label="thiết lập thanh toán">Điều chỉnh giá Premium cá nhân và số câu trả lời AI miễn phí mỗi ngày.</AdminInfoHint>
+                </div>
               </div>
 
               {errors.settings ? (
@@ -1278,11 +1398,11 @@ export function AdminBillingPage() {
                         Giá gói Premium B2C
                       </label>
                       <span className="rounded bg-primary/10 px-1.5 py-0.5 font-code-sm text-code-sm text-primary">
-                        Live
+                        Đang áp dụng
                       </span>
                     </div>
                     <div>
-                      <span className="mb-1 block font-label-sm text-label-sm text-outline">Cước tháng (Monthly)</span>
+                      <span className="mb-1 block font-label-sm text-label-sm text-outline">Cước tháng</span>
                       <div className="relative">
                         <input
                           type="number"
@@ -1303,33 +1423,30 @@ export function AdminBillingPage() {
                       )}
                       {settings && (
                         <span className="mt-0.5 block font-code-sm text-code-sm text-outline">
-                          Giá hiện tại từ backend: {settings.b2cPremiumPriceVnd.toLocaleString('vi-VN')}đ
+                          Giá đang áp dụng: {settings.b2cPremiumPriceVnd.toLocaleString('vi-VN')}đ
                         </span>
                       )}
                     </div>
                     <div>
-                      <span className="mb-1 block font-label-sm text-label-sm text-outline">
+                      <div className="mb-1 flex items-center font-label-sm text-label-sm text-outline">
                         Cước năm ước tính (−20%)
-                      </span>
+                        <AdminInfoHint label="giá năm ước tính">Giá năm chỉ là ước tính hiển thị; hệ thống không lưu khoản này.</AdminInfoHint>
+                      </div>
                       <div className="rounded-lg bg-surface-container-lowest px-3 py-2 font-code-sm text-code-sm text-on-surface-variant">
                         {annualDisplay}
-                        <span className="ml-2 text-outline">(chỉ hiển thị, không lưu API)</span>
                       </div>
                     </div>
                   </div>
 
                   <div className="space-y-space-sm rounded-xl bg-surface-container p-space-md">
                     <div className="flex items-center justify-between">
-                      <label className="flex items-center gap-1.5 font-headline-sm text-headline-sm text-on-surface">
+                      <div className="flex min-w-0 items-center gap-1.5 font-headline-sm text-headline-sm text-on-surface">
                         <MaterialIcon name="neurology" className="text-[18px] text-secondary" />
                         Giới hạn thuyết minh AI Free
-                      </label>
+                        <AdminInfoHint label="giới hạn AI miễn phí">Chọn từ 3 đến 50 câu mỗi ngày. Sau khi lưu, trò chuyện AI sẽ dùng hạn mức mới.</AdminInfoHint>
+                      </div>
                       <span className="font-code-sm text-code-sm font-bold text-secondary">{chatLimit} câu / ngày</span>
                     </div>
-                    <p className="font-body-sm text-body-sm text-outline">
-                      Số lượt truy vấn AI miễn phí mỗi ngày cho tài khoản free (3–50). Bấm Lưu để ghi vào billing
-                      settings — chat free đọc hạn mức này ngay sau khi lưu.
-                    </p>
                     <div className="space-y-1.5 pt-1">
                       <input
                         type="range"
@@ -1356,54 +1473,54 @@ export function AdminBillingPage() {
                 </form>
               ) : null}
 
-              <div className="flex items-start gap-2 rounded-lg bg-surface-container/40 p-2.5">
-                <MaterialIcon name="verified_user" className="mt-0.5 shrink-0 text-[18px] text-primary" />
-                <span className="font-code-sm text-code-sm text-outline">
-                  Thay đổi biểu phí được lưu qua admin billing settings; hiệu lực theo cấu hình máy chủ.
-                </span>
+              <div className="flex items-center text-xs text-on-surface-variant">
+                Hiệu lực thiết lập
+                <AdminInfoHint label="hiệu lực thiết lập">Thay đổi biểu phí được lưu trên máy chủ và có hiệu lực theo cấu hình hệ thống.</AdminInfoHint>
               </div>
             </section>
           </div>
 
           {/* Phễu B2B */}
           <section
-            className="flex flex-col gap-4 rounded-xl bg-surface-container-low p-5 shadow-md lg:p-6"
+            className="admin-billing-pipeline flex flex-col gap-4 rounded-xl bg-surface-container-low p-5 shadow-md lg:p-6"
             aria-labelledby="billing-pipeline"
           >
             <div className="flex flex-col justify-between gap-space-sm pb-2 lg:flex-row lg:items-center">
               <div>
                 <span className="rounded bg-secondary/15 px-2 py-0.5 font-code-sm text-code-sm font-semibold uppercase tracking-wider text-secondary">
-                  Khu vực C · Pipeline B2B
+                  Khu vực C · Tư vấn di sản
                 </span>
-                <h2 id="billing-pipeline" className="pt-1 font-headline-md text-headline-md text-on-surface">
-                  Phễu yêu cầu thương mại
-                </h2>
-                <p className="font-body-sm text-body-sm text-on-surface-variant">
-                  Theo dõi cơ hội từ lead đến ký kết — dữ liệu từ b2b2c-inquiries.
-                </p>
+                <div className="flex flex-wrap items-center gap-1 pt-1">
+                  <h2 id="billing-pipeline" className="font-headline-md text-headline-md text-on-surface">Yêu cầu tư vấn số hóa di sản</h2>
+                  <AdminInfoHint label="yêu cầu tư vấn">Yêu cầu mới xuất hiện ở cột đầu tiên. Dùng mã hoặc email để tìm trong Bảng ma trận.</AdminInfoHint>
+                </div>
               </div>
               <div className="flex flex-wrap items-center gap-space-sm">
-                <div className="flex rounded-lg bg-surface-container p-1 font-code-sm text-code-sm text-on-surface-variant">
+                <button
+                  type="button"
+                  className={btnGhost}
+                  onClick={() => { void loadInquiries(); void loadPipeline() }}
+                >
+                  <MaterialIcon name="refresh" className="text-[16px]" />
+                  Làm mới
+                </button>
+                <div className="admin-billing-segment" role="group" aria-label="Cách xem yêu cầu tư vấn">
                   <button
                     type="button"
-                    onClick={() => setPipelineView('kanban')}
-                    className={`flex cursor-pointer items-center gap-1 rounded px-2.5 py-1 ${
-                      pipelineView === 'kanban'
-                        ? 'bg-surface-container-highest font-semibold text-on-surface'
-                        : 'hover:text-on-surface'
-                    }`}
+                    data-lead-control
+                    onClick={() => void switchPipelineView('kanban')}
+                    aria-pressed={pipelineView === 'kanban'}
+                    className="inline-flex items-center gap-1"
                   >
                     <MaterialIcon name="view_kanban" className="text-[14px]" />
-                    Kanban board
+                    Bảng giai đoạn
                   </button>
                   <button
                     type="button"
-                    onClick={() => setPipelineView('matrix')}
-                    className={`flex cursor-pointer items-center gap-1 rounded px-2.5 py-1 ${
-                      pipelineView === 'matrix'
-                        ? 'bg-surface-container-highest font-semibold text-on-surface'
-                        : 'hover:text-on-surface'
-                    }`}
+                    data-lead-control
+                    onClick={() => void switchPipelineView('matrix')}
+                    aria-pressed={pipelineView === 'matrix'}
+                    className="inline-flex items-center gap-1"
                   >
                     <MaterialIcon name="table_rows" className="text-[14px]" />
                     Bảng ma trận
@@ -1416,10 +1533,14 @@ export function AdminBillingPage() {
               </div>
             </div>
 
-            {errors.inquiries ? (
+            {pipelineView === 'kanban' && pipelineError ? (
+              <AdminErrorState message={pipelineError} onRetry={() => void loadPipeline()} />
+            ) : pipelineView === 'matrix' && errors.inquiries ? (
               <AdminErrorState message={errors.inquiries} onRetry={() => void loadInquiries()} />
             ) : pipelineView === 'kanban' ? (
-              pipelineItems.length === 0 ? (
+              pipelineLoading && pipelineItems.length === 0 ? (
+                <AdminLoading label="Đang tải yêu cầu tư vấn" />
+              ) : pipelineItems.length === 0 ? (
                 <AdminEmptyState title="Chưa có yêu cầu" detail="Không có yêu cầu phù hợp." />
               ) : (
                 <div className="grid grid-cols-1 gap-space-md pt-2 md:grid-cols-2 lg:grid-cols-4">
@@ -1450,7 +1571,7 @@ export function AdminBillingPage() {
                             ? 'border-tertiary'
                             : 'border-transparent'
                     return (
-                      <div key={stage.id} className="flex flex-col space-y-space-sm rounded-xl bg-surface-container p-space-sm">
+                      <div key={stage.id} data-stage={stage.id} className="admin-billing-stage flex flex-col space-y-space-sm rounded-xl bg-surface-container p-space-sm">
                         <div className="flex items-center justify-between px-2 py-1">
                           <div className="flex items-center gap-2">
                             <span className={`h-2.5 w-2.5 rounded-full ${dot}`} />
@@ -1472,7 +1593,7 @@ export function AdminBillingPage() {
                             return (
                               <article
                                 key={item.id}
-                                className={`space-y-2 rounded-xl border-l-2 bg-surface-container-low p-space-md shadow-sm transition-all hover:bg-surface-container-high ${border}`}
+                                className={`admin-billing-lead space-y-2 rounded-xl border-l-2 bg-surface-container-low p-space-md shadow-sm transition-all hover:bg-surface-container-high ${border}`}
                               >
                                 <div className="flex items-center justify-between gap-2">
                                   <span className="rounded bg-surface-container-high px-2 py-0.5 font-code-sm text-code-sm text-on-surface-variant">
@@ -1489,6 +1610,14 @@ export function AdminBillingPage() {
                                   <p className="font-body-sm text-body-sm text-outline">
                                     {item.organizationName || item.interestSiteCode || 'Yêu cầu thương mại'}
                                   </p>
+                                  <p className="font-body-sm text-body-sm font-semibold text-primary">{item.contactName}</p>
+                                </div>
+                                <button type="button" data-lead-control className="admin-billing-expand" aria-expanded={expandedLeadIds.includes(item.id)} onClick={() => void toggleLead(item)}>
+                                  {expandedLeadIds.includes(item.id) ? 'Thu gọn' : 'Xem thêm'}
+                                  <MaterialIcon name={expandedLeadIds.includes(item.id) ? 'expand_less' : 'expand_more'} className="text-[18px]" />
+                                </button>
+                                {expandedLeadIds.includes(item.id) && <div className="admin-billing-lead-detail">
+                                  <p className="break-all font-code-sm text-code-sm text-outline"><strong>Mã yêu cầu:</strong> {item.id}</p>
                                   {item.organizationId && (
                                     <Link
                                       to={`/admin/organizations?orgId=${encodeURIComponent(item.organizationId)}`}
@@ -1498,7 +1627,6 @@ export function AdminBillingPage() {
                                       Tổ chức đã liên kết
                                     </Link>
                                   )}
-                                </div>
                                 <div className="space-y-1 rounded bg-surface-container-lowest p-2 font-code-sm text-code-sm">
                                   <div className="flex items-center gap-1.5 text-on-surface">
                                     <MaterialIcon name="person" className="text-[14px] text-outline" />
@@ -1506,7 +1634,7 @@ export function AdminBillingPage() {
                                   </div>
                                   <div className="flex items-center gap-1.5 text-outline">
                                     <MaterialIcon name="mail" className="text-[14px] text-outline" />
-                                    <span className="truncate">{item.contactEmail}</span>
+                                    <span className="break-all">{item.contactEmail}</span>
                                   </div>
                                   {item.contactPhone && (
                                     <div className="flex items-center gap-1.5 text-outline">
@@ -1514,13 +1642,13 @@ export function AdminBillingPage() {
                                       <span>{item.contactPhone}</span>
                                     </div>
                                   )}
-                                  {item.contactRole && <p className="text-outline">Chức vụ: {item.contactRole}</p>}
+                                  {item.contactRole && <p className="text-outline"><strong>Chức vụ:</strong> {item.contactRole}</p>}
                                 </div>
                                 <div className="space-y-1 text-xs text-on-surface-variant">
-                                  {item.siteLocation && <p>Địa điểm: {item.siteLocation}</p>}
-                                  {item.targetStart && <p>Dự kiến: {item.targetStart}</p>}
-                                  {item.availableMaterials && <p className="whitespace-pre-wrap">Tư liệu: {item.availableMaterials}</p>}
-                                  {item.message && <p className="whitespace-pre-wrap">Mục tiêu: {item.message}</p>}
+                                  {item.siteLocation && <p><strong>Địa điểm:</strong> {item.siteLocation}</p>}
+                                  {item.targetStart && <p><strong>Dự kiến:</strong> {item.targetStart}</p>}
+                                  {item.availableMaterials && <p className="whitespace-pre-wrap"><strong>Tư liệu:</strong> {item.availableMaterials}</p>}
+                                  {item.message && <p className="whitespace-pre-wrap"><strong>Mục tiêu:</strong> {item.message}</p>}
                                 </div>
                                 <label className="block font-body-sm text-body-sm text-on-surface-variant">
                                   Ghi chú quản trị
@@ -1529,16 +1657,21 @@ export function AdminBillingPage() {
                                     onChange={(e) =>
                                       setNotes((current) => ({ ...current, [item.id]: e.target.value }))
                                     }
-                                    onBlur={() => void saveInquiry(item, item.status)}
+                                    onBlur={(event) => {
+                                      if ((event.relatedTarget as HTMLElement | null)?.closest('[data-lead-control]')) return
+                                      if (notes[item.id] !== undefined && notes[item.id] !== (item.adminNotes ?? '')) void saveInquiry(item, item.status)
+                                    }}
                                     rows={2}
                                     className={`mt-1 ${inputClass}`}
                                   />
                                 </label>
+                                </div>}
                                 <div className="flex items-center justify-between gap-2 pt-1">
-                                  <span className="font-code-sm text-code-sm text-outline">{item.status}</span>
+                                  <span className="admin-billing-lead-status font-code-sm text-code-sm">{stage.label}</span>
                                   {next ? (
                                     <button
                                       type="button"
+                                      data-lead-control
                                       onClick={() => void saveInquiry(item, next)}
                                       className="flex cursor-pointer items-center gap-1 rounded bg-surface-container px-2 py-0.5 font-label-sm text-label-sm text-on-surface hover:text-primary"
                                     >
@@ -1564,6 +1697,19 @@ export function AdminBillingPage() {
             ) : (
               <>
                 <div className="flex flex-wrap items-center gap-3">
+                  <form
+                    onSubmit={(event) => { event.preventDefault(); update('inquiryQuery', inquirySearch.trim()) }}
+                    className="flex min-w-0 flex-wrap gap-2"
+                  >
+                    <input
+                      aria-label="Tìm yêu cầu tư vấn"
+                      value={inquirySearch}
+                      onChange={(event) => setInquirySearch(event.target.value)}
+                      placeholder="Mã yêu cầu, email hoặc tên đơn vị"
+                      className={inputClass + ' min-w-0 sm:w-72'}
+                    />
+                    <button type="submit" className={btnSecondary}>Tìm</button>
+                  </form>
                   <select
                     aria-label="Trạng thái yêu cầu"
                     value={inquiryStatus}
@@ -1578,26 +1724,34 @@ export function AdminBillingPage() {
                     ))}
                   </select>
                 </div>
-                {matrixItems.length === 0 && (!inquiries || inquiries.items.length === 0) ? (
+                {inquiriesLoading ? (
+                  <AdminLoading label="Đang tìm yêu cầu tư vấn" />
+                ) : matrixItems.length === 0 ? (
                   <AdminEmptyState title="Chưa có yêu cầu" detail="Không có yêu cầu phù hợp." />
                 ) : (
                   <>
                     <div className="space-y-3">
-                      {(inquiryStatus ? matrixItems : inquiries?.items ?? matrixItems).map((item) => (
-                        <article key={item.id} className="rounded-xl bg-surface-container p-4">
+                      {matrixItems.map((item) => (
+                        <article key={item.id} data-stage={item.status} className="admin-billing-matrix-lead rounded-xl bg-surface-container p-4">
                           <div className="flex flex-wrap justify-between gap-2">
                             <div>
                               <h4 className="font-bold text-on-surface">{item.siteName}</h4>
-                              <p className="text-sm text-on-surface-variant">
-                                {item.contactName} · {item.contactEmail}
-                              </p>
-                              {item.organizationName && <p className="text-sm text-on-surface-variant">Đơn vị: {item.organizationName}</p>}
-                              {item.contactRole && <p className="text-sm text-on-surface-variant">Chức vụ: {item.contactRole}</p>}
-                              {item.contactPhone && <p className="text-sm text-on-surface-variant">Điện thoại: {item.contactPhone}</p>}
-                              {item.siteLocation && <p className="text-sm text-on-surface-variant">Địa điểm: {item.siteLocation}</p>}
-                              {item.targetStart && <p className="text-sm text-on-surface-variant">Dự kiến: {item.targetStart}</p>}
-                              {item.availableMaterials && <p className="whitespace-pre-wrap text-sm text-on-surface-variant">Tư liệu: {item.availableMaterials}</p>}
-                              {item.message && <p className="whitespace-pre-wrap text-sm text-on-surface-variant">Mục tiêu: {item.message}</p>}
+                              <p className="text-sm text-on-surface-variant">{LEAD_PACKAGE_OPTIONS.find((option) => option.value === item.packageType)?.label || item.packageType || 'Tư vấn'} · {relativeTime(item.createdAt)}</p>
+                              <p className="text-sm font-semibold text-primary">{item.contactName}</p>
+                              <button type="button" data-lead-control className="admin-billing-expand" aria-expanded={expandedLeadIds.includes(item.id)} onClick={() => void toggleLead(item)}>
+                                {expandedLeadIds.includes(item.id) ? 'Thu gọn' : 'Xem thêm'}
+                                <MaterialIcon name={expandedLeadIds.includes(item.id) ? 'expand_less' : 'expand_more'} className="text-[18px]" />
+                              </button>
+                              {expandedLeadIds.includes(item.id) && <div className="admin-billing-lead-detail">
+                              <p className="break-all text-xs text-outline"><strong>Mã yêu cầu:</strong> {item.id}</p>
+                              <p><strong>Email:</strong> {item.contactEmail}</p>
+                              {item.organizationName && <p><strong>Đơn vị:</strong> {item.organizationName}</p>}
+                              {item.contactRole && <p><strong>Chức vụ:</strong> {item.contactRole}</p>}
+                              {item.contactPhone && <p><strong>Điện thoại:</strong> {item.contactPhone}</p>}
+                              {item.siteLocation && <p><strong>Địa điểm:</strong> {item.siteLocation}</p>}
+                              {item.targetStart && <p><strong>Dự kiến:</strong> {item.targetStart}</p>}
+                              {item.availableMaterials && <p className="whitespace-pre-wrap"><strong>Tư liệu:</strong> {item.availableMaterials}</p>}
+                              {item.message && <p className="whitespace-pre-wrap"><strong>Mục tiêu:</strong> {item.message}</p>}
                               {item.organizationId && (
                                 <Link
                                   to={`/admin/organizations?orgId=${encodeURIComponent(item.organizationId)}`}
@@ -1607,9 +1761,11 @@ export function AdminBillingPage() {
                                   Tổ chức đã liên kết
                                 </Link>
                               )}
+                              </div>}
                             </div>
                             <select
                               aria-label={`Trạng thái ${item.siteName}`}
+                              data-lead-control
                               defaultValue={item.status}
                               onChange={(e) => void saveInquiry(item, e.target.value)}
                               className={inputClass + ' w-auto'}
@@ -1621,22 +1777,25 @@ export function AdminBillingPage() {
                               ))}
                             </select>
                           </div>
-                          <label className="mt-3 block text-sm text-on-surface">
+                          {expandedLeadIds.includes(item.id) && <label className="mt-3 block text-sm text-on-surface">
                             Ghi chú quản trị
                             <textarea
                               value={notes[item.id] ?? item.adminNotes ?? ''}
                               onChange={(e) =>
                                 setNotes((current) => ({ ...current, [item.id]: e.target.value }))
                               }
-                              onBlur={() => void saveInquiry(item, item.status)}
+                              onBlur={(event) => {
+                                if ((event.relatedTarget as HTMLElement | null)?.closest('[data-lead-control]')) return
+                                if (notes[item.id] !== undefined && notes[item.id] !== (item.adminNotes ?? '')) void saveInquiry(item, item.status)
+                              }}
                               rows={2}
                               className={`mt-1 w-full ${inputClass}`}
                             />
-                          </label>
+                          </label>}
                         </article>
                       ))}
                     </div>
-                    {inquiries && !inquiryStatus && (
+                    {inquiries && (
                       <AdminPagination
                         page={inquiries.page}
                         totalPages={inquiries.totalPages}
@@ -1816,7 +1975,7 @@ export function AdminBillingPage() {
       {leadOpen && (
         <AdminModal
           title="Thêm Lead B2B"
-          subtitle="Ghi lead vào pipeline CRM (API thật)"
+          subtitle="Lưu yêu cầu tư vấn vào danh sách khách hàng cần liên hệ"
           icon="person_add"
           onClose={() => !saving && setLeadOpen(false)}
         >
