@@ -28,7 +28,19 @@ test('heritage source is preserved using a controlled query value', () => {
 test('only final output is uploaded and heritage mode never sends a frame id', () => {
   const source = readFileSync(new URL('../src/pages/PhotoFramePage.tsx', import.meta.url), 'utf8')
   assert.equal(source.match(/viralApi\.uploadCreation/g)?.length, 1)
-  assert.match(source, /frameId: photoMode === 'heritage' \? null/)
+  // Verify both upload and offline queue policies, including local artwork.
+  // Matching the old ternary's exact text rejected the equivalent safer rule.
+  const policies = [...source.matchAll(/frameId: (photoMode[^,\n]+),/g)]
+  assert.equal(policies.length, 2, 'upload and offline queue must both declare frame policy')
+  for (const [, expression] of policies) {
+    const select = new Function('photoMode', 'frameId', 'isLocalPhotoFrame', `return (${expression})`)
+    const local = id => id === 'cuchi-frame-1'
+    assert.equal(select('heritage', 'server-frame', local), null)
+    assert.equal(select('heritage', 'cuchi-frame-1', local), null)
+    assert.equal(select('original', 'cuchi-frame-1', local), null)
+    assert.equal(select('original', '', local), null)
+    assert.equal(select('original', 'server-frame', local), 'server-frame')
+  }
   assert.match(source, /exportFullResolution\(\)/)
   assert.doesNotMatch(source, /detectFaceCandidates[\s\S]*uploadCreation/)
 })
