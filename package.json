@@ -57,7 +57,11 @@
     "test:profile": "node --experimental-strip-types --test scripts/profile-workspace.test.mjs scripts/profile-details.test.mjs",
     "test:profile:browser": "node scripts/profile-fullstack-smoke.mjs",
     "test:settings": "node --experimental-strip-types --test scripts/settings-workspace.test.mjs",
-    "test:settings:browser": "node scripts/settings-fullstack-smoke.mjs"
+    "test:settings:browser": "node scripts/settings-fullstack-smoke.mjs",
+    "test:chat-voice": "node scripts/chat-voice.test.cjs",
+    "test:chat-call:browser": "node scripts/chat-call-browser.mjs",
+    "test:chat-call:visuals": "node scripts/chat-call-visuals.test.cjs",
+    "test:chat-mouth-sync": "node scripts/chat-mouth-sync.test.cjs"
   },
   "dependencies": {
     "@mediapipe/tasks-vision": "^1.1.1",

@@ -1,0 +1,113 @@
+.chrono-call {
+  --call-blue: #0275fb;
+  --call-ink: #17345b;
+  --call-line: #e0e9f4;
+  position: fixed; inset: 0; z-index: 100;
+  height: 100dvh; display: flex; flex-direction: column;
+  overflow: hidden; outline: none; color: var(--call-ink);
+  font-family: 'Be Vietnam Pro', sans-serif;
+  background: #eef4fb;
+  padding: 0 32px 24px;
+}
+.chrono-call-header { width: min(1120px, 100%); margin: 0 auto; padding: 24px 4px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-shrink: 0; }
+.chrono-call-brand { display: flex; align-items: center; gap: 11px; }
+.chrono-call-brand-mark { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 14px; color: #1661b9; background: #ffdc55; box-shadow: inset 0 0 0 1px #f3ce45; }
+.chrono-call-brand-name { display: block; font-size: 19px; font-weight: 850; letter-spacing: -.6px; color: #0767d5; line-height: 1.3; }
+.chrono-call-eyebrow { display: block; font-size: 8px; font-weight: 700; letter-spacing: .14em; margin-top: 4px; color: #6b7e97; }
+.chrono-call-session { display: flex; align-items: center; gap: 10px; }
+.chrono-call-session-dot { width: 6px; height: 6px; border-radius: 50%; background: #169578; }
+.chrono-call-duration { display: flex; align-items: center; gap: 7px; color: #58708f; font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.chrono-call-duration .material-symbols-outlined { font-size: 17px; }
+.chrono-call-room { position: relative; width: min(1120px, 100%); margin: 0 auto; min-height: 0; flex: 1; display: flex; flex-direction: column; overflow: hidden; border: 1px solid #dce6f3; border-radius: 32px; background: radial-gradient(ellipse at 50% 27%, #eaf4ff 0, #f8fbff 48%, #fff 76%); box-shadow: 0 16px 60px #355c9410; }
+.chrono-call-stage { position: relative; display: flex; align-items: center; justify-content: center; flex: 1; min-height: 0; padding: 24px 32px 0; isolation: isolate; container-type: size; }
+.chrono-call-avatar-halo { position: absolute; height: min(90%, 440px); max-width: 75%; aspect-ratio: 1; z-index: -1; border-radius: 50%; background: radial-gradient(circle, #fff8dd 0, #fffaf0a0 40%, #ffffff00 71%); }
+.chrono-call-avatar-halo > span { position: absolute; inset: 0; border: 1px solid #d4e3f38c; border-radius: 50%; }
+.chrono-call-avatar-halo > span + span { inset: -22px; border-color: #d4e3f34d; }
+.chrono-call.is-talking .chrono-call-avatar-halo > span { border-color: #ecd7868c; }
+.chrono-talking-avatar { position: relative; width: min(100cqw, 100cqh, 450px); height: auto; max-width: 100%; aspect-ratio: 1; flex-shrink: 1; }
+.chrono-call-avatar { display: block; width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 14px 20px #1b63ba12); }
+.chrono-call-face { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.chrono-call-mouth { transform-origin: 0 0; }
+.chrono-call-identity { position: relative; text-align: center; flex-shrink: 0; padding: 8px 20px 20px; }
+.chrono-call-identity h1 { font-size: 27px; font-weight: 800; line-height: 1.35; letter-spacing: -.8px; margin: 0 0 9px; }
+.chrono-call-status { display: flex; align-items: center; justify-content: center; gap: 7px; min-height: 24px; font-size: 12px; font-weight: 500; color: #687f9d; }
+.chrono-call-state-icon { display: flex; color: #2785d7; }
+.chrono-call-state-icon .material-symbols-outlined { font-size: 19px; }
+.chrono-call.is-talking .chrono-call-state-icon { color: #b28209; }
+.chrono-call.is-muted .chrono-call-state-icon { color: #c4495c; }
+.chrono-call-dock { position: relative; z-index: 2; display: flex; align-items: center; flex-direction: column; flex-shrink: 0; padding: 20px 24px 22px; border-top: 1px solid #e7edf5; background: #ffffffbd; }
+.chrono-call-controls { display: flex; align-items: center; justify-content: center; gap: 24px; }
+.chrono-call-icon { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.chrono-call-icon .material-symbols-outlined { font-size: 23px; }
+.chrono-call-control { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 9px; width: 76px; min-height: 80px; border: none; padding: 0; border-radius: 16px; cursor: pointer; background: transparent; color: #4e6583; }
+.chrono-call-control-symbol { width: 52px; height: 52px; display: grid; place-items: center; border-radius: 18px; background: #f0f5fc; border: 1px solid #e3ebf6; transition: background .15s, border-color .15s; }
+.chrono-call-control-label { font-size: 11px; font-weight: 650; line-height: 1.5; }
+.chrono-call-control:focus-visible { outline: 3px solid #0275fb; outline-offset: 4px; }
+.chrono-call-control:disabled { cursor: default; color: #8090a6; }
+.chrono-call-control:disabled .chrono-call-control-symbol { background: #f5f7fb; color: #8e9db3; border-color: #edf1f7; }
+.chrono-call-mic.is-muted { color: #b54b5d; }
+.chrono-call-restart { color: #486d9a; }
+.chrono-call-mic.is-muted .chrono-call-control-symbol { background: #fff0f2; border-color: #f8dde2; }
+.chrono-call-next:not(:disabled) { color: #284065; }
+.chrono-call-next:not(:disabled) .chrono-call-control-symbol { background: #ffd239; color: #253b5b; border-color: #f1c631; box-shadow: 0 3px 7px #d6ac1d16; }
+.chrono-call-control-divider { width: 1px; height: 40px; background: #e4ebf4; margin: 0 0 19px; }
+.chrono-call-hangup { color: #b74656; }
+.chrono-call-hangup .chrono-call-control-symbol { background: #ef4c60; color: #fff; border-color: #e84458; box-shadow: 0 3px 7px #e94c5d18; }
+.chrono-call-hint { font-size: 10px; color: #7587a1; line-height: 1.65; text-align: center; margin: 15px 0 0; }
+@media (hover: hover) and (pointer: fine) {
+  .chrono-call-mic:hover:not(:disabled) .chrono-call-control-symbol, .chrono-call-replay:hover:not(:disabled) .chrono-call-control-symbol { background: #e3eefc; border-color: #cddff4; }
+  .chrono-call-next:hover:not(:disabled) .chrono-call-control-symbol { background: #ffdd65; }
+  .chrono-call-hangup:hover .chrono-call-control-symbol { background: #d9374c; }
+}
+@media (max-width: 639px) {
+  .chrono-call { padding: 0 12px max(12px, env(safe-area-inset-bottom)); }
+  .chrono-call-header { padding: 18px 5px 16px; }
+  .chrono-call-brand-mark { width: 36px; height: 36px; border-radius: 12px; }
+  .chrono-call-brand-name { font-size: 17px; }
+  .chrono-call-eyebrow { font-size: 7px; letter-spacing: .11em; }
+  .chrono-call-duration { font-size: 11px; }
+  .chrono-call-duration .material-symbols-outlined { display: none; }
+  .chrono-call-room { border-radius: 26px; }
+  .chrono-call-stage { padding: 20px 6px 0; }
+  .chrono-talking-avatar { width: min(100cqw, 100cqh, 380px); }
+  .chrono-call-avatar-halo { height: auto; width: 76%; max-width: 76%; }
+  .chrono-call-avatar-halo > span + span { inset: -14px; }
+  .chrono-call-identity { padding: 8px 12px 24px; }
+  .chrono-call-identity h1 { font-size: 25px; }
+  .chrono-call-status { font-size: 11px; }
+  .chrono-call-dock { padding: 18px 10px 16px; }
+  .chrono-call-controls { width: 100%; gap: 8px; }
+  .chrono-call-control { width: 60px; flex: 1; min-width: 0; gap: 8px; min-height: 78px; }
+  .chrono-call-control-symbol { width: 48px; height: 48px; border-radius: 16px; }
+  .chrono-call-control-divider { margin-left: 2px; margin-right: 2px; height: 32px; }
+  .chrono-call-hint { max-width: 265px; font-size: 9px; margin-top: 12px; }
+}
+@media (max-width: 359px) {
+  .chrono-call-controls { gap: 3px; }
+  .chrono-call-control { width: 46px; }
+  .chrono-call-control-symbol { width: 44px; height: 44px; border-radius: 15px; }
+  .chrono-call-control-label { font-size: 10px; }
+  .chrono-call-identity { padding-bottom: 14px; }
+}
+@media (max-height: 550px) and (min-width: 640px) {
+  .chrono-call { padding: 0 16px 12px; }
+  .chrono-call-header { padding: 10px 8px; }
+  .chrono-call-brand-mark { width: 30px; height: 30px; border-radius: 10px; }
+  .chrono-call-brand-name { font-size: 15px; }
+  .chrono-call-eyebrow { display: none; }
+  .chrono-call-room { display: grid; grid-template-columns: minmax(0, 1fr) 290px; grid-template-rows: minmax(0, 1fr) auto; border-radius: 24px; }
+  .chrono-call-stage { grid-row: 1 / 3; padding: 12px; }
+  .chrono-call-identity { align-self: end; padding: 10px 15px 6px; }
+  .chrono-call-identity h1 { font-size: 22px; margin-bottom: 4px; }
+  .chrono-call-status { font-size: 10px; }
+  .chrono-call-dock { border: none; background: transparent; padding: 12px 10px 22px; }
+  .chrono-call-controls { gap: 2px; }
+  .chrono-call-control { width: 52px; min-height: 68px; gap: 5px; }
+  .chrono-call-control-symbol { width: 42px; height: 42px; border-radius: 14px; }
+  .chrono-call-control-label { font-size: 9px; }
+  .chrono-call-control-divider { height: 25px; margin-bottom: 15px; }
+  .chrono-call-hint { font-size: 9px; max-width: 200px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .chrono-call *, .chrono-call *::before, .chrono-call *::after { animation: none !important; transition: none !important; }
+}

@@ -19,7 +19,7 @@ function withoutDisclaimer(raw: string): string {
   return stripEmoji(raw).replace(DISCLAIMER, ' ')
 }
 
-/** Các dòng hiện trên thẻ góc phải. Cùng bản chữ với giọng đọc. */
+/** Các đoạn hiện trong khung câu trả lời. Cùng nội dung với giọng đọc. */
 export function answerCardLines(raw: string): string[] {
   const body = withoutDisclaimer(raw)
   return body
@@ -38,6 +38,7 @@ function lowercaseHeadings(text: string): string {
 /** Bản đọc: dấu * đầu mục thành chấm, tiêu đề in hoa thành chữ thường. */
 export function spokenReply(raw: string): string {
   let body = withoutDisclaimer(raw)
+  body = body.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
   body = body.replace(/([.!?…]?)\s*\*\s+/g, (_, punct: string) => (punct ? `${punct} ` : '. '))
   body = body.replace(/[*_`#>]+/g, ' ')
   body = lowercaseHeadings(body)
@@ -55,7 +56,18 @@ export function spokenSentences(raw: string): string[] {
 const SPEECH_CHUNK_CHARS = 720
 
 export function spokenChunks(raw: string): string[] {
-  const parts = spokenSentences(raw)
+  const parts = spokenSentences(raw).flatMap(sentence => {
+    const segments: string[] = []
+    let remaining = sentence
+    while (remaining.length > SPEECH_CHUNK_CHARS) {
+      const space = remaining.lastIndexOf(' ', SPEECH_CHUNK_CHARS)
+      const end = space > 0 ? space : SPEECH_CHUNK_CHARS
+      segments.push(remaining.slice(0, end).trim())
+      remaining = remaining.slice(end).trim()
+    }
+    if (remaining) segments.push(remaining)
+    return segments
+  })
   const chunks: string[] = []
   let current = ''
   for (const part of parts) {

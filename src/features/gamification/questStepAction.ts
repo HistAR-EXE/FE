@@ -3,9 +3,10 @@
 
 import { timePortalPath } from '../../shared/config/locationSlug'
 import type { QuestV2Step } from './questsV2Api'
-import { SA_BAN_FRAGMENT_CODE, SA_BAN_QUEST_KEY } from './saBanFragment'
+import { SA_BAN_QUEST_KEY } from './saBanFragment'
 
 export type QuestStepAction =
+    | { kind: 'sa-ban-quiz'; locationId: string; label: string; icon: string }
     | { kind: 'link'; href: string; label: string; icon: string }
     /** Hiện vật xem ngay trong trang (khung xem hiện vật), ghi nhận sau vài giây. */
     | { kind: 'artifact'; label: string; icon: string }
@@ -44,14 +45,7 @@ export function questStepAction(
         return { kind: 'link', href: `/quests/${ctx.questId}/play/${step.minigameId}`, label: label('Chơi thử thách'), icon }
     }
     if (step.key === SA_BAN_QUEST_KEY) {
-        const params = new URLSearchParams({
-            locationId: ctx.locationId,
-            persona: 'chrono',
-            questRecord: SA_BAN_QUEST_KEY,
-            questPrompt: SA_BAN_FRAGMENT_CODE,
-            autoSend: '1',
-        })
-        return { kind: 'link', href: `/chat?${params}`, label: label('Giải câu hỏi Sa bàn'), icon: 'quiz' }
+        return { kind: 'sa-ban-quiz', locationId: ctx.locationId, label: label('Giải câu hỏi Sa bàn'), icon: 'quiz' }
     }
 
     switch (step.actionType) {

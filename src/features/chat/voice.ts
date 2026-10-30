@@ -1,12 +1,13 @@
 // src/features/chat/voice.ts
 import { chatApi, type ChatSource } from './api'
-import { spokenChunks, spokenSentences } from './callCopy'
+import { spokenChunks, spokenReply, spokenSentences } from './callCopy'
 import { aiClient, synthesizeSpeechSentence } from '../../shared/api/aiClient'
 import type { AppLocale } from '../../shared/i18n'
+import { mouthOpennessAt, readWavEnvelope, type SpeechEnvelope } from './speechEnvelope'
 
 export type VoicePhase = 'idle' | 'recording' | 'stt' | 'chat' | 'tts' | 'playing' | 'answered'
 
-export type SpeechEnd = 'played' | 'silent' | 'stopped'
+export type SpeechEnd = 'played' | 'silent' | 'stopped' | 'forbidden'
 
 export function speechLocale(locale: string): string {
   switch (locale) {
@@ -45,11 +46,43 @@ let activeAudioUrl: string | null = null
 let speechGeneration = 0
 let speakAbort: AbortController | null = null
 let releasePlayback: (() => void) | null = null
+let releaseBrowserSpeech: (() => void) | null = null
+let playbackAudio: HTMLAudioElement | null = null
+let playbackEnvelope: SpeechEnvelope | null = null
+
+/** Read at animation-frame cadence; the HTML audio clock owns synchronization. */
+export function getSpeechMouthOpenness(): number {
+  if (!activeAudio || activeAudio.paused || activeAudio.ended || activeAudio.muted || activeAudio.volume === 0) return 0
+  return mouthOpennessAt(playbackEnvelope, activeAudio.currentTime)
+}
+const SILENT_AUDIO = 'data:audio/wav;base64,UklGRiYAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQIAAAAAAA=='
+
+function getPlaybackAudio(): HTMLAudioElement {
+  playbackAudio ??= new Audio()
+  playbackAudio.preload = 'auto'
+  return playbackAudio
+}
+
+/** Call synchronously from the call/replay button to unlock later async audio on mobile. */
+export function prepareSpeechPlayback(): void {
+  const audio = getPlaybackAudio()
+  if (activeAudio) return
+  audio.src = SILENT_AUDIO
+  void audio.play().then(() => {
+    if (audio.src === SILENT_AUDIO && !activeAudio) audio.pause()
+  }).catch(() => undefined)
+  // Starts loading OS voices on the first interaction; fallback still waits for voiceschanged.
+  window.speechSynthesis?.getVoices()
+}
 
 export function stopActiveSpeech() {
+  playbackEnvelope = null
   speechGeneration += 1
   speakAbort?.abort()
   speakAbort = null
+  window.speechSynthesis?.cancel()
+  releaseBrowserSpeech?.()
+  releaseBrowserSpeech = null
   const audio = activeAudio
   const url = activeAudioUrl
   activeAudio = null
@@ -73,17 +106,22 @@ export function waitForSpeechToSettle(): Promise<void> {
   })
 }
 
-function playSpeechBlob(
+async function playSpeechBlob(
   blob: Blob,
   generation: number,
   onAudible?: () => void,
 ): Promise<SpeechEnd> {
   if (generation !== speechGeneration) return Promise.resolve('stopped')
   if (!blob.size) return Promise.resolve('silent')
+  let envelope: SpeechEnvelope | null = null
+  try { envelope = readWavEnvelope(await blob.arrayBuffer()) } catch { /* Audio still plays without an envelope. */ }
+  if (generation !== speechGeneration) return 'stopped'
+  playbackEnvelope = envelope
   if (activeAudioUrl) URL.revokeObjectURL(activeAudioUrl)
   const url = URL.createObjectURL(blob)
   activeAudioUrl = url
-  const audio = new Audio(url)
+  const audio = getPlaybackAudio()
+  audio.src = url
   audio.volume = 1
   activeAudio = audio
   return new Promise((resolve) => {
@@ -91,15 +129,22 @@ function playSpeechBlob(
     const finish = (end: SpeechEnd) => {
       if (settled) return
       settled = true
-      if (releasePlayback === finish) releasePlayback = null
-      if (activeAudio === audio) activeAudio = null
+      window.clearTimeout(watchdog)
+      if (releasePlayback === cancelPlayback) releasePlayback = null
+      audio.onplaying = null
+      audio.onended = null
+      audio.onpause = null
+      audio.onerror = null
+      if (activeAudio === audio) { activeAudio = null; playbackEnvelope = null }
       if (activeAudioUrl === url) {
         URL.revokeObjectURL(url)
         activeAudioUrl = null
       }
       resolve(end)
     }
-    releasePlayback = () => finish('stopped')
+    const cancelPlayback = () => finish('stopped')
+    const watchdog = window.setTimeout(() => { audio.pause(); finish('silent') }, 120_000)
+    releasePlayback = cancelPlayback
     audio.onplaying = () => {
       if (generation === speechGeneration) onAudible?.()
     }
@@ -173,6 +218,12 @@ type BrowserSpeech = {
   stop: () => void
 }
 
+let cancelActiveListening: (() => void) | null = null
+
+export function stopActiveListening(): void {
+  cancelActiveListening?.()
+}
+
 function speechCtor(): (new () => BrowserSpeech) | null {
   const host = window as Window & {
     SpeechRecognition?: new () => BrowserSpeech
@@ -241,32 +292,35 @@ export function listenForUtterance(
     const recognition = new Ctor()
     let text = ''
     let settled = false
+    const cancel = () => {
+      finish('')
+      try { recognition.stop() } catch { /* already stopped */ }
+    }
     const finish = (value: string) => {
       if (settled) return
       settled = true
       window.clearInterval(timer)
+      if (cancelActiveListening === cancel) cancelActiveListening = null
       resolve(value.trim())
     }
     const timer = window.setInterval(() => {
       if (!shouldStop()) return
-      try {
-        recognition.stop()
-      } catch {
-        finish('')
-      }
+      finish('')
+      try { recognition.stop() } catch { /* already stopped */ }
     }, 200)
     recognition.lang = speechLocale(locale)
     recognition.continuous = false
     recognition.interimResults = true
     recognition.onresult = (event) => {
       text = transcriptOf(event)
-      onUpdate(text)
+      if (!settled) onUpdate(text)
     }
     recognition.onerror = (event) => {
       if (event.error === 'not-allowed') {
         if (!settled) {
           settled = true
           window.clearInterval(timer)
+          if (cancelActiveListening === cancel) cancelActiveListening = null
           reject(new Error('not-allowed'))
         }
         return
@@ -274,10 +328,12 @@ export function listenForUtterance(
       finish(text)
     }
     recognition.onend = () => finish(text)
+    cancelActiveListening = cancel
     try {
       recognition.start()
     } catch (error) {
       window.clearInterval(timer)
+      if (cancelActiveListening === cancel) cancelActiveListening = null
       reject(error)
     }
   })
@@ -289,40 +345,50 @@ export async function speakReply(
   hooks?: { onAudible?: () => void },
   locale: AppLocale = 'vi',
 ): Promise<SpeechEnd> {
-  const nativeResult = await speakWithBrowser(reply, locale, hooks)
-  if (nativeResult !== null) return nativeResult
-  void chatApi.recordVoiceFallback()
+  stopActiveSpeech()
   const generation = speechGeneration
   const controller = new AbortController()
   speakAbort = controller
   const chunks = spokenChunks(reply)
+  const targetLocale = speechLocale(locale).startsWith('vi') ? locale : 'vi'
   let played = false
+  let serverUnavailable = false
+  let accessDenied = false
   const loadChunk = async (text: string): Promise<Blob | null> => {
-    for (let attempt = 0; attempt < 2; attempt += 1) {
-      if (generation !== speechGeneration) return null
-      try {
-        const next = await synthesizeSpeechSentence(text, personaKey, controller.signal)
-        if (next.size > 0) return next
-      } catch {
-        if (controller.signal.aborted || generation !== speechGeneration) return null
-      }
+    if (serverUnavailable || generation !== speechGeneration) return null
+    try {
+      const blob = await synthesizeSpeechSentence(text, personaKey, controller.signal)
+      if (blob.size > 0) return blob
+    } catch (error) {
+      const status = (error as { status?: number; response?: { status?: number } })?.status
+        ?? (error as { response?: { status?: number } })?.response?.status
+      if (status === 401 || status === 403) accessDenied = true
+      if (!controller.signal.aborted) serverUnavailable = true
     }
     return null
+  }
+  const audible = () => {
+    if (generation !== speechGeneration) return
+    played = true
+    hooks?.onAudible?.()
   }
   try {
     let upcoming = chunks.length > 0 ? loadChunk(chunks[0]) : null
     for (let index = 0; index < chunks.length; index += 1) {
       if (generation !== speechGeneration) return 'stopped'
       const blob = await upcoming
-      upcoming = index + 1 < chunks.length ? loadChunk(chunks[index + 1]) : null
       if (generation !== speechGeneration) return 'stopped'
-      if (!blob) continue
-      const end = await playSpeechBlob(blob, generation, () => {
-        played = true
-        hooks?.onAudible?.()
-      })
-      if (end === 'stopped') return 'stopped'
-      if (end === 'played') played = true
+      if (accessDenied) return 'forbidden'
+      // Fetch the next chunk during playback to avoid a pause between sentences.
+      upcoming = index + 1 < chunks.length ? loadChunk(chunks[index + 1]) : null
+      let end: SpeechEnd | null = blob ? await playSpeechBlob(blob, generation, audible) : null
+      if (end === null || end === 'silent') {
+        void chatApi.recordVoiceFallback()
+        end = await speakWithBrowser(chunks[index], targetLocale, { onAudible: audible })
+      }
+      if (end === 'stopped' || generation !== speechGeneration) return 'stopped'
+      if (end !== 'played') return 'silent'
+      played = true
     }
   } finally {
     if (speakAbort === controller) speakAbort = null
@@ -330,27 +396,73 @@ export async function speakReply(
   return played ? 'played' : 'silent'
 }
 
-/** Browser TTS is privacy-preserving and available without sending visitor audio to another service. */
-function speakWithBrowser(
+/** Never let an English/Chinese default voice read Vietnamese when OS voices arrive late. */
+async function speakWithBrowser(
   reply: string,
-  locale: AppLocale,
+  _locale: AppLocale,
   hooks?: { onAudible?: () => void },
 ): Promise<SpeechEnd | null> {
-  if (!('speechSynthesis' in window) || typeof SpeechSynthesisUtterance === 'undefined') return Promise.resolve(null)
+  if (!window.speechSynthesis || typeof SpeechSynthesisUtterance === 'undefined') return null
   const generation = speechGeneration
-  return new Promise((resolve) => {
-    const utterance = new SpeechSynthesisUtterance(reply)
-    utterance.lang = speechLocale(locale)
+  const synthesis = window.speechSynthesis
+  const vietnameseVoice = () => synthesis.getVoices().find(v => /^vi(?:-|_)/i.test(v.lang))
+  let voice = vietnameseVoice()
+  if (!voice) {
+    await new Promise<void>(resolve => {
+      let settled = false
+      const finish = () => {
+        if (settled) return
+        settled = true
+        window.clearTimeout(timer)
+        synthesis.removeEventListener('voiceschanged', changed)
+        if (releaseBrowserSpeech === finish) releaseBrowserSpeech = null
+        resolve()
+      }
+      const changed = () => { if (vietnameseVoice()) finish() }
+      const timer = window.setTimeout(finish, 1500)
+      synthesis.addEventListener('voiceschanged', changed)
+      releaseBrowserSpeech = finish
+      changed()
+    })
+    if (generation !== speechGeneration) return 'stopped'
+    voice = vietnameseVoice()
+  }
+  if (!voice) return null
+  return new Promise(resolve => {
+    const utterance = new SpeechSynthesisUtterance(spokenReply(reply))
+    utterance.lang = 'vi-VN'
+    utterance.voice = voice
+    utterance.rate = 1.12
+    utterance.pitch = 1.18
+    utterance.volume = 1
+    let settled = false
+    let started = false
+    const finish = (end: SpeechEnd | null) => {
+      if (settled) return
+      settled = true
+      window.clearTimeout(startTimer)
+      window.clearTimeout(endTimer)
+      if (releaseBrowserSpeech === cancel) releaseBrowserSpeech = null
+      utterance.onstart = null
+      utterance.onend = null
+      utterance.onerror = null
+      resolve(end)
+    }
+    const cancel = () => finish('stopped')
+    const startTimer = window.setTimeout(() => {
+      if (!started) { synthesis.cancel(); finish(null) }
+    }, 8000)
+    const endTimer = window.setTimeout(() => { synthesis.cancel(); finish(null) }, 120_000)
+    releaseBrowserSpeech = cancel
     utterance.onstart = () => {
-      if (generation === speechGeneration) hooks?.onAudible?.()
+      if (generation !== speechGeneration) return
+      started = true
+      window.clearTimeout(startTimer)
+      hooks?.onAudible?.()
     }
-    utterance.onend = () => resolve(generation === speechGeneration ? 'played' : 'stopped')
-    utterance.onerror = () => resolve(null)
-    try {
-      window.speechSynthesis.speak(utterance)
-    } catch {
-      resolve(null)
-    }
+    utterance.onend = () => finish(generation === speechGeneration ? 'played' : 'stopped')
+    utterance.onerror = () => finish(generation === speechGeneration ? null : 'stopped')
+    try { synthesis.resume(); synthesis.speak(utterance) } catch { finish(null) }
   })
 }
 

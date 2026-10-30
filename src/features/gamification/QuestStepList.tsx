@@ -2,6 +2,7 @@
 // Danh sách bước của một nhiệm vụ (API v2). Trạng thái từng bước do BE tính theo khóa, không theo vị trí.
 
 import { Link } from 'react-router-dom'
+import { SaBanQuizButton } from './SaBanQuizButton'
 import { MaterialIcon } from '../../components/ui/MaterialIcon'
 import { siteCodeFromLocationId } from '../../shared/config/constants'
 import { SmartImage } from '../../shared/ui/SmartImage'
@@ -201,6 +202,11 @@ function StepButton({
         ? 'inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-[#0275FB] px-4 text-sm font-black text-white shadow-[0_8px_18px_-8px_rgba(2,117,251,0.8)] transition-colors hover:bg-[#015CC8]'
         : 'inline-flex min-h-[40px] items-center gap-1.5 rounded-xl border border-[#0275FB]/25 bg-white px-3 text-xs font-bold text-[#0275FB] transition-colors hover:bg-[#F2F7FF]'
 
+    if (action.kind === 'sa-ban-quiz') {
+        return <SaBanQuizButton locationId={action.locationId} className={className}>
+            <MaterialIcon name={action.icon} className="text-lg" /> {label}
+        </SaBanQuizButton>
+    }
     if (action.kind === 'premium') {
         return (
             <button

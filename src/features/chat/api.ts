@@ -195,6 +195,7 @@ export const chatApi = {
         narrativeNodeCode?: string | null
         narrativeVersion?: number | null
         pageContext?: ChatPageContext | null
+        signal?: AbortSignal
     }) =>
         getData<ChatReply>(
             httpClient.post('/api/chat/messages', {
@@ -207,7 +208,7 @@ export const chatApi = {
                 narrativeNodeCode: payload.narrativeNodeCode ?? undefined,
                 narrativeVersion: payload.narrativeVersion ?? undefined,
                 pageContext: payload.pageContext ?? undefined,
-            }),
+            }, { signal: payload.signal }),
         ),
 
     /** Production path — orchestrated chat via BE (BR-14). */
@@ -221,6 +222,7 @@ export const chatApi = {
         narrativeNodeCode?: string | null
         narrativeVersion?: number | null
         pageContext?: ChatPageContext | null
+        signal?: AbortSignal
     }): Promise<ChatReply> {
         return chatApi.sendOrchestrated(payload)
     },

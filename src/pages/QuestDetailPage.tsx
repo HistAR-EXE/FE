@@ -19,6 +19,7 @@ import { NarrativeInvestigationBoard } from '../features/gamification/NarrativeI
 import { QuestBackdrop } from '../features/gamification/QuestBackdrop'
 import { questStepAction } from '../features/gamification/questStepAction'
 import { QuestStepList } from '../features/gamification/QuestStepList'
+import { SaBanQuizButton } from '../features/gamification/SaBanQuizButton'
 import {
     DIFFICULTY_LABEL,
     TRACK_LABEL,
@@ -575,6 +576,9 @@ function NextStepCta({ quest, step, onOpenArtifact }: { quest: QuestV2Card; step
             </span>
         </>
     )
+    if (action.kind === 'sa-ban-quiz') {
+        return <SaBanQuizButton locationId={action.locationId} className={className}>{content}</SaBanQuizButton>
+    }
     if (action.kind === 'link') {
         return (
             <Link to={action.href} className={className}>

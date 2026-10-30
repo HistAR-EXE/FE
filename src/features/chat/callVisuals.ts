@@ -1,80 +1,42 @@
-const ARTIFACT = '/artifacts/cu-chi'
+import { CU_CHI_LOCATION_ID } from '../../shared/config/constants'
+import { XUA_NAY, XUA_NAY_PHOTO_CREDIT, type XuaNaySpotId } from '../time-portal/xuaNay/xuaNayData'
 
-type ImageRule = { phrase: string; files: string[] }
+export type CallIllustration = { src: string; alt: string; caption: string; credit: string }
 
-const RULES: ImageRule[] = [
-  { phrase: 'tia tản', files: ['cc-04'] },
-  { phrase: 'tản khói', files: ['cc-04'] },
-  { phrase: 'rãnh khói', files: ['cc-02', 'cc-05'] },
-  { phrase: 'hoàng cầm', files: ['cc-01', 'cc-06'] },
-  { phrase: 'hầm khói', files: ['cc-03'] },
-  { phrase: 'lá phủ', files: ['cc-07'] },
-  { phrase: 'miệng hầm', files: ['cc-07', 'cc-10'] },
-  { phrase: 'ngụy trang', files: ['cc-07', 'cc-10'] },
-  { phrase: 'đất phủ', files: ['cc-09'] },
-  { phrase: 'cửa hầm', files: ['cc-12'] },
-  { phrase: 'miệng giếng', files: ['cc-19', 'cc-20', 'cc-22', 'cc-24'] },
-  { phrase: 'tầng một', files: ['cc-13'] },
-  { phrase: 'tầng 1', files: ['cc-13'] },
-  { phrase: 'tầng hai', files: ['cc-14'] },
-  { phrase: 'tầng 2', files: ['cc-14'] },
-  { phrase: 'tầng ba', files: ['cc-15'] },
-  { phrase: 'tầng 3', files: ['cc-15'] },
-  { phrase: 'lối tầng', files: ['cc-16'] },
-  { phrase: 'sa bàn', files: ['cc-17'] },
-  { phrase: 'hướng đào', files: ['cc-21'] },
-  { phrase: 'im lặng', files: ['cc-23'] },
-  { phrase: 'bếp', files: ['cc-01', 'cc-06'] },
-  { phrase: 'nồi', files: ['cc-01'] },
-  { phrase: 'rãnh', files: ['cc-02', 'cc-05'] },
-  { phrase: 'nắp', files: ['cc-08', 'cc-11'] },
-  { phrase: 'giếng', files: ['cc-19', 'cc-20', 'cc-22', 'cc-24'] },
-  { phrase: 'tầng', files: ['cc-16', 'cc-18'] },
-  { phrase: 'đào', files: ['cc-21'] },
-  { phrase: 'gác', files: ['cc-23'] },
-].sort((a, b) => b.phrase.length - a.phrase.length)
-
-const DEFAULT_FILES = ['cc-18', 'cc-08', 'cc-06', 'cc-13']
-const MAX_IMAGES = 8
-
-function src(file: string): string {
-  return `${ARTIFACT}/${file}.png`
+// Identified present-day photos from Xưa & Nay only. Generated cc-*.png diagrams
+// and generic keyword/default images must never be substituted for evidence.
+const TOPICS: { spot: XuaNaySpotId; phrases: string[] }[] = [
+  { spot: 'bep-hoang-cam', phrases: ['bep hoang cam'] },
+  { spot: 'mieng-ham', phrases: ['mieng ham', 'nap ham'] },
+  { spot: 'phong-hop', phrases: ['phong hop duoi long dat', 'phong hop ngam', 'phong hop'] },
+  { spot: 'thong-hoi', phrases: ['lo thong hoi', 'u moi thong hoi'] },
+]
+const PHOTOS: CallIllustration[] = TOPICS.map(({ spot }) => ({
+  src: XUA_NAY[spot].nay.src,
+  alt: `Ảnh hiện trạng ${XUA_NAY[spot].name.toLocaleLowerCase('vi')} tại Củ Chi`,
+  caption: `${XUA_NAY[spot].name} · Hiện trạng tại khu di tích`,
+  credit: XUA_NAY_PHOTO_CREDIT,
+}))
+function normalized(text: string): string {
+  return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D')
+    .toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
 }
-
-function isTokenChar(char: string): boolean {
-  return /[\p{L}\p{N}]/u.test(char)
+function containsPhrase(text: string, phrase: string): boolean {
+  return ` ${text} `.includes(` ${phrase} `)
 }
-
-/** Ảnh theo thứ tự cụm xuất hiện trong câu trả lời. Giữ dấu, cụm dài khớp trước. */
-export function imagesForReply(reply: string): string[] {
-  const text = reply.normalize('NFC').toLocaleLowerCase('vi')
-  const claimed: Array<{ start: number; end: number; files: string[] }> = []
-
-  for (const rule of RULES) {
-    let from = 0
-    while (from < text.length) {
-      const at = text.indexOf(rule.phrase, from)
-      if (at < 0) break
-      const end = at + rule.phrase.length
-      const before = at === 0 ? '' : text[at - 1] ?? ''
-      const after = text[end] ?? ''
-      const overlaps = claimed.some((span) => at < span.end && end > span.start)
-      if (!isTokenChar(before) && !isTokenChar(after) && !overlaps) {
-        claimed.push({ start: at, end, files: rule.files })
-      }
-      from = end
-    }
-  }
-
-  claimed.sort((a, b) => a.start - b.start)
-  const urls: string[] = []
-  for (const hit of claimed) {
-    for (const file of hit.files) {
-      const url = src(file)
-      if (!urls.includes(url)) urls.push(url)
-      if (urls.length >= MAX_IMAGES) return urls
-    }
-  }
-  if (urls.length === 0) return DEFAULT_FILES.map(src)
-  return urls
+export function callIllustrationForSrc(src: string): CallIllustration | undefined {
+  return PHOTOS.find(photo => photo.src === src)
+}
+/** No image is safer than a plausible but unrelated illustration. */
+export function imagesForReply(reply: string, context?: { question: string; locationId?: string | null }): string[] {
+  if (!context || context.locationId !== CU_CHI_LOCATION_ID) return []
+  const question = normalized(context.question)
+  const answer = normalized(reply)
+  if (/khong (can|hien thi|dung|dua|cho).*?(anh|hinh)|dung.*?(anh|hinh)/.test(question)) return []
+  if (/\b(tab|tinh nang|huy hieu|nhiem vu|bao tang|premium|cong thoi gian|1948|1968|1975)\b/.test(question)) return []
+  if (/chua (co|du) (thong tin|tu lieu)|khong (co|du) tu lieu|khong the xac (minh|dinh)|chua xac minh/.test(answer)) return []
+  const matches = TOPICS.filter(topic => topic.phrases.some(phrase => containsPhrase(question, phrase))
+    && topic.phrases.some(phrase => containsPhrase(answer, phrase)))
+  if (matches.length !== 1) return []
+  return [XUA_NAY[matches[0].spot].nay.src]
 }

@@ -1,6 +1,5 @@
 // src/pages/ChatPage.tsx
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
@@ -14,9 +13,7 @@ import { analyticsApi } from '../features/analytics/api'
 import { buildChatTimeline } from '../features/chat/chatTimeline'
 import type { MascotMode } from '../features/chat/MascotAvatar'
 import { MascotCallOverlay } from '../features/chat/MascotCallOverlay'
-import { answerCardLines } from '../features/chat/callCopy'
-import { imagesForReply } from '../features/chat/callVisuals'
-import { browserVoiceCapabilities, listenForUtterance, speakReply, startDictation, stopActiveSpeech, waitForSpeechToSettle, type VoicePhase } from '../features/chat/voice'
+import { browserVoiceCapabilities, listenForUtterance, prepareSpeechPlayback, speakReply, startDictation, stopActiveListening, stopActiveSpeech, waitForSpeechToSettle, type VoicePhase } from '../features/chat/voice'
 import { locationsApi, type Character } from '../features/locations/api'
 import { gamificationApi } from '../features/gamification/api'
 import { questRecordFromSearch } from '../features/gamification/questEngagement'
@@ -25,7 +22,8 @@ import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
 import { ApiError } from '../shared/api/contracts'
 import { ChatMessageContent } from '../shared/ui/ChatMessageContent'
 import { useAuth } from '../shared/auth/useAuth'
-import { shouldShowB2CPaywall } from '../shared/access/contentAccess'
+import { hasPremiumAccess, shouldShowB2CPaywall } from '../shared/access/contentAccess'
+import { PremiumContentModal } from '../components/monetization/PremiumContentModal'
 import { QuotaExceededModal } from '../components/monetization/QuotaExceededModal'
 import { OrgQuotaModal } from '../components/monetization/OrgQuotaModal'
 import { billingApi } from '../features/billing/api'
@@ -100,8 +98,7 @@ function resolveChatCharacterId(
 }
 
 export function ChatPage() {
-    const { i18n } = useTranslation()
-    const voiceLocale = (['vi', 'en', 'ko', 'zh-CN'].includes(i18n.language) ? i18n.language : 'vi') as import('../shared/i18n').AppLocale
+    const voiceLocale = 'vi' as const
     const { characterId: routeCharacterId } = useParams<{ characterId?: string }>()
     const [params, setSearchParams] = useSearchParams()
     const routerLocation = useLocation()
@@ -162,10 +159,9 @@ export function ChatPage() {
     const [voicePhase, setVoicePhase] = useState<VoicePhase>('idle')
     const [dictating, setDictating] = useState(false)
     const [callOpen, setCallOpen] = useState(false)
+    const [callPremiumModal, setCallPremiumModal] = useState(false)
+    const canCall = hasPremiumAccess(user)
     const [callMuted, setCallMuted] = useState(false)
-    const [heardText, setHeardText] = useState('')
-    const [answerLines, setAnswerLines] = useState<string[]>([])
-    const [callImages, setCallImages] = useState<string[]>([])
     const [hearing, setHearing] = useState(false)
     const [heardAudio, setHeardAudio] = useState(false)
 
@@ -175,6 +171,7 @@ export function ChatPage() {
 
     const dictateStopRef = useRef<(() => void) | null>(null)
     const callRunRef = useRef(0)
+    const callRequestAbortRef = useRef<AbortController | null>(null)
     const callMutedRef = useRef(false)
     const releaseAnswerRef = useRef<(() => void) | null>(null)
     const skipAnswerRef = useRef(false)
@@ -196,6 +193,13 @@ export function ChatPage() {
     useEffect(() => {
         conversationIdRef.current = conversationId
     }, [conversationId])
+
+    useEffect(() => () => {
+        callRunRef.current += 1
+        callRequestAbortRef.current?.abort()
+        stopActiveSpeech()
+        releaseAnswerRef.current?.()
+    }, [])
 
     useEffect(() => {
         if (!quotaModalOpen || !shouldShowB2CPaywall(user)) return
@@ -438,6 +442,12 @@ export function ChatPage() {
         chatRequestAbortRef.current?.abort()
         chatRequestAbortRef.current = null
         callRunRef.current += 1
+        callRequestAbortRef.current?.abort()
+        releaseAnswerRef.current?.()
+        setCallOpen(false)
+        setVoicePhase('idle')
+        setHearing(false)
+        setHeardAudio(false)
         stopActiveSpeech()
         if (!resolvedCharacterId) {
             setConversationId(null)
@@ -824,11 +834,10 @@ export function ChatPage() {
 
     const hangUp = () => {
         callRunRef.current += 1
+        stopActiveListening()
+        callRequestAbortRef.current?.abort()
         callMutedRef.current = false
         stopActiveSpeech()
-        setHeardText('')
-        setAnswerLines([])
-        setCallImages([])
         setHearing(false)
         setHeardAudio(false)
         answerEpochRef.current += 1
@@ -840,7 +849,11 @@ export function ChatPage() {
     }
 
     const beginCall = () => {
-        if (!resolvedCharacterId) {
+        if (!canCall) {
+            setCallPremiumModal(true)
+            return
+        }
+        if (!resolvedCharacterId || !chatContextReady) {
             showToast({
                 message: locationId
                     ? 'Chưa tải được nhân vật cho địa điểm này.'
@@ -850,14 +863,21 @@ export function ChatPage() {
             return
         }
         stopDictation()
+        stopActiveListening()
+        prepareSpeechPlayback()
+        stopActiveSpeech()
+        callRequestAbortRef.current?.abort()
+        releaseAnswerRef.current?.()
+        answerEpochRef.current += 1
         const runId = callRunRef.current + 1
         callRunRef.current = runId
         callMutedRef.current = false
         setCallMuted(false)
+        setHearing(false)
+        setHeardAudio(false)
+        setVoicePhase('recording')
+        replayAnswerRef.current = () => undefined
         setCallOpen(true)
-        setHeardText('')
-        setAnswerLines([])
-        setCallImages([])
         const targetId = resolvedCharacterId
         const personaKey = activePersonaKey
 
@@ -869,13 +889,10 @@ export function ChatPage() {
                     continue
                 }
                 setVoicePhase('recording')
-                setAnswerLines([])
-                setCallImages([])
-                setHeardText('')
                 let said: string
                 try {
                     said = await listenForUtterance(
-                        (text) => setHeardText(text),
+                        () => undefined,
                         () => callRunRef.current !== runId || callMutedRef.current,
                         voiceLocale,
                     )
@@ -899,6 +916,8 @@ export function ChatPage() {
                 }
                 try {
                     setVoicePhase('chat')
+                    const controller = new AbortController()
+                    callRequestAbortRef.current = controller
                     const reply = await chatApi.send({
                         characterId: targetId,
                         message: said,
@@ -906,33 +925,34 @@ export function ChatPage() {
                         stationCode,
                         siteCode,
                         pageContext,
+                        signal: controller.signal,
                     })
                     if (callRunRef.current !== runId) return
                     conversationIdRef.current = reply.conversationId
                     appendExchange(said, reply.reply, reply.conversationId, normalizeChatSources(reply.sources))
-                    setHeardText(said)
-                    setAnswerLines(answerCardLines(reply.reply))
-                    setCallImages(imagesForReply(reply.reply))
                     setHeardAudio(false)
                     setHearing(false)
                     skipAnswerRef.current = false
                     const epoch = answerEpochRef.current
-                    setVoicePhase('playing')
+                    setVoicePhase('tts')
                     const stillThisAnswer = () =>
                         callRunRef.current === runId && answerEpochRef.current === epoch
                     const playThis = () => {
                         if (!stillThisAnswer()) return
+                        prepareSpeechPlayback()
                         stopActiveSpeech()
-                        setVoicePhase('playing')
+                        setVoicePhase('tts')
                         setHearing(false)
                         void speakReply(reply.reply, personaKey, {
                             onAudible: () => {
                                 if (!stillThisAnswer()) return
                                 setHearing(true)
+                                setVoicePhase('playing')
                                 setHeardAudio(true)
                             },
                         }, voiceLocale).then((end) => {
                             if (!stillThisAnswer() || end === 'stopped') return
+                            if (end === 'forbidden') { hangUp(); setCallPremiumModal(true); return }
                             setHearing(false)
                             setHeardAudio(end === 'played')
                             if (end === 'silent') showToast({ message: 'Không thể phát giọng nói. Kiểm tra loa thiết bị.', type: 'error' })
@@ -944,10 +964,12 @@ export function ChatPage() {
                         onAudible: () => {
                             if (!stillThisAnswer()) return
                             setHearing(true)
+                            setVoicePhase('playing')
                             setHeardAudio(true)
                         },
                     }, voiceLocale)
                     if (callRunRef.current !== runId) return
+                    if (result === 'forbidden') { hangUp(); setCallPremiumModal(true); return }
                     if (stillThisAnswer() && result !== 'stopped') {
                         setHearing(false)
                         setHeardAudio(result === 'played')
@@ -970,8 +992,6 @@ export function ChatPage() {
                     if (callRunRef.current !== runId) return
                     await waitForSpeechToSettle()
                     if (callRunRef.current !== runId) return
-                    setAnswerLines([])
-                    setCallImages([])
                     setHearing(false)
                     setHeardAudio(false)
                 } catch (error) {
@@ -981,19 +1001,26 @@ export function ChatPage() {
             }
             if (callRunRef.current === runId) setVoicePhase('idle')
         }
-        void loop()
+        window.setTimeout(() => { if (callRunRef.current === runId) void loop() }, 200)
     }
     useEffect(() => {
         beginCallRef.current = beginCall
     })
 
     useEffect(() => {
-        if (params.get('call') !== '1') return
+        if (callOpen && !canCall) {
+            hangUp()
+            setCallPremiumModal(true)
+        }
+    }, [callOpen, canCall])
+
+    useEffect(() => {
+        if (params.get('call') !== '1' || !resolvedCharacterId || !chatContextReady) return
         beginCallRef.current()
         const next = new URLSearchParams(params)
         next.delete('call')
         setSearchParams(next, { replace: true })
-    }, [params, setSearchParams])
+    }, [params, setSearchParams, resolvedCharacterId, chatContextReady])
 
     const voiceHint = VOICE_STATUS[voicePhase]
     const showTypingIndicator = sending && messages.at(-1)?.role === 'user'
@@ -1195,11 +1222,13 @@ export function ChatPage() {
                                 <button
                                     type="button"
                                     onClick={() => beginCall()}
-                                    disabled={voiceBusy || sending}
-                                    className="h-9 w-9 flex items-center justify-center rounded-full bg-[#FDC908] text-[#0F1B33] hover:bg-[#ffd633] hover:shadow-md transition-all cursor-pointer disabled:opacity-40"
-                                    title="Gọi Video cùng Chrono"
+                                    disabled={voiceBusy || sending || !chatContextReady}
+                                    className={`relative h-9 w-9 flex items-center justify-center rounded-full transition-all cursor-pointer disabled:opacity-40 ${canCall ? 'bg-[#FDC908] text-[#0F1B33] hover:bg-[#ffd633] hover:shadow-md' : 'border border-slate-200 bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
+                                    title={canCall ? 'Gọi Video cùng Chrono' : 'Gọi Video cùng Chrono · Premium'}
+                                    aria-label={canCall ? 'Gọi Video cùng Chrono' : 'Gọi Video cùng Chrono — cần Premium'}
                                 >
                                     <MaterialIcon name="videocam" className="text-[18px]" />
+                                    {!canCall && <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#FDC908] text-[#0F1B33]" aria-hidden><MaterialIcon name="lock" className="text-[10px]" /></span>}
                                 </button>
                             )}
                         </div>
@@ -1505,6 +1534,8 @@ export function ChatPage() {
                 </section>
             </main>
 
+            <PremiumContentModal open={callPremiumModal} onClose={() => setCallPremiumModal(false)}
+                title="Gọi video cùng Chrono · Premium" authenticated={isAuthenticated} />
             <QuotaExceededModal
                 open={quotaModalOpen && shouldShowB2CPaywall(user)}
                 onClose={dismissQuotaModal}
@@ -1527,27 +1558,24 @@ export function ChatPage() {
                 mode={mascotMode}
                 status={
                     hearing
-                        ? 'Chrono đang nói. Nút xanh là tiếng đang phát.'
+                        ? 'Chrono đang kể cho bạn nghe.'
                         : callMuted
                             ? 'Mic đang tắt. Bấm Mic để nói tiếp.'
                             : voicePhase === 'playing' || voicePhase === 'tts'
-                                ? 'Đang chuẩn bị tiếng. Nếu im, bấm Nghe.'
+                                ? 'Chrono đang chuẩn bị giọng đọc tiếng Việt…'
                                 : voicePhase === 'answered'
                                     ? heardAudio
                                         ? 'Đã nói xong. Bấm Nghe lại, hoặc Tiếp tục để hỏi câu mới.'
-                                        : 'Câu trả lời đã hiện. Bấm nút Nghe để nghe Chrono.'
+                                        : 'Chưa phát được tiếng. Bấm Nghe để thử lại, không cần tải lại trang.'
                                     : voicePhase === 'chat' || voicePhase === 'stt'
                                         ? 'Chrono đang soạn câu trả lời.'
                                         : 'Mic đang mở. Hãy nói.'
                 }
                 recording={voicePhase === 'recording'}
-                heardText={heardText}
-                answerLines={answerLines}
-                images={callImages}
-                speaking={voicePhase === 'playing' || voicePhase === 'answered'}
+                speaking={voicePhase === 'tts' || voicePhase === 'playing' || voicePhase === 'answered'}
                 hearing={hearing}
                 heardAudio={heardAudio}
-                analyser={null}
+                preparingAudio={voicePhase === 'tts'}
                 muted={callMuted}
                 onToggleMute={() => {
                     const next = !callMutedRef.current
@@ -1555,6 +1583,7 @@ export function ChatPage() {
                     setCallMuted(next)
                     if (next) stopActiveSpeech()
                 }}
+                onRestartQuestion={() => beginCallRef.current()}
                 onHangUp={hangUp}
                 onHear={() => replayAnswerRef.current()}
                 onContinue={() => {
