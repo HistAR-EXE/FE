@@ -57,8 +57,11 @@ test('mobile share exports 9:16, requires explicit share confirmation, and prese
   await expect.poll(() => writes.filter((path) => path.endsWith('/record-share')).length).toBe(1)
   await page.getByRole('button', { name: 'Sao chép lời nhắn' }).click()
   expect(await page.evaluate(() => (window as typeof window & { __copied?: string }).__copied)).toBe('Heritage fixture')
-  await page.getByRole('button', { name: 'Sao chép liên kết ảnh', exact: true }).click()
-  expect(await page.evaluate(() => (window as typeof window & { __copied?: string }).__copied)).toBe(new URL('/tests/fixtures/portrait-single-face.jpg', page.url()).href)
+  // Private creations are shared as authenticated image files, never storage URLs.
+  await expect(page.getByRole('button', { name: 'Sao chép liên kết ảnh', exact: true })).toHaveCount(0)
+  await expect(page.getByRole('img', { name: 'Ảnh đã lưu của bạn' })).toHaveAttribute('src', /^blob:/)
+  await expect.poll(() => page.getByRole('img', { name: 'Ảnh đã lưu của bạn' }).evaluate(image => (image as HTMLImageElement).naturalWidth)).toBeGreaterThan(0)
+  expect(writes.filter((path) => path.endsWith('/record-share'))).toHaveLength(1)
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
   await page.setViewportSize({ width: 1440, height: 900 })
   await expect(page.getByRole('img', { name: 'Ảnh đã lưu của bạn' })).toHaveCSS('object-fit', 'contain')
