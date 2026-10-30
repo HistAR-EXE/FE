@@ -1,7 +1,8 @@
+import { ReadableLocationRoutes } from '../shared/router/ReadableLocationRoutes'
 import { TeacherWorkspaceLayout } from '../features/org/TeacherWorkspace'
 // src/routes/AppRoutes.tsx
 import { lazy, Suspense } from 'react'
-import { BrowserRouter, Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, useLocation, useParams } from 'react-router-dom'
 import { AppErrorBoundary, SectionErrorBoundary } from '../components/ui/ErrorBoundary'
 import { LoadingOverlay } from '../components/ui/Spinner'
 import { CharacterExplorePage } from '../pages/CharacterExplorePage'
@@ -13,6 +14,7 @@ import { OnboardingPage } from '../pages/OnboardingPage'
 import { PhotoFramePage } from '../pages/PhotoFramePage'
 import { ProfilePage } from '../pages/ProfilePage'
 import { SettingsPage } from '../pages/SettingsPage'
+import { PaymentHistoryPage } from '../pages/PaymentHistoryPage'
 import { ScanPage } from '../pages/ScanPage'
 import { SharePage } from '../pages/SharePage'
 import { JoinPage } from '../pages/JoinPage'
@@ -109,7 +111,7 @@ export function AppRoutes() {
                 {/* Trong Router: màn "Hoàn thành nhiệm vụ" dùng useNavigate. */}
                 <UserProgressProvider>
                 <Suspense fallback={<RouteLoadingFallback />}>
-                    <Routes>
+                    <ReadableLocationRoutes>
                         {/* Public — guest landing only */}
                         <Route path="/" element={<OnboardingPage />} />
                         <Route path="/about" element={<AboutPage />} />
@@ -117,6 +119,7 @@ export function AppRoutes() {
                         <Route path="/time-portal/:locationId/ar" element={<LegacyTimePortalArRedirect />} />
                         <Route path="/heritage-portfolio" element={<HeritagePortfolioPage />} />
                         <Route path="/pricing" element={<PricingPage />} />
+                        <Route path="/checkout/b2g" element={<CheckoutB2B2CPage />} />
                         <Route path="/checkout/b2b2c" element={<CheckoutB2B2CPage />} />
 
                         {/* Auth — guest only */}
@@ -144,6 +147,7 @@ export function AppRoutes() {
                         <Route element={<ProtectedRoute />}>
                             <Route path="/verify-email/pending" element={<VerifyEmailPendingPage />} />
                             <Route path="/settings" element={<SettingsPage />} />
+                            <Route path="/settings/billing" element={<PaymentHistoryPage />} />
                             <Route path="/checkout/b2c" element={<CheckoutB2CPage />} />
                             <Route path="/checkout/b2b" element={<CheckoutB2BPage />} />
 
@@ -208,7 +212,7 @@ export function AppRoutes() {
 
                         <Route path="/404" element={<NotFoundPage />} />
                         <Route path="*" element={<NotFoundPage />} />
-                    </Routes>
+                    </ReadableLocationRoutes>
                 </Suspense>
                 </UserProgressProvider>
             </VisitSessionProvider>

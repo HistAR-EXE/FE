@@ -86,7 +86,7 @@ export function CrossSegmentOverview() {
     )
     const b2bPlanRevenue = b2bPlans.reduce((s: number, p: AdminPlanRevenue) => s + p.revenueVnd, 0)
 
-    // B2B2C pipeline
+    // B2G pipeline
     const inquiryByStatus = inquiries.reduce(
       (acc: Record<string, number>, i: AdminB2b2cInquiry) => {
         const s = i.status.toUpperCase()
@@ -169,7 +169,7 @@ export function CrossSegmentOverview() {
     },
     {
       key: 'b2b2c',
-      label: 'Đối tác di sản',
+      label: 'B2G · Đối tác di sản',
       sublabel: 'Tư vấn số hóa di sản',
       icon: 'account_balance',
       color: 'text-tertiary',
@@ -250,7 +250,7 @@ export function CrossSegmentOverview() {
         ))}
       </div>
 
-      {/* B2B2C Pipeline funnel */}
+      {/* B2G Pipeline funnel */}
       {segments.b2b2c.total > 0 && (
         <div className="dashboard-pipeline rounded-xl bg-surface-container-low p-space-md shadow-sm">
           <div className="mb-3 flex items-center gap-2">

@@ -2,3 +2,53 @@
 @media(max-width:1150px){.st-layout{grid-template-columns:1fr}.st-nav{position:static;grid-template-columns:repeat(3,minmax(0,1fr))}.st-nav button .material-symbols-outlined:last-child{display:none}.st-summary{flex-wrap:wrap}.st-nav button{padding:12px;font-size:12px}}
 @media(max-width:650px){.st-summary{padding:20px;gap:20px}.st-summary .pf-identity{flex-direction:row;align-items:center;gap:15px}.st-summary .pf-avatar{width:65px;height:65px;border-radius:20px;flex-shrink:0}.st-summary h2{font-size:20px}.st-summary .pf-identity>div:last-child{min-width:0}.st-summary-meta{width:100%;max-width:none;border-top:1px solid #d1e1f6;padding-top:18px}.st-nav{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.st-nav button{gap:7px;min-height:58px;padding:10px 8px;line-height:1.4}.st-nav button .material-symbols-outlined{font-size:20px}.st-nav button:last-child{grid-column:1/-1}.st-layout{gap:22px}.st-join-form>div{flex-direction:column}.st-history li{flex-wrap:wrap}.st-history li div:last-child{text-align:left}.st-panel .pf-card{padding:20px}.st-panel .pf-form{padding:14px}.st-dialog{padding:24px}.st-summary p{font-size:12px}}
 @media(prefers-reduced-motion:reduce){.st-toggle input::before{transition:none}}
+/* TimeLens settings: a consistent light account workspace. */
+.settings-workspace{--st-ink:#10233f;--st-muted:#526782;--st-line:#dce7f5;font-family:'Be Vietnam Pro',sans-serif;background:#f4f8ff!important;color:var(--st-ink)}
+.settings-workspace .st-main{max-width:1440px;padding-top:32px;padding-bottom:72px}
+.settings-workspace .pf-page-heading{padding:28px 32px;border-radius:24px;border:1px solid var(--st-line);box-shadow:0 8px 28px #173c7106;margin-bottom:24px;background:#fff}
+.settings-workspace .pf-page-heading h1{font-size:clamp(30px,3.5vw,44px);line-height:1.2;letter-spacing:-.035em;font-weight:850;color:var(--st-ink);margin-top:14px}
+.settings-workspace .pf-page-heading p{font-size:14px;line-height:1.75;color:var(--st-muted)}
+.settings-workspace .st-summary{position:relative;padding:26px 30px;border-radius:24px;background:linear-gradient(110deg,#fff 30%,#eef5ff);border:1px solid #c9ddf8;box-shadow:0 8px 28px #173c7107;margin-bottom:28px;overflow:hidden}
+.settings-workspace .st-summary::before{content:'';position:absolute;inset:22px auto 22px 0;width:4px;background:#0075ff;border-radius:0 4px 4px 0}
+.settings-workspace .st-summary .pf-identity{min-width:0;gap:22px}
+.settings-workspace .st-summary .pf-identity h2{font-family:Montserrat,'Be Vietnam Pro',sans-serif;font-size:clamp(21px,2.2vw,29px);font-weight:850;line-height:1.4;letter-spacing:-.025em;color:#10233f!important;text-shadow:none!important;margin:0 0 5px;overflow-wrap:anywhere}
+.settings-workspace .st-summary .pf-identity p{font-size:14px;color:#526782;line-height:1.7;overflow-wrap:anywhere;margin:0 0 10px}
+.settings-workspace .st-summary .pf-avatar{width:88px;height:88px;border:3px solid #ffce18;border-radius:24px;box-shadow:0 7px 18px #173c7118;flex-shrink:0}
+.settings-workspace .st-summary-meta{border-left:1px solid #cadcf3;padding:4px 0 4px 28px;max-width:320px;gap:9px;flex-shrink:0}
+.settings-workspace .st-summary-meta strong{font-size:24px;color:#10233f;line-height:1.3;font-weight:850}
+.settings-workspace .st-summary-meta small{font-size:12px;line-height:1.7;color:#526782}
+.settings-workspace .pf-kicker{font-size:10px;letter-spacing:.11em;padding:7px 11px;font-weight:850;background:#eaf3ff;border-color:#c8ddfb;color:#0063d5}
+.settings-workspace .pf-pill{font-size:11px;font-weight:750;padding:7px 11px;color:#425a76;background:#f4f7fc;border-color:#cfddec}
+.settings-workspace .pf-pill.green{color:#11613e;background:#e8f9ef;border-color:#abd9be}
+.settings-workspace .st-layout{grid-template-columns:240px minmax(0,1fr);gap:26px}
+.settings-workspace .st-nav{padding:10px;background:#fff;border:1px solid var(--st-line);border-radius:20px;box-shadow:0 7px 22px #173c7105;gap:5px}
+.settings-workspace .st-nav button{font-size:12px;line-height:1.6;color:#526782;padding:14px 12px;min-height:58px;border-radius:12px;font-weight:750}
+.settings-workspace .st-nav button[aria-selected=true]{background:#eaf3ff;color:#0063d5;border-color:#bed7fb;box-shadow:none}
+.settings-workspace .st-nav button[aria-selected=true] .material-symbols-outlined:first-child{color:#0063d5}
+.settings-workspace .st-nav button:hover{background:#f0f6ff}
+.settings-workspace .pf-card{border:1px solid var(--st-line);border-radius:24px;padding:28px;box-shadow:0 8px 28px #173c7106;background:#fff}
+.settings-workspace .pf-card h2{font-family:Montserrat,'Be Vietnam Pro',sans-serif;font-size:23px;line-height:1.4;font-weight:850;color:#10233f;letter-spacing:-.025em}
+.settings-workspace .pf-card>p{font-size:13px;line-height:1.85;color:#526782;margin-top:10px;max-width:760px}
+.settings-workspace .pf-form{padding:24px;background:#f8faff!important;border:1px solid #d9e5f5!important;border-radius:18px}
+.settings-workspace .pf-form h2{font-size:18px}
+.settings-workspace .pf-form label{font-size:12px;font-weight:750;margin:12px 0}
+.settings-workspace .pf-form label>span{color:#405772}
+.settings-workspace .pf-form input,.settings-workspace .pf-form select,.settings-workspace .pf-form textarea{font-family:inherit;font-size:14px;font-weight:500;background:#fff;color:#10233f;border:1px solid #bdcee4;border-radius:11px;min-height:46px;padding:11px 14px;box-shadow:none;color-scheme:light}
+.settings-workspace .pf-form input:focus,.settings-workspace .pf-form select:focus,.settings-workspace .pf-form textarea:focus{border-color:#0075ff;box-shadow:0 0 0 3px #0075ff15;outline:none}
+.settings-workspace .pf-detail-fields legend,.settings-workspace .pf-avatar-editor legend{font-size:14px;color:#173451;font-weight:800}
+.settings-workspace .pf-detail-fields{gap:0 20px}
+.settings-workspace .pf-detail-fields legend small{font-size:11px;color:#647893}
+.settings-workspace .pf-button,.settings-workspace .pf-form button[type=submit]{font-size:12px;min-height:44px;padding:12px 19px;border-radius:11px;box-shadow:none;transform:none;font-weight:800}
+.settings-workspace .pf-button:hover,.settings-workspace .pf-form button[type=submit]:hover{transform:none;box-shadow:0 5px 14px #0075ff18}
+.settings-workspace .pf-footnote{font-size:11px;line-height:1.85;color:#5f748d}
+.settings-workspace .pf-fact dt{font-size:12px;color:#61758f}
+.settings-workspace .pf-fact dd{font-size:14px;color:#173451}
+.settings-workspace .st-panel :focus-visible,.settings-workspace .st-nav :focus-visible{outline:3px solid #0075ff;outline-offset:3px}
+@media(max-width:1000px){.settings-workspace .st-layout{grid-template-columns:205px minmax(0,1fr);gap:18px}.settings-workspace .st-summary-meta{max-width:250px;padding-left:20px}.settings-workspace .pf-card{padding:23px}}
+@media(max-width:760px){.settings-workspace .st-summary{flex-wrap:wrap}.settings-workspace .st-summary-meta{max-width:none;width:100%;border-left:0;border-top:1px solid #d6e3f3;padding:18px 0 0}.settings-workspace .st-layout{grid-template-columns:minmax(0,1fr)}.settings-workspace .st-nav{position:static;display:flex;overflow-x:auto;gap:6px;padding:8px;scrollbar-width:thin}.settings-workspace .st-nav button{flex:0 0 auto;min-height:44px;white-space:nowrap;padding:10px 12px}.settings-workspace .st-nav button .material-symbols-outlined:last-child{display:none}.settings-workspace .pf-page-heading{padding:23px}.settings-workspace .st-main{padding-top:20px}.settings-workspace .pf-form{padding:18px}}
+@media(max-width:480px){.settings-workspace .st-summary{padding:22px}.settings-workspace .st-summary .pf-avatar{width:68px;height:68px;border-radius:19px}.settings-workspace .st-summary .pf-identity{gap:14px}.settings-workspace .st-summary .pf-identity p{font-size:11px}.settings-workspace .st-summary .pf-identity h2{font-size:20px}.settings-workspace .pf-card{padding:20px}.settings-workspace .pf-card h2{font-size:21px}.settings-workspace .pf-form h2{font-size:17px}.settings-workspace .pf-page-heading .pf-button{margin-top:12px}}
+/* Keep the avatar square: inherited min-width must not stretch the smaller settings size. */
+.settings-workspace .st-summary .pf-avatar{min-width:0;aspect-ratio:1;box-sizing:border-box;background:#fff8e5;padding:3px}
+.settings-workspace .st-summary .pf-avatar img{display:block;width:100%;height:100%;min-width:0;min-height:0;object-fit:contain;object-position:center;border-radius:18px}
+.settings-workspace .pf-avatar-preview{padding:4px;box-sizing:border-box;background:#fff8e5}
+.settings-workspace .pf-avatar-preview img{object-fit:contain;object-position:center;min-width:0;min-height:0}

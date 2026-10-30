@@ -55,6 +55,7 @@ dist-ssr
 !/tests/ui/field-trip-report.spec.ts
 !/tests/ui/heritage-studio.spec.ts
 !/tests/ui/profile-creations-delete.spec.ts
+!/tests/ui/photo-frame-editor.spec.ts
 !/tests/e2e/heritage-studio-privacy.spec.ts
 !/tests/e2e/heritage-studio-mobile.spec.ts
 !/tests/fullstack/

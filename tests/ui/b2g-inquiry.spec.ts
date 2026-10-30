@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 test('guest can send a free-text pilot-site consultation request', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('histar_consent_v1', JSON.stringify({ analytics: false, camera: false, gps: false })))
   let payload: Record<string, unknown> | null = null
   await page.route('**/api/billing/b2b2c-inquiry', async (route) => {
     payload = route.request().postDataJSON() as Record<string, unknown>

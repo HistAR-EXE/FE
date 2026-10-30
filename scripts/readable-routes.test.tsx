@@ -1,0 +1,4 @@
+import React from 'react';import {renderToString} from 'react-dom/server';import {MemoryRouter,Route,useParams,useLocation} from 'react-router-dom';import {ReadableLocationRoutes} from '../src/shared/router/ReadableLocationRoutes';import assert from 'node:assert/strict';
+const id='11111111-1111-1111-1111-111111111111';
+function Probe(){return React.createElement('span',null,JSON.stringify({params:useParams(),search:useLocation().search}))}
+for(const path of ['/tour/360/dia-dao-cu-chi','/diorama/dia-dao-cu-chi','/chat?locationId=dia-dao-cu-chi&persona=chrono']){const html=renderToString(React.createElement(MemoryRouter,{initialEntries:[path]},React.createElement(ReadableLocationRoutes,null,React.createElement(Route,{path:'*',element:React.createElement(Probe)}))));assert(html.includes(id),path);console.log('PASS slug resolves to API UUID:',path)}

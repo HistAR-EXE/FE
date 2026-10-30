@@ -7,6 +7,41 @@ const profile = {
   totalPoints: 0, level: 1, city: null, activeVisitSites: [],
 }
 
+test('saved creations use authenticated image bytes and retry a failed preview', async ({ page }) => {
+  await setup(page)
+  let requests = 0
+  await page.route('**/api/user-creations/creation-1/image', route => {
+    requests++
+    expect(route.request().headers().authorization).toBe('Bearer fixture-token')
+    if (requests === 1) return route.fulfill({ status: 503, body: 'unavailable' })
+    return route.fulfill({ contentType: 'image/png', body: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a00sAAAAASUVORK5CYII=', 'base64') })
+  })
+  await page.goto('/profile')
+  await expect(page.getByRole('button', { name: 'Thử tải lại ảnh' })).toBeVisible()
+  await page.getByRole('button', { name: 'Thử tải lại ảnh' }).click()
+  const image = page.locator('.pf-creation img')
+  await expect(image).toHaveAttribute('src', /^blob:/)
+  await expect.poll(() => image.evaluate(node => (node as HTMLImageElement).naturalWidth)).toBe(1)
+  expect(requests).toBe(2)
+})
+
+test('saved review and download use account image bytes, not direct storage URLs', async ({ page }) => {
+  await setup(page)
+  await page.route('**/api/user-creations/creation-1/image', route => {
+    expect(route.request().headers().authorization).toBe('Bearer fixture-token')
+    return route.fulfill({ contentType: 'image/png', body: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a00sAAAAASUVORK5CYII=', 'base64') })
+  })
+  await page.goto('/photo-frame?creationId=creation-1&step=review')
+  await expect(page.getByRole('img', { name: 'Ảnh đã lưu của bạn', exact: true })).toHaveAttribute('src', /^blob:/)
+  await page.getByRole('button', { name: /Tiếp tục tải & chia sẻ/ }).click()
+  await expect(page.getByRole('button', { name: 'Chia sẻ qua thiết bị' })).toBeEnabled()
+  await expect(page.getByRole('button', { name: 'Sao chép liên kết ảnh' })).toHaveCount(0)
+  const pending = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'Tải ảnh 9:16' }).click()
+  const download = await pending
+  expect(download.suggestedFilename()).toBe('timelens-9x16.png')
+})
+
 async function setup(page: Page) {
   await page.addInitScript(() => {
     const values = {
@@ -27,6 +62,7 @@ async function setup(page: Page) {
       return route.fulfill({ status: deleteStatus, body: deleteStatus === 204 ? '' : '{"message":"failed"}', contentType: 'application/json' })
     }
     const data = path === '/api/profile/me' ? profile
+      : path === '/api/profile/overview' ? { profile, account: {}, stats: { completedQuests: 0, discoveredLocations: 0, checkedInLocations: 0, passportStamps: 0, earnedBadges: 0 }, passportStamps: [], locations: [] }
       : path === '/api/me/explore' ? { profile, discovery: { discovered: 0, total: 0, keys: [], version: 1 }, archiveXp: 0, badges: [] }
       : path === '/api/me/passport' ? { stamps: [] }
       : path === '/api/me/discoveries/visited-locations' ? { visitedLocationIds: [], visitedCount: 0 }

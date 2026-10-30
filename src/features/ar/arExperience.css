@@ -301,6 +301,7 @@
 }
 
 .ar-mode-nav button {
+    min-width: 0;
     display: flex;
     align-items: center;
     gap: 14px;
@@ -1632,6 +1633,37 @@
     }
     .ar-camera-stage {
         height: 460px;
+        scroll-margin-top: 64px;
+    }
+    .ar-camera-stage.is-active {
+        height: min(520px, calc(100svh - 144px - env(safe-area-inset-bottom, 0px)));
+    }
+    .ar-camera-intro {
+        padding: 20px 16px;
+    }
+    .ar-camera-intro h2 {
+        font-size: 23px;
+    }
+    .ar-camera-state {
+        top: 12px;
+        left: 10px;
+        right: 10px;
+        max-width: calc(100% - 20px);
+        padding: 8px 12px;
+        font-size: 12px;
+    }
+    .ar-stop-camera {
+        bottom: 12px;
+        right: 12px;
+        min-height: 44px;
+    }
+    .ar-presentation-controls {
+        padding: 16px;
+        gap: 12px;
+    }
+    .ar-presentation-controls button {
+        min-width: 44px;
+        min-height: 44px;
     }
     .ar-camera-guide {
         gap: 12px;
@@ -1640,6 +1672,10 @@
     }
     .ar-camera-guide img {
         width: 84px;
+    }
+    .ar-camera-guide > div {
+        min-width: 0;
+        overflow-wrap: anywhere;
     }
     .ar-print-card {
         padding: 24px;

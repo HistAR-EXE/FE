@@ -5,6 +5,7 @@ import type { LowLightOptions } from './heritageImage'
 export type PhotoFrameReturnDraft = {
   file: File
   mode: 'original' | 'heritage'
+  originalOptions?: { zoom: number; offsetX: number; offsetY: number; removeBackground: boolean }
   frameId: string
   variant: 'square' | 'story'
   lowLight: LowLightOptions

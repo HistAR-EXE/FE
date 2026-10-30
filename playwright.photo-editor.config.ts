@@ -1,0 +1,2 @@
+import { defineConfig } from '@playwright/test'
+export default defineConfig({testDir:'./tests/ui',testMatch:'photo-frame-editor.spec.ts',timeout:90000,expect:{timeout:20000},workers:1,reporter:'list',outputDir:'test-results/photo-editor',use:{baseURL:'http://127.0.0.1:5188',channel:'msedge',headless:true,screenshot:'only-on-failure'},webServer:{command:'npm run dev -- --host 127.0.0.1 --port 5188 --strictPort',url:'http://127.0.0.1:5188',reuseExistingServer:true,timeout:120000}})

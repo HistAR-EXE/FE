@@ -28,7 +28,7 @@ const ENTITY_OPTIONS = [
   { value: 'USER', label: 'Người dùng và quyền truy cập' },
   { value: 'CONTENT_REPORT', label: 'Báo cáo nội dung' },
   { value: 'BILLING_SETTINGS', label: 'Cấu hình thanh toán' },
-  { value: 'B2B2C_INQUIRY', label: 'Yêu cầu tư vấn tổ chức' },
+  { value: 'B2B2C_INQUIRY', label: 'Yêu cầu tư vấn B2G' },
 ] as const
 
 const ACTION_OPTIONS = [

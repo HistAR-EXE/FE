@@ -1,3 +1,4 @@
+import { locationSlug } from '../../shared/config/locationSlug'
 // src/features/landing/LandingHero.tsx
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -211,7 +212,7 @@ export function LandingHero() {
                     </strong>
                     <small>Bộ sưu tập AR chính thức</small>
                 </div>
-                <Link to={`/tour/360/${CU_CHI_LOCATION_ID}`}>
+                <Link to={`/tour/360/${locationSlug(CU_CHI_LOCATION_ID)}`}>
                     Khởi đầu tại
                     <br />
                     <strong>Củ Chi ↗</strong>

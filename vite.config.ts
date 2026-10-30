@@ -37,7 +37,8 @@ export default defineConfig(({ command }) => ({
           /^\/api\//,
           /^\/ai\//,
           /^\/ar\//,
-          /^\/ar\.html$/,
+          // Workbox matches pathname + search (the frame includes ?artifact=...).
+          /^\/ar\.html(?:\?|$)/,
           /^\/media\//,
           /^\/films\//,
           /^\/(audio|images|badges|brand|depth|huy|mascot|minigames)\//,

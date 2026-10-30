@@ -1,14 +1,18 @@
 import { test, expect, type Page } from '@playwright/test'
 import fs from 'node:fs'
+import { createHash } from 'node:crypto'
 const catalog = JSON.parse(fs.readFileSync(new URL('../../src/features/ar/ar-catalog.json', import.meta.url), 'utf8')) as { id: string; name: string; status: string; thumbnail: string; target: string; targetIndex: number; description: string; note: string; author: string; source: string; license: string }[]
+const arTestProfile = { id: 'ar-test-user', email: 'ar@example.test', displayName: 'AR Explorer', role: 'USER', tier: 'PREMIUM', emailVerified: true, totalPoints: 0, level: 1, avatarUrl: null, orgSubscription: 'NONE' }
 
-async function setup(page: Page) {
+async function setup(page: Page, authenticated = true) {
   const writes: string[] = []
   await page.addInitScript(() => localStorage.setItem('histar_consent_v1', JSON.stringify({ analytics: false, camera: false, gps: false })))
+  if (authenticated) await page.addInitScript(() => {
+    for (const [key, value] of Object.entries({ timelens_token: 'ar-ui-test', timelens_user_id: 'ar-test-user', timelens_display_name: 'AR Explorer', timelens_role: 'USER', timelens_tier: 'PREMIUM', timelens_email_verified: '1', timelens_email: 'ar@example.test', timelens_mode: 'online' })) localStorage.setItem(key, value)
+  })
   await page.route(url => url.pathname.startsWith('/api/'), route => {
     if (route.request().method() !== 'GET') writes.push(new URL(route.request().url()).pathname)
-    const profile = { id: 'ar-test-user', email: 'ar@example.test', displayName: 'AR Explorer', role: 'USER', tier: 'FREE', emailVerified: true, totalPoints: 0, level: 1, avatarUrl: null, orgSubscription: 'NONE' }
-    return route.fulfill({ json: { success: true, data: new URL(route.request().url()).pathname === '/api/profile/me' ? profile : [] } })
+    return route.fulfill({ json: { success: true, data: new URL(route.request().url()).pathname === '/api/profile/me' ? arTestProfile : [] } })
   })
   return writes
 }
@@ -34,7 +38,7 @@ test('camera controls update only its frame and can reset presentation', async (
   await expect(page.locator('iframe')).toHaveCount(0)
 })
 
-test('public desktop center opens both real models on demand without reward writes', async ({ page }) => {
+test('Premium desktop center opens both real models on demand without reward writes', async ({ page }) => {
   const writes = await setup(page)
   const models: string[] = []
   page.on('request', request => { if (request.url().endsWith('.glb')) models.push(request.url()) })
@@ -167,6 +171,110 @@ test('camera errors explain recovery and remove frame', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Bật camera AR' })).toBeVisible()
 })
 
+test('a cached app shell in the AR frame fails immediately and can retry', async ({ page }) => {
+  await setup(page)
+  await page.route('**/ar.html?*', route => route.fulfill({ contentType: 'text/html', body: '<div id="root">404</div>' }))
+  await page.goto('/ar-experience?view=camera')
+  await page.getByRole('button', { name: 'Bật camera AR' }).click()
+  await expect(page.getByRole('alert')).toContainText('Tải lại trang', { timeout: 5000 })
+  await expect(page.locator('iframe')).toHaveCount(0)
+  await page.route('**/ar.html?*', route => route.fulfill({ contentType: 'text/html', body: '<script>parent.postMessage({type:"AR_READY",artifact:"hat"},location.origin)</script>' }))
+  await page.getByRole('button', { name: 'Bật camera AR' }).click()
+  await expect(page.locator('.ar-camera-state')).toContainText('Hướng camera')
+  await page.getByRole('button', { name: 'Tắt camera' }).click()
+})
+
+const nativeCameraFrame = `<video autoplay muted playsinline></video><script>
+  let stream, stopped = false;
+  const stop = () => { stopped = true; stream?.getTracks().forEach(track => track.stop()) };
+  addEventListener('timelens-ar-stop', stop);
+  addEventListener('pagehide', stop);
+  (async () => {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({video: {facingMode: {ideal: 'environment'}}, audio: false});
+      parent.__nativeCameraStreams ??= []; parent.__nativeCameraStreams.push(stream);
+      if (stopped) { stop(); return }
+      document.querySelector('video').srcObject = stream;
+      await document.querySelector('video').play();
+      parent.postMessage({type:'AR_READY',artifact:'hat'},location.origin);
+    } catch(error) {
+      parent.postMessage({type:'AR_ERROR',artifact:'hat',message:'Camera: '+error.name},location.origin);
+    }
+  })();
+</script>`
+
+test('native camera permission works inside the frame and tracks stop across restart and navigation', async ({ page, context }) => {
+  await setup(page)
+  await context.grantPermissions(['camera'])
+  await page.route('**/ar.html?*', route => route.fulfill({ contentType: 'text/html', body: nativeCameraFrame }))
+  await page.goto('/ar-experience?artifact=hat&view=camera')
+  for (let attempt = 0; attempt < 2; attempt++) {
+    await page.getByRole('button', { name: 'Bật camera AR' }).click()
+    await expect(page.locator('.ar-camera-state')).toContainText('Hướng camera')
+    await expect.poll(() => page.frameLocator('iframe').locator('video').evaluate(video => (video as HTMLVideoElement).videoWidth)).toBeGreaterThan(0)
+    await page.getByRole('button', { name: 'Tắt camera' }).click()
+    await expect.poll(() => page.evaluate(() => (window as Window & { __nativeCameraStreams: MediaStream[] }).__nativeCameraStreams.every(stream => stream.getTracks().every(track => track.readyState === 'ended')))).toBe(true)
+  }
+  await page.getByRole('button', { name: 'Bật camera AR' }).click()
+  await expect(page.locator('.ar-camera-state')).toContainText('Hướng camera')
+  await page.getByRole('button', { name: '← Xem hiện vật 3D' }).click()
+  await expect(page.locator('iframe')).toHaveCount(0)
+  await expect.poll(() => page.evaluate(() => (window as Window & { __nativeCameraStreams: MediaStream[] }).__nativeCameraStreams.every(stream => stream.getTracks().every(track => track.readyState === 'ended')))).toBe(true)
+})
+
+test('native camera permission rejection removes the frame and leaves retry available', async ({ page, context }) => {
+  await setup(page)
+  const cdp = await context.newCDPSession(page)
+  await cdp.send('Browser.setPermission', { permission: { name: 'camera' }, setting: 'denied', origin: 'http://127.0.0.1:5182' })
+  await page.route('**/ar.html?*', route => route.fulfill({ contentType: 'text/html', body: nativeCameraFrame }))
+  await page.goto('/ar-experience?artifact=hat&view=camera')
+  await page.getByRole('button', { name: 'Bật camera AR' }).click()
+  await expect(page.getByRole('alert')).toContainText('NotAllowedError')
+  await expect(page.locator('iframe')).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Bật camera AR' })).toBeEnabled()
+})
+
+test.describe('touch phone camera flow', () => {
+  test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true })
+  test('phone handoff reaches an explicit camera action with readable controls', async ({ page, context }) => {
+    await setup(page)
+    await context.grantPermissions(['camera'])
+    await page.route('**/ar.html?*', route => route.fulfill({ contentType: 'text/html', body: nativeCameraFrame }))
+    await page.goto('/ar-experience?artifact=hat&view=home')
+    await page.getByRole('button', { name: 'Bắt đầu quét AR', exact: true }).click()
+    await expect(page).toHaveURL(/artifact=hat&view=camera/)
+    await expect(page.locator('iframe')).toHaveCount(0)
+    await page.getByRole('button', { name: 'Bật camera AR' }).click()
+    await expect(page.locator('.ar-camera-state')).toContainText('Hướng camera')
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+    for (const button of await page.locator('.ar-mode-nav button').all()) {
+      expect(await button.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true)
+    }
+    await page.locator('.ar-camera-panel').screenshot({ path: 'test-results/ar/touch-phone-camera.png' })
+    await page.getByRole('button', { name: 'Tắt camera' }).click()
+    await expect(page.locator('iframe')).toHaveCount(0)
+  })
+
+  test('camera controls fit a narrow phone and a short landscape viewport', async ({ page, context }) => {
+    await setup(page)
+    await context.grantPermissions(['camera'])
+    await page.route('**/ar.html?*', route => route.fulfill({ contentType: 'text/html', body: nativeCameraFrame }))
+    for (const viewport of [{ width: 320, height: 568 }, { width: 667, height: 375 }]) {
+      await page.setViewportSize(viewport)
+      await page.goto('/ar-experience?artifact=hat&view=camera')
+      await page.getByRole('button', { name: 'Bật camera AR' }).click()
+      await expect(page.locator('.ar-camera-state')).toContainText('Hướng camera')
+      const stage = await page.locator('.ar-camera-stage').boundingBox()
+      const stop = await page.getByRole('button', { name: 'Tắt camera' }).boundingBox()
+      expect(stage!.y).toBeGreaterThanOrEqual(56)
+      expect(stage!.y + stage!.height).toBeLessThanOrEqual(viewport.height - 64)
+      expect(stop!.height).toBeGreaterThanOrEqual(44)
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+      await page.getByRole('button', { name: 'Tắt camera' }).click()
+    }
+  })
+})
+
 test('phone layout fits viewport and onsite entry preserves station workflow', async ({ page }) => {
   await setup(page)
   await page.setViewportSize({ width: 390, height: 844 })
@@ -180,23 +288,28 @@ test('phone layout fits viewport and onsite entry preserves station workflow', a
   await expect(page.getByRole('link', { name: 'Xem nhiệm vụ tại di tích' })).toHaveAttribute('href', /track=onsite/)
 })
 
-for (const { id: artifact, target: targetImage, targetIndex } of catalog) {
+for (const { id: artifact, target: targetImage, targetIndex, phone } of [
+  ...catalog.map(item => ({ ...item, phone: false })),
+  ...catalog.filter(item => ['hat', 'lamp'].includes(item.id)).map(item => ({ ...item, phone: true })),
+]) {
+  test.describe(`${phone ? 'phone' : 'laptop'} ${artifact}`, () => {
+  if (phone) test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true })
   test(`real MindAR anchors ${artifact} to its compiled recognition card`, async ({ page }) => {
     test.setTimeout(120000)
     await setup(page)
-    await page.addInitScript(({ target, wrongTarget }) => {
+    await page.addInitScript(({ target, wrongTarget, portrait }) => {
       Object.defineProperty(navigator.mediaDevices, 'getUserMedia', { value: async () => {
         let image = new Image()
         image.src = wrongTarget ?? target
         await image.decode()
         const canvas = document.createElement('canvas')
-        canvas.width = 1280; canvas.height = 720
+        canvas.width = portrait ? 720 : 1280; canvas.height = portrait ? 1280 : 720
         const ctx = canvas.getContext('2d')!
         const draw = () => {
-          ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, 1280, 720)
-          const scale = Math.min(1000 / image.width, 600 / image.height)
+          ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height)
+          const scale = Math.min((canvas.width - 120) / image.width, (canvas.height - 120) / image.height)
           const width = image.width * scale, height = image.height * scale
-          ctx.drawImage(image, (1280 - width) / 2, (720 - height) / 2, width, height)
+          ctx.drawImage(image, (canvas.width - width) / 2, (canvas.height - height) / 2, width, height)
           requestAnimationFrame(draw)
         }
         draw()
@@ -206,7 +319,7 @@ for (const { id: artifact, target: targetImage, targetIndex } of catalog) {
         } })
         return stream
       } })
-    }, { target: targetImage, wrongTarget: artifact === 'hat' ? catalog.find(item => item.id === 'lamp')!.target : undefined })
+    }, { target: targetImage, wrongTarget: artifact === 'hat' ? catalog.find(item => item.id === 'lamp')!.target : undefined, portrait: phone })
     await page.goto(`/ar-experience?artifact=${artifact}&view=camera`)
     await page.bringToFront()
     expect(await page.evaluate(() => document.visibilityState)).toBe('visible')
@@ -252,13 +365,14 @@ for (const { id: artifact, target: targetImage, targetIndex } of catalog) {
       await page.getByRole('button', { name: 'Đặt lại hiện vật AR' }).click()
       await expect.poll(() => arFrame.evaluate(`document.querySelector('a-gltf-model').getObject3D('mesh').scale.x`)).toBe(1)
     }
-    await page.locator('iframe').screenshot({ path: `test-results/ar/tracking-${artifact}.png` })
+    await page.locator('iframe').screenshot({ path: `test-results/ar/tracking-${phone ? 'phone-' : ''}${artifact}.png` })
     await page.getByRole('button', { name: 'Tắt camera' }).click()
     await expect(page.locator('iframe')).toHaveCount(0)
     await expect.poll(() => page.evaluate(() => {
       const stream = (window as Window & { __arTestStream?: MediaStream }).__arTestStream
       return stream?.getTracks().every(track => track.readyState === 'ended')
     })).toBe(true)
+  })
   })
 }
 
@@ -322,7 +436,10 @@ test('home UX explains QR versus color target, downloads the photo and labels la
   const pending=page.waitForEvent('download'); await downloadLink.click(); const download=await pending
   expect(download.suggestedFilename()).toBe('DSCF9675.jpg')
   const saved=await download.path()
-  expect(fs.readFileSync(saved!).equals(fs.readFileSync(new URL('../../public' + catalog.find(item=>item.id==='hat')!.target,import.meta.url)))).toBe(true)
+  const manifest = JSON.parse(fs.readFileSync(new URL('../../media-r2-manifest.json', import.meta.url), 'utf8'))
+  const target = catalog.find(item => item.id === 'hat')!.target
+  const expected = manifest.files.find((entry: { source: string }) => '/' + entry.source === target)
+  expect(createHash('sha256').update(fs.readFileSync(saved!)).digest('hex')).toBe(expected.sha256)
   await page.screenshot({path:'test-results/ar-ux-final/desktop-home-ux.png',fullPage:true})
   await page.getByText('Dùng camera trên laptop?',{exact:true}).click()
   await expect(page.getByText('Webcam cần ảnh in hoặc ảnh mở trên điện thoại, đặt trước camera.',{exact:true})).toBeVisible()
@@ -345,21 +462,21 @@ test('touch phone offers AR start and explains using a second screen or printed 
 })
 
 
-test('email is optional for guests and does not send before confirmation', async ({ page }) => {
-  await setup(page)
+test('guest QR handoff preserves selected camera destination through login without opening camera', async ({ page }) => {
+  await setup(page, false)
   let sends=0
   await page.route('**/api/ar/cards/email',route=>{sends++;return route.fulfill({json:{success:true,data:{status:'ACCEPTED',artifactId:route.request().postDataJSON().artifactId,cooldownSeconds:60,remainingToday:2}}})})
-  await page.goto('/ar-experience?artifact=hat&view=home')
-  await page.getByRole('button',{name:'Nhận ảnh qua email',exact:true}).click()
-  await expect(page.getByRole('link',{name:'Đăng nhập để nhận ảnh'})).toHaveAttribute('href',/returnTo=.*ar-experience/)
-  await expect(page.getByRole('link',{name:'Tải ảnh nhận diện',exact:true})).toBeVisible()
+  await page.goto('/ar-experience?artifact=lamp&view=camera')
+  const dialog = page.getByRole('dialog', { name: 'Đăng nhập để tiếp tục' })
+  await expect(dialog.getByRole('link', { name: 'Đăng nhập', exact: true })).toHaveAttribute('href', '/login?returnTo=%2Far-experience%3Fartifact%3Dlamp%26view%3Dcamera')
+  await expect(page.locator('iframe')).toHaveCount(0)
   expect(sends).toBe(0)
 })
 
 async function emailUser(page: Page) {
   await setup(page)
   await page.addInitScript(() => {
-    for (const [key,value] of Object.entries({timelens_token:'ar-mail-test',timelens_user_id:'ar-test-user',timelens_display_name:'AR Explorer',timelens_role:'USER',timelens_tier:'FREE',timelens_email_verified:'1',timelens_email:'ar@example.test'})) localStorage.setItem(key,value)
+    for (const [key,value] of Object.entries({timelens_token:'ar-mail-test',timelens_user_id:'ar-test-user',timelens_display_name:'AR Explorer',timelens_role:'USER',timelens_tier:'PREMIUM',timelens_email_verified:'1',timelens_email:'ar@example.test'})) localStorage.setItem(key,value)
   })
 }
 test('verified account explicitly requests one email pack and sees provider acceptance', async ({ page }) => {
@@ -389,18 +506,26 @@ test('disabled email and unverified email preserve downloads and never report su
 })
 
 
-test('public HTTPS origin hides localhost guidance and shares the HTTPS camera URL', async ({ page }) => {
+test('HTTPS origin hides localhost guidance and shares the HTTPS camera URL', async ({ page }) => {
+  await setup(page)
   await page.route('https://ar.example.test/**',async route=>{
     const url=new URL(route.request().url())
-    if(url.pathname.startsWith('/api/'))return route.fulfill({json:{success:true,data:[]}})
-    const response=await route.fetch({url:'http://127.0.0.1:5182'+url.pathname+url.search})
-    const body=await response.body()
-    await route.fulfill({status:response.status(),headers:response.headers(),body})
+    if(url.pathname.startsWith('/api/'))return route.fulfill({json:{success:true,data:url.pathname === '/api/profile/me' ? arTestProfile : []}})
+    if (url.pathname === '/@vite/client') return route.fulfill({ contentType: 'application/javascript', body: `
+      export const createHotContext = () => ({accept(){}, acceptExports(){}, dispose(){}, prune(){}, invalidate(){}, on(){}, off(){}, send(){}, data:{}});
+      export const injectQuery = value => value;
+      export const ErrorOverlay = class {};
+      export function updateStyle(id, css) { let style = document.getElementById(id); if (!style) { style = document.createElement('style'); style.id = id; document.head.append(style) } style.textContent = css }
+      export function removeStyle(id) { document.getElementById(id)?.remove() }
+    ` })
+    const response=await page.request.get('http://127.0.0.1:5182'+url.pathname+url.search)
+    await route.fulfill({response})
   })
   await page.addInitScript(()=>localStorage.setItem('histar_consent_v1',JSON.stringify({analytics:false,camera:false,gps:false})))
   await page.goto('https://ar.example.test/ar-experience?artifact=lamp&view=home')
   await expect(page.locator('.ar-phone-link')).toHaveAttribute('href','https://ar.example.test/ar-experience?artifact=lamp&view=camera')
   await expect(page.getByText(/Bạn đang chạy trên localhost/)).toHaveCount(0)
+  await page.goto('about:blank')
   await page.unrouteAll({behavior:'wait'})
 })
 

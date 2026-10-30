@@ -4,12 +4,18 @@ import { isArFrameMessage, type ArArtifact } from "./arExperience";
 
 export function ArCameraExperience({ artifact }: { artifact: ArArtifact }) {
   const frame = useRef<HTMLIFrameElement>(null);
+  const stage = useRef<HTMLDivElement>(null);
   const [started, setStarted] = useState(false);
   const [status, setStatus] = useState("idle");
   const [error, setError] = useState("");
   const [attempt, setAttempt] = useState(0);
   const [presentation, setPresentation] = useState({ scale: 1, rotation: 0, motion: false });
   const presentationRef = useRef(presentation);
+  useEffect(() => {
+    if (started && window.matchMedia("(max-width: 767px)").matches) {
+      stage.current?.scrollIntoView({ block: "start", behavior: "instant" });
+    }
+  }, [started]);
   useEffect(() => {
     presentationRef.current = presentation;
     if (started) frame.current?.contentWindow?.postMessage({ type: "AR_PRESENTATION", artifact: artifact.id, ...presentation }, window.location.origin);
@@ -110,13 +116,22 @@ export function ArCameraExperience({ artifact }: { artifact: ArArtifact }) {
 
   return (
     <section className="ar-camera-panel" aria-label="Camera AR">
-      <div className="ar-camera-stage">
+      <div ref={stage} className={`ar-camera-stage${started ? " is-active" : ""}`}>
         {started ? (
           <iframe
             key={`${artifact.id}-${attempt}`}
             ref={frame}
             title={`Camera AR ${artifact.name}`}
             src={`/ar.html?artifact=${encodeURIComponent(artifact.id)}${artifact.status === "review" ? "&review=1" : ""}`}
+            onLoad={() => {
+              // An older PWA worker can serve the app shell for this frame URL.
+              // Do not leave a nested 404 under a misleading camera loading state.
+              if (frame.current?.contentDocument?.getElementById("root")) {
+                setError("Trang camera đang tải phiên bản cũ. Tải lại trang để cập nhật AR rồi bật camera lại.");
+                setStatus("error");
+                setStarted(false);
+              }
+            }}
             allow="camera; gyroscope; accelerometer"
             className="ar-camera-frame"
           />

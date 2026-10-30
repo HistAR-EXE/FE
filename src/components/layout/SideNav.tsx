@@ -1,3 +1,4 @@
+import { locationSlug } from '../../shared/config/locationSlug'
 /* eslint-disable react-refresh/only-export-components */
 // src/components/layout/SideNav.tsx
 import { useMemo } from 'react'
@@ -30,8 +31,8 @@ const navItems: readonly NavigationItem[] = [
     { to: '/explore', icon: 'explore', label: 'Khám phá di tích', prefixes: ['/explore', '/home', '/characters'], modes: 'both' as const },
 
     // --- 3 TÍNH NĂNG ĐỘT PHÁ CỦA TIMELENS ---
-    { to: `/tour/360/${CU_CHI_LOCATION_ID}`, icon: '360', label: 'Tham quan 360°', prefixes: ['/tour/360'], modes: 'online' as const },
-    { to: `/diorama/${CU_CHI_LOCATION_ID}`, icon: 'layers', label: 'Tái hiện lịch sử', prefixes: ['/diorama'], modes: 'online' as const },
+    { to: `/tour/360/${locationSlug(CU_CHI_LOCATION_ID)}`, icon: '360', label: 'Tham quan 360°', prefixes: ['/tour/360'], modes: 'online' as const },
+    { to: `/diorama/${locationSlug(CU_CHI_LOCATION_ID)}`, icon: 'layers', label: 'Tái hiện lịch sử', prefixes: ['/diorama'], modes: 'online' as const },
     { to: timePortalPath(CU_CHI_LOCATION_ID), icon: 'history', label: 'Cổng Thời Gian', prefixes: ['/time-portal'], modes: 'online' as const },
     { to: '/chat', icon: 'forum', label: 'Trợ lý lịch sử AI', prefixes: ['/chat'], modes: 'both' as const },
 

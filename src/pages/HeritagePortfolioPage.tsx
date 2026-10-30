@@ -51,7 +51,7 @@ export function HeritagePortfolioPage() {
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center space-y-8">
           <div className="inline-flex items-center gap-2.5 px-5 py-2 rounded-full bg-white border border-[#0275FB]/20 text-[#0275FB] text-xs font-black uppercase tracking-widest shadow-sm">
             <MaterialIcon name="museum" className="text-lg" />
-            <span>Giải Pháp Số Hóa Di Sản (B2B2C)</span>
+            <span>Giải Pháp Số Hóa Di Sản (B2G)</span>
           </div>
 
           <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight">
@@ -67,7 +67,7 @@ export function HeritagePortfolioPage() {
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
             <Link
-              to="/checkout/b2b2c"
+              to="/checkout/b2g"
               className="px-8 py-4 rounded-2xl bg-gradient-to-r from-[#0275FB] to-[#1d4ed8] text-white font-black text-sm uppercase tracking-wider shadow-[0_8px_25px_rgba(2,117,251,0.4)] hover:scale-105 transition-all flex items-center gap-2"
             >
               <span>Liên Hệ Tư Vấn</span>
@@ -144,7 +144,7 @@ export function HeritagePortfolioPage() {
             Đội ngũ TimeLens sẽ đến tận nơi khảo sát miễn phí. Nhận báo giá chi tiết trong 48 giờ.
           </p>
           <Link
-            to="/checkout/b2b2c"
+            to="/checkout/b2g"
             className="inline-flex items-center gap-2 px-10 py-4 rounded-2xl bg-[#FDC908] text-[#0F1B33] font-black text-sm uppercase tracking-wider shadow-[0_8px_25px_rgba(253,201,8,0.4)] hover:scale-105 transition-all"
           >
             <MaterialIcon name="mail" className="text-lg" />

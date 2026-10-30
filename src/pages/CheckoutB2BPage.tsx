@@ -1,5 +1,6 @@
+import { confirmedPrice } from '../features/billing/planPresentation'
 // src/pages/CheckoutB2BPage.tsx
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { isSafeRedirect } from '../shared/auth/types'
 import { AuthLayout } from '../components/layout/AuthLayout'
@@ -15,8 +16,15 @@ import { MaterialIcon } from '../components/ui/MaterialIcon'
 const PLANS = ['MICRO', 'STANDARD', 'PREMIUM'] as const
 
 export function CheckoutB2BPage() {
+    const [query] = useSearchParams()
+    return <CheckoutB2BForm key={`${query.get('plan') || 'STANDARD'}:${query.get('next') || ''}`} />
+}
+
+function CheckoutB2BForm() {
     const [searchParams] = useSearchParams()
     const navigate = useNavigate()
+    const mounted = useRef(true)
+    useEffect(() => { mounted.current = true; return () => { mounted.current = false } }, [])
     const { user, updateUser } = useAuth()
     const { showToast } = useToast()
     const [orgName, setOrgName] = useState(user?.orgName ?? '')
@@ -32,7 +40,7 @@ export function CheckoutB2BPage() {
     const [status, setStatus] = useState<'PENDING' | 'PAID' | 'FAILED' | 'EXPIRED' | 'UNDERPAID' | null>(null)
     const [statusDetail, setStatusDetail] = useState<Awaited<ReturnType<typeof billingApi.getOrgPaymentStatus>> | null>(null)
     const [planPrices, setPlanPrices] = useState<Record<string, number>>({})
-    const [licenseCount, setLicenseCount] = useState(Math.max(1, Number.parseInt(searchParams.get('licenses') ?? '1', 10) || 1))
+    const licenseCount = 1
     const [volumePreview, setVolumePreview] = useState<Awaited<ReturnType<typeof billingApi.getOrgVolumePreview>> | null>(null)
 
     const returnTo = useMemo(() => {
@@ -62,13 +70,16 @@ export function CheckoutB2BPage() {
     }, [])
 
     useEffect(() => {
+        let active = true
         billingApi.getOrgVolumePreview(planType, licenseCount)
-            .then(setVolumePreview)
-            .catch(() => setVolumePreview(null))
+            .then(data => { if (active) setVolumePreview(confirmedPrice(data.totalVnd) === null ? null : data) })
+            .catch(() => { if (active) setVolumePreview(null) })
+        return () => { active = false }
     }, [planType, licenseCount])
 
     const completeUpgrade = async (nextPath: string) => {
         const profile = await profileApi.me()
+        if (!mounted.current) return
         updateUser({
             tier: profile.tier,
             orgId: profile.orgId,
@@ -85,6 +96,7 @@ export function CheckoutB2BPage() {
         try {
             if (!silent) setChecking(true)
             const nextStatus = await billingApi.getOrgPaymentStatus(orderCode)
+            if (!mounted.current) return
             setStatus(nextStatus.status)
             setStatusDetail(nextStatus)
             if (nextStatus.status === 'PAID' && nextStatus.activated) {
@@ -98,6 +110,7 @@ export function CheckoutB2BPage() {
     }
 
     const handleCheckout = async () => {
+        if (loading || !volumePreview || volumePreview.planType !== planType) return
         if (!orgName.trim() || !contactEmail.trim()) {
             showToast({ message: 'Vui lòng điền đủ Tên cơ sở và Email Quản trị', type: 'error' })
             return
@@ -112,6 +125,7 @@ export function CheckoutB2BPage() {
                 returnToPath: returnTo,
                 licenseCount,
             })
+            if (!mounted.current) return
             setPayment(result)
             setStatus(result.status)
         } catch (e) {
@@ -122,10 +136,10 @@ export function CheckoutB2BPage() {
     }
 
     useEffect(() => {
-        if (!payment || status === 'PAID' || status === 'EXPIRED' || status === 'FAILED') return
+        if (!payment || (status === 'PAID' && statusDetail?.activated) || status === 'EXPIRED' || status === 'FAILED') return
         const timer = window.setInterval(() => { void refreshPaymentStatus(payment.orderCode, true) }, 5000)
         return () => window.clearInterval(timer)
-    }, [payment, status])
+    }, [payment, status, statusDetail?.activated])
 
     return (
         <AuthLayout>
@@ -207,13 +221,7 @@ export function CheckoutB2BPage() {
                                                 <option value="PREMIUM">Premium</option>
                                             </select>
                                         </label>
-                                        <label className="block space-y-1">
-                                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Số Cơ Sở</span>
-                                            <input
-                                                type="number" min={1} max={99} value={licenseCount} onChange={(e) => setLicenseCount(Math.max(1, Number.parseInt(e.target.value, 10) || 1))}
-                                                className="w-full bg-black/40 border border-white/10 focus:border-[#388cf1] rounded-xl px-4 py-2.5 text-sm text-white font-bold focus:outline-none shadow-inner"
-                                            />
-                                        </label>
+                                        <div className="text-xs text-gray-200 leading-relaxed">Một giấy phép cho một tổ chức trong một năm. Hạn mức theo gói; chỉ hạ gói khi số thành viên không vượt sức chứa mới.</div>
                                     </div>
                                 </div>
                             ) : (
@@ -242,7 +250,7 @@ export function CheckoutB2BPage() {
                             <div className="bg-[#0B1120]/60 rounded-xl px-5 py-4 border border-white/10 shadow-inner mt-5 backdrop-blur-md">
                                 <div className="flex justify-between items-center text-[11px] sm:text-xs text-gray-300 font-medium mb-1.5">
                                     <span className="whitespace-nowrap">Đơn giá {planType}:</span>
-                                    <span className="whitespace-nowrap font-bold text-white">{(planPrices[planType] ?? 0).toLocaleString('vi-VN')}đ</span>
+                                    <span className="whitespace-nowrap font-bold text-white">{planPrices[planType]?.toLocaleString('vi-VN') ?? 'Chưa xác nhận'}đ</span>
                                 </div>
                                 {volumePreview && volumePreview.discountPercent > 0 && (
                                     <div className="flex justify-between items-center text-[11px] text-emerald-400 font-bold mb-2">
@@ -253,7 +261,7 @@ export function CheckoutB2BPage() {
                                 <div className="flex justify-between items-end border-t border-white/10 pt-3 mt-2">
                                     <span className="text-[10px] sm:text-[11px] font-bold text-gray-400 uppercase tracking-widest whitespace-nowrap mr-2">Tổng chi phí</span>
                                     <div className="flex items-baseline gap-1 whitespace-nowrap">
-                                        <span className="text-2xl sm:text-3xl font-black text-[#388cf1] drop-shadow-[0_0_10px_rgba(56,140,241,0.5)]">{volumePreview ? volumePreview.totalVnd.toLocaleString('vi-VN') : '0'}</span>
+                                        <span className="text-2xl sm:text-3xl font-black text-[#388cf1] drop-shadow-[0_0_10px_rgba(56,140,241,0.5)]">{volumePreview?.planType === planType ? volumePreview.totalVnd.toLocaleString('vi-VN') : 'Đang xác nhận'}</span>
                                         <span className="text-[10px] font-bold text-gray-300 uppercase">VND</span>
                                     </div>
                                 </div>
@@ -274,12 +282,12 @@ export function CheckoutB2BPage() {
                                     </div>
                                     <h3 className="text-xl font-black text-white mb-3 tracking-tight drop-shadow-md">Khởi Tạo Hóa Đơn</h3>
                                     <p className="text-xs text-gray-300 mb-8 font-medium leading-relaxed">
-                                        Điền đầy đủ thông tin bên trái để tạo mã QR. Hệ thống sẽ tự động khởi tạo không gian quản trị trường học ngay sau khi nhận được thanh toán.
+                                        Điền đầy đủ thông tin bên trái để tạo mã QR. Gói được kích hoạt sau khi hệ thống xác nhận thanh toán và kiểm tra điều kiện tổ chức. Nếu tiền đã được ghi nhận, không chuyển khoản thêm.
                                     </p>
                                     <Button
                                         type="button"
                                         aria-label="Tạo thanh toán SePay"
-                                        disabled={loading}
+                                        disabled={loading || !volumePreview || volumePreview.planType !== planType}
                                         onClick={() => void handleCheckout()}
                                         className="w-full max-w-[300px] h-12 rounded-xl bg-gradient-to-r from-[#1a79e5] via-[#388cf1] to-[#1a79e5] hover:from-[#388cf1] hover:to-[#1a79e5] text-white font-black text-xs uppercase tracking-wider shadow-[0_5px_25px_rgba(56,140,241,0.5)] hover:shadow-[0_8px_35px_rgba(56,140,241,0.8)] hover:scale-105 transition-all cursor-pointer flex items-center justify-center gap-2"
                                     >
@@ -344,13 +352,14 @@ export function CheckoutB2BPage() {
 
                                         <Button
                                             type="button"
-                                            disabled={checking || status === 'PAID'}
+                                            disabled={checking || (status === 'PAID' && statusDetail?.activated === true)}
                                             onClick={() => void refreshPaymentStatus(payment.orderCode)}
                                             className="w-full h-12 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/30 text-white font-bold text-[11px] uppercase tracking-widest transition-all cursor-pointer flex items-center justify-center gap-2 shadow-lg"
                                         >
                                             <MaterialIcon name="sync" className={checking ? "animate-spin text-base" : "text-base"} />
                                             {checking ? 'Đang kiểm tra...' : status === 'PAID' ? 'Đang cấp phép...' : 'Tôi Đã Chuyển Khoản'}
                                         </Button>
+                                        {status === 'PAID' && !statusDetail?.activated && <div role="status" className="mt-4 rounded-xl border border-amber-400/40 bg-amber-500/10 p-4 text-xs text-amber-100"><strong>Đã nhận thanh toán, đang chờ kích hoạt.</strong><p className="mt-2">{statusDetail?.activationMessage || 'Hệ thống đang kiểm tra điều kiện cấp gói.'} Không chuyển khoản thêm. Sau khi xử lý điều kiện, bấm kiểm tra trạng thái để tiếp tục.</p></div>}
                                         {status === 'UNDERPAID' && (
                                             <div
                                                 data-testid="org-underpaid-notice"

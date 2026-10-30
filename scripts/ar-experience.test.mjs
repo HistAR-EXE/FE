@@ -12,7 +12,25 @@ const testSource = source.replace(/import catalog from ["']\.\/ar-catalog\.json[
 const { outputText } = ts.transpileModule(testSource, { compilerOptions: { module: ts.ModuleKind.ESNext } })
 const { readArtifact, phoneExperiencePath, isArFrameMessage } = await import(`data:text/javascript;base64,${Buffer.from(outputText).toString('base64')}`)
 
-test('official collection contains exactly ten unique real assets', () => {
+// R2 migration removes these large assets from Git. Opt into deployed-byte
+// validation explicitly; normal offline runs still use a local public copy.
+async function readAsset(path) {
+  if (!process.env.AR_TEST_ASSET_ORIGIN) return fs.readFileSync(new URL('../public' + path, import.meta.url))
+  const url = new URL(path, process.env.AR_TEST_ASSET_ORIGIN)
+  assert.equal(url.protocol, 'https:')
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const response = await fetch(url, { signal: AbortSignal.timeout(30000) })
+      assert.equal(response.status, 200, path)
+      return Buffer.from(await response.arrayBuffer())
+    } catch (error) {
+      // Retry interrupted CDN reads; content assertions never get retried.
+      if (attempt === 2 || !(error instanceof TypeError)) throw error
+    }
+  }
+}
+
+test('official collection contains exactly ten unique real assets', async () => {
   const catalog = JSON.parse(fs.readFileSync(new URL('../public/ar-catalog.json', import.meta.url), 'utf8'))
   assert.equal(catalog.filter(item => item.status === 'published').length, 10)
   assert.equal(catalog.length, 10)
@@ -24,7 +42,7 @@ test('official collection contains exactly ten unique real assets', () => {
     assert.match(item.source, /^https:\/\/sketchfab.com\/3d-models\//)
     assert.ok(item.author && item.license && item.note)
     assert.ok(Number.isInteger(item.targetIndex) && item.targetIndex >= 0 && item.targetIndex < 10)
-    const bytes = fs.readFileSync(new URL(`../public${item.model}`, import.meta.url))
+    const bytes = await readAsset(item.model)
     assert.equal(bytes.toString('ascii', 0, 4), 'glTF', item.id)
     assert.equal(bytes.readUInt32LE(4), 2)
     assert.equal(bytes.readUInt32LE(8), bytes.length)
@@ -78,17 +96,17 @@ test('standalone public catalog exactly matches the canonical source catalog', (
 test('ten original color field photos map one-to-one to compiled targets', async () => {
   assert.equal(new Set(catalog.map(item => item.target)).size, 10)
   assert.equal(new Set(catalog.map(item => item.targetIndex)).size, 10)
-  const bundle = decode(fs.readFileSync(new URL('../public/assets/cu-chi-targets.mind', import.meta.url)))
+  const bundle = decode(await readAsset('/assets/cu-chi-targets.mind'))
   assert.equal(bundle.dataList.length, 10)
   for (const item of catalog) {
-    const image = fs.readFileSync(new URL('../public' + item.target, import.meta.url))
+    const image = await readAsset(item.target)
     const metadata = await sharp(image).metadata()
     assert.equal(metadata.channels, 3)
     const { data } = await sharp(image).resize(64, 64).raw().toBuffer({ resolveWithObject: true })
     let colorful = 0
     for (let i = 0; i < data.length; i += 3) if (Math.max(data[i], data[i+1], data[i+2]) - Math.min(data[i], data[i+1], data[i+2]) > 15) colorful++
     assert.ok(colorful > 100, item.id + ': keeps color')
-    const original = fs.readFileSync(new URL('../public' + item.targetOriginal, import.meta.url))
+    const original = await readAsset(item.targetOriginal)
     assert.equal(createHash('sha256').update(original).digest('hex'), item.targetOriginalSha256)
     const compiled = bundle.dataList[item.targetIndex]
     assert.ok(compiled.matchingData.length > 0 && compiled.trackingData.length > 0)

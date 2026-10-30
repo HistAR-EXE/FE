@@ -1494,6 +1494,7 @@ export function AdminBillingPage() {
                   <h2 id="billing-pipeline" className="font-headline-md text-headline-md text-on-surface">Yêu cầu tư vấn số hóa di sản</h2>
                   <AdminInfoHint label="yêu cầu tư vấn">Yêu cầu mới xuất hiện ở cột đầu tiên. Dùng mã hoặc email để tìm trong Bảng ma trận.</AdminInfoHint>
                 </div>
+                <p className="font-body-sm text-body-sm text-on-surface-variant">Theo dõi cơ hội hợp tác B2G từ tiếp nhận yêu cầu đến ký kết.</p>
               </div>
               <div className="flex flex-wrap items-center gap-space-sm">
                 <button

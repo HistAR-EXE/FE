@@ -10,6 +10,7 @@ const PERSONAL_LINKS = [
     { to: '/profile', icon: 'person', label: 'Hồ sơ cá nhân' },
     { to: '/settings', icon: 'settings', label: 'Cài đặt' },
     { to: '/pricing', icon: 'workspace_premium', label: 'Gói dịch vụ' },
+    { to: '/settings/billing', icon: 'receipt_long', label: 'Lịch sử thanh toán' },
 ]
 
 export function SideNavAccount({ compact = false }: { compact?: boolean }) {
@@ -163,10 +164,10 @@ export function SideNavAccount({ compact = false }: { compact?: boolean }) {
             </span>
                     </div>
 
-                    {/* Lưới điều hướng nhanh */}
+                    {/* Danh sách điều hướng tài khoản */}
                     <nav
                         aria-label="Liên kết tài khoản"
-                        className="grid grid-cols-2 gap-1.5 py-2.5"
+                        className="grid grid-cols-1 gap-1.5 py-2.5"
                     >
                         {links.map((link) => (
                             <NavLink

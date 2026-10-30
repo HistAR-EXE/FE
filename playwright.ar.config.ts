@@ -11,10 +11,11 @@ export default defineConfig({
   expect: { timeout: 20000 },
   use: {
     ...devices["Desktop Chrome"],
-    channel: "msedge",
+    // Chromium's fake camera is required for native permission/lifecycle tests.
+    channel: process.env.AR_BROWSER_CHANNEL || "chromium",
     baseURL: "http://127.0.0.1:5182",
     screenshot: "only-on-failure",
-    launchOptions: { args: ["--enable-unsafe-swiftshader"] },
+    launchOptions: { args: ["--enable-unsafe-swiftshader", "--use-fake-device-for-media-stream"] },
   },
   webServer: {
     command: "npm run dev -- --host 127.0.0.1 --port 5182 --strictPort",

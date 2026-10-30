@@ -154,6 +154,7 @@ export type OrgPaymentStatus = {
   paidAt: string | null
   returnToPath: string | null
   activated: boolean
+  activationMessage?: string | null
   organizationId: string | null
   planType: string
   orgName: string

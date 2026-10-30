@@ -1,3 +1,4 @@
+import { locationSlug } from '../../shared/config/locationSlug'
 // src/features/landing/LandingContent.tsx
 import { useRef, useState, type KeyboardEvent } from 'react'
 import { Link } from 'react-router-dom'
@@ -15,7 +16,7 @@ const experiences = [
         text: 'Đi từ 1948, qua 1968 và 1975 đến hiện nay. Theo dấu câu chuyện, giải câu đố và đối chiếu 5 điểm Xưa & Nay tại Củ Chi.',
         image: '/images/landing/features-v1/portal.png',
         caption: 'Cổng Thời Gian — hành trình qua bốn chương lịch sử',
-        route: `/time-portal/${CU_CHI_LOCATION_ID}`,
+        route: `/time-portal/${locationSlug(CU_CHI_LOCATION_ID)}`,
         cta: 'Bước vào Cổng Thời Gian',
         chips: ['4 mốc lịch sử', '5 điểm Xưa & Nay'],
     },
@@ -27,7 +28,7 @@ const experiences = [
         text: 'Khám phá sa bàn tương tác và bộ phim 3D dài 11 phút 03 giây. Chọn chất lượng phù hợp và tiếp tục hành trình xem của bạn.',
         image: '/images/landing/features-v1/history.png',
         caption: 'Tái hiện lịch sử — sa bàn tương tác và phim 3D',
-        route: `/diorama/${CU_CHI_LOCATION_ID}`,
+        route: `/diorama/${locationSlug(CU_CHI_LOCATION_ID)}`,
         cta: 'Mở sa bàn & phim 3D',
         chips: ['Sa bàn tương tác', 'Phim 11:03'],
     },
@@ -39,7 +40,7 @@ const experiences = [
         text: 'Quan sát không gian di tích theo nhiều hướng, di chuyển giữa các góc nhìn và tìm những điểm tương tác trong tour 360°.',
         image: '/images/landing/features-v1/tour.png',
         caption: 'Tham quan 360° — khám phá không gian di tích',
-        route: `/tour/360/${CU_CHI_LOCATION_ID}`,
+        route: `/tour/360/${locationSlug(CU_CHI_LOCATION_ID)}`,
         cta: 'Bắt đầu tour 360°',
         chips: ['Kéo để quan sát', 'Điểm tương tác'],
     },
@@ -305,7 +306,7 @@ export function LandingStorySections() {
                                 <li>Chọn di tích và trải nghiệm</li>
                                 <li>Quan sát, tìm hiểu và đặt câu hỏi</li>
                             </ol>
-                            <Link to={`/time-portal/${CU_CHI_LOCATION_ID}`}>
+                            <Link to={`/time-portal/${locationSlug(CU_CHI_LOCATION_ID)}`}>
                                 Khám phá từ xa <span aria-hidden="true">↗</span>
                             </Link>
                         </article>
@@ -421,7 +422,7 @@ export function LandingStorySections() {
                 <strong>10</strong>mô hình AR
               </span>
                         </div>
-                        <Link className="tl-button" to={`/tour/360/${CU_CHI_LOCATION_ID}`}>
+                        <Link className="tl-button" to={`/tour/360/${locationSlug(CU_CHI_LOCATION_ID)}`}>
                             Khám phá Củ Chi <span aria-hidden="true">↗</span>
                         </Link>
                         <Link className="tl-inline-link" to="/pricing#services">

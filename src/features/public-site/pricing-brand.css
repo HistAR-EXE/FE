@@ -24,9 +24,11 @@
 .tl-public .pricing-page .pricing-org-card { background: linear-gradient(145deg, white, #eff6ff); box-shadow: 0 12px 35px #0275fb0e; }
 .tl-public .pricing-page .heritage-steps article { border-top: 3px solid #fdc908; background: #fff; }
 .tl-public .pricing-page .pricing-faq { background: linear-gradient(135deg, #fff, #eaf3ff); }
-.tl-public .pricing-page .pub-contact-band { background: linear-gradient(120deg, #0349a2, #0275fb); color: white; }
-.tl-public .pricing-page .pub-contact-band :is(h2,p) { color: white; }
-.tl-public .pricing-page .pub-contact-band .tl-button { background: #fdc908; color: #102443; }
+.tl-public .pricing-page .pub-contact-band { background: radial-gradient(ellipse at 95% 10%, #fff0a8 0, transparent 55%), linear-gradient(120deg, #fffdf5, #fff7d6); color: #102443; border-top: 1px solid #eddfae; border-bottom: 6px solid #fdc908; }
+.tl-public .pricing-page .pub-contact-band h2 { color: #102443; }
+.tl-public .pricing-page .pub-contact-band p { color: #425773; }
+.tl-public .pricing-page .pub-contact-band .tl-eyebrow { color: #075bbf; }
+.tl-public .pricing-page .pub-contact-band .tl-button { background: #fdc908; color: #102443; border: 2px solid #e7b600; box-shadow: 0 8px 22px #b4870026; }
 .tl-public .pricing-page .heritage-brief > .heritage-solution-icon { animation: pricingIconFloat 4.5s ease-in-out infinite; }
 @keyframes pricingIconFloat { 0%, 100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-5px) rotate(3deg); } }
 .tl-public .pricing-page .pricing-faq-mascot { position: relative; isolation: isolate; display: grid; place-items: center; width: min(100%, 400px); height: 360px; margin: 40px auto 0; }
@@ -46,3 +48,33 @@
 @media (max-width: 900px) { .tl-public .pricing-page .pricing-faq-mascot { height: 260px; max-width: 330px; margin-top: 24px; } .pricing-faq-mascot img { width: 210px; } .pricing-faq-bubble { font-size: 11px; } }
 @media (prefers-reduced-motion: reduce) { .pricing-faq-mascot * { animation: none !important; } }
 @media (prefers-reduced-motion: reduce) { .tl-public .pricing-page .heritage-brief > .heritage-solution-icon { animation: none; } .tl-public .pricing-page .heritage-service-grid article { transition: none; } .tl-public .pricing-page .heritage-service-grid article:hover { transform: none; } }
+
+/* Aligned benefit rows make organization plans directly comparable. */
+.tl-public .pricing-page .pricing-benefits{margin:24px 0;flex:1}
+.tl-public .pricing-page .pricing-benefits h4{font-size:11px;letter-spacing:.12em;font-weight:850;color:#647b98;margin:0 0 14px}
+.tl-public .pricing-page .pricing-benefits ul{list-style:none;padding:0;margin:0;display:grid;gap:0}
+.tl-public .pricing-page .pricing-benefits li{display:grid;grid-template-columns:24px minmax(0,1fr) auto;align-items:center;gap:9px;min-height:52px;padding:12px 0;border-bottom:1px solid #e7eef8;font-size:14px;line-height:1.5;color:#203958}
+.tl-public .pricing-page .pricing-benefits li>span:first-child{width:23px;height:23px;border-radius:50%;display:grid;place-items:center;background:#e6f6ee;color:#13764e;font-weight:900}
+.tl-public .pricing-page .pricing-benefits li small{font-size:10px;font-weight:800;padding:4px 8px;background:#edf8f2;color:#14744f;border-radius:6px;white-space:nowrap}
+.tl-public .pricing-page .pricing-benefits .is-excluded{color:#8190a4}
+.tl-public .pricing-page .pricing-benefits .is-excluded>span:first-child,.tl-public .pricing-page .pricing-benefits .is-excluded small{background:#f0f3f7;color:#7d8da3}
+.tl-public .pricing-page .pricing-org-card dl{min-height:232px}
+.tl-public .pricing-page .pricing-org-card dd{max-width:54%;font-size:clamp(15px,1.3vw,21px)}
+.tl-public .pricing-page .pricing-terms{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:22px;padding:26px;margin-top:28px;background:#edf5ff;border:1px solid #d7e6fb;border-radius:22px}
+.tl-public .pricing-page .pricing-terms>div>span{font-size:11px;color:#0075ff;font-weight:900;letter-spacing:.1em}
+.tl-public .pricing-page .pricing-terms h4{font-weight:850;font-size:14px;margin:8px 0;color:#173451}
+.tl-public .pricing-page .pricing-terms p{font-size:12px;line-height:1.8;color:#5d7390;margin:0}
+@media(max-width:1000px){.tl-public .pricing-page .pricing-terms{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.tl-public .pricing-page .pricing-terms{grid-template-columns:minmax(0,1fr);gap:20px;padding:22px}.tl-public .pricing-page .pricing-benefits li{font-size:13px}.tl-public .pricing-page .pricing-org-card dl{min-height:0}}
+
+/* Readable, consistent pricing typography across all service sections. */
+.tl-public .pricing-page{--pricing-body-size:16px;--pricing-note-size:14px}
+.tl-public .pricing-page :is(p,li,dt,dd,td,th){font-size:var(--pricing-body-size);line-height:1.75}
+.tl-public .pricing-page :is(small,.tl-eyebrow,.pricing-benefits h4,.pricing-terms>div>span){font-size:var(--pricing-note-size);line-height:1.6}
+.tl-public .pricing-page :is(.pricing-terms h4,.pricing-benefits li){font-size:16px;line-height:1.6}
+.tl-public .pricing-page .pricing-terms p{font-size:16px;line-height:1.8;color:#49617f}
+.tl-public .pricing-page .pricing-benefits li small{font-size:14px;white-space:normal}
+.tl-public .pricing-page .heritage-intro>div{min-width:0}
+.tl-public .pricing-page #heritage .tl-section-title{font-size:clamp(28px,3.25vw,52px);line-height:1.18;letter-spacing:-.035em}
+.tl-public .pricing-page .heritage-title-phrase{white-space:nowrap}
+@media(min-width:1100px){.tl-public .pricing-page #heritage .tl-section-title em{white-space:nowrap}}

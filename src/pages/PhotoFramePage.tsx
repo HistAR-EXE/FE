@@ -8,6 +8,7 @@ import { useToast } from '../shared/ui/toast/useToast'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import { useAuth } from '../shared/auth/useAuth'
 import { hasPremiumAccess } from '../shared/access/contentAccess'
+import { LOCAL_PHOTO_FRAMES, isLocalPhotoFrame } from '../features/photo-flow/localPhotoFrames'
 import { exportOriginalPhoto } from '../features/photo-flow/originalPhoto'
 import { photoUploadError } from '../features/photo-flow/photoUpload'
 import { resolveMediaUrl } from '../shared/config/env'
@@ -176,6 +177,7 @@ const PHOTO_FLOW_THEME_CSS = `
 `
 
 export function PhotoFramePage() {
+    const { user } = useAuth()
     const [params] = useSearchParams(),
         location = useLocation(),
         navigate = useNavigate()
@@ -245,6 +247,7 @@ export function PhotoFramePage() {
 
                 {stage === 'create' ? (
                     <PhotoFrameEditor
+                        key={user?.id ?? "guest"}
                         reviewing={reviewing}
                         onReviewChange={setReviewing}
                     />
@@ -302,6 +305,8 @@ function PhotoFrameEditor({
     const cameraLocked = isCameraLockedForStation(effectiveStation)
     const [frames, setFrames] = useState<PhotoFrame[]>([])
     const [frameId, setFrameId] = useState('')
+    const [originalOptions, setOriginalOptions] = useState({ zoom: 1, offsetX: 0, offsetY: 0, removeBackground: false })
+    const photoDrag = useRef<{ x: number; y: number; offsetX: number; offsetY: number } | null>(null)
     const [variant, setVariant] = useState<'square' | 'story'>(() =>
         heritageEntry ? 'story' : 'square',
     )
@@ -329,6 +334,7 @@ function PhotoFrameEditor({
         if (error) { setPhotoInputError(error); return }
         setPhotoInputError('')
         setFile(next)
+        setOriginalOptions({ zoom: 1, offsetX: 0, offsetY: 0, removeBackground: false })
         setQueued(false)
         setHasHeritagePreview(false)
         setHeritagePreview({ ready: false, error: null })
@@ -355,10 +361,8 @@ function PhotoFrameEditor({
     useEffect(() => {
         viralApi
             .frames()
-            .then(setFrames)
-            .catch((e) =>
-                showToast({ message: getFriendlyErrorMessage(e, 'upload'), type: 'error' }),
-            )
+            .then(items => setFrames([...LOCAL_PHOTO_FRAMES, ...items]))
+            .catch(() => setFrames([...LOCAL_PHOTO_FRAMES]))
             .finally(() => setFramesLoading(false))
     }, [showToast])
 
@@ -429,7 +433,8 @@ function PhotoFrameEditor({
             file,
             variant,
             lowLight,
-            selectedFrame ? resolveMediaUrl(selectedFrame.imageUrl) : undefined,
+            selectedFrame ? (isLocalPhotoFrame(selectedFrame.id) ? selectedFrame.imageUrl : resolveMediaUrl(selectedFrame.imageUrl)) : undefined,
+            originalOptions,
         )
             .then((output) => {
                 if (active) setOriginalPhoto(output)
@@ -445,7 +450,7 @@ function PhotoFrameEditor({
         return () => {
             active = false
         }
-    }, [file, photoMode, variant, lowLight, selectedFrame, frameId])
+    }, [file, photoMode, variant, lowLight, selectedFrame, frameId, originalOptions])
 
     const previewFile = photoMode === 'original' ? originalPhoto : null
     const previewUrl = useMemo(
@@ -546,6 +551,7 @@ function PhotoFrameEditor({
                 setPhotoMode(draft.mode === 'heritage' && role ? 'heritage' : 'original')
                 setFile(draft.file)
                 setFrameId(draft.frameId)
+                setOriginalOptions(draft.originalOptions ?? { zoom: 1, offsetX: 0, offsetY: 0, removeBackground: false })
                 setVariant(draft.variant)
                 setLowLight(draft.lowLight)
                 setSelectedHeritageRole(role)
@@ -626,9 +632,14 @@ function PhotoFrameEditor({
             }
             return
         }
+        const submitOwner = user?.id
+        const assertSubmitOwner = () => {
+            if (!submitOwner || readStoredUser()?.id !== submitOwner) throw new Error('Phiên tài khoản đã thay đổi. Vui lòng mở lại trình chỉnh ảnh.')
+        }
         setUploading(true)
         let pendingUploadFile: File | null = null
         try {
+            assertSubmitOwner()
             const uploadFile =
                 photoMode === 'heritage'
                     ? await heritageStudioRef.current?.exportFullResolution()
@@ -669,9 +680,10 @@ function PhotoFrameEditor({
                     savedAt: Date.now(),
                 }).catch(() => setDraftError(true))
             }
+            assertSubmitOwner()
             const creation = await viralApi.uploadCreation({
                 file: resized,
-                frameId: photoMode === 'heritage' ? null : frameId || null,
+                frameId: photoMode === 'heritage' || isLocalPhotoFrame(frameId) ? null : frameId || null,
                 variant,
                 kind: photoMode,
                 siteCode: stationContext?.siteCode,
@@ -680,6 +692,7 @@ function PhotoFrameEditor({
                 era: photoMode === 'heritage' ? 1968 : undefined,
                 source: entrySource,
             })
+            assertSubmitOwner()
             emitEvent('export_created', {
                 stationCode: stationContext?.stationCode,
                 payload: {
@@ -707,6 +720,7 @@ function PhotoFrameEditor({
                         file,
                         mode: photoMode,
                         frameId,
+                        originalOptions,
                         variant,
                         lowLight,
                         roleId: selectedHeritageRole?.id ?? null,
@@ -722,13 +736,14 @@ function PhotoFrameEditor({
                     })
                 }
             }
+            assertSubmitOwner()
             onReviewChange(false)
             navigate(appendHeritageEntrySource(contextualSharePath, entrySource), {
                 state: canUndo ? { freshCreationId: creation.id } : null,
             })
             showToast({ message: 'Tạo ảnh thành công.', type: 'success' })
         } catch (e) {
-            if (pendingUploadFile && isOfflineLikeError(e)) {
+            if (pendingUploadFile && isOfflineLikeError(e) && submitOwner === readStoredUser()?.id) {
                 if (!user?.id) {
                     showToast({
                         message:
@@ -738,7 +753,7 @@ function PhotoFrameEditor({
                     return
                 }
                 await queueHeritageUpload(user.id, pendingUploadFile, {
-                    frameId: photoMode === 'heritage' ? null : frameId || null,
+                    frameId: photoMode === 'heritage' || isLocalPhotoFrame(frameId) ? null : frameId || null,
                     variant,
                     kind: photoMode,
                     siteCode: stationContext?.siteCode,
@@ -798,7 +813,20 @@ function PhotoFrameEditor({
                         template={selectedHeritageRole}
                         onChange={setHeritagePlacement}
                     >
-                        <div className="relative h-full w-full overflow-hidden rounded-[18px] bg-[#0d1422]">
+                        <div className="relative h-full w-full overflow-hidden rounded-[18px] bg-[#0d1422]"
+                                    onPointerDown={event => {
+                                        if (photoMode !== 'original' || !file) return
+                                        event.currentTarget.setPointerCapture(event.pointerId)
+                                        photoDrag.current = { x: event.clientX, y: event.clientY, offsetX: originalOptions.offsetX, offsetY: originalOptions.offsetY }
+                                    }}
+                                    onPointerMove={event => {
+                                        const drag = photoDrag.current
+                                        if (!drag) return
+                                        const bounds = event.currentTarget.getBoundingClientRect()
+                                        setOriginalOptions(value => ({ ...value, offsetX: Math.max(-1, Math.min(1, drag.offsetX + 2 * (event.clientX - drag.x) / bounds.width)), offsetY: Math.max(-1, Math.min(1, drag.offsetY + 2 * (event.clientY - drag.y) / bounds.height)) }))
+                                    }}
+                                    onPointerUp={() => { photoDrag.current = null }}
+                                    onPointerCancel={() => { photoDrag.current = null }}>
                             {photoMode === 'heritage' && selectedHeritageRole ? (
                                 <>
                                     {!hasHeritagePreview && (
@@ -831,8 +859,12 @@ function PhotoFrameEditor({
                                 <img
                                     alt="Ảnh kỷ niệm đang chỉnh"
                                     src={previewUrl}
-                                    className="h-full w-full object-cover"
+                                    draggable={false}
+                                    className="h-full w-full object-contain touch-none cursor-move"
+
                                 />
+                            ) : file && !originalError ? (
+                                <div className="flex h-full items-center justify-center p-6 text-center font-bold text-white" role="status">{originalOptions.removeBackground ? 'Đang tách nền và lồng ảnh vào khung…' : 'Đang tạo ảnh xem trước…'}</div>
                             ) : (
                                 <label
                                     data-testid="photo-frame-empty-preview"
@@ -1060,6 +1092,8 @@ function PhotoFrameEditor({
                             selectedLocked={selectedLocked}
                             variant={variant}
                             onVariantChange={setVariant}
+                            options={originalOptions}
+                            onOptionsChange={setOriginalOptions}
                         />
                     )}
 

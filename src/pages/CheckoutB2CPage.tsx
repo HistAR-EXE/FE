@@ -1,6 +1,6 @@
 import { checkoutPlanCopy, confirmedPrice, confirmedJourneyExpiry } from '../features/billing/planPresentation'
 // src/pages/CheckoutB2CPage.tsx
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { isSafeRedirect } from '../shared/auth/types'
 import { AuthLayout } from '../components/layout/AuthLayout'
@@ -17,8 +17,15 @@ import { getPilotSite } from '../shared/config/constants'
 import { markJourneyPassActive } from '../shared/access/contentAccess'
 
 export function CheckoutB2CPage() {
+    const [query] = useSearchParams()
+    return <CheckoutB2CForm key={`${query.get('plan') || 'PREMIUM'}:${query.get('site') || 'cu-chi'}:${query.get('next') || ''}`} />
+}
+
+function CheckoutB2CForm() {
     const [searchParams] = useSearchParams()
     const navigate = useNavigate()
+    const mounted = useRef(true)
+    useEffect(() => { mounted.current = true; return () => { mounted.current = false } }, [])
     const { updateUser, user } = useAuth()
     const { showToast } = useToast()
     const [loading, setLoading] = useState(false)
@@ -37,7 +44,8 @@ export function CheckoutB2CPage() {
     const requestedSite = searchParams.get('site')
     const site = getPilotSite(requestedSite || 'cu-chi')
     const siteCode = site?.siteCode || 'cu-chi'
-    const organizationBlocked = !!user?.orgId
+    const [authoritativeOrgId, setAuthoritativeOrgId] = useState(user?.orgId)
+    const organizationBlocked = !!authoritativeOrgId
     const unsupportedSite = planType === 'JOURNEY_PASS' && !site
     const planCopy = checkoutPlanCopy(planType, site?.name || siteCode)
 
@@ -53,13 +61,14 @@ export function CheckoutB2CPage() {
             if (active) { setPriceVnd(price); setPriceForPlan(planType); setPricingState(price === null ? 'error' : 'ready') }
         }).catch(() => { if (active) { setPriceVnd(null); setPricingState('error') } })
         profileApi.me()
-            .then((profile) => setEmailVerified(profile.emailVerified))
+            .then((profile) => { if (active) { setEmailVerified(profile.emailVerified); setAuthoritativeOrgId(profile.orgId) } })
             .catch(() => undefined)
         return () => { active = false }
     }, [planType, priceAttempt])
 
     const completeUpgrade = async (nextPath: string) => {
         const profile = await profileApi.me()
+        if (!mounted.current) return
         if (planType === 'JOURNEY_PASS') {
             const expiresMs = confirmedJourneyExpiry(profile.activeVisitSites, siteCode)
             markJourneyPassActive(siteCode, expiresMs)
@@ -84,6 +93,7 @@ export function CheckoutB2CPage() {
         try {
             if (!silent) setChecking(true)
             const nextStatus = await billingApi.getB2CPaymentStatus(orderCode)
+            if (!mounted.current) return
             setStatus(nextStatus.status)
             setStatusDetail(nextStatus)
             if (nextStatus.status === 'PAID' && nextStatus.upgraded) {
@@ -112,6 +122,7 @@ export function CheckoutB2CPage() {
                 planType,
                 siteCode: planType === 'JOURNEY_PASS' ? siteCode : undefined,
             })
+            if (!mounted.current) return
             setPayment(next)
             setPriceVnd(next.amountVnd)
             setStatus(next.status)

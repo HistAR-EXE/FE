@@ -1,3 +1,4 @@
+import { locationSlug, resolveLocationParam } from '../../shared/config/locationSlug'
 // src/features/chat/chatRoute.ts
 import { CU_CHI_LOCATION_ID } from '../../shared/config/constants'
 import { normalizeChatPersona } from './chatPersona'
@@ -29,13 +30,13 @@ export function readSelectedLocationId(): string | null {
 /** URL param → onboarding selection → Củ Chi default (same as Tour 360 / Time Portal). */
 export function resolveChatLocationId(urlLocationId?: string | null): string {
     const trimmed = urlLocationId?.trim()
-    if (trimmed) return trimmed
+    if (trimmed) return resolveLocationParam(trimmed) ?? trimmed
     return readSelectedLocationId() ?? CU_CHI_LOCATION_ID
 }
 
 export function buildChatPath(options: BuildChatPathOptions = {}): string {
     const locationId = resolveChatLocationId(options.locationId)
-    const params = new URLSearchParams({ locationId })
+    const params = new URLSearchParams({ locationId: locationSlug(locationId) })
     params.set('persona', normalizeChatPersona(options.persona))
     if (options.prompt) params.set('prompt', options.prompt)
     if (options.questPrompt) params.set('questPrompt', options.questPrompt)

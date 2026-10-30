@@ -1,103 +1,53 @@
-// src/components/consent/ConsentModal.tsx
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { getConsent, saveConsent } from '../../lib/consent'
 import { emitEvent } from '../../lib/pilotEvents'
+import { MaterialIcon } from '../ui/MaterialIcon'
+import './consent.css'
 
 type ToggleKey = 'analytics' | 'camera' | 'gps'
-
-const ITEMS: { key: ToggleKey; title: string; description: string }[] = [
-  {
-    key: 'analytics',
-    title: 'Phân tích sử dụng',
-    description: 'Ghi nhận sự kiện ẩn danh (phiên, trạm đã đến) để cải thiện trải nghiệm pilot.',
-  },
-  {
-    key: 'camera',
-    title: 'Camera',
-    description: 'Quét mã QR trạm và dùng AR / Time Portal.',
-  },
-  {
-    key: 'gps',
-    title: 'Vị trí (GPS)',
-    description: 'Tùy chọn — xác minh bạn đang ở di tích. Quét QR trạm vẫn check-in được khi không có GPS.',
-  },
+const ITEMS: { key: ToggleKey; icon: string; title: string; description: string; note: string }[] = [
+  { key: 'analytics', icon: 'monitoring', title: 'Phân tích sử dụng', description: 'Cho phép ghi nhận sự kiện sử dụng, như phiên trải nghiệm và trạm đã đến, để cải thiện TimeLens.', note: 'Tắt lựa chọn này để ngừng các sự kiện phân tích của ứng dụng.' },
+  { key: 'camera', icon: 'photo_camera', title: 'Camera cho QR & AR', description: 'Hỗ trợ quét mã QR tại trạm và trải nghiệm thực tế tăng cường (AR / Time Portal).', note: 'Trình duyệt sẽ hỏi quyền khi bạn mở tính năng cần camera.' },
+  { key: 'gps', icon: 'location_on', title: 'Vị trí (GPS)', description: 'Hỗ trợ xác minh vị trí khi bạn trải nghiệm tại di tích.', note: 'Bạn vẫn có thể check-in bằng mã QR khi không có GPS.' },
 ]
 
-/** Shown once per browser (localStorage `histar_consent_v1`). */
+/** Browser-local preferences; camera/GPS browser permissions remain independently controlled. */
 export function ConsentModal() {
   const [open, setOpen] = useState(() => getConsent() === null)
   const [choices, setChoices] = useState<Record<ToggleKey, boolean>>({ analytics: true, camera: true, gps: true })
-
-  if (!open) return null
-
+  const dialog = useRef<HTMLDialogElement>(null)
+  useEffect(() => {
+    if (!open) return
+    const previous = document.activeElement as HTMLElement | null
+    const overflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    dialog.current?.showModal()
+    dialog.current?.querySelector<HTMLElement>('#consent-title')?.focus({ preventScroll: true })
+    if (dialog.current) dialog.current.scrollTop = 0
+    return () => { document.body.style.overflow = overflow; previous?.focus() }
+  }, [open])
   const close = (next: Record<ToggleKey, boolean>) => {
     saveConsent(next)
-    emitEvent('consent_updated', {
-      payload: { purposes: Object.entries(next).filter(([, v]) => v).map(([k]) => k) },
-    })
+    emitEvent('consent_updated', { payload: { purposes: Object.entries(next).filter(([, v]) => v).map(([k]) => k) } })
     setOpen(false)
   }
-
-  return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="consent-title"
-      data-testid="consent-modal"
-      className="fixed inset-0 z-[1000] flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm p-4"
-    >
-      <div className="w-full max-w-md rounded-2xl border border-white/15 bg-[#12141f] text-white shadow-2xl p-6 space-y-4">
-        <div>
-          <h2 id="consent-title" className="text-lg font-black">
-            Quyền riêng tư &amp; quyền truy cập
-          </h2>
-          <p className="text-sm text-gray-300 mt-1">
-            TimeLens cần vài quyền để hoạt động tại di tích. Bạn có thể đổi ý bất cứ lúc nào trong cài đặt trình duyệt.{' '}
-            <a href="/privacy" className="text-[#388cf1] underline">
-              Chính sách bảo mật
-            </a>
-          </p>
-        </div>
-
-        <ul className="space-y-3">
-          {ITEMS.map((item) => (
-            <li key={item.key}>
-              <label className="flex items-start gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="mt-1 h-4 w-4 accent-[#fe951c]"
-                  checked={choices[item.key]}
-                  onChange={(e) => setChoices((prev) => ({ ...prev, [item.key]: e.target.checked }))}
-                  data-testid={`consent-${item.key}`}
-                />
-                <span>
-                  <span className="block text-sm font-bold">{item.title}</span>
-                  <span className="block text-xs text-gray-400">{item.description}</span>
-                </span>
-              </label>
-            </li>
-          ))}
-        </ul>
-
-        <div className="flex flex-col sm:flex-row gap-2 pt-2">
-          <button
-            type="button"
-            data-testid="consent-save"
-            onClick={() => close(choices)}
-            className="flex-1 rounded-xl bg-gradient-to-r from-[#fe951c] to-[#e07d0b] px-4 py-2.5 text-sm font-black text-black"
-          >
-            Lưu lựa chọn
-          </button>
-          <button
-            type="button"
-            data-testid="consent-decline"
-            onClick={() => close({ analytics: false, camera: false, gps: false })}
-            className="flex-1 rounded-xl border border-white/20 px-4 py-2.5 text-sm font-bold hover:bg-white/10"
-          >
-            Từ chối tất cả
-          </button>
-        </div>
-      </div>
-    </div>
-  )
+  if (!open) return null
+  return <dialog ref={dialog} aria-labelledby="consent-title" aria-describedby="consent-description" data-testid="consent-modal" className="tl-consent" onCancel={event => event.preventDefault()}>
+    <header className="tl-consent-heading">
+      <div className="tl-consent-brand"><span className="tl-consent-mark"><MaterialIcon name="verified_user" /></span><span>TIMELENS <span>/ QUYỀN RIÊNG TƯ</span></span></div>
+      <h2 id="consent-title" tabIndex={-1}>Trải nghiệm của bạn.<br /><em>Lựa chọn trong tay bạn.</em></h2>
+      <p id="consent-description">Chọn những tiện ích bạn muốn cho phép khi khám phá di sản. Bạn có thể lưu lựa chọn riêng hoặc từ chối tất cả.</p>
+    </header>
+    <section className="tl-consent-body" aria-label="Tùy chọn quyền riêng tư">
+      <div className="tl-consent-section-title"><h3>Quyền riêng tư & quyền truy cập</h3><span>3 mục tùy chọn</span></div>
+      <ul className="tl-consent-options">{ITEMS.map(item => <li key={item.key}><label className={`tl-consent-option ${choices[item.key] ? 'is-selected' : ''}`}>
+        <span className="tl-consent-icon"><MaterialIcon name={item.icon} /></span>
+        <span className="tl-consent-option-copy"><strong id={`consent-label-${item.key}`}>{item.title}</strong><span id={`consent-description-${item.key}`}>{item.description}</span><small>{item.note}</small></span>
+        <input type="checkbox" role="switch" aria-labelledby={`consent-label-${item.key}`} aria-describedby={`consent-description-${item.key}`} checked={choices[item.key]} onChange={e => setChoices(prev => ({ ...prev, [item.key]: e.target.checked }))} data-testid={`consent-${item.key}`} />
+      </label></li>)}</ul>
+      <div className="tl-consent-info"><MaterialIcon name="info" /><p>Lựa chọn được lưu trên <strong>trình duyệt này</strong>. Camera/GPS vẫn do trình duyệt quản lý; lưu lựa chọn ở đây không tự cấp hoặc thu hồi quyền truy cập.</p></div>
+      <p className="tl-consent-help">Thay đổi lựa chọn tại <strong>Cài đặt → Quyền riêng tư & phiên</strong>. Để quản lý quyền camera/GPS thực tế, dùng biểu tượng cạnh thanh địa chỉ trình duyệt.</p>
+    </section>
+    <footer className="tl-consent-footer"><div className="tl-consent-actions"><button type="button" data-testid="consent-save" onClick={() => close(choices)}>Lưu lựa chọn <span aria-hidden="true">✓</span></button><button type="button" data-testid="consent-decline" onClick={() => close({ analytics: false, camera: false, gps: false })}>Từ chối tất cả</button></div><a href="/privacy" target="_blank" rel="noopener noreferrer">Đọc chính sách quyền riêng tư <span aria-hidden="true">↗</span><span className="tl-consent-sr"> (mở trong thẻ mới)</span></a></footer>
+  </dialog>
 }

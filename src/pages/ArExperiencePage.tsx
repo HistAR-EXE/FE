@@ -447,6 +447,10 @@ export function ArExperiencePage() {
                                                     </div>
 
                                                     <p className="text-xs leading-relaxed text-slate-600 ar-model-disclaimer">{artifact.note}</p>
+                                                    <p className="ar-footnote">
+                                                        Tác giả: {artifact.author} · {artifact.license}
+                                                        {" · "}<a className="ar-text-link" href={artifact.source} target="_blank" rel="noopener noreferrer">Nguồn mô hình ↗</a>
+                                                    </p>
                                                     <button
                                                         className="ar-button ar-button-yellow w-full"
                                                         onClick={() => change("home")}
