@@ -6,6 +6,9 @@ import { VitePWA } from 'vite-plugin-pwa'
 // https://vite.dev/config/
 export default defineConfig(({ command }) => ({
   publicDir: command === 'build' ? '.r2-public-build' : 'public',
+  // Keep even small world meshes/textures as separately measurable streamed assets.
+  // Otherwise base64 inlining hides their 3D bytes in the runtime JS accounting.
+  build: {assetsInlineLimit: file => file.replaceAll('\\','/').includes('/living-world/r2/assets/') ? false : undefined},
   plugins: [
     react(),
     tailwindcss(),

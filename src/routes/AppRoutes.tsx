@@ -42,6 +42,8 @@ import { GoogleRedirectCompletion } from '../shared/auth/GoogleRedirectCompletio
 import { AdminConsoleLayout } from '../components/admin/AdminConsoleLayout'
 import { DemoAdminSessionPage } from '../pages/DemoAdminSessionPage'
 
+const LivingWorldPage = lazy(() => import('../features/living-world/LivingWorldPage'))
+
 const ArtifactsPage = lazy(() => import('../pages/ArtifactsPage').then((module) => ({ default: module.ArtifactsPage })))
 const ArtifactDetailPage = lazy(() => import('../pages/ArtifactDetailPage').then((module) => ({ default: module.ArtifactDetailPage })))
 const TeacherDashboardPage = lazy(() => import('../pages/TeacherDashboardPage').then((module) => ({ default: module.TeacherDashboardPage })))
@@ -115,6 +117,7 @@ export function AppRoutes() {
                         {/* Public — guest landing only */}
                         <Route path="/" element={<OnboardingPage />} />
                         <Route path="/about" element={<AboutPage />} />
+                        <Route path="/living-world" element={<LivingWorldPage />} />
                         <Route path="/ar-experience" element={<SectionErrorBoundary label="Khám phá AR"><ArExperiencePage /></SectionErrorBoundary>} />
                         <Route path="/time-portal/:locationId/ar" element={<LegacyTimePortalArRedirect />} />
                         <Route path="/heritage-portfolio" element={<HeritagePortfolioPage />} />
@@ -163,6 +166,7 @@ export function AppRoutes() {
                                 <Route path="/time-portal/:locationId" element={<SectionErrorBoundary label="Cổng thời gian"><TimePortalPage /></SectionErrorBoundary>} />
                                 <Route path="/tour/360/:locationId?" element={<SectionErrorBoundary label="Tour 360"><Tour360Page /></SectionErrorBoundary>} />
                                 <Route path="/quests" element={<QuestsPage />} />
+
                                 <Route path="/quests/:questId/play/:minigameId" element={<MinigamePage />} />
                                 <Route path="/quests/:questId" element={<QuestDetailPage />} />
                                 <Route path="/leaderboard" element={<LeaderboardPage />} />

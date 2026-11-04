@@ -1,0 +1,426 @@
+{
+ "generated": "2026-11-03T00:12:23.680Z",
+ "note": "Optimized runtime copies of R2 lookdev assets (CC0). LOOKDEV CANDIDATE / placeholder — not final art.",
+ "files": [
+  {
+   "file": "tex/bamboo_wall_02_Diffuse.webp",
+   "bytes": 39944,
+   "source": "polyhaven:bamboo_wall_02"
+  },
+  {
+   "file": "tex/bamboo_wall_02_arm.webp",
+   "bytes": 19024,
+   "source": "polyhaven:bamboo_wall_02"
+  },
+  {
+   "file": "tex/bamboo_wall_02_nor_gl.webp",
+   "bytes": 68898,
+   "source": "polyhaven:bamboo_wall_02"
+  },
+  {
+   "file": "tex/bamboo_wall_Diffuse.webp",
+   "bytes": 26674,
+   "source": "polyhaven:bamboo_wall"
+  },
+  {
+   "file": "tex/bamboo_wall_arm.webp",
+   "bytes": 13932,
+   "source": "polyhaven:bamboo_wall"
+  },
+  {
+   "file": "tex/bamboo_wall_nor_gl.webp",
+   "bytes": 27264,
+   "source": "polyhaven:bamboo_wall"
+  },
+  {
+   "file": "tex/bark_brown_01_Diffuse.webp",
+   "bytes": 66198,
+   "source": "polyhaven:bark_brown_01"
+  },
+  {
+   "file": "tex/bark_brown_01_arm.webp",
+   "bytes": 46520,
+   "source": "polyhaven:bark_brown_01"
+  },
+  {
+   "file": "tex/bark_brown_01_nor_gl.webp",
+   "bytes": 113140,
+   "source": "polyhaven:bark_brown_01"
+  },
+  {
+   "file": "tex/brown_mud_leaves_01_Diffuse.webp",
+   "bytes": 325846,
+   "source": "polyhaven:brown_mud_leaves_01"
+  },
+  {
+   "file": "tex/brown_mud_leaves_01_arm.webp",
+   "bytes": 37384,
+   "source": "polyhaven:brown_mud_leaves_01"
+  },
+  {
+   "file": "tex/brown_mud_leaves_01_nor_gl.webp",
+   "bytes": 585822,
+   "source": "polyhaven:brown_mud_leaves_01"
+  },
+  {
+   "file": "tex/brushed_concrete_Diffuse.webp",
+   "bytes": 39128,
+   "source": "polyhaven:brushed_concrete"
+  },
+  {
+   "file": "tex/brushed_concrete_arm.webp",
+   "bytes": 8310,
+   "source": "polyhaven:brushed_concrete"
+  },
+  {
+   "file": "tex/brushed_concrete_nor_gl.webp",
+   "bytes": 42354,
+   "source": "polyhaven:brushed_concrete"
+  },
+  {
+   "file": "tex/clay_plaster_Diffuse.webp",
+   "bytes": 1692,
+   "source": "polyhaven:clay_plaster"
+  },
+  {
+   "file": "tex/clay_plaster_arm.webp",
+   "bytes": 3494,
+   "source": "polyhaven:clay_plaster"
+  },
+  {
+   "file": "tex/clay_plaster_nor_gl.webp",
+   "bytes": 36922,
+   "source": "polyhaven:clay_plaster"
+  },
+  {
+   "file": "tex/concrete_panels_Diffuse.webp",
+   "bytes": 27490,
+   "source": "polyhaven:concrete_panels"
+  },
+  {
+   "file": "tex/concrete_panels_arm.webp",
+   "bytes": 7308,
+   "source": "polyhaven:concrete_panels"
+  },
+  {
+   "file": "tex/concrete_panels_nor_gl.webp",
+   "bytes": 41686,
+   "source": "polyhaven:concrete_panels"
+  },
+  {
+   "file": "tex/dirt_floor_Diffuse.webp",
+   "bytes": 199270,
+   "source": "polyhaven:dirt_floor"
+  },
+  {
+   "file": "tex/dirt_floor_arm.webp",
+   "bytes": 8622,
+   "source": "polyhaven:dirt_floor"
+  },
+  {
+   "file": "tex/dirt_floor_nor_gl.webp",
+   "bytes": 410118,
+   "source": "polyhaven:dirt_floor"
+  },
+  {
+   "file": "tex/excavated_soil_wall_Diffuse.webp",
+   "bytes": 56668,
+   "source": "polyhaven:excavated_soil_wall"
+  },
+  {
+   "file": "tex/excavated_soil_wall_arm.webp",
+   "bytes": 27832,
+   "source": "polyhaven:excavated_soil_wall"
+  },
+  {
+   "file": "tex/excavated_soil_wall_nor_gl.webp",
+   "bytes": 484404,
+   "source": "polyhaven:excavated_soil_wall"
+  },
+  {
+   "file": "tex/forest_leaves_02_Diffuse.webp",
+   "bytes": 349816,
+   "source": "polyhaven:forest_leaves_02"
+  },
+  {
+   "file": "tex/forest_leaves_02_arm.webp",
+   "bytes": 64706,
+   "source": "polyhaven:forest_leaves_02"
+  },
+  {
+   "file": "tex/forest_leaves_02_nor_gl.webp",
+   "bytes": 579754,
+   "source": "polyhaven:forest_leaves_02"
+  },
+  {
+   "file": "tex/green_metal_rust_Diffuse.webp",
+   "bytes": 4968,
+   "source": "polyhaven:green_metal_rust"
+  },
+  {
+   "file": "tex/green_metal_rust_arm.webp",
+   "bytes": 4416,
+   "source": "polyhaven:green_metal_rust"
+  },
+  {
+   "file": "tex/green_metal_rust_nor_gl.webp",
+   "bytes": 2858,
+   "source": "polyhaven:green_metal_rust"
+  },
+  {
+   "file": "tex/metal_plate_Diffuse.webp",
+   "bytes": 24440,
+   "source": "polyhaven:metal_plate"
+  },
+  {
+   "file": "tex/metal_plate_arm.webp",
+   "bytes": 57648,
+   "source": "polyhaven:metal_plate"
+  },
+  {
+   "file": "tex/metal_plate_nor_gl.webp",
+   "bytes": 48924,
+   "source": "polyhaven:metal_plate"
+  },
+  {
+   "file": "tex/palm_bark_Diffuse.webp",
+   "bytes": 22536,
+   "source": "polyhaven:palm_bark"
+  },
+  {
+   "file": "tex/palm_bark_arm.webp",
+   "bytes": 13064,
+   "source": "polyhaven:palm_bark"
+  },
+  {
+   "file": "tex/palm_bark_nor_gl.webp",
+   "bytes": 115450,
+   "source": "polyhaven:palm_bark"
+  },
+  {
+   "file": "tex/raw_plank_wall_Diffuse.webp",
+   "bytes": 21180,
+   "source": "polyhaven:raw_plank_wall"
+  },
+  {
+   "file": "tex/raw_plank_wall_arm.webp",
+   "bytes": 12272,
+   "source": "polyhaven:raw_plank_wall"
+  },
+  {
+   "file": "tex/raw_plank_wall_nor_gl.webp",
+   "bytes": 31668,
+   "source": "polyhaven:raw_plank_wall"
+  },
+  {
+   "file": "tex/red_dirt_mud_01_Diffuse.webp",
+   "bytes": 332396,
+   "source": "polyhaven:red_dirt_mud_01"
+  },
+  {
+   "file": "tex/red_dirt_mud_01_arm.webp",
+   "bytes": 102758,
+   "source": "polyhaven:red_dirt_mud_01"
+  },
+  {
+   "file": "tex/red_dirt_mud_01_nor_gl.webp",
+   "bytes": 372618,
+   "source": "polyhaven:red_dirt_mud_01"
+  },
+  {
+   "file": "tex/red_laterite_soil_stones_Diffuse.webp",
+   "bytes": 158420,
+   "source": "polyhaven:red_laterite_soil_stones"
+  },
+  {
+   "file": "tex/red_laterite_soil_stones_arm.webp",
+   "bytes": 48364,
+   "source": "polyhaven:red_laterite_soil_stones"
+  },
+  {
+   "file": "tex/red_laterite_soil_stones_nor_gl.webp",
+   "bytes": 578620,
+   "source": "polyhaven:red_laterite_soil_stones"
+  },
+  {
+   "file": "tex/rough_wood_Diffuse.webp",
+   "bytes": 42762,
+   "source": "polyhaven:rough_wood"
+  },
+  {
+   "file": "tex/rough_wood_arm.webp",
+   "bytes": 13156,
+   "source": "polyhaven:rough_wood"
+  },
+  {
+   "file": "tex/rough_wood_nor_gl.webp",
+   "bytes": 51064,
+   "source": "polyhaven:rough_wood"
+  },
+  {
+   "file": "tex/rusty_metal_02_Diffuse.webp",
+   "bytes": 43442,
+   "source": "polyhaven:rusty_metal_02"
+  },
+  {
+   "file": "tex/rusty_metal_02_arm.webp",
+   "bytes": 16672,
+   "source": "polyhaven:rusty_metal_02"
+  },
+  {
+   "file": "tex/rusty_metal_02_nor_gl.webp",
+   "bytes": 18434,
+   "source": "polyhaven:rusty_metal_02"
+  },
+  {
+   "file": "tex/terrazzo_tiles_Diffuse.webp",
+   "bytes": 328436,
+   "source": "polyhaven:terrazzo_tiles"
+  },
+  {
+   "file": "tex/terrazzo_tiles_arm.webp",
+   "bytes": 1306,
+   "source": "polyhaven:terrazzo_tiles"
+  },
+  {
+   "file": "tex/terrazzo_tiles_nor_gl.webp",
+   "bytes": 2694,
+   "source": "polyhaven:terrazzo_tiles"
+  },
+  {
+   "file": "tex/thatch_roof_angled_Diffuse.webp",
+   "bytes": 49116,
+   "source": "polyhaven:thatch_roof_angled"
+  },
+  {
+   "file": "tex/thatch_roof_angled_arm.webp",
+   "bytes": 37178,
+   "source": "polyhaven:thatch_roof_angled"
+  },
+  {
+   "file": "tex/thatch_roof_angled_nor_gl.webp",
+   "bytes": 118796,
+   "source": "polyhaven:thatch_roof_angled"
+  },
+  {
+   "file": "models/vintage_oil_lamp.glb",
+   "bytes": 160588,
+   "source": "vintage_oil_lamp.glb"
+  },
+  {
+   "file": "models/wooden_bowl_01.glb",
+   "bytes": 178072,
+   "source": "wooden_bowl_01.glb"
+  },
+  {
+   "file": "models/wooden_bucket_01.glb",
+   "bytes": 153480,
+   "source": "wooden_bucket_01.glb"
+  },
+  {
+   "file": "models/wicker_basket_01.glb",
+   "bytes": 339280,
+   "source": "wicker_basket_01.glb"
+  },
+  {
+   "file": "models/wicker_basket_02.glb",
+   "bytes": 319168,
+   "source": "wicker_basket_02.glb"
+  },
+  {
+   "file": "models/wooden_stool_01.glb",
+   "bytes": 216052,
+   "source": "wooden_stool_01.glb"
+  },
+  {
+   "file": "models/ceramic_pot.glb",
+   "bytes": 103400,
+   "source": "ceramic_pot.glb"
+  },
+  {
+   "file": "models/pot_enamel_01.glb",
+   "bytes": 144800,
+   "source": "pot_enamel_01.glb"
+  },
+  {
+   "file": "models/wooden_broom.glb",
+   "bytes": 343644,
+   "source": "wooden_broom.glb"
+  },
+  {
+   "file": "models/metal_tool_chest.glb",
+   "bytes": 220812,
+   "source": "metal_tool_chest.glb"
+  },
+  {
+   "file": "models/industrial_wall_lamp.glb",
+   "bytes": 183112,
+   "source": "industrial_wall_lamp.glb"
+  },
+  {
+   "file": "models/tree_stump_01.glb",
+   "bytes": 323624,
+   "source": "tree_stump_01.glb"
+  },
+  {
+   "file": "models/fern_02.glb",
+   "bytes": 124000,
+   "source": "fern_02.glb"
+  },
+  {
+   "file": "models/grass_medium_01.glb",
+   "bytes": 356812,
+   "source": "grass_medium_01.glb"
+  },
+  {
+   "file": "models/shrub_01_lod.glb",
+   "bytes": 268368,
+   "source": "shrub_01_lod.glb"
+  },
+  {
+   "file": "models/island_tree_01_lod.glb",
+   "bytes": 1511276,
+   "source": "island_tree_01_lod.glb"
+  },
+  {
+   "file": "models/island_tree_02_lod.glb",
+   "bytes": 1279908,
+   "source": "island_tree_02_lod.glb"
+  },
+  {
+   "file": "chars/Superhero_Male_FullBody.glb",
+   "bytes": 280704,
+   "source": "Superhero_Male_FullBody.glb"
+  },
+  {
+   "file": "chars/Superhero_Female_FullBody.glb",
+   "bytes": 292452,
+   "source": "Superhero_Female_FullBody.glb"
+  },
+  {
+   "file": "chars/Hair_SimpleParted.glb",
+   "bytes": 75796,
+   "source": "Hair_SimpleParted.glb"
+  },
+  {
+   "file": "chars/Hair_Buns.glb",
+   "bytes": 127172,
+   "source": "Hair_Buns.glb"
+  },
+  {
+   "file": "chars/Eyebrows_Regular.glb",
+   "bytes": 73004,
+   "source": "Eyebrows_Regular.glb"
+  },
+  {
+   "file": "chars/Eyebrows_Female.glb",
+   "bytes": 89556,
+   "source": "Eyebrows_Female.glb"
+  },
+  {
+   "file": "chars/UAL1_Runtime.glb",
+   "bytes": 2697152,
+   "source": "UAL1_Standard.glb"
+  }
+ ]
+}

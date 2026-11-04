@@ -25,6 +25,8 @@ dist-ssr
 
 # Test suite (retain only the self-contained chat failure/retry regressions)
 /tests/*
+!/tests/living-world/
+!/tests/living-world/**
 !/tests/chat-retry.config.ts
 !/tests/e2e-consent.setup.ts
 !/tests/ui/

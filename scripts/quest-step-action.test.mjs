@@ -2,18 +2,17 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { questStepAction } from '../src/features/gamification/questStepAction.ts'
 
-test('Sa bàn quest opens the first-party quiz instead of the unobservable embedded tour', () => {
+test('Sa bàn quest selects the in-page first-party quiz with location context', () => {
   const action = questStepAction({
     key: 'tour:sa-ban',
     actionType: 'tour',
     state: 'TODO',
     actionLabel: 'Giải câu hỏi Sa bàn',
   }, { questId: 'quest-id', locationId: 'location-id' })
-  assert.equal(action.kind, 'link')
-  const url = new URL(action.href, 'https://example.test')
-  assert.equal(url.pathname, '/chat')
-  assert.equal(url.searchParams.get('questRecord'), 'tour:sa-ban')
-  assert.equal(url.searchParams.get('autoSend'), '1')
+  assert.equal(action.kind, 'sa-ban-quiz')
+  assert.equal(action.locationId, 'location-id')
+  assert.equal(action.label, 'Giải câu hỏi Sa bàn')
+  assert.equal('href' in action, false)
 })
 
 test('dialogue quest waits for the visitor to send the relevant question', () => {

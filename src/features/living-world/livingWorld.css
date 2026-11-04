@@ -1,0 +1,168 @@
+.lw-root{box-sizing:border-box;display:flex;flex-direction:column;height:100dvh;min-height:100dvh;overflow:hidden;background:#f1eedf;color:#223b35;padding:12px clamp(14px,3vw,42px);font-family:"Segoe UI",Arial,sans-serif;line-height:1.5}
+.lw-root button,.lw-root select{font:inherit;font-size:14px;line-height:1.35;color:#223b35;border:1px solid #9ba99b;background:#fffdf4;border-radius:6px;padding:9px 12px;min-height:40px;cursor:pointer}
+.lw-root button:hover{background:#e2e8d6;color:#223b35}.lw-root button:disabled,.lw-root button:disabled:hover{opacity:1;color:#657267;background:#e1e5db;border-color:#b8c0b3;cursor:not-allowed}
+.lw-root button:focus-visible,.lw-root a:focus-visible,.lw-root select:focus-visible,.lw-root canvas:focus-visible{outline:3px solid #a66924;outline-offset:3px}
+.lw-root h1,.lw-root h2,.lw-root h3{font-family:"Segoe UI",Arial,sans-serif;letter-spacing:normal;word-spacing:normal;font-kerning:normal;font-weight:650;line-height:1.25}
+.lw-root h1{font-size:clamp(23px,2.5vw,34px);margin:4px 0}.lw-root h2{font-size:21px;margin:6px 0 12px}.lw-root h3{font-size:17px;margin:8px 0}.lw-root p{line-height:1.55;margin:8px 0}
+.lw-header,.lw-heading,.lw-tabs,.lw-stage-tools,.lw-targets,.lw-zone-nav,.lw-scene-hud{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.lw-header{justify-content:space-between;border-bottom:1px solid #c7ccba;padding-bottom:8px}.lw-header span,.lw-eyebrow{font-size:11px;letter-spacing:1px}.lw-header button{min-height:34px;padding:6px 12px}
+.lw-header,.lw-heading,.lw-root>.lw-scope,.lw-tabs,.lw-zone-nav{flex-shrink:0}.lw-root>.lw-card{flex:1;min-height:0;overflow:auto}.lw-root canvas:focus-visible{outline-offset:-4px}.lw-heading{justify-content:space-between;padding-top:10px}.lw-heading label{display:grid;gap:3px;font-size:12px}.lw-scope,.lw-small{font-size:12px;color:#526354}.lw-tabs{margin:9px 0}.lw-tabs button{min-height:36px;padding:7px 12px}
+.lw-tabs [aria-pressed=true],.lw-tabs [aria-pressed=true]:hover,.lw-zone-nav [aria-current],.lw-zone-nav [aria-current]:hover,.lw-root .lw-primary,.lw-root .lw-primary:hover{background:#254e40;color:#fff;border-color:#254e40}
+.lw-root .lw-primary:hover{background:#183d30}.lw-play{display:grid;flex:1;min-height:340px;grid-template-columns:minmax(0,1fr) 330px;gap:16px;height:auto}
+.lw-stage{display:flex;flex-direction:column;min-height:0;background:#172b29;border-radius:8px;overflow:hidden;position:relative}
+.lw-canvas,.lw-preview{flex:1;min-height:0;position:relative;width:100%;overflow:hidden}.lw-canvas canvas{display:block;width:100%;height:100%;touch-action:none}.lw-preview{display:grid;place-items:center;color:#f1eedf;min-height:300px}
+.lw-stage-tools{padding:8px 10px;color:#e7ead9;font-size:12px;flex-shrink:0}.lw-stage-tools button{font-size:12px;padding:7px 10px;min-height:36px}
+.lw-scene-hud{padding:8px 10px;flex-shrink:0;background:#213d35;color:#f1eedf;font-size:12px;justify-content:space-between}.lw-scene-hud button{font-size:12px;min-height:36px}.lw-scene-hud [aria-pressed=true],.lw-scene-hud [aria-pressed=true]:hover{background:#d3e6bf;color:#193f2e;border-color:#9ec18d}
+.lw-compass{min-width:0;min-height:0;overflow:auto;overscroll-behavior:contain;background:#e4e4d0;padding:16px;border-top:4px solid #9e7e41;scrollbar-gutter:stable}.lw-compass>.lw-eyebrow{margin-top:0}.lw-compass p{font-size:14px}.lw-feedback{border-left:3px solid #8d7546;padding-left:10px;color:#314939}
+.lw-card{background:#fffdf3;border:1px solid #cdd0bc;border-radius:8px;padding:20px;margin:12px 0}.lw-card a{text-decoration:underline}.lw-card dt{font-weight:700;margin-top:12px}.lw-card dd{margin:6px 0}
+.lw-alternatives .lw-card{padding:0;background:transparent;border:0}.lw-alternatives h2{font-size:17px}.lw-targets{align-items:stretch}.lw-targets button{flex:1 1 100%;font-size:13px;text-align:left}.lw-assist-toggle{width:100%;margin-top:12px}
+.lw-workbench{border-top:1px solid #b5beaa;margin-top:12px;padding-top:10px}.lw-workbench button{margin:4px 0;width:100%;font-size:13px}.lw-workbench label{display:block;margin:8px 0;font-size:13px}.lw-workbench select{width:100%;margin-top:4px}
+.lw-zone-nav{margin:10px 0 0;gap:6px}.lw-zone-nav button{font-size:11px;min-height:34px;padding:6px 9px;flex:1 1 auto}
+.lw-dialog,.lw-prologue,.lw-moment{position:static;transform:none;width:auto;max-height:none;overflow:visible;background:#fffdf3;border:1px solid #9f8c59;border-radius:8px;padding:14px;box-shadow:none;margin-bottom:12px}
+.lw-dialog button,.lw-prologue button,.lw-moment button{margin:5px 0;max-width:100%}.lw-dialog .lw-targets button{flex-basis:45%;text-align:center}.lw-close{float:right;margin-left:8px!important}.lw-prologue h2{font-size:22px}.lw-moment{border-color:#477156}.lw-reveal{background:#e2ead6;border-left:4px solid #477156;padding:12px}.lw-reveal h2{font-size:19px}
+.lw-scene-label{position:absolute;z-index:1;pointer-events:none;transform:translate(-50%,-120%);font-size:12px;line-height:1.2;font-weight:600;background:#f9f6e8;color:#183d30;border:1px solid #ab9c6c;border-radius:4px;padding:4px 6px;white-space:nowrap;box-shadow:0 2px 5px #172b2930}.lw-scene-label[hidden]{display:none}.lw-actor-label{background:#264e40;color:#fff;border-color:#c8d5b4;font-size:11px;transform:translate(-50%,100%)}
+.lw-map{padding:16px;color:#f1eedf;flex:1;min-height:260px}.lw-map-field{position:relative;height:260px}.lw-map-field button{position:absolute;transform:translateX(-50%);max-width:140px;font-size:12px}.lw-map-avatar{position:absolute;color:#f1cf78;transition:left .1s,top .1s}.lw-root a{color:inherit}
+@media(max-width:800px){.lw-root{height:auto;overflow:visible}.lw-play{flex:none;min-height:0;grid-template-columns:1fr;height:auto;gap:10px}.lw-stage{height:360px}.lw-compass{max-height:300px;min-height:200px;padding:14px}.lw-header span{display:none}.lw-root{padding:10px}.lw-heading{gap:6px}.lw-heading label{width:100%;display:flex;align-items:center;justify-content:space-between}.lw-heading select{max-width:230px}.lw-scope{font-size:11px}.lw-tabs{gap:5px}.lw-tabs button{font-size:12px;padding:7px 9px}.lw-scene-label{font-size:10px;padding:3px 4px}.lw-stage-tools span{display:none}.lw-scene-hud{font-size:11px}.lw-scene-hud span{max-width:180px}.lw-zone-nav button{flex-basis:30%}}
+@media(prefers-reduced-motion:reduce){.lw-map-avatar{transition:none}}
+
+.lw-scene-label[data-scene-target="STROKE_LEFT"]{transform:translate(-120%,-200%)}.lw-scene-label[data-scene-target="STROKE_RIGHT"]{transform:translate(12%,-200%)}.lw-scene-label[data-scene-target="NPC_A04"]{transform:translate(30%,-300%)}.lw-scene-label[data-scene-target="A04"]{transform:translate(-130%,0)}
+/* The global toast region otherwise covers the World Shell's station action. */
+body:has(.lw-root) [role="status"][aria-atomic="false"]{top:76px;max-height:calc(100dvh - 92px);overflow:auto}
+.lw-proof-context{flex-shrink:0;font-size:12px;margin:6px 0!important;color:#335843}.lw-world-exits{margin:12px 0;border-top:1px solid #aab59d;padding-top:10px}.lw-world-exits button{display:block;width:100%;margin-top:8px;text-align:left}
+.lw-transfer{position:fixed;inset:80px max(20px,calc((100vw - 600px)/2)) auto;z-index:50;background:#fffdf3;color:#223b35;padding:24px;border:2px solid #7d956e;border-radius:12px;box-shadow:0 0 0 100vmax #172b2970;max-height:70dvh;overflow:auto}.lw-transfer button{margin:6px 8px 0 0}
+/* G3: contextual transition veil. Temporal portal = warm swirl, thematic = soft fade, knowledge = paper fade. */
+.lw-transfer-veil{position:fixed;inset:0;z-index:45;pointer-events:none;animation:lw-veil-in .6s ease-out both}
+.lw-transfer-veil--temporal_portal{background:radial-gradient(circle at 50% 45%,#fff3d1cc 0,#bfe9d6aa 22%,#2d4b44ee 62%,#0f1d1af5 100%)}
+.lw-transfer-veil--temporal_portal::after{content:'';position:absolute;inset:-20%;background:repeating-conic-gradient(from 0deg at 50% 45%,#ffffff14 0 8deg,#ffffff00 8deg 22deg);animation:lw-veil-spin 6s linear infinite}
+.lw-transfer-veil--thematic_scene{background:linear-gradient(180deg,#e9e3c8e6,#c9c09ae6)}
+.lw-transfer-veil--knowledge_link{background:linear-gradient(180deg,#f3ead2e6,#e2d3a8e6)}
+@keyframes lw-veil-in{from{opacity:0}to{opacity:1}}
+@keyframes lw-veil-spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.lw-transfer-veil,.lw-transfer-veil--temporal_portal::after{animation:none}}
+
+/* ---------- G3 Phase 1: game-first shell (default journey). Debug (?debug=1) keeps the G2 layout above. ---------- */
+.lw-root.lw-game{position:fixed;inset:0;padding:0;background:#0d1412;color:#f1eedf;display:block;z-index:30}
+.lw-game .lw-play{position:absolute;inset:0;display:block;min-height:0}
+.lw-game .lw-stage{position:absolute;inset:0;border-radius:0;background:#0d1412}
+.lw-game .lw-canvas{position:absolute;inset:0}
+/* top HUD: place + era (left), memory/sources/menu (right) */
+.lw-game .lw-hud{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:12px 14px;pointer-events:none;z-index:4;background:linear-gradient(#0d1412cc,#0d141200)}
+.lw-game .lw-hud>*{pointer-events:auto}
+.lw-game .lw-hud-place{max-width:min(520px,60vw)}
+.lw-game .lw-hud-place .lw-eyebrow{color:#e6b07a;margin:0}
+.lw-game .lw-hud h1{color:#fff;font-size:clamp(17px,2vw,24px);margin:2px 0 0;text-shadow:0 1px 3px #000a}
+.lw-game .lw-hud-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.lw-game .lw-hud-actions button{min-height:44px;background:#0d1412b3;color:#f1eedf;border-color:#f1eedf55;backdrop-filter:blur(4px)}
+.lw-game .lw-hud-actions button:hover,.lw-game .lw-hud-actions [aria-pressed=true]{background:#254e40;color:#fff}
+.lw-game .lw-sync{position:absolute;top:74px;right:14px;z-index:4;max-width:min(420px,90vw);background:#2b2416e6;color:#f5e2bf;font-size:12px;padding:8px 10px;border-radius:6px}
+.lw-game .lw-sync button{min-height:36px;margin-left:6px;font-size:12px}
+/* the compass/dialogue column becomes a bottom sheet over the world (≤ ~38% height) */
+.lw-game .lw-compass{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);width:min(760px,calc(100vw - 24px));max-height:30dvh;background:#101a17e8;color:#f1eedf;border:1px solid #f1eedf33;border-top:3px solid #e6b07a;border-radius:10px;padding:12px 16px;z-index:5;backdrop-filter:blur(6px)}
+.lw-game .lw-compass h2{font-size:17px;margin:4px 0 8px;color:#fff}
+.lw-game .lw-compass p,.lw-game .lw-feedback{color:#e5e7d8;font-size:14px}
+.lw-game .lw-compass .lw-eyebrow{color:#9fdcff}
+.lw-game .lw-dialog,.lw-game .lw-prologue,.lw-game .lw-moment,.lw-game .lw-compass .lw-card{background:transparent;border:0;padding:0;margin:0 0 8px;color:#f1eedf}
+.lw-game .lw-compass button{min-height:44px}
+.lw-game .lw-compass .lw-primary{background:#e6b07a;color:#1b140c;border-color:#e6b07a}
+.lw-game .lw-small{color:#c8cdbd}
+/* in-world proximity prompt */
+.lw-game .lw-prompt{position:absolute;left:50%;bottom:calc(30dvh + 28px);transform:translateX(-50%);z-index:5;min-height:44px;background:#0d1412d9;color:#fff;border:1px solid #e6b07a;border-radius:22px;padding:8px 16px}
+.lw-game .lw-prompt kbd{display:inline-block;min-width:20px;padding:1px 6px;margin-right:4px;border-radius:4px;background:#e6b07a;color:#1b140c;font:600 13px/1.4 inherit}
+/* scene captions are hints only; Avatar label is not needed in third-person */
+.lw-game .lw-actor-label{display:none}
+.lw-game .lw-scene-label{font-size:12px;opacity:.85}
+.lw-game[data-hints=off] .lw-scene-label{visibility:hidden}
+.lw-game .lw-scene-hud{position:absolute;left:12px;bottom:12px;z-index:3;background:transparent;padding:0;max-width:40vw}
+.lw-game .lw-scene-hud>span{display:none}
+/* menu drawer + Atlas/Sources overlay (world remains mounted underneath) */
+.lw-game .lw-menu{position:absolute;top:0;right:0;bottom:0;width:min(360px,92vw);z-index:8;background:#101a17f2;border-left:1px solid #f1eedf33;padding:16px;overflow:auto;display:flex;flex-direction:column;gap:10px}
+.lw-game .lw-menu-head{display:flex;justify-content:space-between;align-items:center}
+.lw-game .lw-menu a{color:#e6b07a}
+.lw-game .lw-menu label{display:grid;gap:4px;font-size:13px}
+.lw-game .lw-menu .lw-stage-tools{flex-direction:column;align-items:stretch;padding:0;color:#c8cdbd}
+.lw-game .lw-menu button,.lw-game .lw-menu select{width:100%;text-align:left}
+.lw-game .lw-overlay{position:absolute;top:70px;left:50%;transform:translateX(-50%);width:min(720px,calc(100vw - 24px));max-height:calc(100dvh - 90px);overflow:auto;z-index:7}
+.lw-game .lw-overlay .lw-card{margin:0;color:#223b35}
+.lw-game .lw-world-exits{color:#e5e7d8}
+.lw-game .lw-alternatives{color:#e5e7d8}
+
+@media (max-width:640px){.lw-game .lw-hud{flex-direction:column}.lw-game .lw-hud-actions{justify-content:flex-start}.lw-game .lw-compass{max-height:42dvh}}
+/* G3 immersive pass: subtitle-style guidance, smaller HUD — the scene is the main surface. */
+.lw-game .lw-hud{padding:8px 12px;background:linear-gradient(#0d141299,#0d141200)}
+.lw-game .lw-hud h1{font-size:clamp(15px,1.5vw,19px)}
+.lw-game .lw-hud-place .lw-eyebrow{font-size:11px;letter-spacing:.06em}
+.lw-game .lw-hud-actions button{min-height:40px;padding:6px 12px;font-size:13px;background:#0d141280}
+.lw-game .lw-compass{width:min(620px,calc(100vw - 24px));max-height:22dvh;background:linear-gradient(#0d1412b8,#0d1412e0);border:0;border-top:2px solid #e6b07acc;padding:10px 14px;font-size:13px}
+.lw-game .lw-compass h2{font-size:15px;margin:2px 0 4px}
+.lw-game .lw-compass p,.lw-game .lw-feedback{font-size:13px;margin:2px 0 6px}
+.lw-game .lw-compass button{min-height:40px;font-size:13px}
+.lw-game .lw-prompt{bottom:calc(22dvh + 22px)}
+@media (max-width:640px){.lw-game .lw-compass{max-height:36dvh}}
+/* P4→P5 departure: the scene stays visible while the Avatar boards; the portal veil arrives at the end. */
+.lw-game .lw-transfer-veil--depart{animation:lw-veil-in .5s ease-out 1.3s both}
+.lw-game .lw-transfer{inset:auto auto 16px 50%;transform:translateX(-50%);width:min(560px,calc(100vw - 24px));background:#0d1412e6;color:#f1eedf;border:1px solid #e6b07a;box-shadow:none;padding:12px 16px;max-height:30dvh}
+.lw-game .lw-transfer h2{font-size:15px;margin:0 0 4px;color:#fff}.lw-game .lw-transfer p{font-size:13px;margin:2px 0}
+.lw-game[data-transfer=on] .lw-compass,.lw-game[data-transfer=on] .lw-prompt{display:none}
+/* G3 round 4 · free exploration: guidance lives in a small corner tracker, not a panel under the player.
+   Same DOM (all actions stay reachable for keyboard/2D/tests); only placement and weight change. */
+.lw-game .lw-hud-place .lw-small{display:block;font-size:11px;color:#d9d4c3;opacity:.8;margin-top:2px;text-shadow:0 1px 2px #000}
+.lw-game .lw-compass{left:12px;top:78px;bottom:auto;transform:none;width:min(330px,calc(100vw - 24px));max-height:42dvh;background:linear-gradient(90deg,#0d1412cc,#0d141299);border:0;border-left:3px solid #e6b07a;border-radius:8px;padding:8px 12px;font-size:12.5px;box-shadow:0 2px 12px #0006}
+.lw-game .lw-compass h2{font-size:14px;margin:0 0 4px}
+.lw-game .lw-compass .lw-eyebrow{font-size:10px;letter-spacing:.08em;margin:0}
+.lw-game .lw-compass p,.lw-game .lw-compass .lw-small{font-size:12px;line-height:1.35;margin:2px 0 4px;color:#d7d9cc}
+.lw-game .lw-compass .lw-primary{background:transparent;color:#f3c98e;border:1px solid #e6b07a88;min-height:34px;font-size:12px;padding:4px 10px}
+.lw-game .lw-compass button{min-height:34px;font-size:12px;padding:4px 10px}
+.lw-game .lw-prompt{bottom:28px}
+@media (max-width:640px){.lw-game .lw-compass{top:auto;bottom:10px;left:10px;right:10px;width:auto;max-height:34dvh}.lw-game .lw-prompt{bottom:calc(34dvh + 18px)}}
+/* Ambient bark (auto-hides) and hint ladder in the corner tracker */
+.lw-game .lw-bark{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);z-index:6;max-width:min(560px,calc(100vw - 32px));margin:0;padding:6px 14px;border-radius:16px;background:#0d1412b3;color:#f4f0e2;font-size:14px;text-shadow:0 1px 2px #000;animation:lw-bark-in .35s ease-out both;pointer-events:none}
+.lw-game .lw-bark b{color:#9fe8d0;font-weight:600}
+@keyframes lw-bark-in{from{opacity:0;transform:translate(-50%,6px)}to{opacity:1;transform:translate(-50%,0)}}
+@media (prefers-reduced-motion:reduce){.lw-game .lw-bark{animation:none}}
+.lw-game .lw-hint{margin:4px 0;padding:4px 8px;border-radius:6px;background:#e6b07a22;color:#f6e3c6;font-size:12px}
+.lw-game .lw-hint-button{background:transparent;color:#f3c98e;border:1px solid #e6b07a88}
+.lw-game .lw-prompt{bottom:64px}
+.lw-game .lw-feedback:empty{display:none}
+
+.lw-transfer-veil--fast_return{background:radial-gradient(circle at 50% 45%,#f6efe0cc 0,#9cc3d8aa 30%,#1b2a33f2 100%)}
+.lw-game .lw-xray-legend{position:absolute;right:12px;top:64px;z-index:5;margin:0;padding:8px 12px;list-style:none;background:#0d1412cc;border-radius:10px;color:#e5e7d8;font-size:12px;line-height:1.6;max-width:min(300px,calc(100vw - 24px))}
+.lw-game .lw-xray-legend li[aria-current]{color:#ffcf8a;font-weight:600}
+.lw-game .lw-xray-legend .lw-xray-note{opacity:.7;font-size:11px}
+@media (max-width:640px){.lw-game .lw-xray-legend{top:auto;bottom:120px}}
+/* P2 · time axis on the Chrono Vessel console */
+.lw-p2{display:grid;gap:8px}
+.lw-p2-steps{display:flex;gap:6px;margin:0;padding:0;list-style:none;font-size:11px;color:#9fb3b0}
+.lw-p2-steps li{padding:2px 8px;border-radius:999px;border:1px solid #9fb3b044}
+.lw-p2-steps li[aria-current]{color:#ffcf8a;border-color:#ffcf8a99}
+.lw-p2-list{display:grid;gap:6px}
+.lw-p2-list button{display:grid;text-align:left;gap:2px;padding:8px 10px}
+.lw-p2-list button small{font-size:11px;opacity:.75;font-weight:400}
+.lw-p2-list button:disabled{opacity:.5;cursor:not-allowed}
+.lw-p2-picked{margin:0;font-weight:600;color:#ffcf8a}
+.lw-p2-kha{margin:0;padding:8px 10px;border-left:3px solid #7fd6ff;background:#0d14128c;font-size:13px}
+.lw-p2-back{background:transparent;border:1px solid #9fb3b066;color:#d8e4e0}
+
+/* R2 OFFLINE-2D-LAYOUT: the 2D fallback inside the game layout keeps clear of the HUD title and the corner tracker */
+.lw-game .lw-map{position:absolute;inset:0;display:flex;flex-direction:column;gap:10px;padding:96px 16px 96px clamp(16px,28vw,360px);box-sizing:border-box;overflow:auto}
+.lw-game .lw-map-title{margin:0;font-size:13px;opacity:.85}
+.lw-game .lw-map-field{flex:1;min-height:220px;border:1px dashed #9fb3b055;border-radius:12px}
+.lw-game .lw-map-field button{width:auto;max-width:160px;padding:6px 10px}
+.lw-game .lw-map .lw-targets{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.lw-game .lw-map .lw-targets button{width:auto;min-width:96px;flex:0 0 auto}
+@media (max-width:640px){.lw-game .lw-map{padding:200px 12px 120px}}
+.lw-game .lw-xray-route{font-size:11px}.lw-game .lw-xray-route--thematic{color:#e6a94f}.lw-game .lw-xray-route--knowledge{color:#7fb6ff}
+/* Override the legacy 360px stacked layout inside the immersive mobile shell. */
+@media(max-width:800px){
+ .lw-root.lw-game{height:100dvh;overflow:hidden}
+ .lw-game .lw-play{height:100%;min-height:0;display:block}
+ .lw-game .lw-stage{height:100%;min-height:0}
+ .lw-game .lw-compass{min-height:0}
+}
+
+/* Representative passages: stream only behind the earth turn; no confirmation/loading panel over gameplay. */
+.lw-game .lw-transfer-veil--passage{pointer-events:none;background:#100b07;animation:none;transition:opacity .2s;opacity:0}
+.lw-game .lw-transfer-veil--passage.lw-transfer-veil--loading{opacity:1}
+.lw-game .lw-transfer-veil--passage.lw-transfer-veil--arriving{opacity:0;transition:opacity .65s}
+.lw-game[data-transfer="on"] .lw-compass,.lw-game[data-transfer="on"] .lw-prompt{visibility:hidden}
+
+@media(max-width:640px){.lw-game .lw-prompt{bottom:calc(34dvh + 18px)}}

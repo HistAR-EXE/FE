@@ -1,0 +1,492 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "D:\\FPT\\SU26\\EXE101\\HistAR\\FE\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "-c",
+      ".superpowers/underground.playwright.config.ts"
+    ],
+    "configFile": "D:\\FPT\\SU26\\EXE101\\HistAR\\FE\\.superpowers\\underground.playwright.config.ts",
+    "rootDir": "D:/FPT/SU26/EXE101/HistAR/FE/tests/living-world",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "D:/FPT/SU26/EXE101/HistAR/docs/superpowers/m1/g3-g4-completion/evidence/underground-p0/regression/fullstack-artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "D:/FPT/SU26/EXE101/HistAR/FE/tests/living-world",
+        "testIgnore": [],
+        "testMatch": [
+          "underground.spec.ts",
+          "fullstack.spec.ts"
+        ],
+        "timeout": 180000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "../docs/superpowers/m1/g3-g4-completion/evidence/underground-p0/regression/fullstack-results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.61.1",
+    "workers": 1,
+    "webServer": {
+      "command": "node node_modules/vite/bin/vite.js preview --outDir .superpowers/living-world-underground-r17e --host 127.0.0.1 --port 5405 --strictPort",
+      "env": {
+        "HISTAR_LOCAL_API_TARGET": "http://127.0.0.1:8094"
+      },
+      "url": "http://127.0.0.1:5405",
+      "reuseExistingServer": false,
+      "timeout": 60000,
+      "cwd": "D:\\FPT\\SU26\\EXE101\\HistAR\\FE\\"
+    }
+  },
+  "suites": [
+    {
+      "title": "fullstack.spec.ts",
+      "file": "fullstack.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "S2 manual choreography persists/replays/offline-resumes without granting narrative facts",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 10244,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m6\u001b[39m\nReceived: \u001b[31mundefined\u001b[39m\n\nCall Log:\n- Timeout 5000ms exceeded while waiting on the predicate",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m6\u001b[39m\nReceived: \u001b[31mundefined\u001b[39m\n\nCall Log:\n- Timeout 5000ms exceeded while waiting on the predicate\n    at D:\\FPT\\SU26\\EXE101\\HistAR\\FE\\tests\\living-world\\fullstack.spec.ts:22:62",
+                    "location": {
+                      "file": "D:\\FPT\\SU26\\EXE101\\HistAR\\FE\\tests\\living-world\\fullstack.spec.ts",
+                      "column": 62,
+                      "line": 22
+                    },
+                    "snippet": "  20 |  await page.goto('/living-world?debug=1');await page.getByTestId('consent-decline').click();await page.getByRole('button',{name:'Bỏ qua dẫn nhập · khám phá ngay'}).click();await page.getByLabel('Cách khám phá').selectOption('FREE');await ensureControls(page);await page.getByRole('button',{name:'Thử phối hợp giã gạo',exact:true}).last().click();await prepareA04(page)\n  21 |  for(let i=0;i<6;i++){for(const name of ['Nắm chày','Nâng chày','Hạ chày'])await page.getByRole('button',{name,exact:true}).click()}\n> 22 |  await expect.poll(async()=>(await state()).checkpoint.rice).toBe(6);expect((await state()).facts).toEqual([]);expect((await state()).foundations).toEqual([])\n     |                                                              ^\n  23 |  await page.getByRole('button',{name:'Làm lại một mẻ · không thưởng thêm'}).click();await expect.poll(async()=>(await state()).checkpoint.rice).toBe(0);await page.getByRole('button',{name:'Sẵn sàng · đến lượt tôi'}).click()\n  24 |  await context.setOffline(true);for(const name of ['Nắm chày','Nâng chày','Hạ chày'])await page.getByRole('button',{name,exact:true}).click();expect((await state()).checkpoint.rice).toBe(0)\n  25 |  await context.setOffline(false);await expect.poll(async()=>(await state()).checkpoint.rice).toBe(1);await page.reload();await expect(page.getByRole('heading',{level:1})).toHaveText('Góc lao động · một bữa ăn bắt đầu ở đây');await page.getByLabel('Cách khám phá').selectOption('FREE');await ensureControls(page);await page.getByRole('button',{name:'Thử phối hợp giã gạo',exact:true}).last().click();await expect(page.getByText('Đã phối hợp 1/6',{exact:false})).toBeVisible();expect((await state()).facts).toEqual([])"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "D:\\FPT\\SU26\\EXE101\\HistAR\\FE\\tests\\living-world\\fullstack.spec.ts",
+                        "column": 62,
+                        "line": 22
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m6\u001b[39m\nReceived: \u001b[31mundefined\u001b[39m\n\nCall Log:\n- Timeout 5000ms exceeded while waiting on the predicate\n\n  20 |  await page.goto('/living-world?debug=1');await page.getByTestId('consent-decline').click();await page.getByRole('button',{name:'Bỏ qua dẫn nhập · khám phá ngay'}).click();await page.getByLabel('Cách khám phá').selectOption('FREE');await ensureControls(page);await page.getByRole('button',{name:'Thử phối hợp giã gạo',exact:true}).last().click();await prepareA04(page)\n  21 |  for(let i=0;i<6;i++){for(const name of ['Nắm chày','Nâng chày','Hạ chày'])await page.getByRole('button',{name,exact:true}).click()}\n> 22 |  await expect.poll(async()=>(await state()).checkpoint.rice).toBe(6);expect((await state()).facts).toEqual([]);expect((await state()).foundations).toEqual([])\n     |                                                              ^\n  23 |  await page.getByRole('button',{name:'Làm lại một mẻ · không thưởng thêm'}).click();await expect.poll(async()=>(await state()).checkpoint.rice).toBe(0);await page.getByRole('button',{name:'Sẵn sàng · đến lượt tôi'}).click()\n  24 |  await context.setOffline(true);for(const name of ['Nắm chày','Nâng chày','Hạ chày'])await page.getByRole('button',{name,exact:true}).click();expect((await state()).checkpoint.rice).toBe(0)\n  25 |  await context.setOffline(false);await expect.poll(async()=>(await state()).checkpoint.rice).toBe(1);await page.reload();await expect(page.getByRole('heading',{level:1})).toHaveText('Góc lao động · một bữa ăn bắt đầu ở đây');await page.getByLabel('Cách khám phá').selectOption('FREE');await ensureControls(page);await page.getByRole('button',{name:'Thử phối hợp giã gạo',exact:true}).last().click();await expect(page.getByText('Đã phối hợp 1/6',{exact:false})).toBeVisible();expect((await state()).facts).toEqual([])\n    at D:\\FPT\\SU26\\EXE101\\HistAR\\FE\\tests\\living-world\\fullstack.spec.ts:22:62"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [
+                    {
+                      "buffer": ""
+                    }
+                  ],
+                  "retry": 0,
+                  "startTime": "2026-11-04T04:16:41.579Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "D:\\FPT\\SU26\\EXE101\\HistAR\\docs\\superpowers\\m1\\g3-g4-completion\\evidence\\underground-p0\\regression\\fullstack-artifacts\\fullstack-S2-manual-choreo-83093-ut-granting-narrative-facts\\test-failed-1.png"
+                    },
+                    {
+                      "name": "video",
+                      "contentType": "video/webm",
+                      "path": "D:\\FPT\\SU26\\EXE101\\HistAR\\docs\\superpowers\\m1\\g3-g4-completion\\evidence\\underground-p0\\regression\\fullstack-artifacts\\fullstack-S2-manual-choreo-83093-ut-granting-narrative-facts\\video.webm"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "D:\\FPT\\SU26\\EXE101\\HistAR\\docs\\superpowers\\m1\\g3-g4-completion\\evidence\\underground-p0\\regression\\fullstack-artifacts\\fullstack-S2-manual-choreo-83093-ut-granting-narrative-facts\\error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "D:\\FPT\\SU26\\EXE101\\HistAR\\docs\\superpowers\\m1\\g3-g4-completion\\evidence\\underground-p0\\regression\\fullstack-artifacts\\fullstack-S2-manual-choreo-83093-ut-granting-narrative-facts\\trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "D:\\FPT\\SU26\\EXE101\\HistAR\\FE\\tests\\living-world\\fullstack.spec.ts",
+                    "column": 62,
+                    "line": 22
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "59f0dfcbcd928559d023-bfcec3e7f2a541aa3be2",
+          "file": "fullstack.spec.ts",
+          "line": 16,
+          "column": 1
+        },
+        {
+          "title": "authenticated inspection is server-confirmed, retained offline and restored after refresh",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 7214,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeGreaterThan\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: > \u001b[32m0\u001b[39m\nReceived:   \u001b[31m0\u001b[39m\n\nCall Log:\n- Timeout 5000ms exceeded while waiting on the predicate",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeGreaterThan\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: > \u001b[32m0\u001b[39m\nReceived:   \u001b[31m0\u001b[39m\n\nCall Log:\n- Timeout 5000ms exceeded while waiting on the predicate\n    at D:\\FPT\\SU26\\EXE101\\HistAR\\FE\\tests\\living-world\\fullstack.spec.ts:32:55",
+                    "location": {
+                      "file": "D:\\FPT\\SU26\\EXE101\\HistAR\\FE\\tests\\living-world\\fullstack.spec.ts",
+                      "column": 55,
+                      "line": 32
+                    },
+                    "snippet": "  30 |  const state=async()=>{const response=await request.get(`${endpoint}/state`,{headers:{Authorization:`Bearer ${token}`}});expect(response.status()).toBe(200);return (await response.json()).data}\n  31 |  await page.goto('/living-world?debug=1');await page.getByTestId('consent-decline').click();await page.getByRole('button',{name:'Bỏ qua dẫn nhập · khám phá ngay'}).click()\n> 32 |  await expect.poll(async()=>(await state()).revision).toBeGreaterThan(0)\n     |                                                       ^\n  33 |  await ensureControls(page);await page.getByRole('button',{name:'Dấu thông hơi trên mặt đất',exact:true}).last().click();await page.getByRole('button',{name:'Ghi điều vừa quan sát'}).click()\n  34 |  await expect.poll(async()=>(await state()).facts.includes('AIR_OPENING_INSPECTED')).toBe(true)\n  35 |  await context.setOffline(true)"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "D:\\FPT\\SU26\\EXE101\\HistAR\\FE\\tests\\living-world\\fullstack.spec.ts",
+                        "column": 55,
+                        "line": 32
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeGreaterThan\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: > \u001b[32m0\u001b[39m\nReceived:   \u001b[31m0\u001b[39m\n\nCall Log:\n- Timeout 5000ms exceeded while waiting on the predicate\n\n  30 |  const state=async()=>{const response=await request.get(`${endpoint}/state`,{headers:{Authorization:`Bearer ${token}`}});expect(response.status()).toBe(200);return (await response.json()).data}\n  31 |  await page.goto('/living-world?debug=1');await page.getByTestId('consent-decline').click();await page.getByRole('button',{name:'Bỏ qua dẫn nhập · khám phá ngay'}).click()\n> 32 |  await expect.poll(async()=>(await state()).revision).toBeGreaterThan(0)\n     |                                                       ^\n  33 |  await ensureControls(page);await page.getByRole('button',{name:'Dấu thông hơi trên mặt đất',exact:true}).last().click();await page.getByRole('button',{name:'Ghi điều vừa quan sát'}).click()\n  34 |  await expect.poll(async()=>(await state()).facts.includes('AIR_OPENING_INSPECTED')).toBe(true)\n  35 |  await context.setOffline(true)\n    at D:\\FPT\\SU26\\EXE101\\HistAR\\FE\\tests\\living-world\\fullstack.spec.ts:32:55"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [
+                    {
+                      "buffer": ""
+                    }
+                  ],
+                  "retry": 0,
+                  "startTime": "2026-11-04T04:16:53.931Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "D:\\FPT\\SU26\\EXE101\\HistAR\\docs\\superpowers\\m1\\g3-g4-completion\\evidence\\underground-p0\\regression\\fullstack-artifacts\\fullstack-authenticated-in-5d38c--and-restored-after-refresh\\test-failed-1.png"
+                    },
+                    {
+                      "name": "video",
+                      "contentType": "video/webm",
+                      "path": "D:\\FPT\\SU26\\EXE101\\HistAR\\docs\\superpowers\\m1\\g3-g4-completion\\evidence\\underground-p0\\regression\\fullstack-artifacts\\fullstack-authenticated-in-5d38c--and-restored-after-refresh\\video.webm"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "D:\\FPT\\SU26\\EXE101\\HistAR\\docs\\superpowers\\m1\\g3-g4-completion\\evidence\\underground-p0\\regression\\fullstack-artifacts\\fullstack-authenticated-in-5d38c--and-restored-after-refresh\\error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "D:\\FPT\\SU26\\EXE101\\HistAR\\docs\\superpowers\\m1\\g3-g4-completion\\evidence\\underground-p0\\regression\\fullstack-artifacts\\fullstack-authenticated-in-5d38c--and-restored-after-refresh\\trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "D:\\FPT\\SU26\\EXE101\\HistAR\\FE\\tests\\living-world\\fullstack.spec.ts",
+                    "column": 55,
+                    "line": 32
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "59f0dfcbcd928559d023-f2ef3f7a321e980343c3",
+          "file": "fullstack.spec.ts",
+          "line": 27,
+          "column": 1
+        },
+        {
+          "title": "logout and account switch clear owned activity, dialogue and facts",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 10056,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [
+                    {
+                      "buffer": ""
+                    },
+                    {
+                      "buffer": ""
+                    }
+                  ],
+                  "retry": 0,
+                  "startTime": "2026-11-04T04:17:02.797Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "video",
+                      "contentType": "video/webm",
+                      "path": "D:\\FPT\\SU26\\EXE101\\HistAR\\docs\\superpowers\\m1\\g3-g4-completion\\evidence\\underground-p0\\regression\\fullstack-artifacts\\fullstack-logout-and-accou-c3694-activity-dialogue-and-facts\\video.webm"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "D:\\FPT\\SU26\\EXE101\\HistAR\\docs\\superpowers\\m1\\g3-g4-completion\\evidence\\underground-p0\\regression\\fullstack-artifacts\\fullstack-logout-and-accou-c3694-activity-dialogue-and-facts\\trace.zip"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "59f0dfcbcd928559d023-f0d9d49e40f52e604151",
+          "file": "fullstack.spec.ts",
+          "line": 76,
+          "column": 1
+        },
+        {
+          "title": "Q1 evidence queued offline by account A stays with A across an A→B switch",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 34560,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\nExpected value: \u001b[32m\"Q1_TRAIL_OBSERVED\"\u001b[39m\nReceived array: \u001b[31m[]\u001b[39m\n\nCall Log:\n- Timeout 30000ms exceeded while waiting on the predicate",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\nExpected value: \u001b[32m\"Q1_TRAIL_OBSERVED\"\u001b[39m\nReceived array: \u001b[31m[]\u001b[39m\n\nCall Log:\n- Timeout 30000ms exceeded while waiting on the predicate\n    at D:\\FPT\\SU26\\EXE101\\HistAR\\FE\\tests\\living-world\\fullstack.spec.ts:124:75",
+                    "location": {
+                      "file": "D:\\FPT\\SU26\\EXE101\\HistAR\\FE\\tests\\living-world\\fullstack.spec.ts",
+                      "column": 75,
+                      "line": 124
+                    },
+                    "snippet": "  122 |  const hud=await page.locator('.lw-game').innerText();expect(hud).not.toMatch(/Q1_|ENTRANCE_CONFIRMED/)\n  123 |  await login(a)\n> 124 |  await expect.poll(async()=>(await state(a.token)).facts,{timeout:30000}).toContain('Q1_TRAIL_OBSERVED')\n      |                                                                           ^\n  125 |  expect((await state(b.token)).facts).toEqual([])\n  126 | })\n  127 |"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "D:\\FPT\\SU26\\EXE101\\HistAR\\FE\\tests\\living-world\\fullstack.spec.ts",
+                        "column": 75,
+                        "line": 124
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\nExpected value: \u001b[32m\"Q1_TRAIL_OBSERVED\"\u001b[39m\nReceived array: \u001b[31m[]\u001b[39m\n\nCall Log:\n- Timeout 30000ms exceeded while waiting on the predicate\n\n  122 |  const hud=await page.locator('.lw-game').innerText();expect(hud).not.toMatch(/Q1_|ENTRANCE_CONFIRMED/)\n  123 |  await login(a)\n> 124 |  await expect.poll(async()=>(await state(a.token)).facts,{timeout:30000}).toContain('Q1_TRAIL_OBSERVED')\n      |                                                                           ^\n  125 |  expect((await state(b.token)).facts).toEqual([])\n  126 | })\n  127 |\n    at D:\\FPT\\SU26\\EXE101\\HistAR\\FE\\tests\\living-world\\fullstack.spec.ts:124:75"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [
+                    {
+                      "buffer": ""
+                    },
+                    {
+                      "buffer": ""
+                    }
+                  ],
+                  "retry": 0,
+                  "startTime": "2026-11-04T04:17:14.100Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "D:\\FPT\\SU26\\EXE101\\HistAR\\docs\\superpowers\\m1\\g3-g4-completion\\evidence\\underground-p0\\regression\\fullstack-artifacts\\fullstack-Q1-evidence-queu-7beb1-with-A-across-an-A→B-switch\\test-failed-1.png"
+                    },
+                    {
+                      "name": "video",
+                      "contentType": "video/webm",
+                      "path": "D:\\FPT\\SU26\\EXE101\\HistAR\\docs\\superpowers\\m1\\g3-g4-completion\\evidence\\underground-p0\\regression\\fullstack-artifacts\\fullstack-Q1-evidence-queu-7beb1-with-A-across-an-A→B-switch\\video.webm"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "D:\\FPT\\SU26\\EXE101\\HistAR\\docs\\superpowers\\m1\\g3-g4-completion\\evidence\\underground-p0\\regression\\fullstack-artifacts\\fullstack-Q1-evidence-queu-7beb1-with-A-across-an-A→B-switch\\error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "D:\\FPT\\SU26\\EXE101\\HistAR\\docs\\superpowers\\m1\\g3-g4-completion\\evidence\\underground-p0\\regression\\fullstack-artifacts\\fullstack-Q1-evidence-queu-7beb1-with-A-across-an-A→B-switch\\trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "D:\\FPT\\SU26\\EXE101\\HistAR\\FE\\tests\\living-world\\fullstack.spec.ts",
+                    "column": 75,
+                    "line": 124
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "59f0dfcbcd928559d023-3503131e02d138dd51a9",
+          "file": "fullstack.spec.ts",
+          "line": 98,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "underground.spec.ts",
+      "file": "underground.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "representative doors preserve canonical Q1 and offline checkpoint without movement XP",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 13268,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\nExpected value: \u001b[32m\"Q1_TRAIL_OBSERVED\"\u001b[39m\nReceived array: \u001b[31m[]\u001b[39m\n\nCall Log:\n- Timeout 5000ms exceeded while waiting on the predicate",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\nExpected value: \u001b[32m\"Q1_TRAIL_OBSERVED\"\u001b[39m\nReceived array: \u001b[31m[]\u001b[39m\n\nCall Log:\n- Timeout 5000ms exceeded while waiting on the predicate\n    at D:\\FPT\\SU26\\EXE101\\HistAR\\FE\\tests\\living-world\\underground.spec.ts:18:209",
+                    "location": {
+                      "file": "D:\\FPT\\SU26\\EXE101\\HistAR\\FE\\tests\\living-world\\underground.spec.ts",
+                      "column": 209,
+                      "line": 18
+                    },
+                    "snippet": "  16 |  const ready=async(z:string)=>{await page.waitForFunction(z=>document.querySelector('canvas')?.dataset.readiness==='ready'&&JSON.parse(document.querySelector('canvas')?.dataset.r2Zone??'{}').zone===z,z,{timeout:60000});await page.waitForFunction(()=>document.querySelector('main')?.getAttribute('data-transfer')!=='on')}\n  17 |  const approach=async(target:string)=>{const a=page.getByRole('button',{name:'Điều khiển bàn phím / 2D',exact:true});if(await a.getAttribute('aria-expanded')==='false')await a.click();await page.locator(`.lw-alternatives [data-target=\"${target}\"]`).click();await page.waitForFunction(id=>document.querySelector('main')?.getAttribute('data-arrived')===id,target);await a.click();await page.locator('canvas').focus()}\n> 18 |  await ready('S1');await approach('Q1_TRAIL');await page.keyboard.press('e');await page.getByRole('button',{name:'Ghi điều vừa quan sát',exact:true}).click();await expect.poll(async()=>(await state()).facts).toContain('Q1_TRAIL_OBSERVED')\n     |                                                                                                                                                                                                                 ^\n  19 |  await approach('Q1_HATCH');await page.keyboard.press('e');await ready('L1-A');await expect.poll(async()=>(await state()).facts).toContain('ENTRANCE_CONFIRMED');const confirmed=await state(),ledgerBefore=ledger()\n  20 |  await approach('ROUTE_ENTRANCE_AIR');await page.keyboard.press('e');await ready('L1-B');await expect.poll(async()=>(await state()).checkpoint.zone).toBe('L1-B');const before=await state()\n  21 |  await context.setOffline(true);await approach('ROUTE_AIR_ENTRANCE');await page.keyboard.press('e');await ready('L1-A');expect((await state()).checkpoint.zone).toBe('L1-B')"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "D:\\FPT\\SU26\\EXE101\\HistAR\\FE\\tests\\living-world\\underground.spec.ts",
+                        "column": 209,
+                        "line": 18
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\nExpected value: \u001b[32m\"Q1_TRAIL_OBSERVED\"\u001b[39m\nReceived array: \u001b[31m[]\u001b[39m\n\nCall Log:\n- Timeout 5000ms exceeded while waiting on the predicate\n\n  16 |  const ready=async(z:string)=>{await page.waitForFunction(z=>document.querySelector('canvas')?.dataset.readiness==='ready'&&JSON.parse(document.querySelector('canvas')?.dataset.r2Zone??'{}').zone===z,z,{timeout:60000});await page.waitForFunction(()=>document.querySelector('main')?.getAttribute('data-transfer')!=='on')}\n  17 |  const approach=async(target:string)=>{const a=page.getByRole('button',{name:'Điều khiển bàn phím / 2D',exact:true});if(await a.getAttribute('aria-expanded')==='false')await a.click();await page.locator(`.lw-alternatives [data-target=\"${target}\"]`).click();await page.waitForFunction(id=>document.querySelector('main')?.getAttribute('data-arrived')===id,target);await a.click();await page.locator('canvas').focus()}\n> 18 |  await ready('S1');await approach('Q1_TRAIL');await page.keyboard.press('e');await page.getByRole('button',{name:'Ghi điều vừa quan sát',exact:true}).click();await expect.poll(async()=>(await state()).facts).toContain('Q1_TRAIL_OBSERVED')\n     |                                                                                                                                                                                                                 ^\n  19 |  await approach('Q1_HATCH');await page.keyboard.press('e');await ready('L1-A');await expect.poll(async()=>(await state()).facts).toContain('ENTRANCE_CONFIRMED');const confirmed=await state(),ledgerBefore=ledger()\n  20 |  await approach('ROUTE_ENTRANCE_AIR');await page.keyboard.press('e');await ready('L1-B');await expect.poll(async()=>(await state()).checkpoint.zone).toBe('L1-B');const before=await state()\n  21 |  await context.setOffline(true);await approach('ROUTE_AIR_ENTRANCE');await page.keyboard.press('e');await ready('L1-A');expect((await state()).checkpoint.zone).toBe('L1-B')\n    at D:\\FPT\\SU26\\EXE101\\HistAR\\FE\\tests\\living-world\\underground.spec.ts:18:209"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [
+                    {
+                      "buffer": ""
+                    }
+                  ],
+                  "retry": 0,
+                  "startTime": "2026-11-04T04:17:49.751Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "D:\\FPT\\SU26\\EXE101\\HistAR\\docs\\superpowers\\m1\\g3-g4-completion\\evidence\\underground-p0\\regression\\fullstack-artifacts\\underground-representative-d8614-ckpoint-without-movement-XP\\test-failed-1.png"
+                    },
+                    {
+                      "name": "video",
+                      "contentType": "video/webm",
+                      "path": "D:\\FPT\\SU26\\EXE101\\HistAR\\docs\\superpowers\\m1\\g3-g4-completion\\evidence\\underground-p0\\regression\\fullstack-artifacts\\underground-representative-d8614-ckpoint-without-movement-XP\\video.webm"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "D:\\FPT\\SU26\\EXE101\\HistAR\\docs\\superpowers\\m1\\g3-g4-completion\\evidence\\underground-p0\\regression\\fullstack-artifacts\\underground-representative-d8614-ckpoint-without-movement-XP\\error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "D:\\FPT\\SU26\\EXE101\\HistAR\\docs\\superpowers\\m1\\g3-g4-completion\\evidence\\underground-p0\\regression\\fullstack-artifacts\\underground-representative-d8614-ckpoint-without-movement-XP\\trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "D:\\FPT\\SU26\\EXE101\\HistAR\\FE\\tests\\living-world\\underground.spec.ts",
+                    "column": 209,
+                    "line": 18
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "a9cdbaa2fdc3afcaaa88-f32f474be5d49c454623",
+          "file": "underground.spec.ts",
+          "line": 5,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-04T04:16:40.053Z",
+    "duration": 85068.467,
+    "expected": 1,
+    "skipped": 0,
+    "unexpected": 4,
+    "flaky": 0
+  }
+}

@@ -8,14 +8,40 @@
     <title>TimeLens</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!--
+      Third-party font CSS must not gate the first usable screen. A blocking
+      stylesheet also blocks module scripts, so a slow fonts.googleapis.com
+      response delayed React boot by the full third-party latency (G2 ENV-B01).
+      Text uses display=swap fallbacks; icon ligatures stay hidden (layout kept)
+      until the icon stylesheet settles, then follow display=block as before.
+    -->
+    <style>
+      html.tl-icons-pending .material-symbols-outlined{visibility:hidden;display:inline-block;width:1em;overflow:hidden;white-space:nowrap}
+    </style>
+    <script>
+      (function(){
+        var root=document.documentElement;root.classList.add('tl-icons-pending')
+        var done=function(){root.classList.remove('tl-icons-pending')}
+        window.__tlIconsSettled=done;setTimeout(done,4000)
+      })()
+    </script>
     <link
-      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800;900&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,700&family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap"
       rel="stylesheet"
+      media="print"
+      onload="this.media='all'"
     />
     <link
       href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block"
       rel="stylesheet"
+      media="print"
+      onload="this.media='all';window.__tlIconsSettled&&window.__tlIconsSettled()"
+      onerror="window.__tlIconsSettled&&window.__tlIconsSettled()"
     />
+    <noscript>
+      <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,700&family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet" />
+      <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block" rel="stylesheet" />
+    </noscript>
   </head>
   <body>
     <div id="root"></div>

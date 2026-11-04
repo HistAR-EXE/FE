@@ -20,6 +20,7 @@ import { clearAdminDraftsForUser } from '../../features/admin/state'
 import { clearHeritageUploadsForUser } from '../../lib/heritageUploadOutbox'
 import { clearHeritageDrafts } from '../../lib/heritageStudioDraft'
 import { clearPhotoFrameReturnDrafts } from '../../lib/photoFrameReturnDraft'
+import {invalidatesStoredSession} from './bootstrapSessionPolicy'
 
 function clearAdminDrafts(userId: string | undefined) {
   if (userId && typeof sessionStorage !== 'undefined') clearAdminDraftsForUser(sessionStorage, userId)
@@ -133,8 +134,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     let cancelled = false
     rehydrateFromProfile()
-      .catch(() => {
+      .catch((error:unknown) => {
         if (cancelled) return
+        if (!invalidatesStoredSession(error)) return
         clearSession()
         setUser(null)
       })

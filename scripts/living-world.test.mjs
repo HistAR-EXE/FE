@@ -1,0 +1,47 @@
+import test from 'node:test'
+import assert from 'node:assert/strict'
+const m = await import('../src/features/living-world/worldModel.ts').catch(() => ({}))
+test('navigation avoids machine collision and rejects unreachable destinations', () => {
+ assert.equal(typeof m.planPath, 'function', 'world navigation not implemented')
+ const path=m.planPath([0,2],[0,-2.5],'S0')
+ assert.ok(path.length>1)
+ for(const [x,z] of path) assert.ok(!(Math.abs(x)<0.8 && z < -0.2 && z > -1.8))
+ assert.deepEqual(m.planPath([0,2],[100,100],'S0'),[])
+})
+test('interaction executes only after approach; new movement cancels old intent',()=>{
+ assert.equal(typeof m.startApproach,'function')
+ let s=m.initialShell();s=m.startApproach(s,'KHA')
+ assert.equal(m.arrivedInteraction(s),null)
+ for(let i=0;i<200;i++)s=m.advanceShell(s,0.05)
+ assert.equal(m.arrivedInteraction(s),'KHA')
+ s=m.moveTo(s,[3,2]);assert.equal(m.arrivedInteraction(s),null)
+ s=m.enterZone(s,'L1-B');assert.equal(s.zone,'L1-B');assert.equal(s.intent,null)
+})
+test('mode priorities send users to distinct available content',()=>{
+ assert.equal(typeof m.modeDestination,'function')
+ assert.equal(m.modeDestination('FREE'),'S2');assert.equal(m.modeDestination('STORY'),'L1-B');assert.equal(m.modeDestination('MEMORY'),'SOURCES')
+})
+test('Compass respects a chosen structure quest before air, even in Free mode',()=>{
+ assert.equal(typeof m.nextStop,'function')
+ assert.equal(m.nextStop('FREE','L1-D',[]),'L1-D')
+ assert.equal(m.nextStop('STORY','L1-D',['STRUCT_LAYER_1','STRUCT_LINK_12']),'L2-A')
+ assert.equal(m.nextStop('STORY','L3-A',['STRUCT_MEANING_CONFIRMED']),'L1-B')
+ assert.equal(m.nextStop('STORY','L1-B',['AIR_MEANING_CONFIRMED']),'L1-D')
+})
+test('A04 approach reaches the tool and turns the Avatar toward it',()=>{
+ let s=m.enterZone(m.initialShell(),'S2');s=m.startApproach(s,'A04')
+ for(let i=0;i<200;i++)s=m.advanceShell(s,0.05)
+ const target=m.zones.S2.targets.find(t=>t.id==='A04')
+ assert.ok(Math.hypot(s.position[0]-target.at[0],s.position[1]-target.at[1])<=1)
+ assert.ok(Math.abs(s.heading-Math.PI)<0.01)
+})
+test('A04 requires alternating deliberate strokes; time alone cannot process grain',()=>{
+ assert.equal(typeof m.strokeRice,'function')
+ let a=m.initialRice(); assert.equal(a.processed,0)
+ a=m.strokeRice(a,'LEFT'); assert.equal(a.processed,1)
+ a=m.strokeRice(a,'LEFT'); assert.equal(a.processed,1)
+ a=m.strokeRice(a,'RIGHT');assert.equal(a.processed,2)
+ assert.equal(a.finished,false)
+ for(const side of ['LEFT','RIGHT','LEFT','RIGHT'])a=m.strokeRice(a,side)
+ assert.equal(a.finished,true);assert.equal(a.processed,6)
+})

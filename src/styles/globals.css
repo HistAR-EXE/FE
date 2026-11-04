@@ -1,5 +1,5 @@
 /* src/styles/globals.css */
-@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,700&family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap');
+/* Web fonts are loaded non-blocking from index.html (G2 ENV-B01); an @import here chained a render-blocking third-party request. */
 @import 'tailwindcss';
 @config '../../tailwind.config.ts';
 

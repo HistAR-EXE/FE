@@ -39,7 +39,7 @@ const navItems: readonly NavigationItem[] = [
     // Trung tâm AR dùng chung cho khám phá từ xa và hành trình tại di tích.
     { to: '/ar-experience', icon: 'view_in_ar', label: 'Trải nghiệm AR', prefixes: ['/ar-experience', '/scan'], modes: 'both' as const },
 
-    { to: '/quests', icon: 'assignment', label: 'Nhiệm vụ', prefixes: ['/quests'], modes: 'both' as const },
+    { to: '/living-world', icon: 'assignment', label: 'Nhiệm vụ', prefixes: ['/living-world', '/quests'], modes: 'both' as const }, // Living World replaces the old quest tab; /quests detail pages stay reachable
     { to: '/artifacts', icon: 'history_edu', label: 'Bảo tàng 3D', prefixes: ['/artifacts'], modes: 'both' as const },
     { to: '/photo-frame', icon: 'photo_camera', label: 'Ảnh & chia sẻ', prefixes: ['/photo-frame'], modes: 'both' as const },
     { to: '/leaderboard', icon: 'leaderboard', label: 'Bảng xếp hạng', prefixes: ['/leaderboard'], modes: 'both' as const },
@@ -58,7 +58,7 @@ const mobileNavItems: readonly NavigationItem[] = [
     { to: '/explore', icon: 'explore', label: 'Khám phá', modes: 'both' as const, prefixes: ['/explore', '/home', '/tour/360', '/diorama', '/time-portal'] },
     { to: '/chat', icon: 'forum', label: 'Trợ lý AI', modes: 'both' as const, prefixes: ['/chat'] },
     { to: '/ar-experience', icon: 'view_in_ar', label: 'AR', modes: 'both' as const, prefixes: ['/ar-experience', '/scan'] },
-    { to: '/quests', icon: 'assignment', label: 'Nhiệm vụ', modes: 'both' as const, prefixes: ['/quests'] },
+    { to: '/living-world', icon: 'assignment', label: 'Nhiệm vụ', modes: 'both' as const, prefixes: ['/living-world', '/quests'] },
     { to: '/artifacts', icon: 'history_edu', label: 'Bảo tàng', modes: 'both' as const, prefixes: ['/artifacts'] },
     { to: '/photo-frame', icon: 'photo_camera', label: 'Ảnh & chia sẻ', modes: 'both' as const, prefixes: ['/photo-frame'] },
 ] as const
