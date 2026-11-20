@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 test('proof routes reach every existing scene and return without inventing physical links',async()=>{
  const {worldRoutes}=await import('../src/features/living-world/worldContinuity.ts')
  const seen=new Set(['S0']);for(let i=0;i<10;i++)for(const r of worldRoutes)if(seen.has(r.from))seen.add(r.to)
- assert.deepEqual([...seen].sort(),['S0','S1','S2','L1-A','L1-B','L1-C','L1-D','L2-A','L2-C','L3-A','L3-B','L3-C'].sort()) // S0, S1 (P5 slice, G3 immersive), S2, L1-B, L1-D, L2-A, L3-A
+ assert.deepEqual([...seen].sort(),['S0','S1','S2','S5','L1-A','L1-B','L1-C','L1-D','L2-A','L2-C','L2-D','L3-A','L3-B','L3-C','L3-D'].sort()) // S0, S1 (P5 slice, G3 immersive), S2, L1-B, L1-D, L2-A, L3-A
  for(const z of seen)if(z!=='S0')assert.ok(worldRoutes.some(r=>r.from===z&&r.to==='S0'))
  assert.ok(worldRoutes.every(r=>r.type!=='PHYSICAL_VERIFIED'))
  assert.equal(new Set(worldRoutes.map(r=>r.id)).size,worldRoutes.length)

@@ -2,7 +2,7 @@ export type WorldIntent={actionType:string;targetId:string;payload:Record<string
 export type WorldWire=WorldIntent&{actionId:string;releaseVersion:number;expectedRevision:number}
 export type QueueRow={id:string;owner:string;createdAt:number;dependsOn?:string;status:'PENDING'|'WAITING_DEPENDENCY'|'REJECTED_REQUIRES_ACTION';intent:WorldIntent;wire?:WorldWire;wireActionId?:string;error?:string}
 export type QueueStore={all:()=>Promise<QueueRow[]>;put:(row:QueueRow)=>Promise<unknown>;remove:(id:string)=>Promise<unknown>;freezeWire?:(id:string,wire:WorldWire)=>Promise<WorldWire|null>}
-export type WorldState={revision:number;releaseVersion:number;facts?:string[];mode?:string;checkpoint?:{zone?:string;rice?:number;last?:'LEFT'|'RIGHT'};moment?:'LOCKED'|'AVAILABLE'|'PRESENTED'|'VIEWED';callbackAvailable?:boolean}
+export type WorldState={revision:number;releaseVersion:number;facts?:string[];mode?:string;checkpoint?:{zone?:string;rice?:number;last?:'LEFT'|'RIGHT';memorial?:unknown;kitchenEcho?:unknown};moment?:'LOCKED'|'AVAILABLE'|'PRESENTED'|'VIEWED';callbackAvailable?:boolean;activities?:string[];activityPersistence?:boolean;memorialPersistence?:boolean;echoPersistence?:boolean;quests?:string[];foundations?:string[];synthesisComplete?:boolean;kitchenCareCallback?:'LOCKED'|'AVAILABLE'|'VIEWED'}
 type Transport={state:()=>Promise<WorldState>;send:(wire:WorldWire)=>Promise<WorldState>;isCurrent?:()=>boolean}
 /** Retained account queue. A wire request is frozen BEFORE send to survive a lost acknowledgement. */
 export async function flushWorldQueue(store:QueueStore,owner:string,transport:Transport){

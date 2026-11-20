@@ -158,6 +158,17 @@ export function buildForest(scene:T.Scene,kit:Kit,renderer:T.WebGLRenderer):Zone
  {const haze=new T.Mesh(kit.track(new T.CylinderGeometry(36,36,16,40,1,true)),kit.track(new T.MeshBasicMaterial({color:'#5f7356',side:T.BackSide,fog:true})));haze.position.set(0,6,-1);root.add(haze)}
  const ferns:{p:[number,number,number];r:number;s:number}[]=[];for(let i=0;i<70;i++){const x=(R()-.5)*14,z=(R()-.5)*11;if(Math.abs(x)<4.6&&Math.abs(z)<3.2&&Math.hypot(x-1.5,z+1.5)>.7)continue;ferns.push({p:[x,villageHeight(x,z),z],r:R()*6.3,s:.6+R()*.6})}
  const fernGeo=kit.track(cardClump(.7)),fernMat=kit.track(new T.MeshStandardMaterial({map:leafCard('bamboo',.22,91),alphaTest:.45,side:T.DoubleSide,roughness:.9})),fernIM=new T.InstancedMesh(fernGeo,fernMat,ferns.length),fernMatrix=new T.Matrix4();ferns.forEach((v,i)=>{fernMatrix.compose(new T.Vector3(...v.p).add(new T.Vector3(0,.35,0)),new T.Quaternion().setFromEuler(new T.Euler(0,v.r,0)),new T.Vector3().setScalar(v.s));fernIM.setMatrixAt(i,fernMatrix)});fernIM.computeBoundingSphere();root.add(fernIM);plantBushes(root,kit,[{p:[-4.8,0,-3.4],s:1.3},{p:[4.9,0,2.9],s:1.2},{p:[3.4,0,-3.5],s:1.1}],{s:53})
+ // G3/G4 S1: clustered understory (dense/sparse pockets, not an even grid) and fallen wood with exposed roots at the
+ // edges of the clearing — forest-floor depth without opening a path to the answer. Kept off the Q1 clues and camera lane.
+ {const seedBefore=s;s=7331;const pockets:[number,number][]=[[-5.2,-1],[-4.4,2.6],[5.3,.6],[4.6,-2.9],[-2.8,-4.2],[2.2,-4.4],[-6.1,-3.6],[6.2,2.8]]
+  const extra:{p:[number,number,number];r:number;s:number}[]=[]
+  for(const [cx,cz] of pockets)for(let i=0;i<9;i++){const a=R()*6.283,r=Math.sqrt(R())*1.4,x=cx+Math.cos(a)*r,z=cz+Math.sin(a)*r;if(Math.abs(x)<3.3&&Math.abs(z)<2.5)continue;extra.push({p:[x,villageHeight(x,z)+.3,z],r:R()*6.3,s:.55+R()*.7})}
+  const im=new T.InstancedMesh(fernGeo,fernMat,extra.length),m4=new T.Matrix4();extra.forEach((v,i)=>{m4.compose(new T.Vector3(...v.p),new T.Quaternion().setFromEuler(new T.Euler(0,v.r,0)),new T.Vector3().setScalar(v.s));im.setMatrixAt(i,m4)});im.computeBoundingSphere();im.receiveShadow=true;root.add(im)
+  const bark=pbr(kit,'bark_brown_01',{repeat:[1,2],color:'#6b5a46'})
+  for(const [x,z,len,ry,rad] of [[-4.9,-.2,2.6,.4,.16],[4.8,-1.6,2.2,-.7,.13],[-3.6,-3.6,1.8,1.2,.11],[3.9,2.4,2.4,.2,.14],[-5.6,2.1,1.6,-1,.1]] as [number,number,number,number,number][]){
+   const log=new T.Mesh(kit.track(new T.CylinderGeometry(rad,rad*1.15,len,10)),bark);log.rotation.set(0,ry,Math.PI/2-.04);log.position.set(x,villageHeight(x,z)+rad*.8,z);log.castShadow=log.receiveShadow=true;root.add(log)
+   for(let k=0;k<3;k++){const root_=new T.Mesh(kit.track(new T.TorusGeometry(.18+k*.05,.022,6,10,Math.PI)),bark);root_.position.set(x+Math.cos(ry)*len*.48,villageHeight(x,z)+.02,z-Math.sin(ry)*len*.48);root_.rotation.set(Math.PI/2*.9,ry+k*.9,0);root.add(root_)}}
+  s=seedBefore}
  const under:{p:[number,number,number];s:number}[]=[];for(let i=0;i<160&&under.length<46;i++){const x=(R()-.5)*12,z=(R()-.5)*9;if(Math.abs(x)<3.4&&Math.abs(z)<2.4)continue;if(z>1.2&&Math.abs(x)<4.2)continue; // keep the camera lane behind the spawn clear
 if(Math.hypot(x-2.5,z+2.5)<1.2||Math.hypot(x+1.5,z-1)<1)continue;under.push({p:[x,villageHeight(x,z),z],s:.6+R()*.7})}
  plantBushes(root,kit,under,{hue:.24,light:.36,s:77})

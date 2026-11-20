@@ -11,7 +11,7 @@ import type {Zone} from './worldModel'
 // air path / layered tunnels are drawn. Dimensions, depths and layouts are NOT survey data.
 
 export type ZoneCamera={position:[number,number,number];target:[number,number,number];min:number;max:number;polar:number}
-export type ZoneEnv={heightAt:(x:number,z:number)=>number;floor:T.Mesh;targets:Record<string,T.Object3D>;endpoints:Map<string,T.Vector3>;pipes:T.Mesh[];links:T.Mesh[];camera:ZoneCamera;update:(t:number,dt:number,state:{reduced:boolean;working:boolean;active:string|null;hatch?:string;p2?:string;p2Era?:string|null;completed?:string[]})=>void}
+export type ZoneEnv={heightAt:(x:number,z:number)=>number;floor:T.Mesh;targets:Record<string,T.Object3D>;endpoints:Map<string,T.Vector3>;pipes:T.Mesh[];links:T.Mesh[];camera:ZoneCamera;update:(t:number,dt:number,state:{reduced:boolean;working:boolean;active:string|null;hatch?:string;p2?:string;p2Era?:string|null;completed?:string[];selectedTarget?:string;player?:[number,number]|null})=>void}
 
 const strata=['#8a6a45','#7a5a3a','#a07a4a','#6e4f33','#93704a']
 function earthColour(y:number,n:number,out:T.Color){const band=Math.floor((-y+n*.25)*2.2);out.set(strata[((band%strata.length)+strata.length)%strata.length]);out.offsetHSL(0,0,n*.04)}

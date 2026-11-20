@@ -1,3 +1,4 @@
+import {livingTarget} from './livingSpaces'
 import {tunnelLayouts} from './tunnelLayouts'
 import type {Point,Zone,Shell} from './worldModel'
 import type {WorldState} from './worldQueue'
@@ -5,6 +6,9 @@ import {passages,passageArrival} from './undergroundContinuity'
 export type WorldRoute={id:string;from:Zone;to:Zone;target:string;label:string;type:'THEMATIC_SCENE'|'TEMPORAL_PORTAL'|'KNOWLEDGE_LINK'|'FAST_RETURN';at:Point;approach:Point;spawn:Point;heading:number;passage?:string}
 const route=(id:string,from:Zone,to:Zone,label:string,type:WorldRoute['type'],side=1):WorldRoute=>({id,from,to,target:'ROUTE_'+id,label,type,at:[side*2.6,1],approach:[side*2,1.5],spawn:to==='S0'?[0,1.5]:[0,2],heading:Math.PI})
 export const worldRoutes:WorldRoute[]=[
+ {...route('EPILOGUE_RETURN','L3-D','S5','Khép hành trình · trở về hiện tại','TEMPORAL_PORTAL'),at:[1.6,.5],approach:[1,.5]},
+ {...route('STATION_MEMORIAL','S0','S5','Thăm không gian tưởng niệm hiện đại','THEMATIC_SCENE'),at:[3,2],approach:[2.5,2]},
+ route('MEMORIAL_STATION','S5','S0','Trở về trạm thời gian','FAST_RETURN'),
  // Prologue P5: the Story (and Memory) journey lands in S1 (Q1). S2 stays a valid Free Exploration shortcut.
  {...route('TIME_OUT','S0','S1','Củ Chi01/1967 · bìa rừng','TEMPORAL_PORTAL'),target:'MACHINE'},
  {...route('TIME_OUT_FREE','S0','S2','Củ Chi1967 · góc lao động (khám phá tự do)','TEMPORAL_PORTAL',-1),target:'MACHINE'},
@@ -42,16 +46,13 @@ const entranceRoute=worldRoutes.find(r=>r.id==='FOREST_ENTRANCE')!;entranceRoute
 // Added after the legacy anchor assignment so existing Q1/Q2/Q3 routes retain their positions/order.
 for(const [from,to,id,label] of [
  ['S2','L1-C','LABOR_KITCHEN','Theo bữa cơm tới cảnh bếp'],['L1-C','S2','KITCHEN_LABOR','Về xóm lao động'],
- ['L1-C','L2-C','KITCHEN_REST','Tới cảnh nghỉ và sinh hoạt'],['L2-C','L1-C','REST_KITCHEN','Trở lại cảnh bếp'],
- ['L1-C','L3-B','KITCHEN_CARE','Tới cảnh chăm sóc'],['L3-B','L1-C','CARE_KITCHEN','Trở lại hậu cần bếp'],
- ['L3-B','L3-C','CARE_WATER','Tìm hiểu nguồn nước'],['L3-C','L3-B','WATER_CARE','Trở lại nơi chăm sóc'],
- ['L3-C','L1-C','WATER_KITCHEN','Mang liên hệ nước về bếp'],['L2-C','L3-B','REST_CARE','Tới cảnh chăm sóc'],
+ // L2-C / L3-B / L3-C are now reached through their own layer's passages (undergroundContinuity.ts); no cross-layer jumps.
 ] as [Zone,Zone,string,string][]){const r=route(id,from,to,label,'THEMATIC_SCENE');const n=worldRoutes.filter(r=>r.from===from).length;r.at=from==='S2'?[5,3]:[[-2.6,1],[2.6,1],[0,.9]][n%3] as Point;r.approach=from==='S2'?[4.5,3]:[[-2,1],[2,1],[0,.5]][n%3] as Point;r.spawn=to==='S2'?[4,3]:[0,2.5];worldRoutes.push(r)}
-for(const z of ['L1-C','L2-C','L3-B','L3-C'] as Zone[]){const r=route('RETURN_'+z,z,'S0','Trở về hiện tại','FAST_RETURN');r.at=[0,3];r.approach=[0,2.5];worldRoutes.push(r)}
+for(const z of ['L1-C','L2-C','L3-B','L3-C','L2-D','L3-D'] as Zone[]){const r=route('RETURN_'+z,z,'S0','Trở về hiện tại','FAST_RETURN');r.at=[0,3];r.approach=[0,2.5];worldRoutes.push(r)}
 // PO representative continuity correction: these edges now have authored doors/ramps, not model-view links.
 for(const p of Object.values(passages)){
  let r=worldRoutes.find(r=>r.id===p.id)
- const label=p.id==='FOREST_ENTRANCE'?'Chui xuống địa đạo':p.id==='ENTRANCE_SURFACE'?'Leo lên bìa rừng':p.motion==='down'?'Leo xuống '+p.to:p.motion==='up'?'Leo lên '+p.to:p.to==='L1-C'?'Rẽ vào bếp':p.to==='L1-B'?'Qua hành lang thông khí':'Đi qua cửa hầm'
+ const label=p.id==='FOREST_ENTRANCE'?'Chui xuống địa đạo':p.id==='ENTRANCE_SURFACE'?'Leo lên bìa rừng':p.motion==='down'?'Leo xuống '+p.to:p.motion==='up'?'Leo lên '+p.to:p.to==='L1-C'?'Rẽ vào bếp':p.to==='L2-C'?'Vào chỗ nghỉ':p.to==='L3-B'?'Vào nơi chăm sóc':p.to==='L3-C'?'Tới chỗ lấy nước':p.from==='L2-C'?'Ra nút giao tầng 2':p.from==='L3-B'&&p.to==='L3-A'?'Ra tuyến sâu':p.from==='L3-C'?'Trở lại nơi chăm sóc':p.to==='L1-B'?'Qua hành lang thông khí':'Đi qua cửa hầm'
  if(!r){r=route(p.id,p.from as Zone,p.to as Zone,label,'THEMATIC_SCENE');worldRoutes.push(r)}
  const arrival=passageArrival(p.id);r.passage=p.id;r.type=p.truth;r.label=label;r.approach=[...p.at];r.at=[p.at[0]+p.out[0]*.6,p.at[1]+p.out[1]*.6];r.spawn=arrival.position;r.heading=arrival.heading
 }
@@ -60,10 +61,10 @@ export const typeLabels={FAST_RETURN:'Về nhanh hiện tại · không phải E
 export const routesFrom=(zone:Zone)=>worldRoutes.filter(r=>r.from===zone)
 /** Time-machine departure: Story/Memory → S1 (P5); Free Exploration → S2 shortcut. */
 export const timeRoute=(mode:string)=>worldRoutes.find(r=>r.id===(mode==='FREE'?'TIME_OUT_FREE':'TIME_OUT'))!
-type Nav={version:1;zone:Zone;position:Point;heading:number;rice:number;last:'LEFT'|'RIGHT'|null;facts?:string[];callbackSeen?:boolean;mode?:string;q1?:string[]}
+type Nav={version:1;zone:Zone;position:Point;heading:number;rice:number;last:'LEFT'|'RIGHT'|null;facts?:string[];callbackSeen?:boolean;mode?:string;q1?:string[];activities?:string[];synthesisDraft?:string[];modelCompared?:boolean;smokeDraft?:string[];memorial?:unknown;kitchenEcho?:unknown}
 const storage=(owner:string)=>owner==='guest'?sessionStorage:localStorage
 export function saveNavigation(owner:string,value:Nav){try{storage(owner).setItem('timelens-proof-nav:'+owner,JSON.stringify(value))}catch{/* Server checkpoint remains authoritative when storage is unavailable. */}}
-export function readNavigation(owner:string):Nav|null{try{const n=JSON.parse(storage(owner).getItem('timelens-proof-nav:'+owner)??'null');return n?.version===1&&['S0','S1','S2','L1-A','L1-B','L1-C','L1-D','L2-A','L2-C','L3-A','L3-B','L3-C'].includes(n.zone)&&Array.isArray(n.position)&&n.position.length===2&&n.position.every((v:unknown)=>typeof v==='number'&&Number.isFinite(v))&&Number.isFinite(n.heading)&&Number.isInteger(n.rice)&&n.rice>=0&&n.rice<=6&&[null,'LEFT','RIGHT'].includes(n.last)?n:null}catch{return null}}
+export function readNavigation(owner:string):Nav|null{try{const n=JSON.parse(storage(owner).getItem('timelens-proof-nav:'+owner)??'null');return n?.version===1&&['S0','S1','S2','S5','L1-A','L1-B','L1-C','L1-D','L2-A','L2-C','L3-A','L3-B','L3-C','L2-D','L3-D'].includes(n.zone)&&Array.isArray(n.position)&&n.position.length===2&&n.position.every((v:unknown)=>typeof v==='number'&&Number.isFinite(v))&&Number.isFinite(n.heading)&&Number.isInteger(n.rice)&&n.rice>=0&&n.rice<=6&&[null,'LEFT','RIGHT'].includes(n.last)&&(n.activities===undefined||Array.isArray(n.activities)&&n.activities.every((id:unknown)=>typeof id==='string'&&!!livingTarget(id)))&&(n.synthesisDraft===undefined||Array.isArray(n.synthesisDraft)&&n.synthesisDraft.every((x:unknown)=>typeof x==='string'))?n:null}catch{return null}}
 export function saveVerifiedState(owner:string,state:WorldState){try{localStorage.setItem('timelens-proof-verified:'+owner,JSON.stringify(state))}catch{/* Do not turn cache failure into an acknowledgement. */}}
 export function readVerifiedState(owner:string):WorldState|null{try{const s=JSON.parse(localStorage.getItem('timelens-proof-verified:'+owner)??'null');return s?.releaseVersion===1&&Number.isFinite(s.revision)&&Array.isArray(s.facts)?s:null}catch{return null}}
 export function resumeShell(base:Shell,nav:Nav|null,zone:Zone,isSafe:(p:Point,z:Zone)=>boolean):Shell{return nav&&nav.zone===zone&&isSafe(nav.position,zone)?{...base,zone,position:nav.position,heading:nav.heading,path:[],intent:null}:{...base,zone,path:[],intent:null}}

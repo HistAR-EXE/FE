@@ -2,6 +2,8 @@ import * as T from 'three'
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js'
 import type {Kit} from '../../time-portal/tunnel3d/kit'
 import {gltfReady} from './r2Assets'
+import {buildAuthoredCharacter} from './authoredCharacter'
+import {elbowPoint} from './armPose'
 
 // Rigged people for the playable build: Quaternius Universal Base Characters [Standard] + Universal Animation
 // Library [Standard] (CC0). Bodies are the free "Superhero" bases, proportion-adjusted toward an ordinary build
@@ -11,7 +13,7 @@ import {gltfReady} from './r2Assets'
 
 export const R2_CHAR_FILES=['Superhero_Male_FullBody','Superhero_Female_FullBody','Hair_SimpleParted','Hair_Buns','Eyebrows_Regular','Eyebrows_Female','UAL1_Runtime']
 export type Clothing={top:string;bottom:string;style?:'baba'|'modern';hat?:'non';scarf?:boolean}
-export type RigOptions={body:'male'|'female';height:number;skin:string;hair:'Hair_SimpleParted'|'Hair_Buns';brows?:boolean;hairColor:string;clothing:Clothing;crouch?:boolean;idle?:string}
+export type RigOptions={body:'male'|'female';height:number;skin:string;hair:'Hair_SimpleParted'|'Hair_Buns';brows?:boolean;hairColor:string;clothing:Clothing;crouch?:boolean;idle?:string;sample?:boolean}
 export type RigActor={g:T.Group;contact:T.Mesh;legs:T.Object3D[];left:T.Object3D;right:T.Object3D;reach:(target:T.Vector3|null)=>void;grip:(left:T.Vector3|null,right:T.Vector3|null)=>void;tick:(dt:number,reduced:boolean)=>void;setCrouch:(on:boolean)=>void;setTalking:(on:boolean)=>void;setIdle:(clip:string)=>void;dispose:()=>void}
 
 const live=new Set<RigActor>()
@@ -103,15 +105,15 @@ function ordinaryBuild(root:T.Object3D,female:boolean){
 }
 
 export function createRigActor(parent:T.Object3D,kit:Kit,o:RigOptions):RigActor{
- const base=gltfReady('chars/'+(o.body==='female'?'Superhero_Female_FullBody':'Superhero_Male_FullBody')+'.glb'),anim=gltfReady('chars/UAL1_Runtime.glb')
- const model=SkeletonUtils.clone(base.scene)
- model.traverse(x=>{if(!(x instanceof T.Mesh))return;x.castShadow=true;x.receiveShadow=false;x.frustumCulled=false;const m=kit.track((x.material as T.MeshStandardMaterial).clone());if(/Superhero/.test(m.name))m.color.multiply(new T.Color(o.skin));x.material=m})
- for(const f of [o.hair,...(o.brows?[o.body==='female'?'Eyebrows_Female':'Eyebrows_Regular']:[])])for(const m of rebind(gltfReady('chars/'+f+'.glb').scene,model,o.hairColor,kit))model.add(m)
+ const anim=gltfReady('chars/UAL1_Runtime.glb')
+ const model=o.sample?buildAuthoredCharacter(anim.scene,{skin:o.skin,hair:o.hairColor,top:o.clothing.top,bottom:o.clothing.bottom,female:o.body==='female'}):SkeletonUtils.clone(gltfReady('chars/'+(o.body==='female'?'Superhero_Female_FullBody':'Superhero_Male_FullBody')+'.glb').scene)
+ model.traverse(x=>{if(!(x instanceof T.Mesh))return;x.castShadow=true;x.receiveShadow=false;x.frustumCulled=false;if(o.sample){kit.track(x.geometry);kit.track(x.material as T.Material)}else{const m=kit.track((x.material as T.MeshStandardMaterial).clone());if(/Superhero/.test(m.name))m.color.multiply(new T.Color(o.skin));x.material=m}})
+ if(!o.sample)for(const f of [o.hair,...(o.brows?[o.body==='female'?'Eyebrows_Female':'Eyebrows_Regular']:[])])for(const m of rebind(gltfReady('chars/'+f+'.glb').scene,model,o.hairColor,kit))model.add(m)
  model.updateMatrixWorld(true);const box=new T.Box3().setFromObject(model),h=box.max.y-box.min.y
- dress(kit,model,o.clothing)
- const build=ordinaryBuild(model,o.body==='female')
+ if(!o.sample)dress(kit,model,o.clothing)
+ const build=o.sample?{reset:()=>{},apply:()=>{}}:ordinaryBuild(model,o.body==='female')
  model.scale.setScalar(o.height/h)
- const g=new T.Group();g.add(model);parent.add(g)
+ const g=new T.Group();g.name=o.sample?'authored-worker-review-sample':'legacy-rig';g.userData.characterArt=o.sample?'AUTHORED_SAMPLE_REVIEW_PENDING':'LEGACY_PLACEHOLDER';g.add(model);parent.add(g)
  const mixer=new T.AnimationMixer(model),actions=new Map<string,T.AnimationAction>()
  const action=(name:string)=>{let a=actions.get(name);if(!a){const clip=T.AnimationClip.findByName(anim.animations,name);if(!clip)return undefined;a=mixer.clipAction(clip);actions.set(name,a)}return a}
  let current='',crouch=!!o.crouch,talking=false,idle=o.idle??'Idle_Loop',speed=0,moveHold=0
@@ -125,13 +127,35 @@ export function createRigActor(parent:T.Object3D,kit:Kit,o:RigOptions):RigActor{
  // r16 continuity: `grip` gives each hand its own world target (ladder rails / rungs); `reach` keeps the shared target.
  let reachTarget:T.Vector3|null=null,reachW=0,gripL:T.Vector3|null=null,gripR:T.Vector3|null=null
  const last=new T.Vector3().copy(g.position)
+ const footBones=['foot_l','foot_r'].map(name=>model.getObjectByName(name))
+ let footReference:T.Vector3[]|null=null,footAnimation='',footYaw=0,footSettled=0
  const vA=new T.Vector3(),vB=new T.Vector3(),vC=new T.Vector3(),vD=new T.Vector3(),q=new T.Quaternion(),qp=new T.Quaternion(),qw=new T.Quaternion()
  const aim=(bone:T.Object3D,child:T.Object3D,to:T.Vector3,w:number)=>{bone.getWorldPosition(vA);child.getWorldPosition(vB);vC.subVectors(vB,vA).normalize();vD.subVectors(to,vA).normalize();q.setFromUnitVectors(vC,vD);bone.getWorldQuaternion(qw);qw.premultiply(q);bone.parent!.getWorldQuaternion(qp);qp.invert().multiply(qw);bone.quaternion.slerp(qp,w);bone.updateMatrixWorld(true)}
  const ik=(w:number)=>{const pair=!!(gripL&&gripR);if((!reachTarget&&!pair)||w<=0)return;g.updateMatrixWorld(true)
   for(const a of arms){const target=pair?(a.side>0?gripL!:gripR!):reachTarget!;const S=a.upper.getWorldPosition(new T.Vector3()),E0=a.lower.getWorldPosition(new T.Vector3()),H0=a.hand.getWorldPosition(new T.Vector3()),l1=S.distanceTo(E0),l2=E0.distanceTo(H0)
-   const side=new T.Vector3(pair?0:a.side*.06,0,0).applyQuaternion(g.quaternion),P=target.clone().add(side),d=Math.min(S.distanceTo(P),(l1+l2)*.98),dir=P.clone().sub(S).normalize()
-   const cosA=(l1*l1+d*d-l2*l2)/(2*l1*d),ang=Math.acos(T.MathUtils.clamp(cosA,-1,1)),pole=(pair?new T.Vector3(a.side*.9,-.7,-.25):new T.Vector3(a.side*.4,-1,-.3)).applyQuaternion(g.quaternion),axis=new T.Vector3().crossVectors(dir,pole).normalize()
-   const E=S.clone().add(dir.clone().applyAxisAngle(axis,-ang).multiplyScalar(l1));aim(a.upper,a.lower,E,w);aim(a.lower,a.hand,S.clone().add(dir.multiplyScalar(d)),w)}}
+   const handOrientation=a.hand.getWorldQuaternion(new T.Quaternion())
+   const palmOffset=o.sample?new T.Vector3(0,.052*o.height/h,0).applyQuaternion(handOrientation):new T.Vector3()
+   const side=new T.Vector3(pair?0:a.side*.06,0,0).applyQuaternion(g.quaternion),palmGoal=target.clone().add(side),P=palmGoal.clone().sub(palmOffset),d=T.MathUtils.clamp(S.distanceTo(P),Math.abs(l1-l2)+.001,(l1+l2)*.999),dir=P.clone().sub(S).normalize()
+   const cosA=(l1*l1+d*d-l2*l2)/(2*l1*d),ang=Math.acos(T.MathUtils.clamp(cosA,-1,1)),pole=(pair?new T.Vector3(a.side*.9,-.7,-.25):new T.Vector3(a.side*.4,-1,-.3)).applyQuaternion(g.quaternion)
+   // Rotate toward the elbow pole. The opposite sign raised both elbows above
+   // the shoulders when reaching down to a work surface.
+   const E=elbowPoint(S,dir,pole,l1,ang);aim(a.upper,a.lower,E,w);aim(a.lower,a.hand,S.clone().add(dir.multiplyScalar(d)),w)
+   if(o.sample){
+    const parentQ=a.hand.parent!.getWorldQuaternion(new T.Quaternion()).invert()
+    a.hand.quaternion.slerp(parentQ.multiply(handOrientation),w);a.hand.updateMatrixWorld(true)
+    const actual=a.hand.localToWorld(new T.Vector3(0,.052,0))
+    g.userData['palmError'+a.side]=actual.distanceTo(palmGoal)
+    g.userData['contact'+a.side]={
+     side:a.side,root:g.getWorldPosition(new T.Vector3()).toArray(),
+     shoulder:a.upper.getWorldPosition(new T.Vector3()).toArray(),
+     elbow:a.lower.getWorldPosition(new T.Vector3()).toArray(),
+     wrist:a.hand.getWorldPosition(new T.Vector3()).toArray(),palm:actual.toArray(),
+     target:palmGoal.toArray(),toolTarget:target.toArray(),
+     error:actual.distanceTo(palmGoal),reachDistance:S.distanceTo(P),
+     maximumReach:l1+l2,unreachable:S.distanceTo(P)>(l1+l2)*.999,blend:w,
+    }
+   }
+  }}
  const actor:RigActor={g,contact,legs,left,right,
   reach:t=>{reachTarget=t?t.clone():null},
   grip:(l,r)=>{gripL=l?l.clone():null;gripR=r?r.clone():null},
@@ -143,7 +167,31 @@ export function createRigActor(parent:T.Object3D,kit:Kit,o:RigOptions):RigActor{
    play(walking?(crouch?'Crouch_Fwd_Loop':'Walk_Loop'):crouch?'Crouch_Idle_Loop':talking?'Idle_Talking_Loop':idle)
    const a=actions.get(current);if(a)a.timeScale=walking&&!crouch?T.MathUtils.clamp(speed/1.4,.6,1.6):1
    build.reset();mixer.update(reduced&&!walking?0:dt);build.apply();model.updateMatrixWorld(true)
+   // Ground the authored soles after retargeting. This corrects vertical root offsets;
+   // horizontal foot locking still needs separate gait/contact verification.
+   if(o.sample){
+    const soles=model.getObjectByName('authored-sandals') as T.SkinnedMesh
+    if(soles){let low=Infinity;const p=soles.geometry.attributes.position,v=new T.Vector3()
+     for(let i=0;i<p.count;i++){soles.getVertexPosition(i,v).applyMatrix4(soles.matrixWorld);low=Math.min(low,v.y)}
+     if(Number.isFinite(low)){model.position.y+=g.position.y-low;model.updateMatrixWorld(true)}
+    }
+   }
    reachW=T.MathUtils.lerp(reachW,reachTarget||(gripL&&gripR)||raised?1:0,Math.min(1,dt*8));ik(reachW)
+   const activeContact=!!(reachTarget||(gripL&&gripR))&&!walking
+   if(o.sample){
+    const positions=footBones.map(b=>b?.getWorldPosition(new T.Vector3())??new T.Vector3())
+    const turning=Math.abs(Math.atan2(Math.sin(g.rotation.y-footYaw),Math.cos(g.rotation.y-footYaw)))>.01
+    if(walking||turning||footAnimation!==current){footReference=null;footSettled=0}
+    else footSettled+=dt
+    if(!footReference&&footSettled>.4)footReference=positions.map(p=>p.clone())
+    g.userData.footFrame={capturedAt:performance.now(),animation:current,walking,turning,settled:!!footReference,root:g.position.toArray(),feet:positions.map((p,i)=>({side:i?'right':'left',position:p.toArray(),horizontalDrift:footReference?Math.hypot(p.x-footReference[i].x,p.z-footReference[i].z):null}))}
+    footAnimation=current;footYaw=g.rotation.y
+   }
+   g.userData.activeContact=activeContact
+   if(o.sample&&activeContact){
+    g.userData.contactFrame=arms.map(a=>({...g.userData['contact'+a.side],capturedAt:performance.now(),animation:current}))
+   }else{delete g.userData.contactFrame;delete g.userData.palmError1;delete g.userData['palmError-1']}
+   if(typeof g.userData.afterPose==='function')g.userData.afterPose()
    contact.position.set(g.position.x,g.position.y+.006,g.position.z)
   },
   dispose:()=>{mixer.stopAllAction();mixer.uncacheRoot(model)}}

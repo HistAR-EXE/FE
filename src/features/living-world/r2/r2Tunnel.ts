@@ -2,7 +2,7 @@ import * as T from 'three'
 import type {Kit} from '../../time-portal/tunnel3d/kit'
 import type {ZoneEnv} from '../zoneEnvironments'
 import type {Zone} from '../worldModel'
-import {place,preload,r2Texture,pbr,roomEnvironment} from './r2Assets'
+import {place,preload,r2Texture,pbr,roomEnvironment,canvasTexture} from './r2Assets'
 import {R2_CHAR_FILES} from './r2Actors'
 import {passages,passagePoints,passageFloor,passageRoof} from '../undergroundContinuity'
 import {tunnelLayouts,isTunnelZone} from '../tunnelLayouts'
@@ -15,7 +15,7 @@ import {tunnelLayouts,isTunnelZone} from '../tunnelLayouts'
 // The walk grid (worldModel) and this carved mask both come from tunnelLayouts.ts: each layer has its own layout.
 
 const MATERIALS=['clay_plaster','red_dirt_mud_01','excavated_soil_wall','dirt_floor','rough_wood','bamboo_wall_02']
-export const prepareTunnel=()=>preload({materials:MATERIALS,models:['vintage_oil_lamp','wooden_bowl_01','ceramic_pot','wicker_basket_02','wooden_bucket_01'],chars:R2_CHAR_FILES})
+export const prepareTunnel=()=>preload({materials:MATERIALS,models:['vintage_oil_lamp','wooden_bowl_01','ceramic_pot','wicker_basket_02','wooden_bucket_01','wicker_basket_01','wooden_stool_01','wooden_broom','pot_enamel_01'],chars:R2_CHAR_FILES})
 
 type Seg={a:[number,number];b:[number,number];r:number;h:number}
 type Room={c:[number,number];r:number;h:number}
@@ -36,6 +36,7 @@ let insideFn:((x:number,y:number,z:number)=>boolean)|null=null
 export const tunnelInside=(x:number,y:number,z:number)=>insideFn?insideFn(x,y,z):true
 export function buildTunnel(scene:T.Scene,kit:Kit,zone:Zone,renderer:T.WebGLRenderer,opts:{parent?:T.Object3D;xray?:boolean}={}):ZoneEnv{
  const host=opts.parent??scene,xray=!!opts.xray
+ const modelLayers:T.Mesh[]=[],modelLinks:T.Mesh[]=[],relationLines:{mesh:T.Line;id:string}[]=[]
  const lay=zoneLayout(zone),segs=lay.extra,rooms=lay.rooms,wet=lay.depth==='L3',T_=(id:string,dy=0):[number,number,number]=>{const p=lay.lay.targets[id]?.at??[0,0];return [p[0],dy,p[1]]}
  if(!xray){const env=roomEnvironment(renderer);kit.track(env);scene.environment=env.texture;scene.environmentIntensity=.06;scene.background=new T.Color('#060403');scene.fog=new T.Fog('#0b0806',3,11)}
  // ---- carved shell: one heightfield whose arch height follows the distance to the nearest corridor/room ----
@@ -93,7 +94,42 @@ export function buildTunnel(scene:T.Scene,kit:Kit,zone:Zone,renderer:T.WebGLRend
   const mat=new T.Mesh(kit.geo('r2-mat',()=>new T.BoxGeometry(1.1,.02,.65)),pbr(kit,'bamboo_wall_02',{repeat:[1.5,1],color:'#d8c49a'}));mat.position.y=.012;mat.receiveShadow=true;life.add(mat)
   place(life,'wooden_bowl_01',[-.2,.03,.05]);place(life,'ceramic_pot',[.45,0,-.15],{scale:.8})
   life.add(proxy([0,.25,0],[1.1,.5,.7]));targets.LINK_AIR_LIFE=life
- }else if(zone==='L1-D'||zone==='L2-A'){
+ }else if(zone==='L2-D'||zone==='L3-D'){
+  const modelLight=new T.PointLight('#ffe0ac',2.4,5,1.5);modelLight.position.set(0,1.8,.3);host.add(modelLight)
+  // Original teaching model inside a walkable room. Generic historical principles,
+  // THEMATIC_SCENE / RECONSTRUCTED; no surveyed room location or weapon store.
+  const table=new T.Mesh(kit.track(new T.BoxGeometry(2.6,.12,1.6)),wood);table.position.set(0,.64,-.8);host.add(table)
+  for(const x of [-1.1,1.1])for(const z of [-1.4,-.2]){const leg=new T.Mesh(kit.track(new T.BoxGeometry(.09,.65,.09)),wood);leg.position.set(x,.32,z);host.add(leg)}
+  const clay=kit.track(new T.MeshStandardMaterial({color:'#b98a62',roughness:.95}))
+  const modelRoot=new T.Group();host.add(modelRoot)
+  if(zone==='L2-D'){
+   modelRoot.position.set(0,.76,-.8)
+   // Authored teaching cutaway: staggered openings are readable from the room,
+   // not an archaeological plan. The top plate represents the surface.
+   for(let i=0;i<4;i++){
+    const section=new T.Shape();section.moveTo(-.9,-.07);section.lineTo(.9,-.07);section.lineTo(.9,.07);section.lineTo(-.9,.07);section.closePath()
+    if(i<3)for(const x of [-.55+i*.12,.28-i*.08]){const hole=new T.Path();hole.absellipse(x,0,.17,.047,0,Math.PI*2,true);section.holes.push(hole)}
+    const geometry=new T.ExtrudeGeometry(section,{depth:.8,bevelEnabled:false,curveSegments:16});geometry.translate(0,0,-.4)
+    const slab=new T.Mesh(kit.track(geometry),clay);slab.position.set((i-1.5)*.06,i*.18,0);modelRoot.add(slab);modelLayers.push(slab)
+    const title=['L3','L2','L1','Mặt đất'][i],texture=kit.track(canvasTexture(256,64,c=>{c.fillStyle='#241e15';c.fillRect(0,0,256,64);c.fillStyle='#f3e2bb';c.textAlign='center';c.font='30px sans-serif';c.fillText(title,128,43)}))
+    const tag=new T.Mesh(kit.track(new T.PlaneGeometry(.32,.08)),kit.track(new T.MeshBasicMaterial({map:texture})));tag.position.set(.68,0,.405);slab.add(tag)
+   }
+   for(let i=0;i<3;i++){
+    const link=new T.Mesh(kit.track(new T.CylinderGeometry(.018,.018,1,10)),kit.track(new T.MeshStandardMaterial({color:'#d4b37a',roughness:.8})))
+    modelRoot.add(link);modelLinks.push(link)
+   }
+   targets.MODEL_COMPARE=modelRoot;modelRoot.userData.interactionAnchor=new T.Vector3(0,.25,0)
+  }else{
+   const names=['ENTRANCE','STRUCTURE','AIR','LIVING','SUPPORT','COMMUNITY']
+   names.forEach((name,i)=>{const n=new T.Mesh(kit.track(new T.CylinderGeometry(.15,.18,.12,24)),kit.track(new T.MeshStandardMaterial({color:['#c09d65','#bc8151','#83b6ab','#91ae78','#c5a568','#aabe8b'][i],roughness:.8})));n.position.set((i%3-1)*.8,.82,-.7-Math.floor(i/3)*.6);host.add(n);targets['SYN_'+name]=n
+    const caption=kit.track(canvasTexture(512,128,x=>{x.fillStyle='#201c15';x.fillRect(0,0,512,128);x.fillStyle='#f3e2bb';x.font='bold 27px sans-serif';x.textAlign='center';x.fillText(['Lối vào','Tổ chức không gian','Thông khí','Điều kiện sinh hoạt','Bếp · nước · chăm sóc','Cộng đồng'][i],256,75)}))
+    const sign=new T.Mesh(kit.track(new T.PlaneGeometry(.66,.16)),kit.track(new T.MeshBasicMaterial({map:caption,side:T.DoubleSide})));sign.rotation.x=-Math.PI/2;sign.position.set(0,.08,.2);n.add(sign)})
+   for(const [a,b,id] of [['ENTRANCE','STRUCTURE','ENTRANCE_STRUCTURE_ORGANIZES_SPACE'],['AIR','LIVING','AIR_SUPPORTS_LIVING_CONDITIONS'],['SUPPORT','COMMUNITY','KITCHEN_WATER_MEDICAL_SUPPORT_COMMUNITY']]){
+    const points=[targets['SYN_'+a].position.clone(),targets['SYN_'+b].position.clone()];points.forEach(p=>p.y+=.09)
+    const line=new T.Line(kit.track(new T.BufferGeometry().setFromPoints(points)),kit.track(new T.LineBasicMaterial({color:'#a6d3a1'})));line.visible=false;host.add(line);relationLines.push({mesh:line,id})
+   }
+  }
+ }else if(zone==='L1-D' ||zone==='L2-A'){
   const layer=zone==='L1-D'?1:2,lo=T_(`STRUCT_LAYER_${layer}`),room=new T.Group();room.position.set(lo[0],0,lo[2]+.35);host.add(room)
   if(layer===2){const mat=new T.Mesh(kit.geo('r2-mat2',()=>new T.BoxGeometry(1.2,.02,.8)),pbr(kit,'bamboo_wall_02',{repeat:[1.5,1],color:'#cdb88e'}));mat.position.y=.012;room.add(mat);place(room,'wicker_basket_02',[.55,0,-.3],{rotY:.8});place(room,'wooden_bowl_01',[-.25,.03,0]);}
   else place(room,'wooden_bucket_01',[.15,0,-.2],{rotY:1})
@@ -104,20 +140,35 @@ export function buildTunnel(scene:T.Scene,kit:Kit,zone:Zone,renderer:T.WebGLRend
    const no=T_('L2D_NICHE'),niche=new T.Group();niche.position.set(no[0],0,no[2]);host.add(niche)
    const shelf=new T.Mesh(kit.geo('r2-l2d-shelf',()=>new T.BoxGeometry(.5,.3,.42)),wood);shelf.position.y=.15;shelf.castShadow=true;niche.add(shelf)
    const clay=kit.memo('r2-l2d-clay',()=>new T.MeshStandardMaterial({color:'#b98a62',roughness:.95}))
-   for(let k=0;k<3;k++){const slab=new T.Mesh(kit.geo('r2-l2d-slab',()=>new T.BoxGeometry(.36,.035,.28)),clay);slab.position.set((k-1)*.03,.33+k*.07,0);niche.add(slab)}
+   for(let k=0;k<4;k++){const slab=new T.Mesh(kit.geo('r2-l2d-slab',()=>new T.BoxGeometry(.36,.035,.28)),clay);slab.position.set((k-1.5)*.03,.33+k*.07,0);niche.add(slab)}
+   // The four-level teaching model is in the room, before the optional X-ray view.
+   const linkMat=kit.memo('r2-model-link',()=>new T.MeshStandardMaterial({color:'#685439',roughness:1}))
+   for(let k=0;k<3;k++){const link=new T.Mesh(kit.geo('r2-model-link',()=>new T.CylinderGeometry(.012,.012,.08,8)),linkMat);link.position.set(-.1+k*.08,.365+k*.07,.04);niche.add(link)}
    niche.add(proxy([0,.45,0],[.6,.9,.6]));targets.L2D_NICHE=niche
   }
  }else{
-  // L3: deeper, damper; well/water hole (Ch.5 L3-C, RECONSTRUCTED); no casualties depicted
+  // Deep structure observation: an educational section model, never an unsourced underground well.
   const wo=T_('STRUCT_LAYER_3'),room=new T.Group();room.position.set(wo[0],0,wo[2]+.35);host.add(room)
-  const water=new T.Mesh(kit.geo('r2-well',()=>new T.CircleGeometry(.32,32)),kit.memo('r2-water',()=>new T.MeshStandardMaterial({color:'#1b1712',roughness:.05,metalness:.2})));water.rotation.x=-Math.PI/2;water.position.y=-.02;room.add(water)
-  const rim=new T.Mesh(kit.geo('r2-well-rim',()=>new T.TorusGeometry(.36,.05,8,32)),kit.memo('r2-rim',()=>new T.MeshStandardMaterial({color:'#5a3f2e',roughness:.9})));rim.rotation.x=Math.PI/2;room.add(rim)
-  place(room,'wooden_bucket_01',[.6,0,.1],{rotY:.5})
+  const clay=kit.memo('r2-deep-model',()=>new T.MeshStandardMaterial({color:'#a17a55',roughness:1}))
+  for(let k=0;k<4;k++){const slab=new T.Mesh(kit.geo('r2-deep-slab',()=>new T.BoxGeometry(.65,.065,.4)),clay);slab.position.set(k*.04,.08+k*.12,0);slab.receiveShadow=true;room.add(slab)}
+  place(room,'wooden_bowl_01',[.6,.02,.1],{scale:.6})
   room.add(proxy([0,.5,0],[1,1,.9]));targets.STRUCT_LAYER_3=room
  }
  // reference frame: real section size (62 × 104 cm) drawn as a thin outline at the entry, for honesty about scale
  const ref=new T.LineSegments(kit.track(new T.EdgesGeometry(new T.PlaneGeometry(.62,1.04).translate(0,.52,0))),kit.memo('r2-ref-line',()=>new T.LineBasicMaterial({color:'#e6b07a',transparent:true,opacity:.55})));ref.position.set(0,.01,2.45);ref.visible=xray;host.add(ref) // scale reference only in the cutaway; in walk view it read as stray lines
  return {heightAt:(x,z)=>passageFloor(zone,x,z),floor,targets,endpoints:new Map(),pipes:[],links:[],camera:{position:[0,1,3.2],target:[0,.9,1.6],min:.7,max:1.8,polar:1.55},update:(t,_dt,s)=>{
+  modelLayers.forEach((m,i)=>{m.position.y=i*(s.completed?.includes('MODEL_COMPARE')?.3:.18)})
+  modelLinks.forEach((link,i)=>{
+   const x=i%2===0?-.42:.38,a=modelLayers[i].position.clone().add(new T.Vector3(x,.04,.28)),b=modelLayers[i+1].position.clone().add(new T.Vector3(x-.06,-.04,.28)),direction=b.clone().sub(a)
+   link.position.copy(a).add(b).multiplyScalar(.5);link.scale.y=direction.length();link.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),direction.normalize())
+  })
+  relationLines.forEach(r=>{r.mesh.visible=!!s.completed?.includes(r.id)})
+  for(const [id,target] of Object.entries(targets))if(id.startsWith('SYN_')&&target instanceof T.Mesh){
+   const selected=s.selectedTarget===id,material=target.material as T.MeshStandardMaterial
+   material.emissive.set(selected?'#f7ce75':'#000000');material.emissiveIntensity=selected?.55:0
+   // A static lift distinguishes selection without relying on colour or animated pulses.
+   target.position.y=selected?.87:.82
+  }
   for(let i=0;i<lights.length;i++){const k=s.reduced?1:1+Math.sin(t*9+i*1.7)*.06+Math.sin(t*23+i)*.03;if(lights[i].parent)lights[i].intensity=(i<2?1.6:1.3)*k;flames[i].scale.setScalar(k)}
  }}
 }

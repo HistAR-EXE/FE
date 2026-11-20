@@ -72,6 +72,9 @@ body:has(.lw-root) [role="status"][aria-atomic="false"]{top:76px;max-height:calc
 .lw-game .lw-actor-label{display:none}
 .lw-game .lw-scene-label{font-size:12px;opacity:.85}
 .lw-game[data-hints=off] .lw-scene-label{visibility:hidden}
+/* Names printed on the synthesis model are readable labels, not quest hints. */
+.lw-game .lw-canvas[data-model-inspection=true] .lw-scene-label[data-scene-target^="SYN_"]{visibility:visible;white-space:normal;max-width:112px;text-align:center;font-size:12px;opacity:1}
+.lw-game .lw-canvas[data-kitchen-inspection=true] .lw-scene-label[data-scene-target^="Q4_"]{visibility:visible;font-size:12px;opacity:1}
 .lw-game .lw-scene-hud{position:absolute;left:12px;bottom:12px;z-index:3;background:transparent;padding:0;max-width:40vw}
 .lw-game .lw-scene-hud>span{display:none}
 /* menu drawer + Atlas/Sources overlay (world remains mounted underneath) */
@@ -118,6 +121,7 @@ body:has(.lw-root) [role="status"][aria-atomic="false"]{top:76px;max-height:calc
 .lw-game .lw-bark{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);z-index:6;max-width:min(560px,calc(100vw - 32px));margin:0;padding:6px 14px;border-radius:16px;background:#0d1412b3;color:#f4f0e2;font-size:14px;text-shadow:0 1px 2px #000;animation:lw-bark-in .35s ease-out both;pointer-events:none}
 .lw-game .lw-bark b{color:#9fe8d0;font-weight:600}
 @keyframes lw-bark-in{from{opacity:0;transform:translate(-50%,6px)}to{opacity:1;transform:translate(-50%,0)}}
+.lw-game .lw-bark.lw-synthesis-payoff{pointer-events:auto;max-height:40dvh;overflow:auto}
 @media (prefers-reduced-motion:reduce){.lw-game .lw-bark{animation:none}}
 .lw-game .lw-hint{margin:4px 0;padding:4px 8px;border-radius:6px;background:#e6b07a22;color:#f6e3c6;font-size:12px}
 .lw-game .lw-hint-button{background:transparent;color:#f3c98e;border:1px solid #e6b07a88}
@@ -166,3 +170,23 @@ body:has(.lw-root) [role="status"][aria-atomic="false"]{top:76px;max-height:calc
 .lw-game[data-transfer="on"] .lw-compass,.lw-game[data-transfer="on"] .lw-prompt{visibility:hidden}
 
 @media(max-width:640px){.lw-game .lw-prompt{bottom:calc(34dvh + 18px)}}
+/* G3/G4 world recovery: the 3D room stays the main content; the context card is narrower and shorter while playing */
+.lw-game .lw-compass{width:min(290px,calc(100vw - 24px));max-height:36dvh}
+.lw-game .lw-compass .lw-dialog .lw-small{opacity:.8}
+/* PO concept: compact contextual controls; optional stories stay open until explicitly closed. */
+.lw-game .lw-room-story{margin:6px 0;color:#eee5d4}
+.lw-game .lw-room-story summary{cursor:pointer;color:#eac894;padding:5px 0}
+.lw-game .lw-compass:has(.lw-dialog[data-target^="A"]){max-height:28dvh}
+.lw-game button:focus-visible,.lw-game summary:focus-visible{outline:2px solid #f2cf93;outline-offset:3px}
+@media(max-width:640px){
+ .lw-game .lw-hud{padding:8px 10px;gap:6px}
+ .lw-game .lw-hud-place .lw-small{display:none}
+ .lw-game .lw-hud h1{font-size:14px;line-height:1.25}
+ .lw-game .lw-hud-place .lw-eyebrow{font-size:10px;letter-spacing:.02em}
+ .lw-game .lw-hud-actions button{min-height:40px;padding:5px 9px;font-size:12px}
+ .lw-game .lw-compass{width:auto;right:10px;max-height:27dvh;padding:8px 10px}
+ .lw-game .lw-compass:has(.lw-dialog[data-target^="A"]){max-height:27dvh}
+ .lw-game .lw-compass:has(.lw-room-story[open]){max-height:42dvh}
+ .lw-game .lw-prompt{bottom:calc(27dvh + 18px);max-width:calc(100vw - 30px);white-space:normal}
+ .lw-game .lw-compass button{min-height:40px}
+}

@@ -2,11 +2,19 @@ export type Point = [number, number]
 import {routesFrom} from './worldContinuity'
 import {tunnelLayouts,isTunnelZone,inLayout,isQuestTarget} from './tunnelLayouts'
 import {livingSpaces,isLivingZone,livingWalkable,type LivingZone} from './livingSpaces'
-export type Zone = 'S0' | 'S1' | 'S2' | 'L1-A' | 'L1-B' | 'L1-D' | 'L2-A' | 'L3-A' | LivingZone
+import {kitchenNodes} from './spatialKitchen'
+export type Zone = 'S0' | 'S1' | 'S2' | 'S5' | 'L1-A' | 'L1-B' | 'L1-D' | 'L2-A' | 'L3-A' | 'L2-D' | 'L3-D' | LivingZone
 export type Mode = 'FREE' | 'STORY' | 'MEMORY'
 export type Target = { id: string; label: string; at: Point; approach: Point; description: string }
 export const factLabels:Record<string,string>={Q1_TRAIL_OBSERVED:'Lối mòn dừng đột ngột dưới lớp lá',Q1_LEAVES_OBSERVED:'Mảng lá được thay, khác màu xung quanh',Q1_HATCH_OBSERVED:'Một tấm nắp phủ đất và lá',ENTRANCE_CONFIRMED:'Nhận ra lối vào được ngụy trang',AIR_OPENING_INSPECTED:'Một lỗ mở nối với bên ngoài',AIR_PASSAGE_INSPECTED:'Đoạn dẫn nối các không gian',AIR_INTERIOR_INSPECTED:'Không gian cần điều kiện sử dụng',AIR_PATH_CORRECT:'Từ lỗ mở qua đoạn dẫn tới bên trong',AIR_MEANING_CONFIRMED:'Thông khí liên quan tới điều kiện sinh hoạt',STRUCT_LAYER_1:'Lớp trên trong hệ thống',STRUCT_LAYER_2:'Lớp giữa trong hệ thống',STRUCT_LAYER_3:'Lớp dưới trong hệ thống',STRUCT_LINK_12:'Điểm chuyển giữa lớp trên và lớp giữa',STRUCT_LINK_23:'Điểm chuyển giữa lớp giữa và lớp dưới',STRUCT_MEANING_CONFIRMED:'Các lớp kết nối thành một hệ thống có tổ chức'}
+Object.assign(factLabels,{KITCHEN_HEARTH_INSPECTED:'Công việc quanh bữa ăn',KITCHEN_SMOKE_INSPECTED:'Mô hình dẫn khói',KITCHEN_SMOKE_PATH_CORRECT:'Đường khói qua rãnh và khoang phân tán',KITCHEN_MEANING_CONFIRMED:'Bếp gắn với bữa ăn cộng đồng',WATER_STORAGE_INSPECTED:'Vật dụng trữ nước',WATER_USES_CONNECTED:'Nước cho nhiều nhu cầu',MEDICAL_PREPARATION_INSPECTED:'Chuẩn bị cho việc chăm sóc',MEDICAL_SUPPORT_CONNECTED:'Sự hỗ trợ giữa con người',CARE_MEANING_CONFIRMED:'Nước và chăm sóc duy trì cộng đồng',KITCHEN_CARE_REFLECTED:'Nhìn lại bếp sau khi hiểu chăm sóc',MS_SYNTHESIS_COMPLETE:'Một cộng đồng hiện ra'})
 export const zones: Record<Zone, { title: string; targets: Target[] }> = {
+ S5:{title:'Củ Chi hôm nay · ký ức và tri ân',targets:[
+  {id:'MEMORIAL_READ',label:'Đọc lời tưởng niệm',at:[0,-3.35],approach:[0,-2.5],description:'Không gian diễn giải hiện đại dành cho ký ức và tri ân. Bạn có thể tham quan, dừng lại yên lặng hoặc trở về trạm bất cứ lúc nào. Bố cục đang chờ đối chiếu tư liệu Đền Bến Dược.'},
+  {id:'MEMORIAL_FLOWERS',label:'Góc hoa tưởng niệm',at:[-1.5,-1.7],approach:[-1.5,-1],description:'Một khoảng dành cho sự tri ân tự nguyện. Hoạt động nghi lễ đang được hoàn thiện và chờ kiểm duyệt.'},
+  {id:'MEMORIAL_INCENSE',label:'Lư hương',at:[0,-2],approach:[0,-1.5],description:'Nghi thức tưởng niệm tự nguyện trong bối cảnh hiện đại. Cử chỉ trong bản dựng đang chờ kiểm duyệt.'},
+  {id:'MEMORIAL_QUIET',label:'Dừng lại yên lặng',at:[2,-.8],approach:[2,0],description:'Bạn có thể dành một khoảng yên lặng để nhớ về những con người vừa gặp trong hành trình, rồi tự chọn lúc tiếp tục.'},
+ ]},
  S0: { title: 'Trạm thời gian', targets: [
   {id:'KHA',label:'Kha · người giữ trạm',at:[-2,-1],approach:[-2,0],description:'Kha là nhân vật giáo dục hư cấu. Chọn một cách khám phá rồi bước qua cổng; bạn có thể quay lại bất cứ lúc nào.'},
   {id:'MACHINE',label:'Cỗ máy thời gian',at:[0,-1],approach:[0,0],description:'Một chuyến đi vào bối cảnh tái dựng Củ Chi năm 1967. Đây không phải bản đồ khảo cổ hay tái hiện một trận đánh cụ thể.'}] },
@@ -28,11 +36,14 @@ export const zones: Record<Zone, { title: string; targets: Target[] }> = {
  'L1-D':{title:'Thành phố nhiều tầng · lớp trên',targets:[{id:'STRUCT_LAYER_1',label:'Quan sát lớp trên',at:[-1,-1],approach:[-1,0],description:'Lớp trên là một phần của hệ thống nhiều lớp. Sơ đồ này không gán một loại phòng cố định cho từng tầng.'},{id:'STRUCT_LINK_12',label:'Quan sát điểm chuyển 1–2',at:[2,-1],approach:[2,0],description:'Một điểm chuyển nối hai lớp. Hãy xem đầu còn lại ở lớp giữa; vị trí được diễn giải để dễ quan sát.'}]},
  'L2-A':{title:'Thành phố nhiều tầng · lớp giữa',targets:[{id:'STRUCT_LAYER_2',label:'Quan sát lớp giữa',at:[-1,-1],approach:[-1,0],description:'Đừng chỉ đếm tầng: hãy quan sát cách những khoảng không gian liên hệ với nhau.'},{id:'STRUCT_LINK_23',label:'Quan sát điểm chuyển 2–3',at:[2,-1],approach:[2,0],description:'Điểm chuyển này nối lớp giữa và lớp dưới trong mô hình diễn giải.'}]},
  'L3-A':{title:'Thành phố nhiều tầng · lớp dưới',targets:[{id:'STRUCT_LAYER_3',label:'Quan sát lớp dưới',at:[0,-1],approach:[0,0],description:'Khi nối các lớp, những đoạn rời rạc trở thành một hệ thống. Hãy quay về phần thông khí và thử nhìn nó trong toàn bộ cấu trúc.'}]},
- 'L1-C':{...livingSpaces['L1-C'],targets:[...livingSpaces['L1-C'].targets]},
+ 'L2-D':{title:'Trạm ký ức cấu trúc',targets:[{id:'MODEL_COMPARE',label:'Đối chiếu các lớp',at:[0,-.7],approach:[0,.5],description:'Mô hình phục dựng diễn giải, đối chiếu không gian với điều kiện sinh hoạt. Không phải sơ đồ khảo sát.'}]},
+ 'L3-D':{title:'Mạch Sống · một cộng đồng hiện ra',targets:['ENTRANCE','STRUCTURE','AIR','LIVING','SUPPORT','COMMUNITY'].map((n,i)=>({id:'SYN_'+n,label:['Lối vào','Tổ chức không gian','Thông khí','Điều kiện sinh hoạt','Bếp · nước · chăm sóc','Cộng đồng'][i],at:[(i%3-1)*.8,-.7-Math.floor(i/3)*.6] as Point,approach:[0,.5] as Point,description:'Mô hình tổng hợp diễn giải. Chọn hai điểm để nối quan hệ đã khám phá.'}))},
+ 'L1-C':{...livingSpaces['L1-C'],targets:[...livingSpaces['L1-C'].targets,{id:'NPC_COOK',label:'Người nấu bếp',at:[1.15,-1.85],approach:[.5,-1.5],description:'Nhân vật giáo dục hư cấu; bạn có thể hỏi về công việc quanh bếp.'}]},
  'L2-C':{...livingSpaces['L2-C'],targets:[...livingSpaces['L2-C'].targets]},
  'L3-B':{...livingSpaces['L3-B'],targets:[...livingSpaces['L3-B'].targets]},
  'L3-C':{...livingSpaces['L3-C'],targets:[...livingSpaces['L3-C'].targets]},
 }
+for(const node of kitchenNodes)zones['L1-C'].targets.push({id:'Q4_'+node.id,label:node.label,at:[...node.at],approach:[0,-1.5],description:'Mô hình diễn giải nguyên lý trong cảnh bếp; không phải vị trí khảo sát.'})
 // G3 WS6: L2-D interpretive niche inside the L2-A scene (THEMATIC · not a new zone id, never quest progress).
 zones['L2-A'].targets.push({id:'L2D_NICHE',label:'Góc diễn giải L2-D',at:[0,0],approach:[0,0],description:'Một góc diễn giải (THEMATIC): mở mặt cắt X-ray để thấy lớp giữa nằm ở đâu giữa mặt đất và các lớp khác. Đây không phải một phòng có thật được khảo sát.'})
 // Observation targets follow each layer's own layout (tunnelLayouts.ts).
@@ -57,9 +68,10 @@ const blocked = ([x,z]:Point, zone:Zone) => zone==='S2'
    ||(x>4.8&&z>-2.3&&z<.1)||(x>5.6&&z>.3&&z<1.8)||(x< -5.2&&z>-.1&&z<1.3)||Math.hypot(x+3,z-4.5)<.7
  : zone==='S1' ? Math.abs(x)>4.5 || Math.abs(z)>3 || Math.hypot(x-2.5,z+2.5)<.6
  : zone==='S0' ? Math.abs(x)>3.5 || Math.abs(z)>2.5 || (Math.abs(x)<0.8 && z < -0.2 && z > -1.8)
+ : zone==='S5' ? Math.abs(x)>3.5 || z>3 || z< -3 || (Math.abs(x+1.5)<.8&&Math.abs(z+1.7)<.5) || (Math.abs(x-2)<.9&&Math.abs(z+.8)<.45) || (Math.abs(x)<.35&&Math.abs(z+2)<.35)
    // G3 immersive: L1-B / L1-D / L2-A / L3-A are enterable tunnel sections; walking is limited to the carved
    // corridors of that layer's own layout (tunnelLayouts.ts, carved by r2/r2Tunnel.ts). The interpretive cutaway (X-ray) view uses the same points.
-   : isLivingZone(zone)?!(livingWalkable([x,z])||(zone==='L1-C'&&Math.abs(z-3)<=.26&&Math.abs(x)<=1.25)):!(isTunnelZone(zone)&&inLayout(zone,x,z))
+   : isLivingZone(zone)?!livingWalkable([x,z],zone):!(isTunnelZone(zone)&&inLayout(zone,x,z))
 // Small regular walk grid, shared by pointer, keyboard and accessible approach actions.
 export const isSafeWorldPoint=(p:Point,zone:Zone)=>!blocked(p,zone)
 /** Safe spawn view: keep the heading when the passage continues ≥1 m ahead AND there is ≥1 m behind for the follow
