@@ -3,6 +3,7 @@ import { PublicFooter } from '../components/layout/PublicFooter'
 import { emitEvent } from '../lib/pilotEvents'
 import { LandingHeader } from '../features/landing/LandingHeader'
 import { LandingHero } from '../features/landing/LandingHero'
+import { LandingReviews } from '../features/feedback/LandingReviews'
 import { LandingTvc } from '../features/landing/LandingTvc'
 import { ExperienceShowcase, LandingStorySections } from '../features/landing/LandingContent'
 import '../features/landing/landing.css'
@@ -32,7 +33,7 @@ export function OnboardingPage() {
   return <div className="tl-landing" id="top">
     <a className="tl-skip-link" href="#landing-main">Đi tới nội dung</a>
     <LandingHeader />
-    <main id="landing-main"><LandingHero /><LandingTvc /><ExperienceShowcase /><LandingStorySections /></main>
+    <main id="landing-main"><LandingHero /><LandingTvc /><ExperienceShowcase /><LandingStorySections /><LandingReviews /></main>
     <PublicFooter />
     <a href="#top" className="tl-backtop" aria-label="Về đầu trang">↑</a>
   </div>

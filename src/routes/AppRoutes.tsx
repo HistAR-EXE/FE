@@ -68,6 +68,8 @@ const CheckoutB2B2CPage = lazy(() => import('../pages/CheckoutB2B2CPage').then((
 const Tour360Page = lazy(() => import('../pages/Tour360Page').then((module) => ({ default: module.Tour360Page })))
 const TimePortalPage = lazy(() => import('../pages/TimePortalPage').then((module) => ({ default: module.TimePortalPage })))
 const ArExperiencePage = lazy(() => import('../pages/ArExperiencePage').then((module) => ({ default: module.ArExperiencePage })))
+const FeedbackPage = lazy(() => import('../pages/FeedbackPage').then(module => ({ default: module.FeedbackPage })))
+const AdminFeedbackPage = lazy(() => import('../pages/AdminFeedbackPage').then(module => ({ default: module.AdminFeedbackPage })))
 const AdminAnalyticsPage = lazy(() => import('../pages/AdminAnalyticsPage').then((module) => ({ default: module.AdminAnalyticsPage })))
 const AdminBillingPage = lazy(() => import('../pages/AdminBillingPage').then((module) => ({ default: module.AdminBillingPage })))
 const AdminContentPage = lazy(() => import('../pages/AdminContentPage').then((module) => ({ default: module.AdminContentPage })))
@@ -149,6 +151,7 @@ export function AppRoutes() {
                         {/* Protected — login required */}
                         <Route element={<ProtectedRoute />}>
                             <Route path="/verify-email/pending" element={<VerifyEmailPendingPage />} />
+                            <Route path="/feedback" element={<FeedbackPage />} />
                             <Route path="/settings" element={<SettingsPage />} />
                             <Route path="/settings/billing" element={<PaymentHistoryPage />} />
                             <Route path="/checkout/b2c" element={<CheckoutB2CPage />} />
@@ -181,6 +184,7 @@ export function AppRoutes() {
                                         <Route path="users" element={<AdminUsersPage />} />
                                         <Route path="organizations" element={<AdminOrganizationsPage />} />
                                         <Route path="billing" element={<AdminBillingPage />} />
+                                        <Route path="feedback" element={<AdminFeedbackPage />} />
                                         <Route path="analytics" element={<AdminAnalyticsPage />} />
                                         <Route path="audit" element={<AdminAuditPage />} />
                                     </Route>

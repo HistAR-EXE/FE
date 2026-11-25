@@ -10,6 +10,7 @@ import { AdminAccountMenu } from './AdminAccountMenu'
 import { AdminModal } from './AdminModal'
 
 const pageMeta: Record<string, string> = {
+  '/admin/feedback': 'Phản hồi',
   '/admin': 'Bàn điều hành',
   '/admin/content': 'Nội dung',
   '/admin/narrative-pilots': 'Pilot cốt truyện',
@@ -37,6 +38,7 @@ const groups = [
       ['Người dùng', '/admin/users', 'group'],
       ['Tổ chức', '/admin/organizations', 'apartment'],
       ['Thanh toán & CRM', '/admin/billing', 'credit_card'],
+      ['Phản hồi', '/admin/feedback', 'rate_review'],
     ] as const,
     accent: true,
   },
