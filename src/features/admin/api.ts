@@ -1,5 +1,5 @@
 import { getData, getListData, getPageData, httpClient } from '../../shared/api/httpClient'
-import type { PageResponse } from '../../shared/api/contracts'
+import { ApiError, type PageResponse } from '../../shared/api/contracts'
 
 export type AdminContentType = 'DISCOVERY_POINT' | 'ARTIFACT' | 'QUEST'
 export type DeleteReasonPreset = 'Sai nguồn' | 'Lỗi kỹ thuật' | 'Trùng nội dung' | 'Yêu cầu pháp lý' | 'Khác'
@@ -1142,8 +1142,11 @@ export const adminApi = {
 
   addOrgMember: (
     orgId: string,
-    body: { email: string; displayName?: string; sendCredentialsEmail?: boolean },
+    body: { email: string; displayName?: string; sendCredentialsEmail?: boolean; orgRole?: string },
   ) => getData<AdminOrgMemberResult>(httpClient.post(`/api/admin/organizations/${orgId}/members`, body)),
+
+  updateOrgMemberRole: (orgId: string, userId: string, orgRole: string) =>
+    getData<string>(httpClient.patch(`/api/admin/organizations/${orgId}/members/${userId}`, { orgRole })),
 
   exportOrgRosterCsv: async (orgId: string) => {
     const res = await httpClient.get<Blob>(`/api/admin/organizations/${orgId}/roster/export.csv`, {
@@ -1269,11 +1272,39 @@ export const adminApi = {
     ),
 
   exportPaymentsCsv: async (query: AdminPaymentQuery = {}) => {
-    const res = await httpClient.get<Blob>('/api/admin/billing/payments/export.csv', {
-      params: query,
-      responseType: 'blob',
-    })
-    return res.data
+    try {
+      const res = await httpClient.get<Blob>('/api/admin/billing/payments/export.csv', {
+        params: query, responseType: 'blob',
+      })
+      return res.data
+    } catch (error) {
+      if (!(error instanceof ApiError) || error.status !== 500) throw error
+    }
+    const columns = ['id', 'channel', 'orderCode', 'status', 'payerEmail', 'amountVnd', 'planType', 'organizationName', 'paidAt', 'createdAt']
+    const lines = [columns.join(',')]
+    const seen = new Set<string>()
+    let total = 0
+    for (let page = 0; ; page++) {
+      const batch = await getPageData<Record<string, string | number | null>>(httpClient.get('/api/admin/billing/payments', {
+        params: { ...query, page, size: 100 },
+      }))
+      if (page === 0) total = batch.totalItems
+      if (total > 10000) throw new Error('Hãy thu hẹp bộ lọc xuống tối đa 10.000 giao dịch.')
+      if (batch.totalItems !== total) throw new Error('Sổ giao dịch vừa thay đổi. Vui lòng tải lại.')
+      for (const row of batch.items) {
+        const key = row.channel + '/' + row.id
+        if (seen.has(key)) throw new Error('Sổ giao dịch vừa thay đổi. Vui lòng tải lại.')
+        seen.add(key)
+        lines.push(columns.map(column => {
+          const value = row[column]
+          const raw = typeof value === 'string' && /^[=+@\-\t\r]/.test(value) ? "'" + value : String(value ?? '')
+          return '"' + raw.replaceAll('"', '""') + '"'
+        }).join(','))
+      }
+      if (seen.size === total) break
+      if (!batch.items.length || page + 1 >= batch.totalPages) throw new Error('Chưa tải đủ giao dịch.')
+    }
+    return new Blob([lines.join('\r\n') + '\r\n'], { type: 'text/csv;charset=utf-8' })
   },
 
   billingOverview: async (months = 12) => {

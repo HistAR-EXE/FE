@@ -602,12 +602,11 @@ export function AdminNarrativePilotsPage() {
 
   return (
     <section
-      className="admin-page admin-narrative-page flex w-full flex-col pb-20"
+      className="ops-paper-page ops-work-page admin-page admin-narrative-page flex w-full flex-col pb-20"
       aria-busy={loading || detailLoading}
     >
       <AdminPageHeader
-        eyebrow="Vận hành / Cốt truyện AR"
-        title="Pilot cốt truyện"
+        title={<>Pilot <span className="ops-title-accent">cốt truyện</span></>}
         description="Soạn cấu trúc, duyệt phiên bản và phát hành mà không ghi đè trải nghiệm đang chạy."
         actions={
           <div className="flex flex-wrap items-center gap-2">
@@ -962,7 +961,7 @@ export function AdminNarrativePilotsPage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-space-sm pt-space-sm sm:grid-cols-4">
+                  <div className="ops-metric-strip grid grid-cols-2 sm:grid-cols-4">
                     <div className="narrative-metric flex flex-col rounded-lg p-space-sm" data-tone="blue">
                       <span className="narrative-metric-label"><MaterialIcon name="account_tree" className="text-[18px]" /> Bước kịch bản</span>
                       <span className="mt-0.5 font-headline-md text-headline-md text-on-surface">

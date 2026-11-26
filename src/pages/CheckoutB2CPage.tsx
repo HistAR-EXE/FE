@@ -66,17 +66,33 @@ function CheckoutB2CForm() {
         return () => { active = false }
     }, [planType, priceAttempt])
 
+    const waitForJourneyExpiry = async () => {
+        let lastError: unknown = new Error('Thanh toán đã được ghi nhận nhưng chưa xác nhận được quyền Journey Pass. Hãy kiểm tra lại trạng thái; không cần thanh toán lần nữa.')
+        for (let attempt = 0; attempt < 5; attempt += 1) {
+            const profile = await profileApi.me()
+            if (!mounted.current) return null
+            try {
+                return confirmedJourneyExpiry(profile.activeVisitSites, siteCode)
+            } catch (error) {
+                lastError = error
+                await new Promise((resolve) => window.setTimeout(resolve, 800))
+            }
+        }
+        throw lastError
+    }
+
     const completeUpgrade = async (nextPath: string) => {
-        const profile = await profileApi.me()
-        if (!mounted.current) return
         if (planType === 'JOURNEY_PASS') {
-            const expiresMs = confirmedJourneyExpiry(profile.activeVisitSites, siteCode)
+            const expiresMs = await waitForJourneyExpiry()
+            if (expiresMs == null || !mounted.current) return
             markJourneyPassActive(siteCode, expiresMs)
             setUpgraded(true)
-            showToast({ message: 'Journey Pass đã được xác nhận cho di tích đã chọn.', type: 'success' })
+            showToast({ message: 'Journey Pass đã được xác nhận cho di tích đã chọn. Có hiệu lực 72 giờ, không nâng cấp thành Premium.', type: 'success' })
             navigate(nextPath)
             return
         }
+        const profile = await profileApi.me()
+        if (!mounted.current) return
         if (profile.tier !== 'PREMIUM') throw new Error('Chưa xác nhận được quyền Premium. Hãy kiểm tra lại trạng thái thanh toán.')
         setUpgraded(true)
         updateUser({
@@ -149,7 +165,7 @@ function CheckoutB2CForm() {
 
     return (
         <AuthLayout>
-            <div className="relative z-10 flex flex-col h-screen overflow-hidden bg-[#0f1015] text-white font-sans selection:bg-[#fe951c] selection:text-black">
+            <div className="relative z-10 flex min-h-screen flex-col overflow-y-auto bg-[#0f1015] text-white font-sans selection:bg-[#fe951c] selection:text-black">
 
                 {/* NỀN HIỆU ỨNG TỔNG THỂ CỦA TRANG */}
                 <div className="absolute inset-0 z-0 pointer-events-none">
@@ -160,7 +176,7 @@ function CheckoutB2CForm() {
                     <div className="absolute top-1/2 right-1/4 translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#388cf1]/15 rounded-[100%] blur-[120px]" />
                 </div>
 
-                <header className="w-full top-0 h-20 shrink-0 flex justify-between items-center px-6 sm:px-12 relative z-20">
+                <header className="sticky top-0 z-20 flex h-20 w-full shrink-0 items-center justify-between bg-[#0f1015]/90 px-6 backdrop-blur-md sm:px-12">
                     <div className="flex items-center gap-3">
                         <MaterialIcon name="verified_user" className="text-emerald-400 text-2xl drop-shadow-[0_0_10px_rgba(52,211,153,0.8)]" />
                         <span className="text-sm font-black tracking-widest uppercase text-white drop-shadow-md">Cổng Thanh Toán Trực Tuyến</span>
@@ -174,7 +190,7 @@ function CheckoutB2CForm() {
                 </header>
 
                 {/* KHUNG MAIN CHÍNH GIỮA MÀN HÌNH - ĐÃ ĐIỀU CHỈNH PADDING LẠI ĐỂ TẠO KHOẢNG TRỐNG */}
-                <main className="flex-1 min-h-0 flex items-center justify-center w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 relative z-10">
+                <main className="relative z-10 mx-auto flex w-full max-w-5xl flex-1 items-start justify-center px-4 py-6 sm:px-6 lg:px-8">
 
                     <div className="w-full bg-gradient-to-br from-[#1b1e2c]/95 to-[#12141f]/95 backdrop-blur-3xl rounded-[2.5rem] border border-white/20 border-t-white/30 shadow-[0_30px_70px_rgba(0,0,0,0.8),0_0_30px_rgba(254,149,28,0.1)] flex flex-col md:flex-row overflow-hidden relative">
 
@@ -192,7 +208,7 @@ function CheckoutB2CForm() {
                                     NÂNG CẤP TÀI KHOẢN
                                 </span>
                                 {/* Ép chữ trên 1 dòng với whitespace-nowrap và size text nhỏ lại một chút */}
-                                <h1 className="text-2xl md:text-[1.75rem] font-black text-white tracking-tight drop-shadow-md whitespace-nowrap">
+                                <h1 className="text-2xl md:text-[1.75rem] font-black text-white tracking-tight drop-shadow-md">
                                     {planCopy.title}
                                 </h1>
                             </div>

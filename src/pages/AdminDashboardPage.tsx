@@ -169,10 +169,10 @@ export function AdminDashboardPage() {
   ] : []
 
   return (
-    <section className="admin-dashboard flex w-full flex-col space-y-space-lg pb-4" aria-busy={operationsLoading || billingLoading}>
+    <section className="admin-dashboard flex w-full flex-col pb-4" aria-busy={operationsLoading || billingLoading}>
       <AdminPageHeader
-        eyebrow="Tổng quan quản trị"
-        title="Bàn điều hành"
+
+        title={<>Bàn <span className="dashboard-title-accent">điều hành</span></>}
         description="Theo dõi doanh thu, công việc cần xử lý và hoạt động quản trị gần đây."
         actions={billing ? (
           <div className="flex flex-wrap items-center gap-space-sm">
@@ -204,15 +204,14 @@ export function AdminDashboardPage() {
         ) : undefined}
       />
 
-      <section aria-labelledby="dashboard-kpi-title" className="space-y-space-sm">
+      <section aria-labelledby="dashboard-kpi-title" className="grid gap-2">
         <h2 id="dashboard-kpi-title" className="sr-only">Chỉ số chính</h2>
         {billingLoading && <AdminLoading label="Đang tải doanh thu" />}
         {!billingLoading && billingError && (
           <AdminErrorState message={`Không tải được doanh thu: ${billingError}`} onRetry={loadBilling} />
         )}
-        <div className="grid grid-cols-1 gap-gutter-desktop sm:grid-cols-2 2xl:grid-cols-4">
+        <div className="dashboard-metric-grid">
           <div data-dashboard-card="revenue" className="dashboard-kpi-card relative flex flex-col justify-between overflow-hidden rounded-xl bg-surface-container-low p-space-lg shadow-sm">
-            <div className="pointer-events-none absolute -right-8 -top-8 h-28 w-28 rounded-full bg-primary/5 blur-2xl" />
             <div className="flex items-center justify-between">
               <span className="font-body-md text-body-md text-outline">Doanh thu thực thu tháng này</span>
               <div className="grid h-8 w-8 place-items-center rounded-lg bg-surface-container-high text-primary">
@@ -223,7 +222,7 @@ export function AdminDashboardPage() {
               <span className="font-headline-xl text-headline-xl tracking-tight text-on-surface">{money(billing?.actualRevenueMonthVnd)}</span>
               <span className="font-label-sm text-label-sm text-outline">VNĐ</span>
             </div>
-            <div className="mt-4 flex items-center justify-between pt-3">
+            <div className="mt-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
               {mom == null ? (
                 <span className="font-code-sm text-code-sm text-outline">Chưa có số liệu so sánh</span>
               ) : (
@@ -236,7 +235,6 @@ export function AdminDashboardPage() {
           </div>
 
           <div data-dashboard-card="growth" className="dashboard-kpi-card relative flex flex-col justify-between overflow-hidden rounded-xl bg-surface-container-low p-space-lg shadow-sm">
-            <div className="pointer-events-none absolute -right-8 -top-8 h-28 w-28 rounded-full bg-secondary/5 blur-2xl" />
             <div className="flex items-center justify-between">
               <span className="font-body-md text-body-md text-outline">Thay đổi so với tháng trước</span>
               <div className="grid h-8 w-8 place-items-center rounded-lg bg-surface-container-high text-secondary">
@@ -250,7 +248,7 @@ export function AdminDashboardPage() {
               <span className="font-body-sm text-body-sm text-outline">so với tháng trước</span>
             </div>
             {mom != null && (
-              <div className="mt-4 flex items-center justify-between pt-3">
+              <div className="mt-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
                 <span className="font-code-sm text-code-sm text-outline">Mức thay đổi doanh thu</span>
                 <span className="font-code-sm text-code-sm text-secondary">Theo tháng</span>
               </div>
@@ -258,7 +256,6 @@ export function AdminDashboardPage() {
           </div>
 
           <div data-dashboard-card="mrr" className="dashboard-kpi-card relative flex flex-col justify-between overflow-hidden rounded-xl bg-surface-container-low p-space-lg shadow-sm">
-            <div className="pointer-events-none absolute -right-8 -top-8 h-28 w-28 rounded-full bg-tertiary/5 blur-2xl" />
             <div className="flex items-center justify-between">
               <span className="font-body-md text-body-md text-outline">Doanh thu định kỳ tháng</span>
               <div className="grid h-8 w-8 place-items-center rounded-lg bg-surface-container-high text-tertiary">
@@ -269,14 +266,13 @@ export function AdminDashboardPage() {
               <span className="font-headline-xl text-headline-xl tracking-tight text-on-surface">{money(billing?.estimatedMrrVnd)}</span>
               <span className="font-label-sm text-label-sm text-outline">VNĐ</span>
             </div>
-            <div className="mt-4 flex items-center justify-between pt-3">
+            <div className="mt-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
               <span className="font-code-sm text-code-sm text-outline">Ước tính năm: <strong className="text-on-surface">{money(billing?.estimatedArrVnd)}</strong></span>
               <span className="font-code-sm text-code-sm text-outline">Đang trả phí: <strong className="text-primary">{billing?.activePaidSubscriptions?.toLocaleString('vi-VN') ?? '—'}</strong></span>
             </div>
           </div>
 
           <div data-dashboard-card="pilot" className="dashboard-kpi-card relative flex flex-col justify-between overflow-hidden rounded-xl bg-surface-container-low p-space-lg shadow-sm">
-            <div className="pointer-events-none absolute -right-8 -top-8 h-28 w-28 rounded-full bg-primary/5 blur-2xl" />
             <div className="flex items-center justify-between">
               <span className="font-body-md text-body-md text-outline">Kịch bản đang hoạt động</span>
               <div className="grid h-8 w-8 place-items-center rounded-lg bg-surface-container-high text-primary">
@@ -289,7 +285,7 @@ export function AdminDashboardPage() {
               </span>
               <span className="font-body-sm text-body-sm font-medium text-primary">kịch bản</span>
             </div>
-            <div className="mt-4 flex items-center justify-between pt-3">
+            <div className="mt-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
               <span className="flex items-center gap-1.5 font-body-sm text-body-sm text-on-surface-variant">
                 <span className="h-2 w-2 rounded-full bg-primary" />
                 Theo dữ liệu vận hành
@@ -306,32 +302,31 @@ export function AdminDashboardPage() {
             <MaterialIcon name="notification_important" className="text-[20px] text-primary" />
             <h2 id="dashboard-queue-title" className="font-headline-md text-headline-md text-on-surface">Hàng đợi xử lý ưu tiên</h2>
           </div>
-          <span className="font-label-sm text-label-sm uppercase tracking-wider text-outline">Yêu cầu can thiệp ngay</span>
         </div>
         {operationsLoading && <AdminLoading label="Đang tải hàng đợi vận hành" />}
         {!operationsLoading && operationsError && (
           <AdminErrorState message={`Không tải được vận hành: ${operationsError}`} onRetry={loadOperations} />
         )}
         {operations && (
-          <div className="grid grid-cols-1 gap-gutter-desktop sm:grid-cols-2 2xl:grid-cols-4">
+          <div className="dashboard-metric-grid">
             {queue.map((item) => (
               <Link
                 key={item.label}
                 to={item.to}
-                data-dashboard-queue={item.tone}
+                data-dashboard-queue={item.value > 0 ? item.tone : 'neutral'}
                 className="dashboard-queue-card group flex items-center justify-between rounded-xl bg-surface-container-low p-space-md text-left shadow-sm transition-all hover:bg-surface-container-high"
               >
                 <div className="flex items-center gap-3">
                   <div className={`grid h-10 w-10 place-items-center rounded-lg ${
-                    item.tone === 'danger' ? 'bg-error-container/40 text-error'
-                      : item.tone === 'warn' ? 'bg-tertiary/20 text-tertiary'
+                    item.value > 0 && item.tone === 'danger' ? 'bg-error-container/40 text-error'
+                      : item.value > 0 && item.tone === 'warn' ? 'bg-tertiary/20 text-tertiary'
                         : 'bg-surface-container-high text-outline group-hover:text-on-surface'
                   }`}>
                     <MaterialIcon name={item.icon} className="text-[20px]" />
                   </div>
                   <div className="flex flex-col">
                     <span className={`font-body-md text-body-md ${
-                      item.tone === 'danger' ? 'text-error' : item.tone === 'warn' ? 'text-tertiary' : 'text-outline'
+                      item.value > 0 && item.tone === 'danger' ? 'text-error' : item.value > 0 && item.tone === 'warn' ? 'text-tertiary' : 'text-outline'
                     }`}>{item.label}</span>
                     <span className="font-headline-md text-headline-md text-on-surface">
                       {item.value}{' '}
@@ -339,13 +334,7 @@ export function AdminDashboardPage() {
                     </span>
                   </div>
                 </div>
-                <span className={`rounded-full px-2.5 py-1 font-label-sm text-label-sm font-semibold uppercase ${
-                  item.tone === 'danger' ? 'bg-error/20 text-error'
-                    : item.tone === 'warn' ? 'bg-tertiary/15 text-tertiary'
-                      : 'bg-surface-container text-outline'
-                }`}>
-                  {item.badge}
-                </span>
+                <MaterialIcon name="chevron_right" className="shrink-0 text-outline" />
               </Link>
             ))}
           </div>
@@ -356,27 +345,8 @@ export function AdminDashboardPage() {
       <div className="grid grid-cols-1 items-start gap-gutter-desktop lg:grid-cols-12">
         <div className="flex flex-col space-y-space-md lg:col-span-8">
           <section aria-labelledby="dashboard-revenue-title" className="dashboard-chart rounded-xl bg-surface-container-low p-space-lg shadow-sm">
-            <div className="dashboard-chart-heading flex flex-col justify-between gap-space-sm pb-space-md sm:flex-row sm:items-center">
-              <div className="flex flex-col">
-                <div className="flex items-center gap-2">
-                  <MaterialIcon name="monitoring" className="text-[20px] text-primary" />
-                  <h2 id="dashboard-revenue-title" className="font-headline-md text-headline-md text-on-surface">Doanh thu 6 tháng gần nhất</h2>
-                </div>
-                <span className="font-body-sm text-body-sm text-outline">
-                  So sánh doanh thu từ khách cá nhân và các tổ chức
-                </span>
-              </div>
-              <div className="flex flex-wrap items-center gap-space-md">
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-1.5">
-                    <span className="h-2.5 w-2.5 rounded-sm bg-primary" />
-                    <span className="font-code-sm text-code-sm text-on-surface-variant">Khách cá nhân</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="h-2.5 w-2.5 rounded-sm bg-secondary" />
-                    <span className="font-code-sm text-code-sm text-on-surface-variant">Tổ chức</span>
-                  </div>
-                </div>
+            <div className="dashboard-chart-heading flex flex-wrap items-baseline justify-between gap-2">
+              <h2 id="dashboard-revenue-title" className="font-headline-md text-headline-md text-on-surface">Doanh thu 6 tháng gần nhất</h2>
                 <button
                   type="button"
                   onClick={() => setShowTableView((value) => !value)}
@@ -385,9 +355,7 @@ export function AdminDashboardPage() {
                   <MaterialIcon name="table_chart" className="text-[16px]" />
                   {showTableView ? 'Biểu đồ trực quan' : 'Bảng số liệu'}
                 </button>
-              </div>
             </div>
-
             {billing && chartRows.length > 0 ? (
               showTableView ? (
                 <div className="dashboard-plot w-full overflow-x-auto pt-2">
@@ -420,9 +388,16 @@ export function AdminDashboardPage() {
                 </div>
               ) : (
                 <div className="dashboard-plot w-full pt-4" role="img" aria-label="Biểu đồ doanh thu khách cá nhân và tổ chức trong 6 tháng">
-                  <p className="mb-3 font-body-sm text-body-sm text-on-surface-variant">
-                    Doanh thu đã ghi nhận theo tháng; không bao gồm khoản định kỳ ước tính.
-                  </p>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-sm bg-primary" />
+                    <span className="font-code-sm text-code-sm text-on-surface-variant">Khách cá nhân</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-sm bg-secondary" />
+                    <span className="font-code-sm text-code-sm text-on-surface-variant">Tổ chức</span>
+                  </div>
+                </div>
                   <div className="relative mt-6 h-56 w-full" aria-hidden="true">
                     {revenueAxis.ticks.map((tick) => (
                       <div key={tick} className="pointer-events-none absolute inset-x-0 flex -translate-y-1/2 items-center gap-3" style={{ top: `${(1 - tick / (revenueAxis.maximum || 1)) * 100}%` }}>
@@ -483,12 +458,9 @@ export function AdminDashboardPage() {
             {billing && (
               <div className="mt-2 flex flex-wrap items-center justify-between pt-3 font-body-sm text-body-sm text-outline">
                 <span>
-                  Tổng gộp 6 tháng: <strong className="font-headline-sm text-on-surface">{moneyVnd(sixMonthTotal)}</strong>
+                  Tổng thực thu 6 tháng: <strong className="font-headline-sm text-on-surface">{moneyVnd(sixMonthTotal)}</strong>
                 </span>
-                <span className="flex items-center gap-1 font-code-sm text-code-sm text-primary">
-                  <MaterialIcon name="verified" className="text-[16px]" />
-                  Cập nhật lúc {new Date(billing.updatedAt).toLocaleString('vi-VN')}
-                </span>
+                <small>Chỉ gồm doanh thu đã ghi nhận.</small>
               </div>
             )}
           </section>
@@ -542,9 +514,7 @@ export function AdminDashboardPage() {
             </div>
             <span className="h-2 w-2 rounded-full bg-primary" />
           </div>
-          <p className="-mt-2 font-body-sm text-body-sm text-outline">
-            Những thay đổi gần đây về thanh toán, phê duyệt và nội dung.
-          </p>
+
           <div className="flex flex-col gap-2">
             {audit.length === 0 && (
               <p className="py-6 font-body-sm text-body-sm text-outline">Chưa có hoạt động quản trị gần đây.</p>
@@ -564,17 +534,21 @@ export function AdminDashboardPage() {
                       <span title={`${event.action} · ${event.entityType}`} className="font-headline-sm text-headline-sm text-on-surface">
                         {auditActionLabel(event.action)} · {auditEntityLabel(event.entityType)}
                       </span>
-                      <time dateTime={event.occurredAt} className="shrink-0 font-code-sm text-code-sm text-outline">{relativeTime(event.occurredAt)}</time>
+
                     </div>
                     {event.reason && (
                       <p title={event.reason} className="mt-1 font-body-sm text-body-sm text-on-surface-variant">
                         {auditReasonLabel(event.reason)}
                       </p>
                     )}
-                    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 font-code-sm text-code-sm text-outline">
-                      <span>Người thực hiện: {actor}</span>
-                      <span title={event.entityId}>Mã: {event.entityId.slice(0, 8)}</span>
+                    <div className="dashboard-event-meta">
+                      <span>{actor}</span><span aria-hidden="true">·</span>
+                      <time dateTime={event.occurredAt} className="shrink-0 font-code-sm text-code-sm text-outline">{relativeTime(event.occurredAt)}</time>
                     </div>
+                    <details className="dashboard-event-meta">
+                      <summary>Chi tiết</summary>
+                      <span>Mã đối tượng: {event.entityId}</span>
+                    </details>
                   </div>
                 </div>
               )

@@ -1,3 +1,4 @@
+import { noteFeedbackActivity } from '../features/feedback/activity'
 // src/pages/ArtifactsPage.tsx
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom' // THÊM DÒNG NÀY
@@ -355,6 +356,7 @@ export function ArtifactsPage() {
             return
         }
         sessionStorage.setItem('artifact_scroll', window.scrollY.toString())
+        noteFeedbackActivity('artifact', !isFreeArtifact(id))
         navigate(`/artifacts/${id}`)
     }
 

@@ -1,0 +1,88 @@
+.tl-reviews {
+  background: radial-gradient(ellipse at 50% 0%, #fff6dc, transparent 65%), #faf9f5;
+  color: #132e48;
+  padding: clamp(3rem, 6vw, 6rem) 1.25rem;
+}
+.tl-reviews h2 {
+  max-width: 22ch;
+  margin: 0 auto clamp(1.75rem, 4vw, 3rem);
+  text-align: center;
+  text-wrap: balance;
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  line-height: 1.12;
+  letter-spacing: -.035em;
+  font-weight: 750;
+}
+.tl-reviews h2 em {
+  font-family: Georgia, serif;
+  font-weight: 500;
+  color: #226659;
+}
+.tl-review-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1.25rem;
+  max-width: 74rem;
+  margin: auto;
+}
+.tl-review-card {
+  flex: 1 1 18rem;
+  max-width: 29rem;
+  min-width: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  padding: clamp(1.4rem, 2.5vw, 2.25rem);
+  border: 1px solid #dfded4;
+  border-radius: 1.25rem;
+  background: #fffefa;
+  box-shadow: 0 7px 24px -18px #483c32;
+}
+.tl-review-card:only-child { max-width: 40rem; }
+.tl-review-rating { color: #97680e; letter-spacing: .18em; }
+.tl-review-card blockquote {
+  margin: 1rem 0 1.75rem;
+  font: 500 clamp(1.2rem, 1.65vw, 1.45rem)/1.55 Georgia, serif;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.tl-review-card figcaption {
+  margin-top: auto;
+  padding-top: 1rem;
+  border-top: 1px solid #e7e4d9;
+  display: flex;
+  gap: .75rem;
+  align-items: center;
+  font-size: .9rem;
+  font-weight: 650;
+}
+.tl-review-monogram {
+  display: grid;
+  place-items: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 50%;
+  background: #e2eee8;
+  color: #23584a;
+  font: italic bold 1rem Georgia, serif;
+}
+.tl-review-card small { display: block; color: #54665e; font-size: .8rem; font-weight: 400; }
+.tl-reviews h2 em, .tl-review-card blockquote {
+  font-family: "Times New Roman", "Liberation Serif", serif;
+  font-kerning: normal;
+  letter-spacing: normal;
+  word-spacing: normal;
+}
+.tl-review-tools {
+  display: flex; justify-content: center; align-items: center; gap: 1rem;
+  flex-wrap: wrap; margin: 1.25rem auto; color: #284b45;
+}
+.tl-review-tools select, .tl-review-tools button {
+  min-height: 44px; padding: .45rem .85rem; border: 1px solid #c9d4cc;
+  border-radius: .75rem; background: #fffefa; color: #203f39;
+}
+.tl-review-tools button:disabled { opacity: .45; }
+.tl-review-monogram { position:relative; overflow:hidden; flex-shrink:0; }
+.tl-review-monogram img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+@media(min-width:960px) { .tl-review-list { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); } .tl-review-card { max-width:none; } .tl-review-card:only-child { grid-column:2; } }

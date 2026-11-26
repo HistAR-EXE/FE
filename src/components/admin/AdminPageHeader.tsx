@@ -6,7 +6,7 @@ export function AdminPageHeader({
   eyebrow,
   actions,
 }: {
-  title: string
+  title: ReactNode
   description?: string
   eyebrow?: string
   actions?: ReactNode

@@ -2,6 +2,7 @@ import { ReadableLocationRoutes } from '../shared/router/ReadableLocationRoutes'
 import { TeacherWorkspaceLayout } from '../features/org/TeacherWorkspace'
 // src/routes/AppRoutes.tsx
 import { lazy, Suspense } from 'react'
+import { FeedbackInvitationHost } from '../features/feedback/FeedbackInvitation'
 import { BrowserRouter, Navigate, Route, useLocation, useParams } from 'react-router-dom'
 import { AppErrorBoundary, SectionErrorBoundary } from '../components/ui/ErrorBoundary'
 import { LoadingOverlay } from '../components/ui/Spinner'
@@ -114,6 +115,7 @@ export function AppRoutes() {
             <VisitSessionProvider>
                 {/* Trong Router: màn "Hoàn thành nhiệm vụ" dùng useNavigate. */}
                 <UserProgressProvider>
+                    <FeedbackInvitationHost />
                 <Suspense fallback={<RouteLoadingFallback />}>
                     <ReadableLocationRoutes>
                         {/* Public — guest landing only */}
@@ -184,7 +186,7 @@ export function AppRoutes() {
                                         <Route path="users" element={<AdminUsersPage />} />
                                         <Route path="organizations" element={<AdminOrganizationsPage />} />
                                         <Route path="billing" element={<AdminBillingPage />} />
-                                        <Route path="feedback" element={<AdminFeedbackPage />} />
+                                        <Route path="feedback" element={<AdminFeedbackPage />} /><Route path="oc" element={<Navigate replace to="/admin/analytics" />} />
                                         <Route path="analytics" element={<AdminAnalyticsPage />} />
                                         <Route path="audit" element={<AdminAuditPage />} />
                                     </Route>

@@ -152,6 +152,8 @@ export function AdminOrganizationsPage() {
   const [memberEmail, setMemberEmail] = useState('')
   const [memberDisplayName, setMemberDisplayName] = useState('')
   const [memberSendEmail, setMemberSendEmail] = useState(true)
+  const [memberRole, setMemberRole] = useState('student')
+  const [roleSavingId, setRoleSavingId] = useState<string | null>(null)
   const [contracts, setContracts] = useState<OrgContract[]>([])
   const [arReport, setArReport] = useState<OrgArReport | null>(null)
   const [activityLogs, setActivityLogs] = useState<PageResponse<OrgActivityLog> | null>(null)
@@ -666,6 +668,7 @@ export function AdminOrganizationsPage() {
         email: memberEmail.trim(),
         displayName: memberDisplayName.trim() || undefined,
         sendCredentialsEmail: memberSendEmail,
+        orgRole: memberRole,
       })
       const temp = created.temporaryPassword
         ? ` Mật khẩu tạm: ${created.temporaryPassword}`
@@ -679,6 +682,7 @@ export function AdminOrganizationsPage() {
       setMemberModalOpen(false)
       setMemberEmail('')
       setMemberDisplayName('')
+      setMemberRole('student')
       loadDetails()
       loadOrganizations()
       loadPlanFacets()
@@ -686,6 +690,25 @@ export function AdminOrganizationsPage() {
       showToast({ message: getFriendlyErrorMessage(cause, 'quest'), type: 'error' })
     } finally {
       setSaving(false)
+    }
+  }
+
+  const changeMemberRole = async (userId: string, orgRole: string) => {
+    if (!orgId || !orgRole) return
+    setRoleSavingId(userId)
+    try {
+      await adminApi.updateOrgMemberRole(orgId, userId, orgRole)
+      showToast({
+        message: orgRole === 'student'
+          ? 'Đã đưa về học sinh. Tài khoản không bị xóa.'
+          : 'Đã cập nhật vai trò thành viên.',
+        type: 'success',
+      })
+      loadDetails()
+    } catch (cause) {
+      showToast({ message: getFriendlyErrorMessage(cause, 'quest'), type: 'error' })
+    } finally {
+      setRoleSavingId(null)
     }
   }
 
@@ -698,7 +721,7 @@ export function AdminOrganizationsPage() {
     filteredRoster.length > 0 && filteredRoster.every((m) => selectedIds.includes(m.userId))
 
   return (
-    <section className="admin-page admin-organizations-page flex w-full min-w-0 flex-col pb-8" aria-busy={loading || detailLoading || saving}>
+    <section className="ops-paper-page admin-page admin-organizations-page flex w-full min-w-0 flex-col pb-8" aria-busy={loading || detailLoading || saving}>
       <input
         ref={importInputRef}
         type="file"
@@ -707,9 +730,8 @@ export function AdminOrganizationsPage() {
         onChange={(event) => void onImportFile(event.target.files?.[0] ?? null)}
       />
       <AdminPageHeader
-        eyebrow="Khách hàng và doanh thu · Đối tác di sản"
-        title="Tổ chức và cơ quan liên kết"
-        description="Quản trị các cơ quan đối tác, trường học, bảo tàng và doanh nghiệp liên kết trải nghiệm AR di sản — dữ liệu từ máy chủ."
+        title={<>Tổ chức <span className="ops-title-accent">liên kết</span></>}
+        description="Tra cứu đối tác, thành viên và hợp đồng theo từng tổ chức."
         actions={
           <>
             <button
@@ -1032,7 +1054,7 @@ export function AdminOrganizationsPage() {
                   </div>
                 </div>
 
-                <div className="mt-5 grid grid-cols-1 gap-3 border-t border-surface-container-high/40 pt-5 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="ops-metric-strip mt-5 grid grid-cols-1 sm:grid-cols-3">
                   <div className="org-metric-card flex flex-col justify-between rounded-xl bg-surface-container/70 p-3" data-tone="blue">
                     <div className="flex items-center justify-between">
                       <span className="font-body-sm text-body-sm text-outline">Nhiệm vụ học tập</span>
@@ -1065,7 +1087,7 @@ export function AdminOrganizationsPage() {
                           {data.fullTourRatePct}%
                         </span>
                         <span className="font-code-sm text-code-sm text-secondary">
-                          {formatCount(data.memberCount)} TV
+                          {formatCount(data.memberCount)} thành viên
                         </span>
                       </div>
                       <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-surface-container-highest">
@@ -1101,7 +1123,8 @@ export function AdminOrganizationsPage() {
                     </div>
                   </div>
 
-                  <div className="org-metric-card flex flex-col justify-between rounded-xl bg-surface-container/70 p-3" data-tone="violet">
+                </div>
+                <div className="mt-4 border-t pt-4">
                     <div className="flex items-center justify-between">
                       <span className="font-body-sm text-body-sm text-outline">Ghi chú vận hành</span>
                       <MaterialIcon name="flag" className="text-[18px] text-on-surface-variant" />
@@ -1127,7 +1150,7 @@ export function AdminOrganizationsPage() {
                         </button>
                       </div>
                     </div>
-                  </div>
+
                 </div>
               </div>
 
@@ -1491,14 +1514,31 @@ export function AdminOrganizationsPage() {
                                     </div>
                                   </td>
                                   <td className="px-3 py-3 text-center">
-                                    <span
-                                      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 font-label-sm text-code-sm ${badge.className}`}
-                                    >
-                                      {badge.icon && (
-                                        <MaterialIcon name={badge.icon} className="text-[13px]" />
-                                      )}
-                                      {member.orgRole === 'teacher' ? 'Giáo viên' : member.orgRole === 'student' ? 'Học sinh' : member.orgRole === 'admin' ? 'Quản trị viên' : member.orgRole}
-                                    </span>
+                                    {member.orgRole.toLowerCase() === 'owner' ? (
+                                      <span
+                                        className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 font-label-sm text-code-sm ${badge.className}`}
+                                      >
+                                        {badge.icon && (
+                                          <MaterialIcon name={badge.icon} className="text-[13px]" />
+                                        )}
+                                        Chủ tổ chức
+                                      </span>
+                                    ) : (
+                                      <select
+                                        aria-label={`Vai trò của ${member.displayName || member.email}`}
+                                        value={['student', 'teacher', 'admin'].includes(member.orgRole.toLowerCase()) ? member.orgRole.toLowerCase() : ''}
+                                        disabled={saving || roleSavingId === member.userId}
+                                        onChange={(event) => void changeMemberRole(member.userId, event.target.value)}
+                                        className={`${inputClass} mx-auto max-w-[11rem]`}
+                                      >
+                                        {!['student', 'teacher', 'admin'].includes(member.orgRole.toLowerCase()) && (
+                                          <option value="" disabled>{member.orgRole}</option>
+                                        )}
+                                        <option value="student">Học sinh</option>
+                                        <option value="teacher">Giáo viên</option>
+                                        <option value="admin">Quản trị viên</option>
+                                      </select>
+                                    )}
                                   </td>
                                   <td className="px-3 py-3 text-center">
                                     <span className="font-medium text-on-surface">Cấp {member.level}</span>
@@ -1721,6 +1761,21 @@ export function AdminOrganizationsPage() {
                 className={inputClass}
                 placeholder="Tùy chọn"
               />
+            </label>
+            <label className="flex flex-col gap-1.5 font-label-sm text-label-sm text-outline">
+              Vai trò trong tổ chức
+              <select
+                value={memberRole}
+                onChange={(event) => setMemberRole(event.target.value)}
+                className={inputClass}
+              >
+                <option value="student">Học sinh</option>
+                <option value="teacher">Giáo viên</option>
+                <option value="admin">Quản trị viên</option>
+              </select>
+              <span className="font-body-sm text-body-sm text-outline">
+                Chọn Học sinh để gỡ vai trò giáo viên hoặc quản trị. Tài khoản không bị xóa.
+              </span>
             </label>
             <label className="flex items-center gap-2 font-body-sm text-body-sm text-on-surface">
               <input

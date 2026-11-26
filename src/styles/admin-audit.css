@@ -1,0 +1,32 @@
+.audit-metrics {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));background:white;border:1px solid #dce2e5;border-radius:16px;overflow:hidden;margin:12px 0 0}
+.audit-metrics>div {padding:16px 22px}
+.audit-metrics>div+div {border-inline-start:1px solid #dce2e5}
+.audit-metrics dt,.audit-events p,.audit-metrics small {color:#475569}
+.audit-metrics dd {margin:3px 0;color:#0f1b33;font-size:2rem;font-weight:750;line-height:1.2;font-variant-numeric:tabular-nums}
+.audit-list-heading {padding:16px 20px;font-size:1.14rem;font-weight:700;color:#0f1b33}
+.audit-events {margin:0;padding:0;list-style:none;background:white}
+.audit-events li {display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr) minmax(0,1fr) auto;align-items:center;gap:16px;border-top:1px solid #e1e6eb;padding:15px 20px;color:#0f1b33;overflow-wrap:anywhere}
+.audit-event-main {display:flex;gap:12px;align-items:center}
+.audit-event-icon {display:grid;place-items:center;flex:none;width:34px;height:34px;border-radius:10px}
+.audit-events h3,.audit-events strong {font-size:.95rem;font-weight:650}
+.audit-events p {font-size:.82rem;margin-top:3px}
+.audit-events time {font-size:.88rem;font-variant-numeric:tabular-nums}
+.audit-detail {color:#014296;font-weight:650;padding:7px 12px;background:#eef5ff;border-radius:8px}
+.audit-detail:hover {background:#deebff}
+@media(max-width:1050px){.audit-events li{grid-template-columns:repeat(2,minmax(0,1fr))}.audit-detail{justify-self:start}}
+@media(max-width:620px){.audit-metrics,.audit-events li{grid-template-columns:1fr}.audit-metrics>div+div{border-inline-start:0;border-top:1px solid #dce2e5}.audit-events li{gap:8px}}
+
+.audit-record {color:#0f1b33; overflow-wrap:anywhere}
+.audit-record-facts {margin:0}
+.audit-record-facts > div {display:grid;grid-template-columns:minmax(100px,30%) minmax(0,1fr);gap:12px;padding:10px 0;border-bottom:1px solid #e3e8ed}
+.audit-record-facts > div:first-child {padding-top:0}
+.audit-record-facts dt,.audit-record small {color:#475569;font-size:.85rem}
+.audit-record-facts dd {margin:0;font-weight:550}
+.audit-record small {display:block;font-weight:400}
+.audit-record details {margin-top:12px;background:#f5f8fa;border-radius:10px;padding:0 14px}
+.audit-record summary {padding:12px 0;color:#174e70;cursor:pointer;font-weight:650}
+.audit-record details[open] {padding-bottom:12px}
+.audit-record h3 {font-size:.86rem;font-weight:650}
+.audit-record pre {white-space:pre-wrap;overflow-wrap:anywhere;max-height:15rem;overflow:auto;font-size:.8rem;background:white;padding:10px;border-radius:6px}
+.audit-record code {font-size:.82rem}
+@media(max-width:480px){.audit-record-facts > div{grid-template-columns:1fr;gap:3px}}

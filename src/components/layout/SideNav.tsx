@@ -27,7 +27,6 @@ type NavigationItem = NavItem & {
     readonly prefixes: readonly string[]
 }
 
-const feedbackNavItem: NavigationItem = { to: '/feedback', icon: 'rate_review', label: 'Gửi góp ý', prefixes: ['/feedback'], modes: 'both' }
 
 const navItems: readonly NavigationItem[] = [
     { to: '/explore', icon: 'explore', label: 'Khám phá di tích', prefixes: ['/explore', '/home', '/characters'], modes: 'both' as const },
@@ -45,7 +44,6 @@ const navItems: readonly NavigationItem[] = [
     { to: '/artifacts', icon: 'history_edu', label: 'Bảo tàng 3D', prefixes: ['/artifacts'], modes: 'both' as const },
     { to: '/photo-frame', icon: 'photo_camera', label: 'Ảnh & chia sẻ', prefixes: ['/photo-frame'], modes: 'both' as const },
     { to: '/leaderboard', icon: 'leaderboard', label: 'Bảng xếp hạng', prefixes: ['/leaderboard'], modes: 'both' as const },
-    feedbackNavItem,
     {
         to: '/admin/content',
         icon: 'admin_panel_settings',
@@ -64,7 +62,6 @@ const mobileNavItems: readonly NavigationItem[] = [
     { to: '/living-world', icon: 'assignment', label: 'Nhiệm vụ', modes: 'both' as const, prefixes: ['/living-world', '/quests'] },
     { to: '/artifacts', icon: 'history_edu', label: 'Bảo tàng', modes: 'both' as const, prefixes: ['/artifacts'] },
     { to: '/photo-frame', icon: 'photo_camera', label: 'Ảnh & chia sẻ', modes: 'both' as const, prefixes: ['/photo-frame'] },
-    feedbackNavItem,
 ] as const
 
 function withChatPath(items: readonly NavigationItem[], chatPath: string): NavigationItem[] {

@@ -1,10 +1,11 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
-export default defineConfig(({ command }) => ({
+export default defineConfig(({ command, mode }) => ({
+  cacheDir: 'node_modules/.vite-' + mode,
   publicDir: command === 'build' ? '.r2-public-build' : 'public',
   // Keep even small world meshes/textures as separately measurable streamed assets.
   // Otherwise base64 inlining hides their 3D bytes in the runtime JS accounting.
@@ -80,7 +81,12 @@ export default defineConfig(({ command }) => ({
   server: {
     port: 5173,
     proxy: {
-      '/api': { target: process.env.HISTAR_LOCAL_API_TARGET || 'http://127.0.0.1:8080', changeOrigin: true },
+      ...(loadEnv(mode, '.', 'HISTAR_FEEDBACK_TARGET').HISTAR_FEEDBACK_TARGET ? {
+        '/api/admin/feedback': { target: loadEnv(mode, '.', 'HISTAR_FEEDBACK_TARGET').HISTAR_FEEDBACK_TARGET, changeOrigin: true },
+        '/api/feedback/featured': { target: loadEnv(mode, '.', 'HISTAR_FEEDBACK_TARGET').HISTAR_FEEDBACK_TARGET, changeOrigin: true },
+        '/api/me/feedback': { target: loadEnv(mode, '.', 'HISTAR_FEEDBACK_TARGET').HISTAR_FEEDBACK_TARGET, changeOrigin: true },
+      } : {}),
+      '/api': { target: process.env.HISTAR_LOCAL_API_TARGET || (mode === 'local8080' ? 'http://127.0.0.1:8081' : 'http://127.0.0.1:8080'), changeOrigin: true },
       '/ai': { target: 'http://127.0.0.1:8100', changeOrigin: true },
       '/media': {
         target: 'https://media.timelens.asia',

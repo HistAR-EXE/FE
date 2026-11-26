@@ -368,10 +368,9 @@ export function AdminContentPage() {
     : '—'
 
   return (
-    <section className="admin-page flex w-full flex-col space-y-space-lg pb-20" aria-busy={loading && showListChrome}>
+    <section className="ops-paper-page ops-work-page admin-page flex w-full flex-col pb-20" aria-busy={loading && showListChrome}>
       <AdminPageHeader
-        eyebrow="Vận hành / Di sản & nội dung"
-        title="Quản lý Nội dung khám phá"
+        title={<>Nội dung <span className="ops-title-accent">khám phá</span></>}
         description={
           selectedLocation
             ? `Quản lý điểm khám phá, hiện vật, nhiệm vụ và ảnh toàn cảnh cho ${selectedLocation.name}.`

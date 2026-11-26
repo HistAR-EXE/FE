@@ -1,3 +1,4 @@
+import '../styles/admin-audit.css'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { AdminErrorState, AdminEmptyState, AdminLoading } from '../components/admin/AdminAsyncState'
@@ -34,6 +35,7 @@ const ENTITY_OPTIONS = [
 const ACTION_OPTIONS = [
   { value: '', label: 'Tất cả hành động' },
   { value: 'CREATED', label: 'Đã tạo' },
+  { value: 'ORG_MEMBER_ROLE_UPDATED', label: 'Đổi vai trò thành viên' },
   { value: 'UPDATED', label: 'Đã cập nhật' },
   { value: 'SOFT_DELETED', label: 'Đã chuyển vào thùng rác' },
   { value: 'RESTORED', label: 'Đã khôi phục' },
@@ -68,12 +70,6 @@ function formatOccurredAt(value: string) {
   }
 }
 
-function initials(name: string | null | undefined, fallback: string) {
-  const parts = (name ?? '').trim().split(/\s+/).filter(Boolean)
-  if (parts.length === 0) return fallback.slice(0, 2).toUpperCase()
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
-  return `${parts[0][0] ?? ''}${parts[parts.length - 1]?.[0] ?? ''}`.toUpperCase()
-}
 
 function actionTone(action: string) {
   const key = action.toUpperCase()
@@ -332,7 +328,7 @@ export function AdminAuditPage() {
   const pageTo = result ? result.page * result.size + result.items.length : 0
 
   return (
-    <section className="admin-page flex w-full max-w-7xl flex-col pb-16" aria-busy={loading}>
+    <section className="ops-paper-page ops-work-page admin-page flex w-full max-w-7xl flex-col pb-16" aria-busy={loading}>
       {verifiedBanner && (
         <div
           className={`relative mb-space-md overflow-hidden rounded-xl px-space-md py-2 shadow-lg ${
@@ -369,22 +365,7 @@ export function AdminAuditPage() {
       <div className="admin-page-header flex flex-col gap-space-sm py-space-sm">
         <div className="flex flex-col justify-between gap-space-sm xl:flex-row xl:items-end">
           <div className="max-w-4xl space-y-1">
-            <div className="flex items-center gap-1 text-[11px] uppercase tracking-wider text-outline">
-              <span>QUẢN TRỊ</span>
-              <MaterialIcon name="chevron_right" className="text-[12px]" />
-              <span>GIÁM SÁT</span>
-              <MaterialIcon name="chevron_right" className="text-[12px]" />
-              <span className="font-semibold text-primary">NHẬT KÝ KIỂM TOÁN</span>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-xl font-bold leading-tight tracking-tight text-on-surface md:text-2xl">
-                Nhật ký kiểm toán &amp; Giám sát tuân thủ
-              </h1>
-              <span className="inline-flex items-center gap-1 rounded-full bg-surface-container-high px-2 py-0.5 text-[11px] font-semibold text-primary">
-                <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-                Theo dõi thay đổi
-              </span>
-            </div>
+            <h1 className="text-xl font-bold leading-tight tracking-tight text-on-surface md:text-2xl">Nhật ký <span className="ops-title-accent">kiểm toán</span></h1>
             <p className="max-w-3xl text-xs leading-relaxed text-on-surface-variant">
               Tra cứu thay đổi quản trị theo đối tượng, người thực hiện và hành động.
             </p>
@@ -439,63 +420,11 @@ export function AdminAuditPage() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 gap-space-sm sm:grid-cols-2 lg:grid-cols-4">
-          <div className="relative flex flex-col justify-between overflow-hidden rounded-xl bg-surface-container-low p-3 shadow-sm">
-            <div className="mb-1 flex items-center justify-between">
-              <span className="text-xs text-on-surface-variant">Tổng ghi nhận (bộ lọc)</span>
-              <div className="flex h-6 w-6 items-center justify-center rounded-md bg-surface-container text-primary">
-                <MaterialIcon name="history" className="text-[14px]" />
-              </div>
-            </div>
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-xl font-bold text-on-surface">{kpis.totalItems.toLocaleString('vi-VN')}</span>
-            </div>
-            <div className="mt-0.5 truncate text-[11px] text-outline">
-              Trang hiện tại: {kpis.pageCount} bản ghi · {rangeLabel}
-            </div>
-          </div>
-
-          <div className="relative flex flex-col justify-between overflow-hidden rounded-xl bg-surface-container-low p-3 shadow-sm">
-            <div className="mb-1 flex items-center justify-between">
-              <span className="text-xs text-on-surface-variant">Hành động nhạy cảm (trang)</span>
-              <div className="flex h-6 w-6 items-center justify-center rounded-md bg-surface-container text-tertiary">
-                <MaterialIcon name="admin_panel_settings" className="text-[14px]" />
-              </div>
-            </div>
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-xl font-bold text-tertiary">{kpis.sensitive}</span>
-              <span className="text-[11px] text-on-surface-variant">lần ghi nhận</span>
-            </div>
-            <div className="mt-0.5 text-xs text-on-surface-variant">Xóa, đổi vai trò hoặc trạng thái trên trang này</div>
-          </div>
-
-          <div className="relative flex flex-col justify-between overflow-hidden rounded-xl bg-surface-container-low p-3 shadow-sm">
-            <div className="mb-1 flex items-center justify-between">
-              <span className="text-xs text-on-surface-variant">Có địa chỉ IP (trang)</span>
-              <div className="flex h-6 w-6 items-center justify-center rounded-md bg-surface-container text-primary">
-                <MaterialIcon name="public" className="text-[14px]" />
-              </div>
-            </div>
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-xl font-bold text-primary">{kpis.withIp}</span>
-              <span className="text-[11px] text-primary">bản ghi</span>
-            </div>
-            <div className="mt-0.5 text-xs text-on-surface-variant">Có thông tin địa chỉ truy cập</div>
-          </div>
-
-          <div className="relative flex flex-col justify-between overflow-hidden rounded-xl bg-surface-container-low p-3 shadow-sm">
-            <div className="mb-1 flex items-center justify-between">
-              <span className="text-xs text-on-surface-variant">Theo dõi thay đổi</span>
-              <div className="flex h-6 w-6 items-center justify-center rounded-md bg-surface-container text-secondary">
-                <MaterialIcon name="verified" className="text-[14px]" />
-              </div>
-            </div>
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-xl font-bold text-on-surface">Đang hoạt động</span>
-            </div>
-            <div className="mt-0.5 text-xs text-on-surface-variant">Xem và kiểm tra lịch sử thao tác quản trị</div>
-          </div>
-        </div>
+        <dl className="audit-metrics">
+          <div><dt>Bản ghi khớp bộ lọc</dt><dd>{kpis.totalItems.toLocaleString('vi-VN')}</dd><small>{rangeLabel}</small></div>
+          <div><dt>Thao tác nhạy cảm</dt><dd>{kpis.sensitive}</dd><small>Trong {kpis.pageCount} bản ghi trên trang</small></div>
+          <div><dt>Bản ghi có địa chỉ IP</dt><dd>{kpis.withIp}</dd><small>Trong {kpis.pageCount} bản ghi trên trang</small></div>
+        </dl>
       </div>
 
       <form
@@ -620,77 +549,23 @@ export function AdminAuditPage() {
       )}
       {!loading && !error && result && result.items.length > 0 && (
         <div className="mb-space-md overflow-hidden rounded-xl bg-surface-container-low shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="admin-audit-table w-full min-w-[72rem] table-fixed text-left text-xs">
-              <colgroup><col className="w-[12rem]" /><col className="w-[14rem]" /><col className="w-[12rem]" /><col className="w-[17rem]" /><col className="w-[10rem]" /><col className="w-[9rem]" /></colgroup>
-              <thead>
-                <tr className="bg-surface-container-lowest text-[11px] font-semibold uppercase tracking-wider text-outline">
-                  <th className="whitespace-nowrap px-3 py-2">Thời điểm (UTC+7)</th>
-                  <th className="whitespace-nowrap px-3 py-2">Người thực hiện</th>
-                  <th className="whitespace-nowrap px-3 py-2">Hành động</th>
-                  <th className="whitespace-nowrap px-3 py-2">Đối tượng ảnh hưởng</th>
-                  <th className="whitespace-nowrap px-3 py-2">Địa chỉ IP &amp; Vị trí</th>
-                  <th className="whitespace-nowrap px-3 py-2 text-center">Chi tiết</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-surface-container-high/40">
-                {result.items.map((event) => {
-                  const ip = eventIp(event)
-                  const location = eventLocation(event)
-                  const name = event.actorName ?? 'Không có tên'
-                  const email = event.actorEmailMasked ?? event.actorId
-                  return (
-                    <tr key={event.id} className="transition-colors hover:bg-surface-container/60">
-                      <td className="whitespace-nowrap px-3 py-1.5">
-                        <div className="flex items-center gap-1.5">
-                          <MaterialIcon name="lock" className="text-[14px] text-primary" />
-                          <span className="font-mono text-[11px] text-on-surface">{formatOccurredAt(event.occurredAt)}</span>
-                        </div>
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-1.5">
-                        <div className="flex items-center gap-2">
-                          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/20 text-[10px] font-bold text-primary">
-                            {initials(event.actorName, event.actorId)}
-                          </div>
-                          <div className="flex min-w-0 flex-col gap-0.5">
-                            <span className="truncate text-xs font-semibold leading-none text-on-surface">{name}</span>
-                            <span className="truncate font-mono text-[10px] leading-none text-outline">{email}</span>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-3 py-1.5">
-                        <span
-                          className={`inline-flex max-w-full items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-semibold leading-snug ${actionTone(event.action)}`}
-                        >
-                          <span className="h-1 w-1 shrink-0 rounded-full bg-current" />
-                          {actionLabel(event.action)}
-                        </span>
-                      </td>
-                      <td className="overflow-hidden px-3 py-1.5">
-                        <div className="flex min-w-0 flex-col items-start gap-0.5">
-                          <span className="rounded bg-surface-container-high px-1.5 py-0.5 text-[11px] font-semibold text-on-surface">
-                            {entityLabel(event.entityType)}
-                          </span>
-                          <span className="max-w-full truncate font-mono text-[10px] text-primary" title={event.entityId}>
-                            {event.entityId}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-1.5">
-                        <div className="flex flex-col gap-0.5">
-                          <span className="font-mono text-[11px] text-on-surface">{ip ?? '—'}</span>
-                          <span className="text-[10px] text-outline">{location ?? 'Không có vị trí'}</span>
-                        </div>
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-1.5 text-center">
-                        <button type="button" className="admin-table-action gap-1 text-[11px]" onClick={function () { setSelected(event) }}>Xem chi tiết</button>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+          <h2 className="audit-list-heading">Lịch sử thao tác</h2>
+          <ul className="audit-events">
+            {result.items.map((event) => (
+              <li key={event.id}>
+                <div className="audit-event-main">
+                  <span className={`audit-event-icon ${actionTone(event.action)}`}><MaterialIcon name="history" /></span>
+                  <div>
+                    <h3>{actionLabel(event.action)}</h3>
+                    <p>{entityLabel(event.entityType)} <span title={event.entityId}>· {shortHash(event.entityId)}</span></p>
+                  </div>
+                </div>
+                <div><strong>{event.actorName || 'Không có tên'}</strong><p>{event.actorEmailMasked ?? event.actorId}</p></div>
+                <div><time dateTime={event.occurredAt}>{formatOccurredAt(event.occurredAt)}</time><p>{[eventIp(event), eventLocation(event)].filter(Boolean).join(' · ') || 'Chưa ghi nhận IP'}</p></div>
+                <button type="button" className="audit-detail" onClick={() => setSelected(event)}>Xem chi tiết</button>
+              </li>
+            ))}
+          </ul>
           <div className="flex flex-col items-center justify-between gap-2 bg-surface-container-low p-3 sm:flex-row">
             <div className="flex flex-wrap items-center gap-2">
               <span className="font-mono text-[11px] text-outline">
@@ -710,101 +585,47 @@ export function AdminAuditPage() {
 
       {selected && (
         <AdminModal
-          title="Chi tiết thao tác"
-          subtitle={`${actionLabel(selected.action)} · ${formatOccurredAt(selected.occurredAt)}`}
-          icon="difference"
-          extraWide
+          title={actionLabel(selected.action)}
+          subtitle={formatOccurredAt(selected.occurredAt)}
+          icon="history"
+          wide
           onClose={() => setSelected(null)}
         >
-          <div className="space-y-5 text-sm">
-            <div className="rounded-xl border border-primary/25 bg-primary/5 p-4">
-              <div className="flex items-start gap-3">
-                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary/15 text-primary"><MaterialIcon name="history" className="text-[20px]" /></span>
-                <div className="min-w-0">
-                  <p className="font-headline-sm text-base font-bold text-on-surface">{actionLabel(selected.action)}</p>
-                  <p className="mt-1 text-on-surface-variant">{entityLabel(selected.entityType)} · {formatOccurredAt(selected.occurredAt)}</p>
-                </div>
-              </div>
-            </div>
-            <dl className="grid gap-2.5 sm:grid-cols-2 [&>div]:min-w-0 [&>div]:rounded-xl [&>div]:border [&>div]:border-outline-variant/60 [&>div]:bg-white [&>div]:p-3 [&_dt]:mb-1 [&_dt]:text-xs [&_dt]:font-semibold [&_dt]:uppercase [&_dt]:tracking-wide [&_dd]:font-medium">
+          <div className="audit-record">
+            <dl className="audit-record-facts">
               <div>
-                <dt className="text-on-surface-variant">Người thực hiện</dt>
-                <dd className="break-words text-on-surface">
-                  {selected.actorName ?? 'Không có tên'} · {selected.actorEmailMasked ?? selected.actorId}
-                </dd>
+                <dt>Người thực hiện</dt>
+                <dd>{selected.actorName || 'Chưa ghi nhận tên'}<small>{selected.actorEmailMasked ?? selected.actorId}</small></dd>
               </div>
               <div>
-                <dt className="text-on-surface-variant">Thời điểm</dt>
-                <dd className="text-on-surface">{formatOccurredAt(selected.occurredAt)}</dd>
+                <dt>Đối tượng</dt>
+                <dd>{entityLabel(selected.entityType)}<small>{selected.entityId}</small></dd>
               </div>
-              <div>
-                <dt className="text-on-surface-variant">Hành động</dt>
-                <dd className="text-on-surface">{actionLabel(selected.action)}</dd>
-              </div>
-              <div>
-                <dt className="text-on-surface-variant">Đối tượng</dt>
-                <dd className="text-on-surface">
-                  {entityLabel(selected.entityType)}<br /><span className="break-all font-mono text-xs text-primary">{selected.entityId}</span>
-                </dd>
-              </div>
-              <div>
-                <dt className="text-on-surface-variant">Địa chỉ IP</dt>
-                <dd className="font-mono text-on-surface">{eventIp(selected) ?? '—'}</dd>
-              </div>
-              <div>
-                <dt className="text-on-surface-variant">Vị trí</dt>
-                <dd className="text-on-surface">{eventLocation(selected) ?? '—'}</dd>
-              </div>
-              <div>
-                <dt className="text-on-surface-variant">Phiên bản</dt>
-                <dd className="text-on-surface">
-                  {selected.oldRowVersion ?? '—'} → {selected.newRowVersion ?? '—'}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-on-surface-variant">Lý do</dt>
-                <dd className="text-on-surface">{selected.reason ?? '—'}</dd>
-              </div>
-              <div className="sm:col-span-2">
-                <dt className="text-on-surface-variant">Mã kiểm tra tính toàn vẹn</dt>
-                <dd className="break-all font-mono text-[12px] text-on-surface" title={selected.eventHash ?? undefined}>
-                  {selected.eventHash ?? '—'}
-                </dd>
-                {selected.prevEventHash && (
-                  <p className="mt-1 break-all font-mono text-[11px] text-outline" title={selected.prevEventHash}>
-                    Mã bản ghi trước: {shortHash(selected.prevEventHash)}
-                  </p>
-                )}
-              </div>
+              {selected.reason && <div><dt>Lý do</dt><dd>{selected.reason}</dd></div>}
+              <div><dt>Nguồn truy cập</dt><dd>{[eventIp(selected), eventLocation(selected)].filter(Boolean).join(' · ') || 'Chưa ghi nhận'}</dd></div>
             </dl>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="min-w-0 rounded-xl border border-outline-variant/60 bg-surface-container-low p-3">
-                <h3 className="mb-2 flex items-center gap-2 font-bold text-on-surface"><span className="h-2 w-2 rounded-full bg-outline" />Trước thay đổi</h3>
-                <pre className="max-h-48 overflow-auto whitespace-pre-wrap break-all rounded-lg bg-white p-3 text-[13px] text-on-surface-variant">
-                  {(() => {
-                    const before = snapshotFromEvent(selected, 'before')
-                    return before ? JSON.stringify(before, null, 2) : 'Không có dữ liệu trước thay đổi.'
-                  })()}
-                </pre>
-              </div>
-              <div className="min-w-0 rounded-xl border border-primary/25 bg-primary/5 p-3">
-                <h3 className="mb-2 flex items-center gap-2 font-bold text-on-surface"><span className="h-2 w-2 rounded-full bg-primary" />Sau thay đổi</h3>
-                <pre className="max-h-48 overflow-auto whitespace-pre-wrap break-all rounded-lg bg-white p-3 text-[13px] text-on-surface-variant">
-                  {(() => {
-                    const after = snapshotFromEvent(selected, 'after')
-                    return after ? JSON.stringify(after, null, 2) : 'Không có dữ liệu sau thay đổi.'
-                  })()}
-                </pre>
-              </div>
-            </div>
-            {selected.metadata && (
-              <details className="rounded-xl border border-outline-variant/60 bg-white p-3">
-                <summary className="cursor-pointer font-semibold text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">Dữ liệu kỹ thuật</summary>
-                <pre className="mt-3 max-h-72 overflow-auto whitespace-pre-wrap break-all rounded-lg bg-surface-container-high p-3 text-[13px] text-on-surface-variant">
-                  {JSON.stringify(selected.metadata, null, 2)}
-                </pre>
+            {(snapshotFromEvent(selected, 'before') || snapshotFromEvent(selected, 'after')) && (
+              <details>
+                <summary tabIndex={0}>Thay đổi trước và sau</summary>
+                {(['before', 'after'] as const).map((side) => (
+                  <div key={side}>
+                    <h3>{side === 'before' ? 'Trước thay đổi' : 'Sau thay đổi'}</h3>
+                    <pre>{JSON.stringify(snapshotFromEvent(selected, side), null, 2) ?? 'Chưa ghi nhận'}</pre>
+                  </div>
+                ))}
               </details>
             )}
+            <details>
+              <summary tabIndex={0}>Thông tin kỹ thuật</summary>
+              <dl className="audit-record-facts">
+                {(selected.oldRowVersion != null || selected.newRowVersion != null) && (
+                  <div><dt>Phiên bản</dt><dd>{selected.oldRowVersion ?? '—'} → {selected.newRowVersion ?? '—'}</dd></div>
+                )}
+                <div><dt>Mã toàn vẹn</dt><dd><code>{selected.eventHash || 'Chưa ghi nhận'}</code></dd></div>
+                {selected.prevEventHash && <div><dt>Mã bản ghi trước</dt><dd><code>{selected.prevEventHash}</code></dd></div>}
+              </dl>
+              {selected.metadata && <pre>{JSON.stringify(selected.metadata, null, 2)}</pre>}
+            </details>
           </div>
         </AdminModal>
       )}

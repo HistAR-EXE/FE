@@ -220,13 +220,17 @@ function sparkPath(values: number[]) {
 function planDisplayName(plan: string) {
   const raw = plan.trim()
   if (!raw) return 'Khác'
-  if (/cá nhân|b2c|personal|premium/i.test(raw)) return 'Gói Cá nhân (B2C)'
+  if (/journey/i.test(raw)) return 'Journey Pass'
+  if (/^premium/i.test(raw)) return 'Premium cá nhân'
+  if (/cá nhân|b2c|personal/i.test(raw)) return 'Gói Cá nhân (B2C)'
   if (/trường|edu|school|k12|standard/i.test(raw)) return 'Gói Trường học (Edu)'
   if (/bảo tàng|tổ chức|museum|org|heritage|micro|basic/i.test(raw)) return 'Gói Bảo tàng / Tổ chức'
   return raw
 }
 
 function planDescription(planName: string) {
+  if (planName.includes('Journey')) return '72 giờ, một di tích, không nâng Premium'
+  if (planName.includes('Premium cá nhân')) return 'Gói tháng cá nhân'
   if (planName.includes('Cá nhân') || planName.includes('B2C')) return 'Quest vé lẻ & Plus'
   if (planName.includes('Trường') || planName.includes('Edu')) return 'Bản quyền ngoại khóa K12'
   if (planName.includes('Bảo tàng') || planName.includes('Tổ chức')) return 'Hợp tác địa phương'
@@ -288,6 +292,8 @@ export function AdminBillingPage() {
   const [paymentActionError, setPaymentActionError] = useState<string | null>(null)
   const [paymentActionSaving, setPaymentActionSaving] = useState(false)
   const [exportingPayments, setExportingPayments] = useState(false)
+  const [showMorePaymentStatuses, setShowMorePaymentStatuses] = useState(false)
+  const [paymentMenuId, setPaymentMenuId] = useState<string | null>(null)
   const [invoiceForm, setInvoiceForm] = useState(emptyInvoiceForm)
   const [leadForm, setLeadForm] = useState(emptyLeadForm)
   const [orgOptions, setOrgOptions] = useState<AdminOrganizationSummary[]>([])
@@ -652,6 +658,31 @@ export function AdminBillingPage() {
     }
   }
 
+  const downloadSummaryCsv = () => {
+    const period = overview?.updatedAt
+      ? new Date(overview.updatedAt).toLocaleString('vi-VN')
+      : new Date().toLocaleString('vi-VN')
+    const cell = (value: string) => `"${value.replaceAll('"', '""')}"`
+    const lines = [
+      'Hạng mục,Giá trị',
+      `${cell('Kỳ doanh thu')},${cell(`Tháng hiện tại, cập nhật ${period}`)}`,
+      `${cell('Phạm vi số đơn')},${cell('Toàn bộ sổ giao dịch')}`,
+      `${cell('Đơn thành công')},${paymentFacets.PAID}`,
+      `${cell('Đơn đang xử lý')},${paymentFacets.PENDING}`,
+      `${cell('Doanh thu thực thu trong tháng')},${overview?.actualRevenueMonthVnd ?? 0}`,
+    ]
+    for (const row of overview?.planRevenue ?? []) {
+      lines.push(`${cell(planDisplayName(row.plan))},${row.revenueVnd}`)
+    }
+    const blob = new Blob([`\uFEFF${lines.join('\n')}`], { type: 'text/csv;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const anchor = document.createElement('a')
+    anchor.href = url
+    anchor.download = `histar-bao-cao-goi-${new Date().toISOString().slice(0, 10)}.csv`
+    anchor.click()
+    URL.revokeObjectURL(url)
+  }
+
   const openPaymentAction = (item: AdminRecentPayment, action: PaymentAction) => {
     setPaymentActionReason('')
     setPaymentActionError(null)
@@ -733,12 +764,6 @@ export function AdminBillingPage() {
       })
   }, [overview?.planRevenue])
 
-  const annualDisplay = useMemo(() => {
-    const monthly = Number(price)
-    if (!Number.isFinite(monthly) || monthly <= 0) return '—'
-    return money(Math.round(monthly * 12 * 0.8))
-  }, [price])
-
   const pipelineByStage = useMemo(() => {
     const map: Record<string, AdminB2b2cInquiry[]> = {
       NEW: [],
@@ -757,23 +782,21 @@ export function AdminBillingPage() {
 
   return (
     <section
-      className="admin-page admin-billing-page flex w-full max-w-[1600px] flex-col gap-6 pb-16"
+      className="ops-paper-page admin-page admin-billing-page flex w-full max-w-[1600px] flex-col gap-6 pb-16"
       aria-busy={bootLoading || paymentsLoading || inquiriesLoading}
     >
       {/* Header ribbon */}
       <div className="admin-page-header flex flex-col justify-between gap-4 rounded-xl bg-surface-container-low p-5 shadow-md lg:flex-row lg:items-center lg:gap-6 lg:p-6">
         <div className="flex flex-col space-y-1">
           <div className="flex items-center gap-space-sm">
-            <span className="rounded bg-primary-container/20 px-2 py-0.5 font-code-sm text-code-sm uppercase tracking-wider text-primary">
-              Thanh toán và doanh thu
-            </span>
+            
             {overview?.updatedAt && (
               <span className="font-code-sm text-code-sm text-outline">
                 Cập nhật: {new Date(overview.updatedAt).toLocaleString('vi-VN')}
               </span>
             )}
           </div>
-          <h1 className="font-headline-xl text-headline-xl tracking-tight text-on-surface">Thanh toán &amp; CRM</h1>
+          <h1 className="font-headline-xl text-headline-xl tracking-tight text-on-surface">Thanh toán <span className="ops-title-accent">&amp; CRM</span></h1>
           <p className="max-w-3xl font-body-md text-body-md text-on-surface-variant">
             Quản lý doanh thu đa kênh, đối soát cổng thanh toán, thiết lập biểu phí và theo dõi phễu khách hàng B2B.
           </p>
@@ -794,7 +817,7 @@ export function AdminBillingPage() {
             onClick={() => void exportFilteredPayments()}
           >
             <MaterialIcon name="file_download" className="text-[16px]" />
-            {exportingPayments ? 'Đang xuất…' : 'Xuất đối soát CSV'}
+            {exportingPayments ? 'Đang xuất…' : 'Tải sao lưu giao dịch'}
           </button>
           <button type="button" className={btnPrimary} onClick={openInvoiceModal}>
             <MaterialIcon name="add_circle" className="text-[18px]" />
@@ -802,6 +825,41 @@ export function AdminBillingPage() {
           </button>
         </div>
       </div>
+
+      {overview && (
+        <section
+          className="rounded-xl border border-outline-variant bg-surface-container-low p-5 shadow-sm"
+          aria-labelledby="billing-package-report"
+        >
+          <header className="billing-report-heading">
+            <h2 id="billing-package-report">Tổng quan giao dịch mua gói</h2>
+            <button type="button" className={btnSecondary} onClick={downloadSummaryCsv}>
+              <MaterialIcon name="download" className="text-[16px]" /> Tải báo cáo CSV
+            </button>
+          </header>
+          <div className="billing-report-layout">
+            <div>
+              <p className="billing-report-label">Thực thu tháng này</p>
+              <strong className="billing-report-amount">{money(overview.actualRevenueMonthVnd)}</strong>
+              <h3>Đơn hàng từ trước đến nay</h3>
+              <dl className="billing-report-orders">
+                <div><dt>Đã thanh toán</dt><dd>{formatCount(paymentFacets.PAID)}</dd></div>
+                <div><dt>Chờ thanh toán</dt><dd>{formatCount(paymentFacets.PENDING)}</dd></div>
+              </dl>
+            </div>
+            <div>
+              <h3>Doanh thu đã ghi nhận theo gói</h3>
+              {overview.planRevenue?.length ? (
+                <dl className="billing-plan-amounts">
+                  {overview.planRevenue.map(row => (
+                    <div key={row.plan}><dt>{planDisplayName(row.plan)}</dt><dd>{money(row.revenueVnd)}</dd></div>
+                  ))}
+                </dl>
+              ) : <p>Chưa có doanh thu theo gói.</p>}
+            </div>
+          </div>
+        </section>
+      )}
 
       {bootLoading && !overview && <AdminLoading label="Đang tải thanh toán và CRM" />}
 
@@ -815,7 +873,7 @@ export function AdminBillingPage() {
             {errors.overview ? (
               <AdminErrorState message={errors.overview} onRetry={() => void loadShell()} />
             ) : overview ? (
-              <div className="admin-billing-kpis grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
+              <div className="ops-metric-strip admin-billing-kpis grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
                 <article className="flex min-h-[148px] min-w-0 flex-col justify-between rounded-xl bg-surface-container-low p-4 shadow-sm transition-all hover:bg-surface-container">
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-label-md text-label-md uppercase tracking-wider text-on-surface-variant">
@@ -837,10 +895,7 @@ export function AdminBillingPage() {
                       {overview.monthOverMonthPct == null
                         ? '—'
                         : `${overview.monthOverMonthPct > 0 ? '+' : ''}${overview.monthOverMonthPct}%`}
-                    </span>
-                    <svg className="h-5 w-14 text-primary opacity-80" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 56 20">
-                      <path d={sparkPath(sparkValues)} strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
+                    </span><svg aria-hidden="true" className="h-5 w-14 text-primary" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 56 20"><path d={sparkPath(sparkValues)} /></svg>
                   </div>
                 </article>
 
@@ -1215,7 +1270,10 @@ export function AdminBillingPage() {
 
               <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-surface-container p-2">
                 <div className="flex flex-wrap items-center gap-1">
-                  {PAYMENT_CHIPS.map((chip) => {
+                  {PAYMENT_CHIPS.filter((chip) => {
+                    const primary = chip.status === '' || chip.status === 'PAID' || chip.status === 'PENDING'
+                    return primary || showMorePaymentStatuses || paymentStatus === chip.status
+                  }).map((chip) => {
                     const count =
                       chip.id === ''
                         ? paymentFacets.all
@@ -1237,6 +1295,14 @@ export function AdminBillingPage() {
                       </button>
                     )
                   })}
+                  <button
+                    type="button"
+                    className={btnGhost}
+                    aria-expanded={showMorePaymentStatuses}
+                    onClick={() => setShowMorePaymentStatuses((open) => !open)}
+                  >
+                    {showMorePaymentStatuses ? 'Thu gọn' : 'Xem thêm'}
+                  </button>
                 </div>
                 <div className="flex items-center gap-2">
                   <MaterialIcon name="filter_alt" className="text-[18px] text-outline" />
@@ -1264,17 +1330,17 @@ export function AdminBillingPage() {
                   <div
                     className={`w-full overflow-x-auto transition-opacity ${paymentsLoading ? 'opacity-60' : 'opacity-100'}`}
                   >
-                    <table className="admin-billing-ledger w-full min-w-[1050px] table-fixed border-collapse text-left">
+                    <table className="admin-billing-ledger w-full min-w-[1050px] table-fixed border-collapse border border-outline-variant text-left">
                       <colgroup><col className="w-[160px]" /><col className="w-[230px]" /><col className="w-[160px]" /><col className="w-[145px]" /><col className="w-[110px]" /><col className="w-[150px]" /><col className="w-[125px]" /></colgroup>
                       <thead>
                         <tr className="bg-surface-container-lowest font-code-sm text-code-sm uppercase tracking-wider text-outline">
-                          <th className="rounded-l-lg px-3 py-2.5">Mã giao dịch</th>
-                          <th className="px-3 py-2.5">Người thanh toán</th>
-                          <th className="px-3 py-2.5 text-right">Số tiền</th>
-                          <th className="px-3 py-2.5">Cổng/Kênh</th>
-                          <th className="px-3 py-2.5 text-center">Trạng thái</th>
-                          <th className="px-3 py-2.5 text-right">Thời gian</th>
-                          <th className="rounded-r-lg px-3 py-2.5 text-center">Thao tác</th>
+                          <th className="border border-outline-variant px-3 py-2.5">Mã giao dịch</th>
+                          <th className="border border-outline-variant px-3 py-2.5">Người thanh toán</th>
+                          <th className="border border-outline-variant px-3 py-2.5 text-right">Số tiền</th>
+                          <th className="border border-outline-variant px-3 py-2.5">Cổng/Kênh</th>
+                          <th className="border border-outline-variant px-3 py-2.5 text-center">Trạng thái</th>
+                          <th className="border border-outline-variant px-3 py-2.5 text-right">Thời gian</th>
+                          <th className="border border-outline-variant px-3 py-2.5 text-center">Thao tác</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-surface-container-high/40">
@@ -1287,10 +1353,10 @@ export function AdminBillingPage() {
                               key={item.id ?? item.orderCode ?? index}
                               className="h-12 transition-colors hover:bg-surface-container"
                             >
-                              <td className="break-all px-3 py-2 font-code-sm text-code-sm font-semibold text-primary">
+                              <td className="break-all border border-outline-variant px-3 py-2 font-code-sm text-code-sm font-semibold text-primary">
                                 {item.orderCode}
                               </td>
-                              <td className="px-3 py-2">
+                              <td className="border border-outline-variant px-3 py-2">
                                 <div className="flex min-w-0 flex-col">
                                   <span className="truncate font-body-sm text-body-sm font-medium text-on-surface" title={email}>
                                     {email}
@@ -1302,39 +1368,61 @@ export function AdminBillingPage() {
                                   )}
                                 </div>
                               </td>
-                              <td className="whitespace-nowrap px-3 py-2 text-right font-code-sm text-code-sm font-bold text-on-surface">
+                              <td className="whitespace-nowrap border border-outline-variant px-3 py-2 text-right font-code-sm text-code-sm font-bold text-on-surface">
                                 {money(item.amountVnd ?? item.amount)}
                               </td>
-                              <td className="px-3 py-2">
+                              <td className="border border-outline-variant px-3 py-2">
                                 <div className="flex items-center gap-1.5">
                                   <span className={`h-2 w-2 rounded-full ${ch.color}`} />
                                   <span className="font-body-sm text-body-sm text-on-surface-variant">{ch.label}</span>
                                 </div>
                               </td>
-                              <td className="px-3 py-2 text-center">
+                              <td className="border border-outline-variant px-3 py-2 text-center">
                                 <span
                                   className={`inline-flex items-center rounded-full border px-2 py-0.5 font-label-sm text-label-sm ${status.className}`}
                                 >
                                   {status.label}
                                 </span>
                               </td>
-                              <td className="px-3 py-2 text-right font-code-sm text-code-sm text-outline">
+                              <td className="border border-outline-variant px-3 py-2 text-right font-code-sm text-code-sm text-outline">
                                 {new Date(item.createdAt).toLocaleString('vi-VN')}
                               </td>
-                              <td className="px-3 py-2">
-                                <div className="admin-table-actions">
-                                  {getPaymentActionsForStatus(item.status).map((action) => (
+                              <td className="border border-outline-variant px-3 py-2">
+                                {getPaymentActionsForStatus(item.status).length === 0 ? (
+                                  <span className="font-body-sm text-body-sm text-outline">—</span>
+                                ) : (
+                                  <div className="relative flex justify-center">
                                     <button
-                                      key={action}
                                       type="button"
                                       className={btnGhost}
-                                      onClick={() => openPaymentAction(item, action)}
-                                      aria-label={`${paymentActionMeta(action).label} cho giao dịch ${item.orderCode}`}
+                                      aria-expanded={paymentMenuId === (item.id ?? item.orderCode)}
+                                      aria-label={`Thao tác cho giao dịch ${item.orderCode}`}
+                                      onClick={() => {
+                                        const id = item.id ?? item.orderCode
+                                        setPaymentMenuId((current) => current === id ? null : id)
+                                      }}
                                     >
-                                      {paymentActionMeta(action).label}
+                                      Thao tác
                                     </button>
-                                  ))}
-                                </div>
+                                    {paymentMenuId === (item.id ?? item.orderCode) && (
+                                      <div className="absolute right-0 top-10 z-20 min-w-44 rounded-lg border border-outline-variant bg-surface-container-lowest p-1 shadow-md">
+                                        {getPaymentActionsForStatus(item.status).map((action) => (
+                                          <button
+                                            key={action}
+                                            type="button"
+                                            className="block w-full rounded px-2 py-1.5 text-left font-body-sm text-body-sm text-on-surface hover:bg-surface-container"
+                                            onClick={() => {
+                                              setPaymentMenuId(null)
+                                              openPaymentAction(item, action)
+                                            }}
+                                          >
+                                            {paymentActionMeta(action).label}
+                                          </button>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
                               </td>
                             </tr>
                           )
@@ -1365,7 +1453,7 @@ export function AdminBillingPage() {
 
             {/* Cài đặt & CRM */}
             <section
-              className="admin-billing-settings flex flex-col justify-between gap-4 rounded-xl bg-surface-container-low p-5 shadow-md lg:col-span-4 lg:p-6"
+              className="admin-billing-settings flex flex-col gap-3 rounded-xl border border-outline-variant bg-surface-container-low p-4 shadow-md lg:col-span-4"
               aria-labelledby="billing-settings-crm"
             >
               <div>
@@ -1391,50 +1479,28 @@ export function AdminBillingPage() {
                     void saveSettings()
                   }}
                 >
-                  <div className="space-y-space-sm rounded-xl bg-surface-container p-space-md">
-                    <div className="flex items-center justify-between">
-                      <label className="flex items-center gap-1.5 font-headline-sm text-headline-sm text-on-surface">
-                        <MaterialIcon name="workspace_premium" className="text-[18px] text-primary" />
-                        Giá gói Premium B2C
-                      </label>
-                      <span className="rounded bg-primary/10 px-1.5 py-0.5 font-code-sm text-code-sm text-primary">
-                        Đang áp dụng
+                  <div className="space-y-2 rounded-xl bg-surface-container p-3">
+                    <label className="flex flex-wrap items-center gap-2 font-headline-sm text-headline-sm text-on-surface" htmlFor="b2c-premium-price">
+                      <MaterialIcon name="workspace_premium" className="text-[18px] text-primary" />
+                      Giá gói Premium B2C
+                      <span className="font-code-sm text-code-sm font-normal text-outline">
+                        Đang áp dụng {settings.b2cPremiumPriceVnd.toLocaleString('vi-VN')}đ
                       </span>
-                    </div>
-                    <div>
-                      <span className="mb-1 block font-label-sm text-label-sm text-outline">Cước tháng</span>
-                      <div className="relative">
-                        <input
-                          type="number"
-                          value={price}
-                          onChange={(e) => setPrice(e.target.value)}
-                          className={inputClass}
-                          min={0}
-                          step={1000}
-                        />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 font-code-sm text-code-sm text-outline">
-                          VND
-                        </span>
-                      </div>
-                      {Number.isFinite(Number(price)) && Number(price) > 0 && (
-                        <span className="mt-1 block font-code-sm text-code-sm text-primary">
-                          {Number(price).toLocaleString('vi-VN')}đ/tháng
-                        </span>
-                      )}
-                      {settings && (
-                        <span className="mt-0.5 block font-code-sm text-code-sm text-outline">
-                          Giá đang áp dụng: {settings.b2cPremiumPriceVnd.toLocaleString('vi-VN')}đ
-                        </span>
-                      )}
-                    </div>
-                    <div>
-                      <div className="mb-1 flex items-center font-label-sm text-label-sm text-outline">
-                        Cước năm ước tính (−20%)
-                        <AdminInfoHint label="giá năm ước tính">Giá năm chỉ là ước tính hiển thị; hệ thống không lưu khoản này.</AdminInfoHint>
-                      </div>
-                      <div className="rounded-lg bg-surface-container-lowest px-3 py-2 font-code-sm text-code-sm text-on-surface-variant">
-                        {annualDisplay}
-                      </div>
+                    </label>
+                    <div className="relative">
+                      <input
+                        id="b2c-premium-price"
+                        type="number"
+                        value={price}
+                        onChange={(e) => setPrice(e.target.value)}
+                        aria-label="Giá Premium mới"
+                        className={inputClass}
+                        min={0}
+                        step={1000}
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 font-code-sm text-code-sm text-outline">
+                        VND
+                      </span>
                     </div>
                   </div>
 

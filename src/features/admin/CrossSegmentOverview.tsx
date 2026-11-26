@@ -157,9 +157,9 @@ export function CrossSegmentOverview() {
       label: 'Trường học',
       sublabel: 'Các gói dành cho tổ chức',
       icon: 'school',
-      color: 'text-secondary',
-      bgColor: 'bg-secondary/10',
-      barColor: 'bg-secondary',
+      color: 'text-primary',
+      bgColor: 'bg-primary/10',
+      barColor: 'bg-primary',
       revenue: segments.b2b.revenue,
       metrics: [
         { label: 'Doanh thu tháng', value: money(segments.b2b.revenue) + ' đ' },
@@ -172,9 +172,9 @@ export function CrossSegmentOverview() {
       label: 'B2G · Đối tác di sản',
       sublabel: 'Tư vấn số hóa di sản',
       icon: 'account_balance',
-      color: 'text-tertiary',
-      bgColor: 'bg-tertiary/10',
-      barColor: 'bg-tertiary',
+      color: 'text-primary',
+      bgColor: 'bg-primary/10',
+      barColor: 'bg-primary',
       revenue: 0,
       metrics: [
         { label: 'Tổng lead', value: String(segments.b2b2c.total) },
@@ -219,7 +219,7 @@ export function CrossSegmentOverview() {
                   <MaterialIcon name={seg.icon} className={`text-[18px] ${seg.color}`} />
                 </div>
                 <div className="flex flex-col">
-                  <span className={`font-headline-sm text-headline-sm ${seg.color}`}>{seg.label}</span>
+                  <span className="font-headline-sm text-headline-sm text-on-surface">{seg.label}</span>
                   <span className="font-code-sm text-code-sm text-outline">{seg.sublabel}</span>
                 </div>
               </div>

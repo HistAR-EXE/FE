@@ -1,3 +1,4 @@
+import { noteFeedbackActivity } from '../features/feedback/activity'
 // src/pages/Tour360Page.tsx
 import React, { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -42,6 +43,7 @@ export function Tour360Page() {
     }, [])
 
     const handleToggleImmersive = useCallback(() => {
+        noteFeedbackActivity('tour')
         setImmersive((v) => !v)
     }, [])
 

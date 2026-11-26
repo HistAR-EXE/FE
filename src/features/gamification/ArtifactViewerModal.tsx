@@ -11,6 +11,7 @@ import { useUserProgress } from '../../shared/context/UserProgressProvider'
 import { SmartImage } from '../../shared/ui/SmartImage'
 import { useToast } from '../../shared/ui/toast/useToast'
 import { collectionApi, type Artifact } from '../collection/api'
+import { noteFeedbackActivity } from '../feedback/activity'
 import { recordDiscoveryEngagement } from './discoveryRouting'
 import { notifyEngagementOutcome } from './handleEngagement'
 import type { QuestV2Step } from './questsV2Api'
@@ -77,6 +78,7 @@ export function ArtifactViewerModal({ step, locationId, onClose }: Props) {
             setSecondsLeft(left)
             if (left > 0) return
             window.clearInterval(timer)
+            noteFeedbackActivity('artifact')
             setRecordState('saving')
             void recordDiscoveryEngagement({
                 recordKey: step.key,

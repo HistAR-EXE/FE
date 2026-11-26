@@ -10,6 +10,7 @@
   "scripts": {
     "predev": "node scripts/sync-ar-catalog.mjs",
     "dev": "vite",
+    "dev:local": "vite --mode local8080 --host localhost --port 8080 --strictPort",
     "prebuild": "node scripts/sync-ar-catalog.mjs && node scripts/verify-public-media.mjs && node scripts/verify-film-assets.mjs && node scripts/stage-public-r2.mjs",
     "build": "tsc -b && vite build",
     "lint": "eslint .",

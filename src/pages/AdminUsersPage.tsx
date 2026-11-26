@@ -7,17 +7,12 @@ import { AdminPageHeader } from '../components/admin/AdminPageHeader'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import {
   adminApi,
-  type AdminDemoAccount,
-  type AdminDemoDataset,
-  type AdminDemoEnvironmentStatus,
   type AdminUserSummary,
   type PageResponse,
 } from '../features/admin/api'
 import { parseAdminListState } from '../features/admin/state'
-import { DEMO_STOP_CONFIRMATION, getDemoStopBlock } from '../features/admin/demoEnvironmentState'
 import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
 import { useAuth } from '../shared/auth/useAuth'
-import { appEnv } from '../shared/config/env'
 import { useToast } from '../shared/ui/toast/useToast'
 
 type AdminRole = 'USER' | 'ORG_MEMBER' | 'TEACHER' | 'ADMIN'
@@ -138,12 +133,6 @@ export function AdminUsersPage() {
     unverified: 0,
   })
   const [selectedIds, setSelectedIds] = useState<string[]>([])
-  const [demoDataset, setDemoDataset] = useState<AdminDemoDataset | null>(null)
-  const [demoEnvironment, setDemoEnvironment] = useState<AdminDemoEnvironmentStatus | null>(null)
-  const [demoStopOpen, setDemoStopOpen] = useState(false)
-  const [demoStopConfirmation, setDemoStopConfirmation] = useState('')
-  const [demoAccountToDelete, setDemoAccountToDelete] = useState<AdminDemoAccount | 'ALL' | null>(null)
-  const [demoReason, setDemoReason] = useState('')
   const [target, setTarget] = useState<RoleTarget | null>(null)
   const [statusTarget, setStatusTarget] = useState<StatusTarget | null>(null)
   const [tierTarget, setTierTarget] = useState<TierTarget | null>(null)
@@ -193,15 +182,6 @@ export function AdminUsersPage() {
       })
   }, [])
 
-  const loadDemoDataset = useCallback(() => {
-    adminApi.previewDemoDataset().then(setDemoDataset).catch(() => setDemoDataset(null))
-  }, [])
-
-  const loadDemoEnvironment = useCallback(() => {
-    if (appEnv.demoMode) return
-    adminApi.getDemoEnvironment().then(setDemoEnvironment).catch(() => setDemoEnvironment(null))
-  }, [])
-
   const load = useCallback(() => {
     setLoading(true)
     setError(null)
@@ -234,12 +214,6 @@ export function AdminUsersPage() {
   useEffect(() => {
     loadStats()
   }, [loadStats])
-  useEffect(() => {
-    loadDemoDataset()
-  }, [loadDemoDataset])
-  useEffect(() => {
-    loadDemoEnvironment()
-  }, [loadDemoEnvironment])
   useEffect(() => setSearch(state.q), [state.q])
   useEffect(() => {
     if (params.get('size') === String(USERS_PAGE_SIZE)) return
@@ -300,85 +274,6 @@ export function AdminUsersPage() {
       loadStats()
     } catch (cause) {
       showToast({ message: getFriendlyErrorMessage(cause, 'quest'), type: 'error' })
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const purgeDemoDataset = async () => {
-    if (!demoAccountToDelete || demoReason.trim().length < 10) return
-    setSaving(true)
-    try {
-      const result = await adminApi.purgeDemoDataset({
-        userId: demoAccountToDelete === 'ALL' ? null : demoAccountToDelete.id,
-        reason: demoReason.trim(),
-      })
-      showToast({
-        message: `Đã xóa ${result.deletedAccounts} tài khoản demo và ${result.deletedRows} bản ghi liên quan.`,
-        type: 'success',
-      })
-      setDemoAccountToDelete(null)
-      setDemoReason('')
-      loadDemoDataset()
-      load()
-      loadStats()
-    } catch (cause) {
-      showToast({ message: getFriendlyErrorMessage(cause, 'quest'), type: 'error' })
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const openDemoAdmin = async () => {
-    setSaving(true)
-    setError('')
-    try {
-      const session = await adminApi.createDemoAdminSession()
-      window.location.assign(session.url)
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'Không thể tạo phiên quản trị demo.')
-      setSaving(false)
-    }
-  }
-
-  const startDemoEnvironment = async () => {
-    setSaving(true)
-    try {
-      const status = await adminApi.startDemoEnvironment()
-      setDemoEnvironment(status)
-      showToast({ message: 'Môi trường demo đã sẵn sàng.', type: 'success' })
-    } catch (cause) {
-      showToast({ message: getFriendlyErrorMessage(cause, 'quest'), type: 'error' })
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const stopDemoEnvironment = async () => {
-    if (!demoEnvironment) return
-    const blocked = getDemoStopBlock(demoEnvironment, demoStopConfirmation)
-    if (blocked) {
-      showToast({ message: blocked, type: 'error' })
-      return
-    }
-
-    setSaving(true)
-    try {
-      const latest = await adminApi.getDemoEnvironment()
-      setDemoEnvironment(latest)
-      const latestBlock = getDemoStopBlock(latest, demoStopConfirmation)
-      if (latestBlock) {
-        showToast({ message: latestBlock, type: 'error' })
-        return
-      }
-      const status = await adminApi.stopDemoEnvironment(demoStopConfirmation)
-      setDemoEnvironment(status)
-      setDemoStopOpen(false)
-      setDemoStopConfirmation('')
-      showToast({ message: 'Đã tắt môi trường demo. Dữ liệu demo vẫn được giữ nguyên.', type: 'success' })
-    } catch (cause) {
-      showToast({ message: getFriendlyErrorMessage(cause, 'quest'), type: 'error' })
-      loadDemoEnvironment()
     } finally {
       setSaving(false)
     }
@@ -588,11 +483,10 @@ export function AdminUsersPage() {
       : null
 
   return (
-    <section className="admin-page admin-users-page flex w-full min-w-0 max-w-full flex-col pb-16" aria-busy={loading}>
+    <section className="ops-paper-page admin-page admin-users-page flex w-full min-w-0 max-w-full flex-col pb-16" aria-busy={loading}>
       <AdminPageHeader
-        eyebrow="KHÁCH HÀNG & DOANH THU / TÀI KHOẢN"
-        title="Quản lý Người dùng"
-        description="Quản trị hồ sơ tài khoản, phân quyền và trạng thái xác minh theo dữ liệu API HistAR."
+        title={<>Quản lý <span className="ops-title-accent">người dùng</span></>}
+        description="Quản lý quyền truy cập, gói dịch vụ và xác minh tài khoản."
         actions={
           <div className="flex max-w-full flex-wrap items-center gap-3">
             <button
@@ -627,14 +521,14 @@ export function AdminUsersPage() {
               }}
             >
               <MaterialIcon name="person_add" className="text-[18px]" />
-              <span className="hidden sm:inline">+ Mời người dùng / Thêm mới</span>
+              <span className="hidden sm:inline">Mời người dùng</span>
               <span className="sm:hidden">+ Mời mới</span>
             </button>
           </div>
         }
       />
 
-      <div className="mb-6 grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="ops-metric-strip mb-6 grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <div className="users-stat-card relative flex min-h-[7.5rem] flex-col justify-between gap-3 overflow-hidden rounded-xl border border-outline-variant/40 bg-surface-container-low p-4 shadow-sm" data-tone="blue">
           <div className="flex items-center justify-between gap-3">
             <span className="font-body-md text-body-md font-medium text-on-surface-variant">
@@ -647,9 +541,6 @@ export function AdminUsersPage() {
           <p className="font-headline-xl text-headline-xl font-bold tracking-tight text-on-surface">
             {formatCount(stats.total)}
           </p>
-          <span className="font-code-sm text-code-sm text-outline">
-            Tổng từ API danh sách người dùng
-          </span>
         </div>
         <div className="users-stat-card relative flex min-h-[7.5rem] flex-col justify-between gap-3 overflow-hidden rounded-xl border border-outline-variant/40 bg-surface-container-low p-4 shadow-sm" data-tone="teal">
           <div className="flex items-center justify-between gap-3">
@@ -663,7 +554,6 @@ export function AdminUsersPage() {
           <p className="font-headline-xl text-headline-xl font-bold tracking-tight text-on-surface">
             {formatCount(stats.premium)}
           </p>
-          <span className="font-code-sm text-code-sm text-outline">Gói PREMIUM</span>
         </div>
         <div className="users-stat-card relative flex min-h-[7.5rem] flex-col justify-between gap-3 overflow-hidden rounded-xl border border-outline-variant/40 bg-surface-container-low p-4 shadow-sm" data-tone="violet">
           <div className="flex items-center justify-between gap-3">
@@ -679,7 +569,7 @@ export function AdminUsersPage() {
           </p>
           <div className="flex items-center justify-between gap-3">
             <span className="font-code-sm text-code-sm text-outline">
-              {formatCount(stats.verified)} tài khoản duyệt
+              {formatCount(stats.verified)} tài khoản đã xác minh
             </span>
             <div className="h-1.5 w-16 shrink-0 overflow-hidden rounded-full bg-surface-container-highest">
               <div
@@ -702,121 +592,10 @@ export function AdminUsersPage() {
             {formatCount(stats.unverified)}
           </p>
           <span className="font-code-sm text-code-sm text-outline">
-            Cần theo dõi xác minh email
+            Chưa xác minh địa chỉ email
           </span>
         </div>
       </div>
-
-      {!appEnv.demoMode && (
-        <section className="users-demo-panel mb-6 overflow-hidden rounded-xl border border-outline-variant/50 bg-surface-container-low shadow-sm">
-          <div className="flex flex-col gap-4 p-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex min-w-0 items-start gap-3">
-              <div className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${demoEnvironment?.enabled ? 'bg-primary-container text-primary' : 'bg-surface-container-highest text-outline'}`}>
-                <MaterialIcon name={demoEnvironment?.enabled ? 'science' : 'power_settings_new'} className="text-[20px]" />
-              </div>
-              <div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="font-headline-md text-headline-md font-bold text-on-surface">Môi trường demo riêng</p>
-                  <span className={`rounded-full px-2 py-0.5 font-code-sm text-code-sm ${demoEnvironment?.enabled ? 'bg-primary-container text-on-primary-container' : 'bg-surface-container-highest text-outline'}`}>
-                    {demoEnvironment ? (demoEnvironment.enabled ? 'ĐANG BẬT' : 'ĐÃ TẮT') : 'CHƯA KẾT NỐI'}
-                  </span>
-                </div>
-                <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant">
-                  {demoEnvironment?.enabled
-                    ? `${demoEnvironment.activeUsers} người hoạt động trong 5 phút gần nhất. Dữ liệu hoàn toàn tách khỏi production.`
-                    : 'Chỉ khởi động khi cần trình diễn; tắt môi trường không xóa dữ liệu demo.'}
-                </p>
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <button type="button" disabled={saving} onClick={loadDemoEnvironment} className={btnGhost}>
-                <MaterialIcon name="refresh" className="text-[18px]" />
-                Làm mới
-              </button>
-              {demoEnvironment?.enabled ? (
-                <>
-                  <button type="button" disabled={saving} onClick={() => void openDemoAdmin()}
-                    className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 font-headline-sm text-on-primary disabled:opacity-50">
-                    <MaterialIcon name="open_in_new" className="text-[18px]" />
-                    Mở quản trị demo (15 phút)
-                  </button>
-                  <button
-                    type="button"
-                    disabled={saving}
-                    onClick={() => {
-                      setDemoStopConfirmation('')
-                      setDemoStopOpen(true)
-                    }}
-                    className="inline-flex items-center gap-2 rounded-lg bg-error px-4 py-2 font-headline-sm text-on-error disabled:opacity-50"
-                  >
-                    <MaterialIcon name="power_settings_new" className="text-[18px]" />
-                    Tắt môi trường demo
-                  </button>
-                </>
-              ) : (
-                <button
-                  type="button"
-                  disabled={saving || !demoEnvironment}
-                  onClick={() => void startDemoEnvironment()}
-                  className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 font-headline-sm text-on-primary disabled:opacity-50"
-                >
-                  <MaterialIcon name="play_arrow" className="text-[18px]" />
-                  {saving ? 'Đang khởi động…' : 'Bật môi trường demo'}
-                </button>
-              )}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {demoDataset && demoDataset.enabled && (
-        <section className="users-demo-data mb-6 overflow-hidden rounded-xl border border-amber-500/30 bg-amber-500/5 shadow-sm">
-          <div className="flex flex-col gap-3 border-b border-amber-500/20 p-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="font-headline-md text-headline-md font-bold text-on-surface">Dữ liệu demo</p>
-              <p className="font-body-sm text-body-sm text-on-surface-variant">
-                {demoDataset.accountCount} tài khoản · {demoDataset.operationalRowCount} bản ghi vận hành. Chỉ tồn tại trong môi trường demo.
-              </p>
-            </div>
-            <button
-              type="button"
-              className="inline-flex items-center gap-2 rounded-lg bg-error px-4 py-2 font-headline-sm text-on-error disabled:opacity-50"
-              disabled={saving || demoDataset.accountCount === 0}
-              onClick={() => {
-                setDemoAccountToDelete('ALL')
-                setDemoReason('')
-              }}
-            >
-              <MaterialIcon name="delete_sweep" className="text-[18px]" />
-              Xóa toàn bộ bộ demo
-            </button>
-          </div>
-          <div className="grid gap-2 p-4 md:grid-cols-2 xl:grid-cols-3">
-            {demoDataset.accounts.map((account) => (
-              <div key={account.id} className="flex min-w-0 items-center gap-3 rounded-lg bg-surface-container-lowest p-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface-container-high font-headline-sm font-bold">
-                  {initials(account.displayName)}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-headline-sm font-semibold text-on-surface">{account.displayName}</p>
-                  <p className="truncate font-code-sm text-outline">{account.role} · {account.tier} · {account.points} điểm</p>
-                </div>
-                <button
-                  type="button"
-                  className="rounded-lg p-2 text-error hover:bg-error-container"
-                  aria-label={`Xóa tài khoản demo ${account.displayName}`}
-                  onClick={() => {
-                    setDemoAccountToDelete(account)
-                    setDemoReason('')
-                  }}
-                >
-                  <MaterialIcon name="delete" className="text-[18px]" />
-                </button>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
 
       <form
         onSubmit={(event) => {
@@ -1030,12 +809,8 @@ export function AdminUsersPage() {
             )}
 
             <div className="min-w-0 max-w-full overflow-x-auto overscroll-x-contain">
-              <table className="admin-users-table w-full min-w-[94rem] table-fixed border-collapse text-left">
-                <colgroup>
-                  <col className="w-12" /><col className="w-[15rem]" /><col className="w-[18rem]" />
-                  <col className="w-[10rem]" /><col className="w-[8rem]" /><col className="w-[9rem]" />
-                  <col className="w-[11rem]" /><col className="w-[8rem]" /><col className="w-[15rem]" />
-                </colgroup>
+              <table className="admin-users-table w-full min-w-[58rem] table-fixed border-collapse text-left">
+                <colgroup>{[4,22,24,14,13,11,12].map((width,i) => <col key={i} style={{width: width + "%"}} />)}</colgroup>
                 <thead>
                   <tr className="users-table-head select-none bg-surface-container-lowest font-label-sm text-label-sm uppercase tracking-wider text-outline">
                     <th className="w-10 px-3 py-3 text-center sm:px-space-md">
@@ -1048,12 +823,10 @@ export function AdminUsersPage() {
                       />
                     </th>
                     <th className="min-w-[11rem] px-3 py-3 sm:px-space-md">Người dùng</th>
-                    <th className="min-w-[10rem] px-3 py-3 sm:px-space-md">Email &amp; Liên hệ</th>
+                    <th className="min-w-[10rem] px-3 py-3 sm:px-space-md">Email và hoạt động</th>
                     <th className="px-3 py-3 text-center sm:px-space-md">Xác minh</th>
                     <th className="px-3 py-3 text-center sm:px-space-md">Tài khoản</th>
                     <th className="px-3 py-3 text-center sm:px-space-md">Gói dịch vụ</th>
-                    <th className="px-3 py-3 text-center sm:px-space-md">Vai trò</th>
-                    <th className="px-3 py-3 text-center sm:px-space-md">Ngày tham gia</th>
                     <th className="sticky right-0 z-[1] bg-surface-container-lowest px-3 py-3 text-center sm:px-space-md">
                       Thao tác
                     </th>
@@ -1106,7 +879,7 @@ export function AdminUsersPage() {
                                 )}
                               </div>
                               <p className="truncate font-code-sm text-code-sm text-outline">
-                                {userCode(user.id)} · Lv.{user.level}
+                                {meta.shortLabel} · {userCode(user.id)} · Lv.{user.level}
                               </p>
                             </div>
                           </div>
@@ -1117,11 +890,11 @@ export function AdminUsersPage() {
                               {user.email}
                             </span>
                             <span className="font-code-sm text-code-sm text-outline">
-                              {user.totalPoints.toLocaleString('vi-VN')} điểm
+                              {user.totalPoints.toLocaleString('vi-VN')} điểm · Tham gia {new Date(user.createdAt).toLocaleDateString('vi-VN')}
                             </span>
                           </div>
                         </td>
-                        <td className="px-3 py-3 text-center sm:px-space-md">
+                        <td data-user-status={user.emailVerified ? 'verified' : 'pending'} className="px-3 py-3 text-center sm:px-space-md">
                           {user.emailVerified ? (
                             <span className="inline-flex max-w-full items-center gap-1 truncate rounded-full bg-primary/10 px-2 py-1 font-label-sm text-label-sm font-medium text-primary">
                               <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
@@ -1134,7 +907,7 @@ export function AdminUsersPage() {
                             </span>
                           )}
                         </td>
-                        <td className="px-3 py-3 text-center sm:px-space-md">
+                        <td data-user-status={accountStatusOf(user) === 'SUSPENDED' ? 'locked' : 'active'} className="px-3 py-3 text-center sm:px-space-md">
                           {accountStatusOf(user) === 'SUSPENDED' ? (
                             <span className="inline-flex items-center gap-1 rounded-full bg-error/15 px-2 py-1 font-label-sm text-label-sm font-semibold text-error">
                               Tạm khóa
@@ -1161,30 +934,7 @@ export function AdminUsersPage() {
                             {tierLabel(user.tier)}
                           </span>
                         </td>
-                        <td className="px-3 py-3 text-center sm:px-space-md">
-                          <span
-                            className={`inline-flex max-w-[11rem] items-center gap-2 truncate rounded-lg px-2.5 py-1.5 font-label-sm text-label-sm ${
-                              user.role === 'ADMIN'
-                                ? 'bg-primary text-on-primary font-bold shadow-sm'
-                                : user.role === 'TEACHER'
-                                  ? 'bg-surface-container-highest text-tertiary'
-                                  : user.role === 'ORG_MEMBER'
-                                    ? 'bg-surface-container-highest text-on-surface'
-                                    : 'bg-surface-container-highest text-outline'
-                            }`}
-                          >
-                            <MaterialIcon
-                              name={meta.icon}
-                              className={`shrink-0 text-[14px] ${user.role === 'ORG_MEMBER' ? 'text-primary' : ''}`}
-                            />
-                            <span className="truncate">{meta.shortLabel}</span>
-                          </span>
-                        </td>
-                        <td className="whitespace-nowrap px-3 py-3 text-center sm:px-space-md">
-                          <span className="font-code-sm text-code-sm text-on-surface">
-                            {new Date(user.createdAt).toLocaleDateString('vi-VN')}
-                          </span>
-                        </td>
+                        
                         <td
                           className={`sticky right-0 z-[1] px-3 py-3 text-center sm:px-space-md ${
                             selected ? 'bg-surface-container' : 'bg-surface-container-low'
@@ -1210,7 +960,7 @@ export function AdminUsersPage() {
                               </option>
                             ))}
                           </select>
-                          <div className="admin-table-actions">
+                          <details className="user-row-tools" onClick={event => event.stopPropagation()}><summary>Thao tác</summary><div className="user-row-options">
                             <button
                               type="button"
                               title={isSelf ? 'Không thể tự đổi vai trò' : 'Thay đổi vai trò'}
@@ -1222,7 +972,7 @@ export function AdminUsersPage() {
                                   : 'text-outline hover:bg-surface-container-highest hover:text-primary'
                               }`}
                             >
-                              <MaterialIcon name="manage_accounts" className="text-[18px]" />
+                              <MaterialIcon name="manage_accounts" className="text-[18px]" /> Đổi vai trò
                             </button>
                             <button
                               type="button"
@@ -1231,9 +981,9 @@ export function AdminUsersPage() {
                               onClick={() => openTierFor(user)}
                               className="rounded-lg p-1.5 text-outline transition-all hover:bg-surface-container-highest hover:text-secondary disabled:opacity-40"
                             >
-                              <MaterialIcon name="workspace_premium" className="text-[18px]" />
+                              <MaterialIcon name="workspace_premium" className="text-[18px]" /> Đổi gói
                             </button>
-                            <button
+                            <button data-destructive={accountStatusOf(user) !== 'SUSPENDED'}
                               type="button"
                               title={
                                 accountStatusOf(user) === 'SUSPENDED' ? 'Mở khóa tài khoản' : 'Khóa tạm thời'
@@ -1250,7 +1000,7 @@ export function AdminUsersPage() {
                               <MaterialIcon
                                 name={accountStatusOf(user) === 'SUSPENDED' ? 'lock_open' : 'lock'}
                                 className="text-[18px]"
-                              />
+                              /> {accountStatusOf(user) === 'SUSPENDED' ? 'Mở khóa' : 'Khóa tài khoản'}
                             </button>
                             {!user.emailVerified && (
                               <>
@@ -1261,7 +1011,7 @@ export function AdminUsersPage() {
                                   onClick={() => openVerifyFor(user)}
                                   className="rounded-lg p-1.5 text-outline transition-all hover:bg-surface-container-highest hover:text-primary disabled:opacity-40"
                                 >
-                                  <MaterialIcon name="verified_user" className="text-[18px]" />
+                                  <MaterialIcon name="verified_user" className="text-[18px]" /> Xác minh email
                                 </button>
                                 <button
                                   type="button"
@@ -1270,11 +1020,12 @@ export function AdminUsersPage() {
                                   onClick={() => void resendVerification(user)}
                                   className="rounded-lg p-1.5 text-outline transition-all hover:bg-surface-container-highest hover:text-primary disabled:opacity-40"
                                 >
-                                  <MaterialIcon name="forward_to_inbox" className="text-[18px]" />
+                                  <MaterialIcon name="forward_to_inbox" className="text-[18px]" /> Gửi lại email
                                 </button>
                               </>
                             )}
                           </div>
+                          </details>
                           {isSelf && (
                             <p className="mt-1 hidden max-w-[7rem] truncate font-code-sm text-code-sm text-outline xl:block" title="Không thể tự đổi vai trò.">
                               Không thể tự đổi vai trò.
@@ -1777,87 +1528,6 @@ export function AdminUsersPage() {
         </AdminModal>
       )}
 
-      {demoStopOpen && demoEnvironment && (
-        <AdminModal
-          title="Tắt môi trường demo"
-          subtitle="Dữ liệu demo được giữ nguyên để bật lại sau"
-          icon="power_settings_new"
-          onClose={() => {
-            setDemoStopOpen(false)
-            setDemoStopConfirmation('')
-          }}
-        >
-          <div className="flex flex-col gap-4">
-            <div className={`rounded-lg p-3 font-body-sm text-body-sm ${demoEnvironment.activeUsers > 0 ? 'bg-error-container text-on-error-container' : 'bg-surface-container-high text-on-surface-variant'}`}>
-              {demoEnvironment.activeUsers > 0
-                ? `Chưa thể tắt: còn ${demoEnvironment.activeUsers} người hoạt động trong 5 phút gần nhất. Hãy chờ họ kết thúc rồi bấm Làm mới.`
-                : 'Không phát hiện người dùng đang hoạt động. Hệ thống sẽ kiểm tra lại một lần nữa trước khi tắt.'}
-            </div>
-            <label className="flex flex-col gap-1.5 font-label-sm text-label-sm text-outline">
-              Nhập chính xác {DEMO_STOP_CONFIRMATION} để xác nhận
-              <input
-                value={demoStopConfirmation}
-                onChange={(event) => setDemoStopConfirmation(event.target.value)}
-                autoComplete="off"
-                className={inputClass}
-              />
-            </label>
-            <div className="flex flex-wrap justify-end gap-2">
-              <button type="button" className={btnGhost} disabled={saving} onClick={loadDemoEnvironment}>
-                Làm mới người hoạt động
-              </button>
-              <button
-                type="button"
-                className="rounded-lg bg-error px-4 py-2 font-headline-sm text-on-error disabled:opacity-50"
-                disabled={saving || getDemoStopBlock(demoEnvironment, demoStopConfirmation) !== null}
-                onClick={() => void stopDemoEnvironment()}
-              >
-                {saving ? 'Đang tắt…' : 'Xác nhận tắt demo'}
-              </button>
-            </div>
-          </div>
-        </AdminModal>
-      )}
-
-      {demoAccountToDelete && (
-        <AdminModal
-          title={demoAccountToDelete === 'ALL' ? 'Xóa toàn bộ bộ demo' : 'Xóa tài khoản demo'}
-          subtitle={demoAccountToDelete === 'ALL' ? 'Đúng 10 tài khoản và dữ liệu phát sinh' : demoAccountToDelete.email}
-          icon="delete_forever"
-          onClose={() => {
-            setDemoAccountToDelete(null)
-            setDemoReason('')
-          }}
-        >
-          <div className="flex flex-col gap-4">
-            <p className="font-body-sm text-body-sm text-on-surface-variant">
-              Thao tác chỉ xóa danh tính đã đăng ký trong bộ demo, thu hồi phiên và dữ liệu phát sinh. Admin thật và nội dung Củ Chi nền được giữ nguyên.
-            </p>
-            <label className="flex flex-col gap-1.5 font-label-sm text-label-sm text-outline">
-              Lý do (tối thiểu 10 ký tự)
-              <textarea
-                value={demoReason}
-                onChange={(event) => setDemoReason(event.target.value)}
-                rows={3}
-                className={inputClass}
-              />
-            </label>
-            <div className="flex justify-end gap-2">
-              <button type="button" className={btnGhost} disabled={saving} onClick={() => setDemoAccountToDelete(null)}>
-                Hủy
-              </button>
-              <button
-                type="button"
-                className="rounded-lg bg-error px-4 py-2 font-headline-sm text-on-error disabled:opacity-50"
-                disabled={saving || demoReason.trim().length < 10}
-                onClick={() => void purgeDemoDataset()}
-              >
-                {saving ? 'Đang xóa…' : 'Xác nhận xóa dữ liệu demo'}
-              </button>
-            </div>
-          </div>
-        </AdminModal>
-      )}
     </section>
   )
 }

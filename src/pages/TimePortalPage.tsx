@@ -1,3 +1,4 @@
+import { noteFeedbackActivity } from '../features/feedback/activity'
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { Navigate, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
@@ -84,6 +85,7 @@ export function TimePortalPage() {
   const recordViewed = useCallback(
     (recordKey: string) => {
       if (!isAuthenticated || !locationId || recordedKeys.current.has(recordKey)) return
+      noteFeedbackActivity('time_portal', /^era:(1948|1968|1975)$/.test(recordKey))
       recordedKeys.current.add(recordKey)
       void recordDiscoveryEngagement({
         recordKey,

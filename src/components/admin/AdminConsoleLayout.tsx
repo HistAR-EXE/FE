@@ -68,6 +68,7 @@ export function AdminConsoleLayout() {
   const navigate = useNavigate()
   const avatarSrc = useUserAvatar()
   const searchShortcut = /Mac|iPhone|iPad/.test(window.navigator.userAgent) ? '⌘ K' : 'Ctrl K'
+  const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [cmdOpen, setCmdOpen] = useState(false)
   const [quickOpen, setQuickOpen] = useState(false)
@@ -183,22 +184,15 @@ export function AdminConsoleLayout() {
   const navigation = (
     <nav aria-label="Điều hướng Admin Console" className="space-y-space-md">
       {groups.map((group) => {
-        const accent = 'accent' in group && group.accent && isCustomerRevenue
         return (
-          <section
-            key={group.label}
-            className={accent ? 'space-y-space-xs rounded-xl border border-outline-variant bg-surface-container-low/70 p-1.5' : 'space-y-space-xs'}
-          >
-            <p className={`px-space-md py-1 font-label-sm text-label-sm tracking-wide ${accent ? 'font-semibold text-primary' : 'text-outline'}`}>
-              {group.label}
-              {accent && <span className="ml-2 inline-block h-1.5 w-1.5 rounded-full bg-primary" />}
-            </p>
+          <section key={group.label}>
+            <p className="admin-nav-heading">{group.label}</p>
             <div className="space-y-0.5">
               {group.links.map(([label, to, icon]) => {
                 const active = pathname === to || (to !== '/admin' && pathname.startsWith(`${to}/`))
                 return (
                   <Link
-                    key={to}
+                    title={label} aria-label={label} key={to}
                     to={to}
                     onClick={closeDrawer}
                     aria-current={active ? 'page' : undefined}
@@ -208,8 +202,8 @@ export function AdminConsoleLayout() {
                         : 'text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface'
                     }`}
                   >
-                    <MaterialIcon name={icon} className="text-[18px]" />
-                    <span className="flex-1 font-body-md">{label}</span>
+                    <MaterialIcon name={icon} filled={active} className="admin-nav-icon text-xl" />
+                    <span className="admin-nav-label flex-1 text-sm">{label}</span>
                     {to === '/admin/trash' && trashCount !== null && (
                       <span aria-label={`${trashCount} mục trong thùng rác`} className="rounded-full bg-surface-container-highest px-2 py-0.5 font-code-sm text-code-sm tabular-nums text-on-surface-variant">
                         {trashCount}
@@ -228,31 +222,22 @@ export function AdminConsoleLayout() {
   return (
     <div
       className="admin-console min-h-screen max-w-[100vw] overflow-x-clip bg-surface font-body-md text-on-surface antialiased selection:bg-primary-container selection:text-on-primary-container"
+      data-nav-collapsed={collapsed}
       style={{ '--admin-header-height': expiry.expiringSoon ? '7rem' : '3.5rem' } as CSSProperties}
     >
       <aside className="admin-sidebar fixed left-0 top-0 z-50 hidden h-full w-64 flex-col border-r border-outline-variant bg-surface-container-lowest md:flex">
-        <div className="flex h-14 items-center justify-between border-b border-outline-variant bg-surface-container-low px-space-lg">
-          <Link to="/admin" aria-label="Admin Console" className="flex items-center gap-space-sm">
-            <img src="/brand/icon-192.png" alt="" className="h-8 w-8 rounded-lg object-contain" />
-            <div className="flex flex-col leading-none">
-              <span className="font-headline-sm text-headline-sm tracking-tight text-on-surface">TimeLens</span>
-              <span className="mt-0.5 font-code-sm text-code-sm tracking-widest text-primary">ADMIN</span>
-            </div>
-          </Link>
-        </div>
-        <div className="flex-1 overflow-y-auto px-space-sm py-space-md">{navigation}</div>
-        <div className="border-t border-outline-variant bg-surface-container-low p-space-md">
-          <div className="flex items-center gap-space-sm rounded-lg bg-surface-container-high px-space-md py-space-sm">
-            <span className="h-2 w-2 rounded-full bg-primary" />
-            <div className="min-w-0 flex-col">
-              <p className="truncate font-label-sm text-label-sm font-semibold text-on-surface">Hệ thống sẵn sàng</p>
-              <p className="truncate font-code-sm text-code-sm text-outline">Quản trị TimeLens</p>
-            </div>
-          </div>
-        </div>
+        <button type="button" className="admin-nav-toggle" aria-label={collapsed ? 'Mở rộng thanh điều hướng' : 'Thu gọn thanh điều hướng'} aria-expanded={!collapsed} onClick={() => setCollapsed(!collapsed)}>
+          <MaterialIcon name={collapsed ? 'chevron_right' : 'chevron_left'} />
+        </button>
+        <Link to="/admin" className="admin-nav-brand" aria-label="TimeLens – Bàn điều hành">
+          <img src="/brand/icon-192.png" alt="" />
+          <span><strong>TimeLens</strong><small>Quản trị hệ thống</small></span>
+        </Link>
+        <div className="admin-nav-scroll flex-1 min-h-0 overflow-y-auto">{navigation}</div>
+        <footer className="admin-sidebar-footer"><AdminAccountMenu avatarSrc={avatarSrc} /></footer>
       </aside>
 
-      <div ref={shellRef} className="min-w-0 md:pl-64">
+      <div ref={shellRef} className="admin-workspace min-w-0 md:pl-64">
         <header className="fixed left-0 right-0 top-0 z-40 flex h-14 min-w-0 items-center justify-between gap-space-sm border-b border-outline-variant bg-surface-container-lowest/80 px-3 shadow-[0_2px_10px_rgba(15,27,51,0.04)] backdrop-blur-xl sm:px-gutter-desktop md:left-64 md:gap-space-md">
           <div className={`flex min-w-0 flex-1 items-center gap-space-sm md:gap-space-lg ${isCustomerRevenue ? 'max-w-2xl' : 'max-w-xl'}`}>
             <button
@@ -316,9 +301,7 @@ export function AdminConsoleLayout() {
             >
               <MaterialIcon name="home" className="text-[20px]" />
             </Link>
-            <div className="flex items-center gap-2.5 pl-1">
-              <AdminAccountMenu avatarSrc={avatarSrc} />
-            </div>
+
           </div>
         </header>
 
@@ -338,12 +321,13 @@ export function AdminConsoleLayout() {
           <button type="button" aria-label="Đóng menu quản trị" className="absolute inset-0 w-full bg-black/70" onClick={closeDrawer} />
           <aside ref={drawerRef} className="admin-sidebar relative flex h-full w-72 flex-col border-r border-outline-variant bg-surface-container-lowest px-3 py-4 shadow-2xl">
             <div className="mb-6 flex items-center justify-between px-2">
-              <span className="font-headline-sm font-semibold tracking-tight text-on-surface">TimeLens Admin</span>
+              <Link to="/admin" onClick={closeDrawer} className="admin-nav-brand"><img src="/brand/icon-192.png" alt="" /><span><strong>TimeLens</strong><small>Quản trị hệ thống</small></span></Link>
               <button type="button" onClick={closeDrawer} aria-label="Đóng menu" className="rounded p-2 text-on-surface-variant">
                 <MaterialIcon name="close" />
               </button>
             </div>
-            {navigation}
+            <div className="min-h-0 flex-1 overflow-y-auto">{navigation}</div>
+        <footer className="admin-sidebar-footer"><AdminAccountMenu avatarSrc={avatarSrc} /></footer>
           </aside>
         </div>
       )}

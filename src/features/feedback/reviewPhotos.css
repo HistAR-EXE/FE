@@ -1,0 +1,7 @@
+.review-photos { display:flex; flex-wrap:wrap; gap:.45rem; margin:.7rem 0; }
+.review-photos > div { position:relative; }
+.review-photos > div img { width:56px; height:56px; border-radius:8px; object-fit:cover; }
+.review-photo-remove { position:absolute; top:-4px; right:-3px; background:white; border:1px solid #aaa; border-radius:50%; width:24px; height:24px; }
+.review-photos dialog { margin:auto; max-width:92vw; max-height:90vh; padding:1rem; background:white; color:#20324b; border-radius:12px; }
+.review-photos dialog img { display:block; max-height:75vh; max-width:85vw; object-fit:contain; }
+.review-photos dialog::backdrop { background:#142030aa; }

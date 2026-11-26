@@ -283,10 +283,9 @@ export function AdminTrashPage() {
   const hasActiveFilters = Boolean(state.q || state.type)
 
   return (
-    <section className="admin-page flex w-full flex-col space-y-space-lg pb-16" aria-busy={loading || busy}>
+    <section className="ops-paper-page ops-work-page admin-page flex w-full flex-col pb-16" aria-busy={loading || busy}>
       <AdminPageHeader
-        eyebrow="/admin/trash · Lưu trữ xóa mềm 30 ngày"
-        title="Thùng rác hệ thống & Khôi phục dữ liệu"
+        title={<>Thùng <span className="ops-title-accent">rác</span></>}
         description="Quản lý điểm khám phá, nhiệm vụ và hiện vật đã xóa mềm. Có thể khôi phục, xóa vĩnh viễn từng mục / hàng loạt, hoặc dọn sạch thùng rác."
         actions={
           <button

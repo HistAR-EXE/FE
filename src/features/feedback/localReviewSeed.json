@@ -1,0 +1,122 @@
+[
+  {
+    "rating": 5,
+    "topics": "tour",
+    "comment": "Đứng giữa cảnh 360°, mình mới hình dung được lối đi trong địa đạo hẹp đến mức nào.",
+    "tier": "FREE"
+  },
+  {
+    "rating": 2,
+    "topics": "performance",
+    "comment": "Trên điện thoại của mình, cảnh đầu tải khá lâu. Mình tưởng đã bấm nhầm nên quay ra hai lần.",
+    "tier": "PREMIUM"
+  },
+  {
+    "rating": 4,
+    "topics": "history",
+    "comment": "Mình thích đọc chuyện về bếp Hoàng Cầm. Nếu có thêm hình nhìn từ bên trên thì dễ hình dung hơn.",
+    "tier": "FREE"
+  },
+  {
+    "rating": 3,
+    "topics": "navigation",
+    "comment": "Mình tìm được giếng nước nhưng lúc quay lại bản đồ thì phải dò lại vị trí vừa xem.",
+    "tier": "FREE"
+  },
+  {
+    "rating": 1,
+    "topics": "technical",
+    "comment": "Mình thử mở cảnh hai lần trên máy cũ, cả hai lần đều chỉ thấy màn hình trắng.",
+    "tier": "FREE"
+  },
+  {
+    "rating": 5,
+    "topics": "content",
+    "comment": "Phần kể chuyện ở bếp làm mình nhớ nhất. Chi tiết nấu cơm mà phải giấu khói rất dễ hiểu.",
+    "tier": "FREE"
+  },
+  {
+    "rating": 4,
+    "topics": "ai",
+    "comment": "Đọc xong mình hỏi trợ lý thêm một câu về địa đạo. Câu trả lời ngắn nên khá dễ theo.",
+    "tier": "FREE"
+  },
+  {
+    "rating": 2,
+    "topics": "access",
+    "comment": "Mình đã mua gói nhưng loay hoay một lúc mới biết phải vào đâu để kiểm tra.",
+    "tier": "PREMIUM"
+  },
+  {
+    "rating": 5,
+    "topics": "explore",
+    "comment": "Mình mở bản đồ cho ba xem cùng. Hai ba con dừng khá lâu ở khu sinh hoạt dưới lòng đất.",
+    "tier": "FREE"
+  },
+  {
+    "rating": 3,
+    "topics": "tour",
+    "comment": "Cảnh nhìn rõ trên máy tính. Khi xoay trên điện thoại, mình muốn có cách trở về hướng ban đầu.",
+    "tier": "FREE"
+  },
+  {
+    "rating": 4,
+    "topics": "quests",
+    "comment": "Các nhiệm vụ giúp mình biết nên khám phá gì tiếp theo, nhất là ở lần đầu vào tour.",
+    "tier": "FREE"
+  },
+  {
+    "rating": 1,
+    "topics": "navigation",
+    "comment": "Mình bị lạc giữa các cảnh và cuối cùng thoát ra trước khi tìm thấy chỗ muốn xem.",
+    "tier": "FREE"
+  },
+  {
+    "rating": 5,
+    "topics": "history",
+    "comment": "Mình nhớ được vị trí của bếp và giếng nhờ tự đi qua từng khu. Cách học này hợp với mình.",
+    "tier": "FREE"
+  },
+  {
+    "rating": 2,
+    "topics": "content",
+    "comment": "Một số chữ trên điện thoại hơi nhỏ. Mình phải đưa màn hình lại gần mới đọc được.",
+    "tier": "PREMIUM"
+  },
+  {
+    "rating": 4,
+    "topics": "tour",
+    "comment": "Mẹ mình lần đầu xem tour ảo mà vẫn tự xoay được cảnh. Nút đổi điểm nhìn có thể rõ hơn.",
+    "tier": "FREE"
+  },
+  {
+    "rating": 3,
+    "topics": "pricing",
+    "comment": "Mình muốn xem cụ thể gói Premium mở thêm những trải nghiệm nào trước khi quyết định mua.",
+    "tier": "PREMIUM"
+  },
+  {
+    "rating": 5,
+    "topics": "ar",
+    "comment": "Được xoay hiện vật để xem mặt sau là phần mình thích nhất trong buổi trải nghiệm.",
+    "tier": "FREE"
+  },
+  {
+    "rating": 4,
+    "topics": "content",
+    "comment": "Mỗi đoạn thuyết minh vừa đủ ngắn để mình đọc trên xe buýt. Mình muốn lưu lại đoạn yêu thích.",
+    "tier": "FREE"
+  },
+  {
+    "rating": 2,
+    "topics": "registration",
+    "comment": "Sau khi đăng nhập, mình phải tự tìm lại trải nghiệm đang xem dở. Khá mất hứng.",
+    "tier": "PREMIUM"
+  },
+  {
+    "rating": 5,
+    "topics": "explore",
+    "comment": "Mình đã quay lại xem căn bếp lần thứ hai vì lần đầu mải nhìn xung quanh mà bỏ sót chi tiết.",
+    "tier": "FREE"
+  }
+]

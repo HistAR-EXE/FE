@@ -5,6 +5,7 @@ import { MaterialIcon } from '../ui/MaterialIcon'
 import { images } from '../../assets/images'
 import { useAppMode } from '../../shared/context/useAppMode'
 import { modeBadgeLabel } from '../../shared/context/appModeUtils'
+import { SideNavAccount } from './SideNavAccount'
 import { OfflineSyncBadge } from './OfflineSyncBadge'
 import { AppSettingsBar } from './AppSettingsBar'
 import { useAuth } from '../../shared/auth/useAuth'
@@ -212,7 +213,10 @@ export function TopNavCompact({ backTo, title }: { backTo?: string; title?: stri
                     <span className="font-black text-base text-white truncate">{title ?? 'TimeLens'}</span>
                 </Link>
             )}
-            <ModeBadge />
+            <div className="flex shrink-0 items-center gap-2">
+                <SideNavAccount placement="header" />
+                <ModeBadge />
+            </div>
         </header>
     )
 }

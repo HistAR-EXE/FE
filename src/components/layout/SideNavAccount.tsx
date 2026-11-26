@@ -1,5 +1,6 @@
 // src/components/layout/SideNavAccount.tsx
 import { useEffect, useId, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../shared/auth/useAuth'
 import { useUserAvatar } from '../../shared/auth/useUserAvatar'
@@ -11,15 +12,23 @@ const PERSONAL_LINKS = [
     { to: '/settings', icon: 'settings', label: 'Cài đặt' },
     { to: '/pricing', icon: 'workspace_premium', label: 'Gói dịch vụ' },
     { to: '/settings/billing', icon: 'receipt_long', label: 'Lịch sử thanh toán' },
+    { to: '/feedback', icon: 'rate_review', label: 'Gửi góp ý' },
 ]
 
-export function SideNavAccount({ compact = false }: { compact?: boolean }) {
+export function SideNavAccount({
+    compact = false,
+    placement = 'sidebar',
+}: {
+    compact?: boolean
+    placement?: 'sidebar' | 'header'
+}) {
     const { user, isAuthenticated, logout } = useAuth()
     const avatar = useUserAvatar()
     const { pathname } = useLocation()
     const navigate = useNavigate()
     const [open, setOpen] = useState(false)
     const rootRef = useRef<HTMLDivElement>(null)
+    const panelRef = useRef<HTMLDivElement>(null)
     const triggerRef = useRef<HTMLButtonElement>(null)
     const panelId = useId()
     const accountActive = PERSONAL_LINKS.some(
@@ -28,8 +37,11 @@ export function SideNavAccount({ compact = false }: { compact?: boolean }) {
 
     useEffect(() => {
         if (!open) return
+        const inside = (target: EventTarget | null) =>
+            rootRef.current?.contains(target as Node) ||
+            panelRef.current?.contains(target as Node)
         const outside = (event: PointerEvent) => {
-            if (!rootRef.current?.contains(event.target as Node)) setOpen(false)
+            if (!inside(event.target)) setOpen(false)
         }
         const escape = (event: KeyboardEvent) => {
             if (event.key === 'Escape') {
@@ -37,19 +49,21 @@ export function SideNavAccount({ compact = false }: { compact?: boolean }) {
                 triggerRef.current?.focus()
             }
         }
-        const resize = () => setOpen(false)
-        rootRef.current?.querySelector<HTMLAnchorElement>('nav a')?.focus()
+        if (placement !== 'header') {
+            rootRef.current?.querySelector<HTMLAnchorElement>('nav a')?.focus()
+        }
         document.addEventListener('pointerdown', outside)
         document.addEventListener('keydown', escape)
-        window.addEventListener('resize', resize)
         return () => {
             document.removeEventListener('pointerdown', outside)
             document.removeEventListener('keydown', escape)
-            window.removeEventListener('resize', resize)
         }
-    }, [open])
+    }, [open, placement])
+
+    const header = placement === 'header'
 
     if (!isAuthenticated || !user) {
+        if (header) return null
         return (
             <Link
                 to="/login"
@@ -82,13 +96,78 @@ export function SideNavAccount({ compact = false }: { compact?: boolean }) {
                     ? 'Thành viên tổ chức'
                     : 'Miễn phí'
 
+    const accountPanel = (
+        <div
+            ref={panelRef}
+            id={panelId}
+            className={
+                header
+                    ? 'fixed top-[3.75rem] right-3 z-[80] w-[min(20rem,calc(100vw-1.5rem))] overflow-hidden rounded-3xl border-2 border-[#0275FB]/20 bg-white p-2.5 shadow-[0_20px_55px_rgba(15,27,51,0.22)]'
+                    : `absolute z-[70] w-96 max-w-[calc(100vw-6rem)] overflow-hidden rounded-3xl border-2 border-[#0275FB]/20 bg-white p-2.5 shadow-[0_20px_55px_rgba(15,27,51,0.22)] ${
+                          compact ? 'bottom-0 left-full ml-4' : 'bottom-full left-0 mb-3'
+                      }`
+            }
+        >
+            <div className="flex items-start justify-between gap-3 rounded-2xl border-b-2 border-[#FDC908] bg-gradient-to-r from-[#0353B8] via-[#0275FB] to-[#014296] px-4 py-3 text-white">
+                <div className="min-w-0">
+                    <p className="truncate text-sm font-black text-white" title={user.displayName}>
+                        {user.displayName}
+                    </p>
+                    <p className="mt-0.5 truncate text-xs font-medium text-blue-100" title={user.email}>
+                        {user.email}
+                    </p>
+                </div>
+                <span className="shrink-0 rounded-full border border-white/60 bg-gradient-to-r from-[#FFF2C3] to-[#FDC908] px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-[#0F1B33] shadow-2xs">
+                    {membership}
+                </span>
+            </div>
+            <nav aria-label="Liên kết tài khoản" className="grid grid-cols-1 gap-1.5 py-2.5">
+                {links.map((link) => (
+                    <NavLink
+                        key={link.to}
+                        to={link.to}
+                        end
+                        onClick={() => setOpen(false)}
+                        className={({ isActive }) =>
+                            `flex min-h-11 items-center gap-2.5 rounded-xl border-l-[3px] px-2.5 py-2 text-xs font-extrabold transition-all focus-visible:outline-2 focus-visible:outline-[#0275FB] ${
+                                isActive
+                                    ? 'border-[#FDC908] bg-gradient-to-r from-[#FFF2C3]/80 to-[#F2F7FF] text-[#0275FB] shadow-2xs'
+                                    : 'border-transparent bg-[#F8FBFF] text-[#0F1B33] hover:bg-[#EAF3FF] hover:text-[#0275FB]'
+                            }`
+                        }
+                    >
+                        <MaterialIcon name={link.icon} className="shrink-0 text-lg text-[#0275FB]" />
+                        <span className="min-w-0 leading-4">{link.label}</span>
+                    </NavLink>
+                ))}
+            </nav>
+            <div className="border-t border-slate-100 pt-1.5">
+                <button
+                    type="button"
+                    onClick={() => {
+                        setOpen(false)
+                        logout()
+                        navigate('/login')
+                    }}
+                    className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-xs font-black text-red-600 transition-colors hover:bg-red-50 cursor-pointer focus-visible:outline-2 focus-visible:outline-red-500"
+                >
+                    <MaterialIcon name="logout" className="text-lg" />
+                    <span>Đăng xuất</span>
+                </button>
+            </div>
+        </div>
+    )
+
     return (
         <div
             ref={rootRef}
-            className="relative w-full font-sans"
+            className={header ? 'relative shrink-0 font-sans' : 'relative w-full font-sans'}
             onBlurCapture={(event) => {
-                if (!event.currentTarget.contains(event.relatedTarget as Node | null))
-                    setOpen(false)
+                if (header) return
+                const next = event.relatedTarget as Node | null
+                if (!next) return
+                if (rootRef.current?.contains(next) || panelRef.current?.contains(next)) return
+                setOpen(false)
             }}
         >
             <button
@@ -97,15 +176,21 @@ export function SideNavAccount({ compact = false }: { compact?: boolean }) {
                 aria-label="Mở tài khoản cá nhân"
                 aria-expanded={open}
                 aria-controls={panelId}
-                title={compact ? `${user.displayName} · ${membership}` : undefined}
+                title={compact || header ? `${user.displayName} · ${membership}` : undefined}
                 onClick={() => setOpen((value) => !value)}
-                className={`flex w-full items-center gap-2.5 rounded-2xl border-l-[3px] py-2 text-left transition-all cursor-pointer focus-visible:outline-2 focus-visible:outline-[#0275FB] ${
-                    compact ? 'justify-center px-0' : 'px-2.5'
-                } ${
-                    open || accountActive
-                        ? 'border-[#FDC908] bg-gradient-to-r from-[#FFF2C3] via-[#FFFBEB] to-transparent shadow-2xs'
-                        : 'border-transparent hover:bg-[#EAF3FF]'
-                }`}
+                className={
+                    header
+                        ? `flex h-10 w-10 items-center justify-center rounded-full cursor-pointer focus-visible:outline-2 focus-visible:outline-[#FDC908] ${
+                              open ? 'ring-2 ring-[#FDC908]' : ''
+                          }`
+                        : `flex w-full items-center gap-2.5 rounded-2xl border-l-[3px] py-2 text-left transition-all cursor-pointer focus-visible:outline-2 focus-visible:outline-[#0275FB] ${
+                              compact ? 'justify-center px-0' : 'px-2.5'
+                          } ${
+                              open || accountActive
+                                  ? 'border-[#FDC908] bg-gradient-to-r from-[#FFF2C3] via-[#FFFBEB] to-transparent shadow-2xs'
+                                  : 'border-transparent hover:bg-[#EAF3FF]'
+                          }`
+                }
             >
         <span className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-[#FDC908] bg-gradient-to-br from-[#0353B8] to-[#0275FB] font-black text-white shadow-xs">
           {user.displayName.trim().slice(0, 1).toUpperCase() || 'T'}
@@ -118,7 +203,7 @@ export function SideNavAccount({ compact = false }: { compact?: boolean }) {
                 }}
             />
         </span>
-                {!compact && (
+                {!compact && !header && (
                     <>
             <span className="min-w-0 flex-1">
               <span className="block truncate text-sm font-black text-[#0F1B33]">
@@ -136,79 +221,7 @@ export function SideNavAccount({ compact = false }: { compact?: boolean }) {
                 )}
             </button>
 
-            {open && (
-                <div
-                    id={panelId}
-                    className={`absolute z-[70] w-96 max-w-[calc(100vw-6rem)] overflow-hidden rounded-3xl border-2 border-[#0275FB]/20 bg-white p-2.5 shadow-[0_20px_55px_rgba(15,27,51,0.22)] ${
-                        compact ? 'bottom-0 left-full ml-4' : 'bottom-full left-0 mb-3'
-                    }`}
-                >
-                    {/* Header thẻ tài khoản */}
-                    <div className="flex items-start justify-between gap-3 rounded-2xl border-b-2 border-[#FDC908] bg-gradient-to-r from-[#0353B8] via-[#0275FB] to-[#014296] px-4 py-3 text-white">
-                        <div className="min-w-0">
-                            <p
-                                className="truncate text-sm font-black text-white"
-                                title={user.displayName}
-                            >
-                                {user.displayName}
-                            </p>
-                            <p
-                                className="mt-0.5 truncate text-xs font-medium text-blue-100"
-                                title={user.email}
-                            >
-                                {user.email}
-                            </p>
-                        </div>
-                        <span className="shrink-0 rounded-full border border-white/60 bg-gradient-to-r from-[#FFF2C3] to-[#FDC908] px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-[#0F1B33] shadow-2xs">
-              {membership}
-            </span>
-                    </div>
-
-                    {/* Danh sách điều hướng tài khoản */}
-                    <nav
-                        aria-label="Liên kết tài khoản"
-                        className="grid grid-cols-1 gap-1.5 py-2.5"
-                    >
-                        {links.map((link) => (
-                            <NavLink
-                                key={link.to}
-                                to={link.to}
-                                end
-                                onClick={() => setOpen(false)}
-                                className={({ isActive }) =>
-                                    `flex min-h-11 items-center gap-2.5 rounded-xl border-l-[3px] px-2.5 py-2 text-xs font-extrabold transition-all focus-visible:outline-2 focus-visible:outline-[#0275FB] ${
-                                        isActive
-                                            ? 'border-[#FDC908] bg-gradient-to-r from-[#FFF2C3]/80 to-[#F2F7FF] text-[#0275FB] shadow-2xs'
-                                            : 'border-transparent bg-[#F8FBFF] text-[#0F1B33] hover:bg-[#EAF3FF] hover:text-[#0275FB]'
-                                    }`
-                                }
-                            >
-                                <MaterialIcon
-                                    name={link.icon}
-                                    className="shrink-0 text-lg text-[#0275FB]"
-                                />
-                                <span className="min-w-0 leading-4">{link.label}</span>
-                            </NavLink>
-                        ))}
-                    </nav>
-
-                    {/* Nút Đăng xuất */}
-                    <div className="border-t border-slate-100 pt-1.5">
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setOpen(false)
-                                logout()
-                                navigate('/login')
-                            }}
-                            className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-xs font-black text-red-600 transition-colors hover:bg-red-50 cursor-pointer focus-visible:outline-2 focus-visible:outline-red-500"
-                        >
-                            <MaterialIcon name="logout" className="text-lg" />
-                            <span>Đăng xuất</span>
-                        </button>
-                    </div>
-                </div>
-            )}
+            {open && (header ? createPortal(accountPanel, document.body) : accountPanel)}
         </div>
     )
 }

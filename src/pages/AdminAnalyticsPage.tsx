@@ -1,5 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { AdminPagination } from '../components/admin/AdminPagination'
+import { CU_CHI_LOCATION_ID } from '../shared/config/constants'
+import '../styles/admin-analytics.css'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { AdminEmptyState, AdminErrorState, AdminLoading } from '../components/admin/AdminAsyncState'
 import { MaterialIcon } from '../components/ui/MaterialIcon'
 import {
@@ -14,6 +17,7 @@ import { formatSuppressedMetric } from '../features/admin/state'
 import { getFriendlyErrorMessage } from '../shared/api/errorMessages'
 import { useToast } from '../shared/ui/toast/useToast'
 
+const POINTS_PER_PAGE = 5
 const RANGE_OPTIONS = [
   { id: '7d', label: '7 ngày' },
   { id: '30d', label: '30 ngày' },
@@ -34,7 +38,7 @@ const formatPct = (value: number | null | undefined) =>
   typeof value === 'number' && Number.isFinite(value) ? `${value.toLocaleString('vi-VN', { maximumFractionDigits: 1 })}%` : '—'
 
 const privacyCopy = (suppressed?: boolean) =>
-  suppressed ? 'Ẩn để bảo vệ riêng tư (dưới ngưỡng mẫu tối thiểu).' : null
+  suppressed ? 'Chưa đủ mẫu để công bố.' : null
 
 function sparkPath(values: number[]) {
   if (values.length < 2) return 'M0 18 L100 18'
@@ -57,18 +61,6 @@ function dwellLabel(avgDwellMs: number | null | undefined) {
   return `${minutes.toLocaleString('vi-VN', { maximumFractionDigits: 1 })} phút`
 }
 
-function attractionMeta(ratePct: number | null | undefined, hotspot?: boolean | null) {
-  if (hotspot) {
-    return { label: 'Cần chú ý', className: 'bg-error/15 text-error' }
-  }
-  if (typeof ratePct !== 'number') {
-    return { label: 'Ẩn', className: 'bg-surface-container-highest text-on-surface-variant' }
-  }
-  if (ratePct >= 70) return { label: 'Rất cao', className: 'bg-primary-container/20 text-primary' }
-  if (ratePct >= 40) return { label: 'Giữ chân sâu', className: 'bg-secondary/15 text-secondary' }
-  return { label: 'Ổn định', className: 'bg-surface-container-highest text-on-surface-variant' }
-}
-
 function exportAnalyticsCsv(overview: AdminAnalyticsOverview, locationName: string, range: string) {
   const lines = [
     ['section', 'key', 'value'],
@@ -84,9 +76,9 @@ function exportAnalyticsCsv(overview: AdminAnalyticsOverview, locationName: stri
       String(item.completed ?? ''),
     ]),
     ...overview.journeyDropOff.map((item) => [
-      'dropOff',
+      'poiDistinctVisitors',
       item.poiName,
-      String(item.dropOffPct ?? ''),
+      String(item.sessionCount ?? ''),
     ]),
     ...overview.poiUnlockRates.map((item) => [
       'poiUnlock',
@@ -135,16 +127,22 @@ export function AdminAnalyticsPage() {
       .list({ size: 100 })
       .then((items) => {
         setLocations(items)
-        if (!locationId && items[0]) update('locationId', items[0].id)
+        if (!locationId && items.length) {
+          const preferred = items.find((item) => item.id === CU_CHI_LOCATION_ID) ?? items[0]
+          update('locationId', preferred.id)
+        }
       })
       .catch(() => setLocations([]))
   }, [])
 
+  const requestVersion = useRef(0)
   const load = useCallback(async () => {
+    const version = ++requestVersion.current
     if (!locationId) {
       setBootLoading(false)
       return
     }
+    setBootLoading(true)
     setRefreshing(true)
     setOverviewError(null)
     setActivityError(null)
@@ -155,6 +153,7 @@ export function AdminAnalyticsPage() {
       adminApi.analyticsActivitySeries(locationId, range, 'DAY'),
       adminApi.analyticsActivityHeatmap(locationId, range),
     ])
+    if (version !== requestVersion.current) return
     if (overviewResult.status === 'fulfilled') setOverview(overviewResult.value)
     else {
       setOverview(null)
@@ -172,33 +171,18 @@ export function AdminAnalyticsPage() {
       setHeatmap(null)
       setHeatmapError(getFriendlyErrorMessage(heatmapResult.reason, 'quest'))
     }
-    setSyncedAt(new Date().toLocaleTimeString('vi-VN'))
+    setSyncedAt(overviewResult.status === 'fulfilled' ? new Date().toLocaleTimeString('vi-VN') : null)
     setBootLoading(false)
     setRefreshing(false)
   }, [locationId, range])
 
   useEffect(() => {
     void load()
+    return () => { requestVersion.current++ }
   }, [load])
 
   const selectedLocation = locations.find((item) => item.id === locationId)
   const locationName = selectedLocation?.name ?? 'Địa điểm'
-
-  const journeyCompletionPct = useMemo(() => {
-    const rates = (overview?.questFunnel ?? [])
-      .map((item) => item.completionRatePct)
-      .filter((value): value is number => typeof value === 'number')
-    if (!rates.length) return null
-    return rates.reduce((sum, value) => sum + value, 0) / rates.length
-  }, [overview?.questFunnel])
-
-  const funnelBase = useMemo(() => {
-    const rows = overview?.questFunnel ?? []
-    const started = rows
-      .map((item) => item.started)
-      .filter((value): value is number => typeof value === 'number')
-    return started.length ? Math.max(...started) : 0
-  }, [overview?.questFunnel])
 
   const sparkValues = useMemo(
     () =>
@@ -220,31 +204,26 @@ export function AdminAnalyticsPage() {
     return { days, slots, byKey }
   }, [heatmap])
 
-  const topPois = useMemo(() => {
-    const heatByKey = new Map((overview?.poiHeatmap ?? []).map((item) => [item.unlockKey, item]))
+  const points = useMemo(() => {
+    const visits = new Map(overview?.journeyDropOff.map(point => [point.unlockKey, point]))
+    const dwell = new Map(overview?.poiHeatmap.map(point => [point.unlockKey, point.avgDwellMs]))
     return [...(overview?.poiUnlockRates ?? [])]
-      .sort((a, b) => (b.unlockCount ?? 0) - (a.unlockCount ?? 0))
-      .slice(0, 6)
-      .map((item) => {
-        const heat = heatByKey.get(item.unlockKey)
-        return {
-          ...item,
-          visitCount: heat?.visitCount ?? null,
-          avgDwellMs: heat?.avgDwellMs ?? null,
-          dropOffHotspot: heat?.dropOffHotspot ?? false,
-        }
-      })
-  }, [overview?.poiHeatmap, overview?.poiUnlockRates])
-
-  const dropRows = useMemo(
-    () =>
-      [...(overview?.journeyDropOff ?? [])]
-        .filter((item) => !item.suppressed)
-        .sort((a, b) => (b.dropOffPct ?? 0) - (a.dropOffPct ?? 0))
-        .slice(0, 4),
-    [overview?.journeyDropOff],
-  )
-
+      .sort((a, b) => Number(a.suppressed) - Number(b.suppressed)
+        || (b.unlockCount ?? 0) - (a.unlockCount ?? 0)
+        || a.name.localeCompare(b.name, 'vi'))
+      .map(point => ({ ...point, visits: visits.get(point.unlockKey), dwell: dwell.get(point.unlockKey) }))
+  }, [overview])
+  const hasDwell = points.some(point => point.dwell != null && point.dwell > 0)
+  const quests = overview?.questFunnel ?? []
+  const reportedQuests = quests.filter(quest => !quest.suppressed)
+  const hiddenQuests = quests.filter(quest => quest.suppressed)
+  const [requestedPointPage, setPointPage] = useState(0)
+  useEffect(() => setPointPage(0), [locationId, range])
+  const pointPages = Math.ceil(points.length / POINTS_PER_PAGE)
+  const pointPage = Math.min(requestedPointPage, Math.max(0, pointPages - 1))
+  const firstPoint = pointPage * POINTS_PER_PAGE
+  const visiblePoints = points.slice(firstPoint, firstPoint + POINTS_PER_PAGE)
+  const reportedPoints = points.filter(point => !point.suppressed).length
   const acquisitionRows = useMemo(() => {
     if (!activity || activity.suppressed) return []
     const entries = [
@@ -264,45 +243,21 @@ export function AdminAnalyticsPage() {
   }, [activity])
 
   return (
-    <section className="admin-page flex w-full max-w-7xl flex-col pb-16" aria-busy={bootLoading || refreshing}>
+    <section className="analytics-page ops-paper-page ops-work-page admin-page flex w-full max-w-7xl flex-col pb-16" aria-busy={bootLoading || refreshing}>
       <div className="admin-page-header flex flex-col gap-space-md py-space-lg">
-        <div className="flex flex-wrap items-center justify-between gap-space-sm">
-          <div className="flex items-center gap-2">
-            <span className="font-code-sm text-code-sm uppercase tracking-wider text-outline">QUẢN TRỊ</span>
-            <span className="text-xs text-outline">/</span>
-            <span className="font-code-sm text-code-sm uppercase tracking-wider text-outline">GIÁM SÁT</span>
-            <span className="text-xs text-outline">/</span>
-            <span className="font-label-sm text-label-sm font-semibold uppercase text-primary">
-              PHÂN TÍCH CHUYÊN SÂU
-            </span>
-          </div>
-          <div className="flex items-center gap-2 rounded-full bg-surface-container px-2.5 py-1 text-on-surface-variant">
-            <span className="h-2 w-2 animate-pulse rounded-full bg-primary-container" />
-            <span className="font-code-sm text-code-sm">Đang theo dõi số liệu</span>
-            {syncedAt && (
-              <>
-                <span className="text-xs text-outline">•</span>
-                <span className="font-code-sm text-code-sm text-outline">Đồng bộ lúc: {syncedAt}</span>
-              </>
-            )}
-          </div>
-        </div>
-
+        {syncedAt && <small className="text-on-surface-variant">Cập nhật lúc {syncedAt}</small>}
         <div className="flex flex-col justify-between gap-space-lg xl:flex-row xl:items-end">
           <div className="max-w-3xl space-y-1.5">
-            <h1 className="font-headline-lg text-headline-lg tracking-tight text-on-surface">
-              Phân tích số liệu di tích &amp; Trải nghiệm du khách
-            </h1>
+            <h1 className="font-headline-lg text-headline-lg tracking-tight text-on-surface">Phân tích <span className="ops-title-accent">trải nghiệm</span></h1>
             <p className="font-body-md text-body-md leading-relaxed text-on-surface-variant">
-              Hệ thống theo dõi hoạt động thực tế, phân tích hành trình từ trải nghiệm trực tuyến đến tham quan tại di tích và mức độ hoàn
-              thành nhiệm vụ AR và chất lượng phiên trải nghiệm. Số liệu dưới ngưỡng riêng tư được ẩn thay vì hiện 0.
+              Theo dõi lượt tham quan, tiến độ nhiệm vụ và thời lượng trải nghiệm tại di tích đã chọn.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-space-sm">
             <button
               type="button"
               className={btnGhost}
-              disabled={!overview}
+              disabled={refreshing || !overview}
               onClick={() => {
                 if (!overview) return
                 exportAnalyticsCsv(overview, locationName, range)
@@ -338,11 +293,6 @@ export function AdminAnalyticsPage() {
                 </option>
               ))}
             </select>
-            {locationId && (
-              <span className="hidden px-2 font-code-sm text-code-sm text-outline sm:inline">
-                ID: {locationId.slice(0, 8).toUpperCase()}
-              </span>
-            )}
           </div>
           <div className="flex items-center gap-1 rounded-lg bg-surface-container-low p-1" role="group" aria-label="Khoảng thời gian">
             {RANGE_OPTIONS.map((item) => (
@@ -372,335 +322,79 @@ export function AdminAnalyticsPage() {
       {!bootLoading && locationId && (
         <>
           {/* KPI */}
-          <div className="mt-2 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <article className="relative flex min-h-[148px] flex-col justify-between overflow-hidden rounded-xl bg-surface-container-low p-space-lg shadow-sm transition-all hover:bg-surface-container">
-              <div className="pointer-events-none absolute -bottom-4 -right-4 h-24 w-24 rounded-full bg-primary/5 blur-xl" />
-              <div className="flex items-center justify-between">
-                <span className="font-body-md text-body-md text-on-surface-variant">Tổng du khách kích hoạt AR</span>
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-surface-container text-primary">
-                  <MaterialIcon name="view_in_ar" className="text-[18px]" />
-                </div>
-              </div>
-              <div className="my-3">
-                <div className="font-headline-xl text-headline-xl font-bold tracking-tight text-on-surface">
-                  {overview?.activitySuppressed
-                    ? 'Ẩn'
-                    : formatCount(overview?.activeUsers)}
-                </div>
-                <p className="mt-1 font-code-sm text-code-sm text-outline">
-                  {overview?.activitySuppressed
-                    ? privacyCopy(true)
-                    : `${formatCount(overview?.eventCount)} sự kiện · ${range}`}
-                </p>
-              </div>
-              <div className="h-8 w-full pt-1">
-                <svg className="h-full w-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 100 24">
-                  <path
-                    d={sparkPath(sparkValues.length ? sparkValues : [0, 0])}
-                    fill="none"
-                    stroke="currentColor"
-                    strokeLinecap="round"
-                    strokeWidth="2"
-                    className="text-primary"
-                  />
-                </svg>
-              </div>
-            </article>
-
-            <article className="flex min-h-[148px] flex-col justify-between rounded-xl bg-surface-container-low p-space-lg shadow-sm transition-all hover:bg-surface-container">
-              <div className="flex items-center justify-between">
-                <span className="font-body-md text-body-md text-on-surface-variant">Tỷ lệ hoàn tất hành trình</span>
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-surface-container text-secondary">
-                  <MaterialIcon name="verified" className="text-[18px]" />
-                </div>
-              </div>
-              <div className="my-3">
-                <div className="font-headline-xl text-headline-xl font-bold tracking-tight text-on-surface">
-                  {formatPct(journeyCompletionPct)}
-                </div>
-                <p className="mt-1 font-code-sm text-code-sm text-outline">
-                  {overview?.questCompletedSuppressed
-                    ? privacyCopy(true)
-                    : `${formatCount(overview?.questCompletedCount)} nhiệm vụ hoàn tất`}
-                </p>
-              </div>
-              <div className="w-full space-y-1">
-                <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-container-high">
-                  <div
-                    className="h-full rounded-full bg-secondary transition-all"
-                    style={{ width: `${Math.min(100, Math.max(0, journeyCompletionPct ?? 0))}%` }}
-                  />
-                </div>
-              </div>
-            </article>
-
-            <article className="flex min-h-[148px] flex-col justify-between rounded-xl bg-surface-container-low p-space-lg shadow-sm transition-all hover:bg-surface-container">
-              <div className="flex items-center justify-between">
-                <span className="font-body-md text-body-md text-on-surface-variant">Từ khám phá trực tuyến đến tham quan tại chỗ</span>
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-surface-container text-tertiary">
-                  <MaterialIcon name="pin_drop" className="text-[18px]" />
-                </div>
-              </div>
-              <div className="my-3">
-                <div className="font-headline-xl text-headline-xl font-bold tracking-tight text-on-surface">
-                  {overview?.onlineToOnsite.suppressed
-                    ? 'Ẩn'
-                    : formatPct(overview?.onlineToOnsite.conversionRatePct)}
-                </div>
-                <p className="mt-1 font-code-sm text-code-sm text-outline">
-                  {overview?.onlineToOnsite.suppressed
-                    ? privacyCopy(true)
-                    : `${formatCount(overview?.onlineToOnsite.usersDiscoveryThenCheckin)} khách khám phá rồi quét mã tại điểm`}
-                </p>
-              </div>
-              <div className="flex items-center gap-1.5">
-                {[
-                  { label: 'Khám phá', value: overview?.onlineToOnsite.usersWithDiscovery },
-                  { label: 'Quét mã', value: overview?.onlineToOnsite.usersWithCheckin },
-                  { label: 'Cả hai', value: overview?.onlineToOnsite.usersDiscoveryThenCheckin },
-                ].map((cell) => (
-                  <div key={cell.label} className="flex-1 rounded bg-surface-container-high p-1 text-center">
-                    <div className="font-code-sm text-[10px] text-outline">{cell.label}</div>
-                    <div className="font-label-sm text-label-sm font-semibold text-on-surface">
-                      {overview?.onlineToOnsite.suppressed ? '—' : formatCount(cell.value)}
+          {overview && (
+            <dl className="analytics-summary analytics-facts">
+              {[
+                { label: 'Khách hoạt động', value: formatCount(overview.activeUsers), hidden: overview.activitySuppressed, note: formatCount(overview.eventCount) + ' sự kiện trong kỳ' },
+                { label: 'Khách hoàn thành nhiệm vụ', value: formatCount(overview.questCompletedCount), hidden: overview.questCompletedSuppressed, note: 'Theo sự kiện hoàn thành' },
+                { label: 'Khám phá rồi check-in', value: formatPct(overview.onlineToOnsite.conversionRatePct), hidden: overview.onlineToOnsite.suppressed, note: 'Trong số khách đã khám phá' },
+                { label: 'Thời lượng phiên trung bình', value: formatSuppressedMetric(overview.sessionQuality.avgDurationMinutes, false), hidden: overview.sessionQuality.suppressed, note: 'Phút trên mỗi phiên đã kết thúc' },
+              ].map(({label, value, hidden, note}) => (
+                <div key={label}><dt>{label}</dt><dd>{hidden ? 'Chưa đủ mẫu' : value}</dd><small>{hidden ? 'Ngưỡng công bố: ' + overview.privacyThreshold + ' khách' : note}</small></div>
+              ))}
+            </dl>
+          )}
+          {sparkValues.length > 1 && !overview?.activitySuppressed && (
+            <div className="analytics-trend"><span>Khách hoạt động theo ngày</span>
+              <svg aria-label="Xu hướng khách hoạt động" role="img" viewBox="0 0 100 24" preserveAspectRatio="none"><path d={sparkPath(sparkValues)} fill="none" stroke="currentColor" vectorEffect="non-scaling-stroke" strokeWidth="2" /></svg>
+            </div>
+          )}
+          {overviewError && <AdminErrorState message={overviewError} onRetry={() => void load()} />}
+          {overview && (
+            <section className="analytics-report" aria-labelledby="quest-summary">
+              <h2 id="quest-summary">Tỷ lệ khách hoàn thành từng nhiệm vụ</h2>
+              {quests.length === 0 ? <p>Di tích chưa có nhiệm vụ trong báo cáo.</p> : (
+                <>
+                  {reportedQuests.length === 0 ? (
+                    <p>Trong {parseInt(range, 10)} ngày qua, chưa thể công bố tỷ lệ hoàn thành cho nhiệm vụ nào trong {quests.length} nhiệm vụ tại {locationName}. Mỗi nhiệm vụ cần ít nhất {overview.privacyThreshold} khách bắt đầu và {overview.privacyThreshold} khách hoàn thành.</p>
+                  ) : (
+                    <p>Trong {parseInt(range, 10)} ngày qua, có số liệu cho {reportedQuests.length} trong {quests.length} nhiệm vụ. Tỷ lệ được tính bằng số khách hoàn thành chia cho số khách bắt đầu từng nhiệm vụ.</p>
+                  )}
+                  {reportedQuests.map(quest => (
+                    <div className="analytics-quest" key={quest.questId}>
+                      <strong>{quest.title}</strong>
+                      <span>{formatCount(quest.completed)} hoàn thành / {formatCount(quest.started)} khách bắt đầu</span>
+                      <b>{formatPct(quest.completionRatePct)}</b>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </article>
-
-            <article className="flex min-h-[148px] flex-col justify-between rounded-xl bg-surface-container-low p-space-lg shadow-sm transition-all hover:bg-surface-container">
-              <div className="flex items-center justify-between">
-                <span className="font-body-md text-body-md text-on-surface-variant">Chất lượng phiên</span>
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-surface-container text-primary">
-                  <MaterialIcon name="star" className="text-[18px]" />
-                </div>
-              </div>
-              <div className="my-3 flex items-baseline gap-2">
-                <span className="font-headline-xl text-headline-xl font-bold tracking-tight text-on-surface">
-                  {overview?.sessionQuality.suppressed
-                    ? 'Ẩn'
-                    : formatSuppressedMetric(overview?.sessionQuality.avgDurationMinutes, false)}
-                </span>
-                {!overview?.sessionQuality.suppressed && (
-                  <span className="font-body-sm text-body-sm text-outline">phút / phiên</span>
-                )}
-              </div>
-              <p className="font-code-sm text-code-sm text-outline">
-                {overview?.sessionQuality.suppressed
-                  ? privacyCopy(true)
-                  : `${formatSuppressedMetric(overview?.sessionQuality.avgDiscoveriesPerSession, false)} lượt khám phá/phiên · ${formatCount(activity?.npsSubmitted)} lượt đánh giá`}
-              </p>
-            </article>
-          </div>
-
-          {/* Funnel + Drop-off */}
-          <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-12">
-            <section
-              className="flex flex-col rounded-xl bg-surface-container-low p-space-lg shadow-sm lg:col-span-8"
-              aria-labelledby="analytics-Phễu nhiệm vụ"
-            >
-              <div className="mb-space-md flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <span className="h-2.5 w-2.5 rounded-full bg-primary" />
-                  <h2 id="analytics-Phễu nhiệm vụ" className="font-headline-sm text-headline-sm text-on-surface">
-                    Tiến độ hoàn thành nhiệm vụ
-                  </h2>
-                </div>
-                <span className="font-code-sm text-code-sm text-outline">
-                  {(overview?.questFunnel.length ?? 0).toLocaleString('vi-VN')} nhiệm vụ
-                </span>
-              </div>
-              {overviewError ? (
-                <AdminErrorState message={overviewError} onRetry={() => void load()} />
-              ) : !(overview?.questFunnel.length) ? (
-                <AdminEmptyState title="Chưa có nhiệm vụ" detail="Không có dữ liệu phễu trong khoảng đã chọn." />
-              ) : (
-                <div className="my-auto space-y-3">
-                  {overview.questFunnel.map((item, index) => {
-                    const completed = item.suppressed ? null : item.completed
-                    const started = item.suppressed ? null : item.started
-                    const pctOfBase =
-                      !item.suppressed && funnelBase > 0 && typeof started === 'number'
-                        ? (started * 100) / funnelBase
-                        : item.completionRatePct ?? 0
-                    const barWidth = item.suppressed ? 0 : Math.min(100, Math.max(0, pctOfBase))
-                    return (
-                      <div
-                        key={item.questId}
-                        className="flex flex-col gap-1.5 rounded-lg bg-surface-container-lowest p-3 transition-transform hover:scale-[1.005]"
-                      >
-                        <div className="flex items-center justify-between gap-3 text-body-sm">
-                          <span className="flex min-w-0 items-center gap-2 font-body-md text-body-md text-on-surface">
-                            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-surface-container font-code-sm text-[10px] font-bold text-primary">
-                              {String(index + 1).padStart(2, '0')}
-                            </span>
-                            <span className="truncate">{item.title}</span>
-                          </span>
-                          <div className="flex shrink-0 items-center gap-3">
-                            <span className="font-code-sm text-code-sm font-semibold text-on-surface">
-                              {item.suppressed ? 'Ẩn' : formatCount(completed)}
-                            </span>
-                            <span className="w-14 text-right font-code-sm text-code-sm font-bold text-primary">
-                              {item.suppressed ? '—' : formatPct(item.completionRatePct)}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="h-2 w-full overflow-hidden rounded-full bg-surface-container-high">
-                          <div
-                            className="h-full rounded-full bg-primary transition-all duration-700"
-                            style={{ width: `${barWidth}%`, opacity: 1 - index * 0.08 }}
-                          />
-                        </div>
-                        {item.suppressed && (
-                          <p className="font-code-sm text-code-sm text-outline">{privacyCopy(true)}</p>
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
+                  ))}
+                  {hiddenQuests.length > 0 && (
+                    <details className="analytics-private">
+                      <summary>Xem {hiddenQuests.length} nhiệm vụ chưa đủ mẫu</summary>
+                      <p>Tỷ lệ chỉ hiển thị khi cả số khách bắt đầu và số khách hoàn thành đạt {overview.privacyThreshold}. Các nhiệm vụ dưới ngưỡng vẫn có thể có người tham gia.</p>
+                      <ul>{hiddenQuests.map(quest => <li key={quest.questId}>{quest.title}</li>)}</ul>
+                    </details>
+                  )}
+                </>
               )}
             </section>
-
-            <section
-              className="flex flex-col justify-between rounded-xl bg-surface-container-low p-space-lg shadow-sm lg:col-span-4"
-              aria-labelledby="analytics-Điểm rời hành trình"
-            >
-              <div>
-                <div className="mb-3 flex items-center gap-2">
-                  <MaterialIcon name="warning" className="text-[20px] text-error" />
-                  <h2 id="analytics-Điểm rời hành trình" className="font-headline-sm text-headline-sm text-on-surface">
-                    Điểm khách dừng hành trình
-                  </h2>
-                </div>
-                <p className="mb-space-md font-body-sm text-body-sm text-on-surface-variant">
-                  Các điểm khám phá có nhiều du khách dừng hành trình trong khoảng thời gian đã chọn.
-                </p>
-                {overviewError ? (
-                  <AdminErrorState message={overviewError} onRetry={() => void load()} />
-                ) : dropRows.length === 0 ? (
-                  <AdminEmptyState title="Chưa có dữ liệu" detail="Chưa đủ lượt tham quan để xác định điểm dừng hành trình." />
-                ) : (
-                  <div className="space-y-3">
-                    {dropRows.map((item, index) => (
-                      <div
-                        key={`${item.unlockKey}-${item.poiName}`}
-                        className={`rounded-lg border-l-2 bg-surface-container-lowest p-space-md ${
-                          index === 0 ? 'border-l-error' : 'border-l-tertiary'
-                        }`}
-                      >
-                        <div className="mb-1 flex items-center justify-between gap-2">
-                          <span className="font-headline-sm text-headline-sm text-on-surface">{item.poiName}</span>
-                          <span
-                            className={`rounded px-2 py-0.5 font-code-sm text-[11px] font-bold ${
-                              index === 0
-                                ? 'bg-error-container/30 text-error'
-                                : 'bg-tertiary-container/30 text-tertiary'
-                            }`}
-                          >
-                            {typeof item.dropOffPct === 'number'
-                              ? `Giảm ${item.dropOffPct.toLocaleString('vi-VN', { maximumFractionDigits: 1 })}%`
-                              : 'Chưa có tỷ lệ'}
-                          </span>
-                        </div>
-                        <p className="font-body-sm text-body-sm text-outline">
-                          {formatCount(item.sessionCount)} lượt dừng tại điểm này.
-                        </p>
-                        <div className="mt-2.5 flex items-center justify-between font-code-sm text-[11px] text-on-surface-variant">
-                          <span>Đã tác động: {formatCount(item.sessionCount)} khách</span>
-                          <Link to="/admin/content" className="flex items-center gap-0.5 text-primary hover:underline">
-                            Xem nội dung
-                            <MaterialIcon name="chevron_right" className="text-[12px]" />
-                          </Link>
-                        </div>
-                      </div>
-                    ))}
+          )}
+          <div className="mt-4 grid grid-cols-1 items-start gap-4 lg:grid-cols-12">
+            {overview && <section className="analytics-report lg:col-span-7" aria-labelledby="point-summary">
+              <h2 id="point-summary">Hoạt động tại các điểm khám phá</h2>
+              {points.length === 0 ? <p>Danh mục của di tích chưa có điểm khám phá.</p> : (
+                <>
+                  <p><strong>{points.length} điểm trong danh mục</strong> · {reportedPoints} điểm đủ mẫu để công bố số khách mở khóa.</p>
+                  <div className="overflow-x-auto">
+                    <table className="analytics-point-table">
+                      <thead><tr><th>Điểm khám phá</th><th>Khách mở khóa</th><th>Khách khám phá trong phiên</th>{hasDwell && <th>Dừng trung bình</th>}</tr></thead>
+                      <tbody>{visiblePoints.map(point => (
+                        <tr key={point.unlockKey}>
+                          <th scope="row">{point.name}</th>
+                          <td>{point.suppressed ? 'Dưới ngưỡng' : formatCount(point.unlockCount)}</td>
+                          <td>{point.visits?.suppressed ? 'Dưới ngưỡng' : formatCount(point.visits?.sessionCount)}</td>
+                          {hasDwell && <td>{dwellLabel(point.dwell)}</td>}
+                        </tr>
+                      ))}</tbody>
+                    </table>
                   </div>
-                )}
-              </div>
-              <div className="mt-4 flex items-start gap-2.5 rounded-lg bg-primary-container/10 p-3">
-                <MaterialIcon name="auto_awesome" className="mt-0.5 shrink-0 text-[18px] text-primary" />
-                <p className="font-body-sm text-body-sm text-on-surface-variant">
-                  <span className="font-semibold text-primary">Gợi ý vận hành: </span>
-                  Ưu tiên kiểm tra vị trí và định vị tại những điểm du khách rời hành trình nhiều.
-                </p>
-              </div>
-            </section>
-          </div>
-
-          {/* POI table + density */}
-          <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-12">
-            <section
-              className="flex flex-col rounded-xl bg-surface-container-low p-space-lg shadow-sm lg:col-span-7"
-              aria-labelledby="analytics-top-pois"
-            >
-              <div className="mb-space-md flex items-center justify-between gap-2">
-                <div>
-                  <h2 id="analytics-top-pois" className="font-headline-sm text-headline-sm text-on-surface">
-                    Điểm di tích được ghi nhận nhiều nhất
-                  </h2>
-                  <p className="font-code-sm text-code-sm text-outline">Xếp hạng theo lượt mở điểm hợp lệ</p>
-                </div>
-                <span className="rounded-full bg-surface-container px-2.5 py-1 font-code-sm text-code-sm text-primary">
-                  {topPois.length} điểm nổi bật
-                </span>
-              </div>
-              {overviewError ? (
-                <AdminErrorState message={overviewError} onRetry={() => void load()} />
-              ) : topPois.length === 0 ? (
-                <AdminEmptyState title="Chưa có điểm khám phá" detail="Không có lượt mở khóa trong khoảng đã chọn." />
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left">
-                    <thead>
-                      <tr className="bg-surface-container-lowest font-label-sm text-label-sm uppercase text-outline">
-                        <th className="rounded-l-lg px-3 py-2.5">Tên điểm khám phá</th>
-                        <th className="px-3 py-2.5 text-right">Lượt quét AR</th>
-                        <th className="px-3 py-2.5 text-right">Dừng trung bình</th>
-                        <th className="rounded-r-lg px-3 py-2.5 text-center">Mức hấp dẫn</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-surface-container-highest">
-                      {topPois.map((item) => {
-                        const badge = attractionMeta(
-                          item.suppressed ? null : item.unlockRatePct,
-                          item.dropOffHotspot,
-                        )
-                        return (
-                          <tr key={item.unlockKey} className="transition-colors hover:bg-surface-container">
-                            <td className="px-3 py-3">
-                              <div className="flex items-center gap-3">
-                                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface-container-high text-primary">
-                                  <MaterialIcon name="place" className="text-[18px]" />
-                                </div>
-                                <div>
-                                  <div className="font-headline-sm text-headline-sm text-on-surface">{item.name}</div>
-                                  <div className="sr-only">Mã điểm: {item.unlockKey}</div>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-3 py-3 text-right font-code-sm text-code-sm font-semibold text-on-surface">
-                              {item.suppressed ? 'Ẩn' : formatCount(item.unlockCount)}
-                            </td>
-                            <td className="px-3 py-3 text-right font-code-sm text-code-sm text-primary">
-                              {item.suppressed ? '—' : dwellLabel(item.avgDwellMs)}
-                            </td>
-                            <td className="px-3 py-3 text-center">
-                              <span
-                                className={`inline-block rounded px-2 py-0.5 font-label-sm text-[11px] ${badge.className}`}
-                              >
-                                {badge.label}
-                              </span>
-                            </td>
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                  <div className="flex flex-wrap items-center justify-between gap-2 py-2">
+                    <small aria-live="polite">Điểm {firstPoint + 1}–{firstPoint + visiblePoints.length} trong {points.length}</small>
+                    {pointPages > 1 && <AdminPagination variant="stitch" page={pointPage} totalPages={pointPages} onPageChange={setPointPage} />}
+                  </div>
+                  <p className="analytics-reading-note">Mở khóa tính theo ghi nhận mở điểm. Khám phá trong phiên tính mỗi khách một lần tại mỗi điểm. Một khách có thể khám phá nhiều điểm.</p>
+                </>
               )}
-            </section>
-
+            </section>}
             <section className="flex flex-col justify-start rounded-xl bg-surface-container-low p-space-lg shadow-sm lg:col-span-5">
               <div className="mb-2 flex items-center justify-between gap-2">
                 <div>
@@ -717,6 +411,8 @@ export function AdminAnalyticsPage() {
               </div>
               {heatmapError ? (
                 <AdminErrorState message={heatmapError} onRetry={() => void load()} />
+              ) : !heatmap?.cells.some((cell) => !cell.suppressed && ((cell.activeUsers ?? 0) > 0 || cell.intensity > 0)) ? (
+                <p className="analytics-empty">Chưa có số liệu đủ để hiển thị mật độ theo giờ trong kỳ này.</p>
               ) : (
                 <>
                   <div className="mb-3 mt-2 grid grid-cols-2 gap-2">
@@ -740,7 +436,7 @@ export function AdminAnalyticsPage() {
                     </div>
                   </div>
 
-                  <div className="space-y-1">
+                  <div className="analytics-hour-grid space-y-1" role="region" aria-label="Mật độ hoạt động trong 24 giờ" tabIndex={0}>
                     <div className="grid grid-cols-7 pb-0.5 text-center font-code-sm text-[10px] text-outline">
                       {heatmapGrid.days.map((label, dayIndex) => (
                         <span
@@ -796,11 +492,6 @@ export function AdminAnalyticsPage() {
                         </div>
                       )
                     })}
-                    {!heatmap?.cells.some((cell) => (cell.activeUsers ?? 0) > 0 || cell.intensity > 0) && (
-                      <p className="pt-2 font-body-sm text-body-sm text-on-surface-variant">
-                        Chưa có mật độ theo giờ trong khoảng đã chọn.
-                      </p>
-                    )}
                   </div>
                 </>
               )}
@@ -808,11 +499,11 @@ export function AdminAnalyticsPage() {
           </div>
 
           {/* Acquisition + Session quality Stitch */}
-          <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-12">
+          <div className="mt-4 grid grid-cols-1 items-start gap-4 lg:grid-cols-12">
             <section className="flex flex-col rounded-xl bg-surface-container-low p-space-lg shadow-sm lg:col-span-6">
               <div className="mb-space-md flex items-center justify-between">
                 <h2 className="font-headline-sm text-headline-sm text-on-surface">Nguồn thu hút tương tác ban đầu</h2>
-                <span className="font-code-sm text-code-sm text-outline">Theo dõi hoạt động thử nghiệm</span>
+                <span className="font-code-sm text-code-sm text-outline">Toàn bộ chương trình pilot</span>
               </div>
               {activityError ? (
                 <AdminErrorState message={activityError} onRetry={() => void load()} />

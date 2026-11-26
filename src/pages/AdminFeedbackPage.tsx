@@ -1,7 +1,11 @@
+import { AdminPagination } from '../components/admin/AdminPagination'
+import '../features/feedback/feedbackForm.css'
+import { ReviewPhotos } from '../features/feedback/ReviewPhotos'
 import { useEffect, useState, type FormEvent } from 'react'
 import { feedbackApi, topicLabels, type FeedbackEntry, type FeedbackFilters } from '../features/feedback/api'
 
-const emptyFilters: FeedbackFilters = { from: '', to: '', tier: '', topic: '' }
+const pageSize = 6
+const emptyFilters: FeedbackFilters = { from: '', to: '', tier: '', topic: '', status: '', rating: '' }
 const dateFormat = new Intl.DateTimeFormat('vi-VN', { dateStyle: 'short', timeStyle: 'short', timeZone: 'Asia/Ho_Chi_Minh' })
 
 export function AdminFeedbackPage() {
@@ -15,8 +19,10 @@ export function AdminFeedbackPage() {
 
   useEffect(() => {
     let active = true
-    feedbackApi.list(filters, page).then(data => {
-      if (active) setResult(data)
+    feedbackApi.list(filters, page, pageSize).then(data => {
+      if (!active) return
+      if (page > 0 && page * pageSize >= data.total) setPage(Math.max(0, Math.ceil(data.total / pageSize) - 1))
+      else setResult(data)
     }).catch(() => {
       if (active) setError('Không tải được phản hồi. Hãy kiểm tra bộ lọc và thử lại.')
     })
@@ -64,15 +70,40 @@ export function AdminFeedbackPage() {
 
   const control = 'rounded-lg border border-slate-300 bg-white px-3 py-2'
   const button = 'rounded-lg border border-slate-300 px-3 py-2 font-semibold disabled:opacity-50'
-  return <section className="space-y-4 text-slate-800">
-    <h1 className="text-2xl font-bold">Phản hồi người dùng</h1>
+  function changePage(next: number) {
+    if (page === next) return
+    setError('')
+    setResult(null)
+    setPage(next)
+    document.querySelector('.feedback-admin')?.scrollIntoView({ block: 'start' })
+  }
+  const pager = result && <AdminPagination variant="stitch" page={page}
+    totalPages={Math.ceil(result.total / pageSize)} onPageChange={changePage} />
+  return <section className="ops-paper-page feedback-admin flex min-w-0 flex-col text-slate-800">
+    <header className="admin-page-header flex flex-wrap items-center justify-between gap-3"><h1 className="review-heading">Quản lý <span className="ops-title-accent">góp ý</span></h1><button type="button" className="feedback-export-button" disabled={busy || !result} onClick={() => void download()}>Xuất CSV</button></header>
+    <nav className="review-status-tabs" aria-label="Trạng thái góp ý">
+      {Object.entries({ '': 'Tất cả', pending: 'Chờ duyệt', published: 'Đã đăng trang chủ', private: 'Riêng tư' }).map(([value, label]) =>
+        <button key={value} type="button" aria-pressed={filters.status === value} onClick={() => {
+          setDraft({ ...draft, status: value })
+          setFilters({ ...filters, status: value })
+          setPage(0)
+          setResult(null)
+          setError('')
+        }}>{label}</button>)}
+    </nav>
     <form onSubmit={apply} className="flex flex-wrap items-end gap-3 rounded-xl border border-slate-200 bg-white p-4">
+      <label className="grid gap-1 text-sm">Số sao
+        <select className={control} value={draft.rating} onChange={event => setDraft({ ...draft, rating: event.target.value })}>
+          <option value="">Mọi mức điểm</option>
+          {[5, 4, 3, 2, 1].map(n => <option key={n} value={n}>{n} sao</option>)}
+        </select>
+      </label>
       {(['from', 'to'] as const).map(key => <label className="grid gap-1 text-sm" key={key}>{key === 'from' ? 'Từ ngày' : 'Đến ngày'}
-        <input type="date" className={control} value={draft[key]} onChange={event => setDraft({ ...draft, [key]: event.target.value })} />
+        <input type="date" min={key === 'to' ? draft.from : undefined} max={key === 'from' ? draft.to : undefined} className={control} value={draft[key]} onChange={event => setDraft({ ...draft, [key]: event.target.value })} />
       </label>)}
       <label className="grid gap-1 text-sm">Gói
         <select className={control} value={draft.tier} onChange={event => setDraft({ ...draft, tier: event.target.value })}>
-          <option value="">Tất cả</option><option>FREE</option><option>PREMIUM</option>
+          <option value="">Tất cả</option><option value="FREE">Miễn phí</option><option value="PREMIUM">Premium</option>
         </select>
       </label>
       <label className="grid gap-1 text-sm">Chủ đề
@@ -80,34 +111,44 @@ export function AdminFeedbackPage() {
           <option value="">Tất cả</option>{Object.entries(topicLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
         </select>
       </label>
-      <button className="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white">Lọc</button>
-      <button type="button" className={button} disabled={busy || !result} onClick={() => void download()}>Xuất CSV</button>
+      <button className="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white">Áp dụng</button><button type="button" className={button} onClick={() => { setDraft(emptyFilters); setFilters({ ...emptyFilters }); setPage(0); setError('') }}>Xóa bộ lọc</button>
+
     </form>
     {error && <p role="alert" className="text-red-700">{error}</p>}
     {!result && !error && <p role="status">Đang tải phản hồi…</p>}
     {result && <>
-      <p>{result.total} phản hồi</p>
-      {result.items.length === 0 ? <p>Chưa có phản hồi phù hợp.</p> :
-        <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-slate-50"><tr>{['Thời gian', 'Gói', 'Điểm', 'Chủ đề', 'Góp ý', 'Công khai'].map(title =>
-              <th key={title} scope="col" className="p-3">{title}</th>)}</tr></thead>
-            <tbody>{result.items.map(entry => <tr key={entry.userId + entry.submissionId} className="border-t align-top">
-              <td className="whitespace-nowrap p-3">{dateFormat.format(new Date(entry.createdAt))}</td>
-              <td className="p-3">{entry.tier}</td><td className="p-3">{entry.rating}/5</td>
-              <td className="p-3">{entry.topics.map(topic => topicLabels[topic]).join(', ') || '—'}</td>
-              <td className="min-w-48 whitespace-pre-wrap break-words p-3">{entry.comment || '—'}</td>
-              <td className="p-3">{entry.publicConsent ? <button type="button" disabled={busy} className={button}
-                onClick={() => void moderate(entry)}>{entry.published ? 'Gỡ' : 'Duyệt'}</button> : 'Riêng tư'}</td>
-            </tr>)}</tbody>
-          </table>
-        </div>}
-      <div className="flex items-center gap-3">
-        <button className={button} disabled={page === 0} onClick={() => { setResult(null); setPage(page - 1) }}>Trước</button>
-        <span>Trang {page + 1}</span>
-        <button className={button} disabled={(page + 1) * 25 >= result.total} onClick={() => { setResult(null); setPage(page + 1) }}>Sau</button>
+      <div className="feedback-admin-listhead">
+        <h2 aria-live="polite">{result.total ? `${page * pageSize + 1}–${page * pageSize + result.items.length} trong ${result.total} phản hồi` : '0 phản hồi'}</h2>
+        {pager}
       </div>
+      {result.items.length === 0 ? <p>Chưa có phản hồi phù hợp với bộ lọc.</p> :
+        <div className="feedback-admin-grid">{result.items.map(entry =>
+          <article key={entry.userId + entry.submissionId} className="fb-entry">
+            <header className="fb-entry-head">
+              <span className="review-author-avatar" aria-hidden="true">{entry.avatarUrl ? <img src={entry.avatarUrl} alt="" /> : (entry.authorName?.trim()[0] || 'T')}</span>
+              <div className="min-w-0"><h3>{entry.authorName || 'Người dùng TimeLens'}</h3>
+                <time dateTime={entry.createdAt}>{dateFormat.format(new Date(entry.createdAt))}</time>
+              </div>
+              <span className="review-stars" role="img" aria-label={entry.rating + " trên 5 sao"}>{"★".repeat(entry.rating)}{"☆".repeat(5-entry.rating)}</span>
+
+            </header>
+            <div className="review-body">
+            {entry.comment && <p className="fb-entry-comment">{entry.comment}</p>}
+            <ReviewPhotos photos={entry.photos} />
+            {!!entry.topics.length && <ul className="fb-entry-topics" aria-label="Chủ đề">{entry.topics.map(topic =>
+              <li key={topic}>{topicLabels[topic] ?? topic}</li>)}</ul>}
+            <p className="text-sm text-slate-600">Gói {entry.tier === 'FREE' ? 'miễn phí' : entry.tier === 'PREMIUM' ? 'Premium' : entry.tier} · {entry.source === 'WEB_INVITED' ? 'Qua lời mời' : 'Góp ý chủ động'}</p>
+            </div>
+            <footer>
+              <div className="fb-entry-details"><strong className={entry.published ? 'fb-public' : ''}>
+                {entry.published ? 'Đã đăng trang chủ' : entry.publicConsent ? 'Chờ duyệt đăng' : 'Riêng tư'}
+              </strong></div>
+              {entry.publicConsent && <div className="fb-entry-actions"><button type="button" disabled={busy}
+                onClick={() => void moderate(entry)}>{entry.published ? 'Gỡ khỏi trang chủ' : 'Duyệt đăng trang chủ'}</button></div>}
+            </footer>
+          </article>
+        )}</div>}
+      {pager && <div className="feedback-admin-listend">{pager}</div>}
     </>}
   </section>
 }
-
