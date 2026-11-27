@@ -6,11 +6,13 @@ import type {A04Phase} from './a04Experience'
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js'
 import {skyDome,terrain,edge,noise2,tree,bamboo,banana,groundCover,hills,puffs,chickens} from './worldEnvKit'
 import {isSafeWorldPoint} from './worldModel'
+import {completionReveal} from './m2ScenePresentation'
+import {createWorkbench} from './m2Workbench'
 
 // Original authored review candidate. No downloaded meshes, textures, motions or likenesses.
-type S2Actor={g:T.Object3D;left:T.Object3D;right:T.Object3D;legs:T.Object3D[];reach:(target:T.Vector3|null)=>void;contact:T.Object3D}
+type S2Actor={g:T.Object3D;left:T.Object3D;right:T.Object3D;legs:T.Object3D[];reach:(target:T.Vector3|null)=>void;contact:T.Object3D;grip?:(l:T.Vector3|null,r:T.Vector3|null)=>void;setIdle?:(clip:string)=>void;setCrouch?:(on:boolean)=>void;setTalking?:(on:boolean)=>void}
 /** G3 immersive build: the R2 village supplies the ground and rigged people; A04 gameplay below is unchanged. */
-export type S2R2={floor:T.Mesh;person:(color:string,scarf:boolean,role:'avatar'|'partner'|'helper'|'winnower',parent:T.Object3D)=>S2Actor}
+export type S2R2={floor:T.Mesh;person:(color:string,scarf:boolean,role:'avatar'|'partner'|'helper'|'winnower'|'crafter'|'cobbler',parent:T.Object3D)=>S2Actor}
 export function createS2(scene:T.Scene,kit:Kit,r2?:S2R2){
  const random=mulberry32(196704),root=new T.Group();root.name='S2_REPRESENTATIVE_REVIEW_CANDIDATE';scene.add(root)
  const palette=new Map<string,T.MeshLambertMaterial|T.MeshStandardMaterial>();const material=(color:string)=>{let m=palette.get(color);if(!m){m=kit.track(r2?new T.MeshStandardMaterial({color,roughness:.82}):new T.MeshLambertMaterial({color}));palette.set(color,m)}return m}
@@ -99,7 +101,7 @@ export function createS2(scene:T.Scene,kit:Kit,r2?:S2R2){
  const batches=new Map<T.Material,T.Mesh[]>()
  root.traverse(o=>{if(!(o instanceof T.Mesh)||!staticScenery(o))return;if(Array.isArray(o.material)||(o.material as T.Material&{vertexColors?:boolean}).vertexColors)return;const list=batches.get(o.material)??[];list.push(o);batches.set(o.material,list)})
  for(const [material,list] of batches){if(list.length<2)continue;const copies=list.map(m=>m.geometry.clone().applyMatrix4(m.matrixWorld)),merged=mergeGeometries(copies);copies.forEach(g=>g.dispose());if(!merged)continue;const batch=new T.Mesh(kit.track(merged),material);batch.castShadow=true;batch.receiveShadow=false;root.add(batch);list.forEach(m=>m.removeFromParent())}
- const person=(color:string,scarf:boolean,role:'avatar'|'partner'|'helper'):S2Actor=>r2?r2.person(color,scarf,role,root):createWorldActor(root,kit,color,scarf)
+ const person=(color:string,scarf:boolean,role:'avatar'|'partner'|'helper'|'crafter'|'cobbler'):S2Actor=>r2?r2.person(color,scarf,role,root):createWorldActor(root,kit,color,scarf)
  const avatar=person('#b4945c',false,'avatar'),npc=person('#596448',true,'partner'),helper=person('#81715a',true,'helper');npc.g.position.set(0,0,-1.5);helper.g.position.set(3.5,0,-2.5);helper.g.rotation.y=2.5
  const tool=(parent:T.Object3D)=>{const group=new T.Group();parent.add(group);rod([0,-.48,.12],[0,.6,.12],.045,'#c5a171',group);ellipsoid([.075,.13,.075],'#95764c',[0,-.5,.12],group);const grip=ellipsoid([.09,.12,.09],'#dbb67d',[0,.15,.12],group);group.traverse(o=>{if(o instanceof T.Mesh)o.castShadow=false});mergeRigidChildren(group,kit,[grip]);return{group,grip}}
  const playerTool=tool(root),npcTool=tool(root),helperTool=tool(root);helperTool.group.position.set(.65,1,-.7)
@@ -121,10 +123,45 @@ export function createS2(scene:T.Scene,kit:Kit,r2?:S2R2){
  const trayHome=new T.Vector3(-3.42,.62,4.15)
  // Butterflies drifting over the clearing.
  const butterflies=[0,1].map(i=>{const g=new T.Group();live.add(g);const wings=[-1,1].map(side=>{const w=new T.Mesh(kit.geo('s2-wing',()=>{const c=new T.CircleGeometry(.07,8);c.translate(.07,0,0);return c}),kit.track(new T.MeshBasicMaterial({color:i?'#f3d36b':'#f0efe6',side:T.DoubleSide})));w.scale.x=side;g.add(w);return w});return{g,wings}})
+ // ---- G5 / M2 S2 FULL stations: A03 (Tráng bánh tráng Củ Chi) & A12 (Nghề dép cao su) + NPCs ----
+ const s2Targets:Record<string,T.Object3D>={}
+ const makeStation=(id:string,x:number,z:number)=>{const g=new T.Group();g.position.set(x,0,z);live.add(g);const proxy=new T.Mesh(kit.geo('s2-proxy-'+id,()=>new T.BoxGeometry(.85,.9,.85)),kit.track(new T.MeshBasicMaterial({visible:false})));proxy.position.y=.45;g.add(proxy);g.userData.interactionAnchor=new T.Vector3(0,.65,0);s2Targets[id]=g;return g}
+ const a03Batter=makeStation('A03_BATTER',-2.5,-1.0)
+ mesh(kit.geo('s2-a03-pot',()=>new T.CylinderGeometry(.34,.38,.45,20)),'#6e503b',[0,.22,0],a03Batter)
+ mesh(kit.geo('s2-a03-cloth',()=>new T.CylinderGeometry(.33,.33,.02,20)),'#f3eedf',[0,.46,0],a03Batter)
+ const batterSheet=mesh(kit.geo('s2-a03-sheet',()=>new T.CylinderGeometry(.25,.25,.01,20)),'#fffdf6',[0,.475,0],a03Batter)
+ const a03Spread=makeStation('A03_SPREAD',-3.5,.5)
+ const rack=mesh(kit.geo('s2-a03-rack',()=>new T.BoxGeometry(1.15,.03,.68)),'#b6975c',[0,.48,0],a03Spread);rack.rotation.x=.22
+ for(const x of [-.5,.5])for(const z of [-.28,.28])rod([x,0,z],[x,.46,z],.03,'#73573a',a03Spread)
+ const paperSheets:T.Object3D[]=[]
+ for(const x of [-.32,0,.32]){const p=mesh(kit.geo('s2-a03-paper',()=>new T.CylinderGeometry(.16,.16,.008,18)),'#f7f3e6',[x,.51,0],a03Spread);p.rotation.x=.22;paperSheets.push(p)}
+ const showPaper=completionReveal('A03_SPREAD',paperSheets),showBatter=completionReveal('A03_BATTER',[batterSheet])
+ const crafter=person('#5c6348',true,'crafter');crafter.g.position.set(-3.0,0,-.5);crafter.g.rotation.y=.6;s2Targets.NPC_CRAFTER=crafter.g
+ const a12Sole=makeStation('A12_SOLE',2.5,-1.0)
+ mesh(kit.geo('s2-a12-bench',()=>new T.BoxGeometry(.95,.05,.55)),'#7e5f3f',[0,.42,0],a12Sole)
+ for(const x of [-.4,.4])for(const z of [-.22,.22])rod([x,0,z],[x,.42,z],.03,'#5f462d',a12Sole)
+ for(const x of [-.18,.18])mesh(kit.geo('s2-a12-sole',()=>new T.BoxGeometry(.14,.025,.28)),'#2b2a29',[x,.46,0],a12Sole)
+ // Chồng vỏ lốp xe cao su cũ và dải lốp cắt bên góc thợ dép (tham chiếu tư liệu xóm nghề làm dép râu Củ Chi)
+ for(const [tx,ty,tz,rx,rz,rad] of [[.88,.11,-.55,Math.PI/2,.12,.3],[.9,.27,-.52,Math.PI/2,-.08,.29],[.56,.28,-.72,.55,.3,.28]] as const){
+  const tire=mesh(kit.geo('s2-tire-'+rad,()=>new T.TorusGeometry(rad,.085,10,22)),'#222120',[tx,ty,tz],a12Sole);tire.rotation.set(rx,0,rz)
+ }
+ const cutTread=mesh(kit.geo('s2-tire-strip',()=>new T.TorusGeometry(.28,.045,8,14,Math.PI*.85)),'#2b2927',[.74,.06,.22],a12Sole);cutTread.rotation.set(.25,.6,.15)
+ const a12Strap=makeStation('A12_STRAP',3.5,.5)
+ mesh(kit.geo('s2-a12-table',()=>new T.BoxGeometry(.85,.05,.52)),'#856544',[0,.42,0],a12Strap)
+ for(const x of [-.36,.36])for(const z of [-.2,.2])rod([x,0,z],[x,.42,z],.03,'#5f462d',a12Strap)
+ const sandalStraps:T.Object3D[]=[]
+ for(const x of [-.15,.15]){mesh(kit.geo('s2-a12-fin',()=>new T.BoxGeometry(.14,.025,.28)),'#282726',[x,.46,0],a12Strap);sandalStraps.push(mesh(kit.geo('s2-a12-strap',()=>new T.TorusGeometry(.065,.012,6,14,Math.PI)),'#504b43',[x,.48,.02],a12Strap))}
+ const showSandal=completionReveal('A12_STRAP',sandalStraps)
+ const cobbler=person('#5a5243',false,'cobbler');cobbler.g.position.set(3.0,0,-.5);cobbler.g.rotation.y=-.6;s2Targets.NPC_COBBLER=cobbler.g
+ const riceWork=createWorkbench({actor:crafter,kit,kind:'rice',stations:[{id:'A03_BATTER',object:a03Batter},{id:'A03_SPREAD',object:a03Spread}]})
+ const sandalWork=createWorkbench({actor:cobbler,kit,kind:'sandal',stations:[{id:'A12_SOLE',object:a12Sole},{id:'A12_STRAP',object:a12Strap}]})
  // Turn cue on the ground around the mortar: amber = your stroke, soft green pulse = partner's stroke.
  const cueMat=kit.track(new T.MeshBasicMaterial({color:'#f2c46b',transparent:true,opacity:0,depthWrite:false})),cue=new T.Mesh(kit.geo('s2-cue',()=>new T.RingGeometry(.72,.8,40)),cueMat);cue.rotation.x=-Math.PI/2;cue.position.set(0,.03,-.7);live.add(cue)
  let previousTime=0,lastProcessed=-1,lastNpcY=0,npcFalling=false,smokeClock=0,chaffClock=0,npcPulse=0,impactAt=-1,seenProcessed=-1
- const update=(t:number,position:[number,number],heading:number,moving:boolean,phase:A04Phase,processed:number,working:boolean,reduced:boolean,onImpact=()=>{},onPartnerImpact=()=>{})=>{
+ const update=(t:number,position:[number,number],heading:number,moving:boolean,phase:A04Phase,processed:number,working:boolean,reduced:boolean,onImpact=()=>{},onPartnerImpact=()=>{},completed:readonly string[]=[],selected:string|null=null,paused=false,hidden=false)=>{
+  showBatter(completed);showPaper(completed);showSandal(completed)
+  // The sheet moves from the steaming cloth to the drying rack after the accepted step.
+  if(completed.includes('A03_SPREAD'))batterSheet.visible=false
   const dt=Math.min(.1,t-previousTime);previousTime=t
   avatar.g.position.set(position[0],0,position[1]);avatar.g.rotation.y=heading
   avatar.legs.forEach((l,i)=>l.rotation.x=moving&&!reduced?Math.sin(t*9+i*Math.PI)*.32:0)
@@ -139,7 +176,9 @@ export function createS2(scene:T.Scene,kit:Kit,r2?:S2R2){
   npcTool.group.position.set(-.18,processed>=6?.92:.92+(reduced?0:(1+Math.sin(t*3))*.365),-.78)
   const destination=new T.Vector3(near?3.5:.8,0,near?-2.5:0),walking=helper.g.position.distanceTo(destination)>.08
   helper.g.position.lerp(destination,Math.min(1,dt*1.4));helper.g.rotation.y=near?2.5:-2.3;helper.left.rotation.x=-.8+(reduced?0:Math.sin(t*1.3)*.1);helper.legs.forEach((l,i)=>l.rotation.x=walking&&!reduced?Math.sin(t*8+i*Math.PI)*.25:0)
-  for(const actor of [avatar,npc,helper])actor.contact.position.set(actor.g.position.x,.005,actor.g.position.z)
+  for(const actor of [avatar,npc,helper,crafter,cobbler])actor.contact.position.set(actor.g.position.x,.005,actor.g.position.z)
+  riceWork.update(dt,{active:selected,completed,reduced,paused:paused||selected==='NPC_CRAFTER',hidden})
+  sandalWork.update(dt,{active:selected,completed,reduced,paused:paused||selected==='NPC_COBBLER',hidden})
   helperTool.group.visible=!near&&!processed;helperTool.group.position.y=1.05+(reduced?0:Math.sin(t*2+Math.PI)*.25)
   avatar.reach(active?new T.Vector3(.18,playerTool.group.position.y+.15,-.48):null)
   npc.reach(new T.Vector3(-.18,npcTool.group.position.y+.15,-.66));helper.reach(!near?new T.Vector3(.65,helperTool.group.position.y+.15,-.58):new T.Vector3(3.2,1,-3))
@@ -166,5 +205,5 @@ export function createS2(scene:T.Scene,kit:Kit,r2?:S2R2){
   butterflies.forEach((b,i)=>{b.g.position.set(-1+Math.sin(t*.35+i*2)*3,1.1+Math.sin(t*.9+i)*.35,2+Math.cos(t*.27+i)*2.2);b.g.rotation.y=t*.35+i;const f=reduced?.3:Math.sin(t*18+i)*.9;b.wings[0].rotation.y=f;b.wings[1].rotation.y=-f})
   for(const fx of [smoke,dust,husks,chaff])fx.update(dt)
  }
- return{floor,avatar,npc,mortar,grain,playerGrip:playerTool.grip,npcGrip:npcTool.grip,before,after,update}
+ return{floor,avatar,npc,mortar,grain,playerGrip:playerTool.grip,npcGrip:npcTool.grip,before,after,targets:s2Targets,update}
 }

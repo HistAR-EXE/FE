@@ -17,5 +17,5 @@ export function createS2Audio(){
  void ctx.resume()
  // Pestle thud: low body + short noise transient; the partner's strokes are softer.
  const thud=(gain:number)=>{tone(95,.18,'sine',gain,.6);burst(.07,600,gain*.6,1.2)}
- return{strike:()=>thud(.42),partner:()=>thud(.16),close:()=>{timers.forEach(clearInterval);try{wind.stop();lfo.stop()}catch{/* already stopped */}void ctx.close()}}
+ return{strike:()=>thud(.42),partner:()=>thud(.16),setVolume:(value:number)=>{if(ctx.state!=='closed'&&Number.isFinite(value))master.gain.setTargetAtTime(.09*Math.max(0,Math.min(1,value)),ctx.currentTime,.025)},close:()=>{timers.forEach(clearInterval);try{wind.stop();lfo.stop()}catch{/* already stopped */}void ctx.close()}}
 }

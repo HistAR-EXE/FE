@@ -1,11 +1,16 @@
 import Dexie, { type EntityTable } from 'dexie'
 import { getData, httpClient } from '../../shared/api/httpClient'
-import { flushWorldQueue, type QueueRow, type WorldIntent, type WorldState, type WorldWire } from './worldQueue'
+import { flushWorldQueue, repairLegacyEpilogueRow, type QueueRow, type WorldIntent, type WorldState, type WorldWire } from './worldQueue'
 import {getSessionMeta} from '../../shared/auth/session'
 import {saveVerifiedState} from './worldContinuity'
 const db=new Dexie('timelens-world-business-actions') as Dexie&{actions:EntityTable<QueueRow,'id'>}
 db.version(1).stores({actions:'id,owner,createdAt,status'})
 const store={all:()=>db.actions.toArray(),put:(row:QueueRow)=>db.actions.put(row),remove:(id:string)=>db.actions.delete(id),freezeWire:(id:string,wire:WorldWire)=>db.transaction('rw',db.actions,async()=>{const row=await db.actions.get(id);if(!row)return null;if(row.wire)return row.wire;await db.actions.update(id,{wire});return wire})}
+const retainedStore={...store,repairLegacyEpilogue:(id:string,owner:string)=>db.transaction('rw',db.actions,async()=>{
+ const current=await db.actions.get(id);if(!current||current.owner!==owner)return null
+ const next=repairLegacyEpilogueRow(current);if(next!==current)await db.actions.put(next)
+ return next
+})}
 const base='/api/v2/worlds/cuchi-mach-song'
 export const readWorldState=async()=>{const owner=getSessionMeta()?.userId;const state=await getData<WorldState>(httpClient.get(`${base}/state`));if(owner&&getSessionMeta()?.userId===owner)saveVerifiedState(owner,state);return state}
 let running:Promise<void>=Promise.resolve()
@@ -19,7 +24,7 @@ export async function enqueueWorld(owner:string,intent:WorldIntent){
 }
 export async function syncWorld(owner:string,isCurrent:()=>boolean){
  // One flight per tab; server revision + receipts cover other tabs/devices.
- const operation=running.catch(()=>{}).then(()=>flushWorldQueue(store,owner,{state:readWorldState,send:wire=>getData<WorldState>(httpClient.post(`${base}/actions`,wire)),isCurrent}))
+ const operation=running.catch(()=>{}).then(()=>flushWorldQueue(retainedStore,owner,{state:readWorldState,send:wire=>getData<WorldState>(httpClient.post(`${base}/actions`,wire)),isCurrent}))
  running=operation;await operation
 }
 export const pendingWorld=(owner:string)=>db.actions.where('owner').equals(owner).toArray()

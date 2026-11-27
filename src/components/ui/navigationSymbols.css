@@ -1,0 +1,2 @@
+@font-face{font-family:TimeLensNavSymbols;src:url('./assets/timelens-navigation-symbols.woff2') format('woff2');font-style:normal;font-weight:400;font-display:block}
+.material-symbols-outlined.timelens-local-symbol{font-family:TimeLensNavSymbols;font-feature-settings:'liga';font-weight:400;font-synthesis:none}

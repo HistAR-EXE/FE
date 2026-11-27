@@ -1,0 +1,76 @@
+/* Field-journal direction: ink, brass and cream; illustrations authored in SVG. */
+@font-face{font-family:Lora;src:url('./assets/Lora-Regular.ttf') format('truetype');font-style:normal;font-weight:400 700;font-display:swap}
+@font-face{font-family:Lora;src:url('./assets/Lora-Italic.ttf') format('truetype');font-style:italic;font-weight:400 700;font-display:swap}
+.lw-root{--story-ink:#102c26;--story-brass:#dfbd81;--story-paper:#f5eedb}
+.quest-world-layout{height:100dvh;min-height:0;overflow:hidden}
+.quest-world-layout>.flex-grow{height:100dvh;padding-bottom:0;transition-property:margin}
+.quest-world-viewport{position:relative;isolation:isolate;height:100%;min-height:0;flex:1;overflow:hidden;background:#0d1412}
+.quest-world-viewport>.lw-root,.quest-world-viewport>.lw-root.lw-game{position:absolute;inset:0;width:100%;height:100%;min-height:0;z-index:0}
+.quest-world-viewport .lw-game .lw-transfer-veil{position:absolute}
+.quest-world-viewport .lw-game .lw-transfer{position:absolute;max-width:calc(100% - 24px)}
+.quest-world-viewport .lw-game .lw-overlay{width:min(720px,calc(100% - 24px));max-height:calc(100% - 90px)}
+.quest-world-viewport .lw-game .lw-compass{max-width:calc(100% - 24px)}
+.lw-root .lw-story-emblem{display:block;width:100%;height:auto;max-width:160px}
+.lw-root .lw-story-cutaway{display:block;width:100%;height:auto}
+.lw-root .lw-story-opening h2,.lw-story-journal h2,.lw-story-journal .lw-story-lead h3{font-family:Lora,Georgia,serif;font-weight:400;letter-spacing:-.035em;line-height:1.12}
+.lw-game .lw-compass:has(.lw-story-opening){top:auto;bottom:24px;left:24px;width:min(940px,calc(100% - 48px));max-height:calc(100% - 108px);padding:0;border:1px solid #dfbd8138;background:linear-gradient(110deg,#10231ff7 35%,#10231fc9);border-radius:4px 24px 4px 4px;box-shadow:0 18px 60px #0006}
+.lw-game .lw-prologue.lw-story-opening{margin:0;padding:28px 32px;display:grid;grid-template-columns:1.1fr 1fr;gap:18px}
+.lw-game .lw-story-opening h2{font-size:clamp(34px,4vw,58px);margin:12px 0 16px;color:var(--story-paper)}
+.lw-story-opening h2 em{color:var(--story-brass);font-weight:400}
+.lw-game .lw-story-opening p{font-size:14px;line-height:1.7;max-width:43ch}
+.lw-game .lw-story-opening .lw-eyebrow{color:var(--story-brass);font-size:10px;letter-spacing:.17em}
+.lw-story-opening-art{align-self:center;text-align:center;color:#d7c594;min-width:0}
+.lw-story-opening-art span{font-size:9px;letter-spacing:.16em;display:block;margin-top:-8px}
+.lw-story-opening-actions{display:flex;gap:8px;flex-direction:column;align-items:flex-start;margin:20px 0 14px}
+.lw-game .lw-story-opening-actions button{font-size:13px;min-height:44px}
+.lw-game .lw-story-opening .lw-primary{background:#dfbd81;color:#152d26;border-color:#dfbd81}
+.lw-game .lw-story-opening-actions button:not(.lw-primary){background:transparent;color:#d5ddca;border:0;border-bottom:1px solid #d5ddca55;border-radius:0;padding-left:0}
+.lw-game .lw-compass:has(.lw-story-opening)>.lw-world-exits{display:none}
+.lw-game .lw-compass:has(.lw-story-opening)>.lw-assist-toggle{margin:0 24px 18px;width:calc(100% - 48px);background:#18382e;color:#c6d2c2;border-color:#4a6755}
+.lw-game .lw-story-opening .lw-small{color:#c2cabd;font-size:11px;line-height:1.65}
+.lw-story-journal{box-sizing:border-box;inset:0;margin:auto;width:min(950px,calc(100% - 32px));max-height:calc(100dvh - 40px);padding:0;border:1px solid #bfa77577;border-radius:4px 22px 4px 4px;background:#102620;color:#f2ecd9;box-shadow:0 24px 100px #0009;overflow:auto;overscroll-behavior:contain;font-family:inherit}
+.lw-story-journal::backdrop{background:#030e0bc9;backdrop-filter:blur(7px)}
+.lw-story-journal p{line-height:1.7}
+.lw-story-journal .lw-eyebrow{color:#dac18f;font-size:10px;letter-spacing:.14em;margin:0 0 8px}
+.lw-story-journal h2{font-size:clamp(25px,4vw,36px);margin:0}
+.lw-story-journal-head{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:26px 30px 22px}
+.lw-root .lw-story-journal button{background:#193b30;color:#f4ecd6;border:1px solid #baa16a66;border-radius:4px;min-height:44px;font-size:13px}
+.lw-root .lw-story-journal button:hover{background:#305044;color:#fff}
+.lw-story-sections{display:flex;gap:6px;padding:0 30px 18px;border-bottom:1px solid #d3ba7c30;flex-wrap:wrap}
+.lw-root .lw-story-sections button{background:transparent;border-color:transparent}
+.lw-root .lw-story-sections button[aria-pressed=true]{background:#dfbd81;color:#162d25}
+.lw-story-lead{display:grid;grid-template-columns:1fr 1.2fr;align-items:center;gap:22px;padding:28px 30px 12px;background:radial-gradient(at 80% 60%,#74906420,transparent 55%)}
+.lw-story-journal .lw-story-lead h3{font-size:clamp(32px,4vw,44px);margin:12px 0 18px;color:#f5eedb}
+.lw-story-lead p{font-size:14px;color:#cad4c6;max-width:35ch}
+.lw-story-chapters{list-style:none;margin:0;padding:6px 30px 20px;display:grid;grid-template-columns:1fr 1fr;gap:18px 28px}
+.lw-story-chapters li{display:flex;gap:16px;border-top:1px solid #bfa77544;padding:22px 0 0}
+.lw-story-chapter-number{font-family:Lora,Georgia,serif;font-size:30px;line-height:1;color:#9b9e80}
+.lw-story-chapters [data-state=CURRENT] .lw-story-chapter-number{color:#e2c28b}
+.lw-story-chapters [data-state=UNDERSTOOD] .lw-eyebrow{color:#abddbd}
+.lw-story-chapters h3{font-size:18px;font-weight:600;margin:0 0 8px;color:#f4eddb}
+.lw-story-chapters p{font-size:13px;color:#becbbd;margin:6px 0}
+.lw-story-chapters .lw-story-question{color:#e3cfaa;font-style:italic}
+.lw-story-footnote{padding:0 30px 18px;font-size:12px;color:#b5c3b3}
+.lw-story-people{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;padding:8px 30px 28px}
+.lw-story-people .lw-story-emblem{width:130px;margin-bottom:22px}
+.lw-story-people h3{color:#f1dfb9;font-size:23px;margin:0 0 10px;font-family:Lora,Georgia,serif;font-weight:400}
+.lw-story-people p{font-size:13px;color:#c8d1c3}
+.lw-story-sources{padding:14px 30px 28px;max-width:78ch}
+.lw-story-sources h3{font-size:21px;margin:18px 0 12px;color:#f5e4bc}
+.lw-story-sources p{font-size:14px;color:#c9d2c3}
+.lw-story-sources article{border-left:2px solid #b6a374;padding:2px 0 2px 18px;margin:24px 0}
+.lw-story-sources a{color:#efd5a2;text-decoration:underline;text-underline-offset:4px}
+.lw-story-sources .lw-story-footnote{padding:12px 0 0;font-size:12px}
+.lw-story-journal-footer{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:18px 30px;border-top:1px solid #d3ba7c30;color:#b5c3b3;font-size:12px}
+.lw-story-journal-footer a{color:#daca9f;text-decoration:underline;text-underline-offset:3px}
+.lw-kha-intro{display:flex;gap:12px;align-items:center;margin:10px 0}
+.lw-kha-intro .lw-story-emblem{width:75px;flex-shrink:0}
+.lw-game .lw-compass:has(.lw-kha-conversation){width:min(420px,calc(100% - 24px));max-height:calc(100% - 150px)}
+.lw-kha-topics{display:flex;flex-direction:column;gap:6px;margin:12px 0}
+.lw-root .lw-kha-topics button{text-align:left;border-color:#bfa77555;background:#182c24;color:#eee5cf}
+.lw-root .lw-kha-topics button[aria-pressed=true]{border-color:#dfbd81;background:#365140}
+.lw-kha-reply{border-left:2px solid #dfbd81;padding:8px 12px;background:#d9c28c0d}
+@media(max-width:767px){.quest-world-layout>.flex-grow{height:calc(100dvh - 65px - env(safe-area-inset-bottom,0px))}.lw-game .lw-compass:has(.lw-story-opening){left:12px;bottom:12px;width:calc(100% - 24px);max-height:calc(100% - 140px)}.lw-game .lw-prologue.lw-story-opening{grid-template-columns:1fr;padding:22px}.lw-story-opening-art{display:none}.lw-game .lw-story-opening h2{font-size:40px;margin:8px 0 14px}.lw-game .lw-story-opening p{font-size:13px}.lw-story-opening-actions{margin:16px 0}.lw-game .lw-story-opening .lw-small{font-size:10px}.lw-story-journal{width:calc(100% - 20px);max-height:calc(100dvh - 24px)}.lw-story-journal-head{padding:22px 20px 18px;align-items:flex-start}.lw-story-journal-head button{flex-shrink:0}.lw-story-sections{padding:0 14px 14px;gap:0}.lw-root .lw-story-sections button{font-size:12px;padding:8px 10px}.lw-story-lead{grid-template-columns:1fr;padding:24px 20px 10px;gap:0}.lw-story-lead>.lw-story-cutaway{max-height:200px;margin-top:-10px}.lw-story-chapters{grid-template-columns:1fr;padding:0 20px 18px;gap:14px}.lw-story-footnote{padding:0 20px 14px}.lw-story-people{grid-template-columns:1fr;padding:4px 20px 20px}.lw-story-people article{border-bottom:1px solid #bfa77533;padding-bottom:18px}.lw-story-people .lw-story-emblem{width:100px;margin-bottom:12px}.lw-story-sources{padding:10px 20px 20px}.lw-story-journal-footer{padding:16px 20px}.lw-story-journal-footer>span{display:none}.lw-story-journal-footer button{width:100%}.lw-game .lw-compass:has(.lw-kha-conversation){width:auto;max-height:calc(100% - 160px)}}
+@media(max-height:620px){.lw-game .lw-story-opening h2{font-size:30px}.lw-game .lw-prologue.lw-story-opening{padding:16px 22px}.lw-story-opening-actions{margin:10px 0}.lw-game .lw-story-opening .lw-small{display:none}}
+/* Four HUD actions stay together; the connection notice begins below their touch targets. */
+@media(max-width:640px){.lw-game .lw-hud{position:relative;box-sizing:border-box}.lw-game .lw-hud-place{max-width:100%}.lw-game .lw-hud-actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;width:100%}.lw-game .lw-hud-actions button{min-width:0;min-height:44px;font-size:12px;padding:6px 4px}.lw-game .lw-sync{position:relative;top:auto;right:auto;width:fit-content;max-width:calc(100% - 24px);margin:8px 12px 0 auto;box-sizing:border-box}}

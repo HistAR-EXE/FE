@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 test('proof routes reach every existing scene and return without inventing physical links',async()=>{
  const {worldRoutes}=await import('../src/features/living-world/worldContinuity.ts')
  const seen=new Set(['S0']);for(let i=0;i<10;i++)for(const r of worldRoutes)if(seen.has(r.from))seen.add(r.to)
- assert.deepEqual([...seen].sort(),['S0','S1','S2','L1-A','L1-B','L1-C','L1-D','L2-A','L2-C','L3-A','L3-B','L3-C'].sort()) // S0, S1 (P5 slice, G3 immersive), S2, L1-B, L1-D, L2-A, L3-A
+ assert.deepEqual([...seen].sort(),['S0','S1','S2','S3','S4','S5','L1-A','L1-B','L1-C','L1-D','L2-A','L2-B','L2-C','L2-D','L3-A','L3-B','L3-C','L3-D'].sort()) // 18 M2 zones
  for(const z of seen)if(z!=='S0')assert.ok(worldRoutes.some(r=>r.from===z&&r.to==='S0'))
  assert.ok(worldRoutes.every(r=>r.type!=='PHYSICAL_VERIFIED'))
  assert.equal(new Set(worldRoutes.map(r=>r.id)).size,worldRoutes.length)
@@ -36,4 +36,13 @@ test('profile network/server failures preserve a stored session; explicit authen
  for(const status of [401,403])assert.equal(invalidatesStoredSession(new ApiError({status,code:'UNAUTHORIZED',message:'denied'})),true)
  for(const status of [400,404,500,503])assert.equal(invalidatesStoredSession(new ApiError({status,code:'INTERNAL_ERROR',message:'unavailable'})),false)
  assert.equal(invalidatesStoredSession(new TypeError('Failed to fetch')),false)
+})
+test('nextRouteStep resolves direct and multi-hop playable routes without getting trapped on knowledge links',async()=>{
+ const {nextRouteStep}=await import('../src/features/living-world/worldContinuity.ts')
+ assert.equal(nextRouteStep('L3-B','L3-C')?.id,'CARE_WATER')
+ assert.equal(nextRouteStep('L3-C','L3-B')?.id,'WATER_CARE')
+ assert.equal(nextRouteStep('L3-B','L3-D')?.id,'CARE_WATER')
+ assert.equal(nextRouteStep('L3-C','L1-C')?.id,'WATER_CARE')
+ assert.equal(nextRouteStep('L3-B','L1-C')?.id,'CARE_DEEP')
+ assert.equal(nextRouteStep('L1-D','L2-A')?.id,'CALLBACK_L1-D')
 })

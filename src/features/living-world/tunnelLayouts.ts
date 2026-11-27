@@ -29,7 +29,9 @@ const SHAFT: LSeg = { a: [0, 3.5], b: [0, 2] }
 const ENTRY: LRoom = { c: [0, 3.3], r: .62, h: 1.5 }
 const UP: Spot = { at: [.65, 3.35], approach: [0, 3] }
 
-export const tunnelLayouts: Record<'L1-A' | 'L1-B' | 'L1-D' | 'L2-A' | 'L3-A', TunnelLayout> = {
+export const tunnelLayouts: Record<'L1-A' | 'L1-B' | 'L1-D' | 'L2-A' | 'L3-A' | 'L2-D' | 'L3-D', TunnelLayout> = {
+ 'L2-D':{depth:'L2',half:.4,high:1.3,meander:.03,tone:'#927051',spawn:{at:[0,2],heading:Math.PI},segs:[{a:[0,3.5],b:[0,.5]}],rooms:[{c:[0,-.3],r:2.15,h:2.15}],lamps:[[-1.6,.2,-1.1,1.6],[1.6,.2,-1.1,1.5],[.4,.1,2,1]],routes:[],targets:{}},
+ 'L3-D':{depth:'L3',half:.4,high:1.3,meander:.03,tone:'#80644f',spawn:{at:[0,2],heading:Math.PI},segs:[{a:[0,3.5],b:[0,.5]}],rooms:[{c:[0,-.3],r:2.15,h:2.15}],lamps:[[-1.6,.2,-1.1,1.6],[1.6,.2,-1.1,1.5],[.4,.1,2,1]],routes:[],targets:{}},
  'L1-A': { depth: 'L1', half: .375, high: 1.2, meander: .05, tone: '#a87951', spawn: { at: [0, 2], heading: Math.PI },
   segs: [SHAFT, { a: [0, 2], b: [0, .5] }, { a: [0, .5], b: [-2.5, .5] }, { a: [-2.5, .5], b: [-2.5, -1] }, { a: [0, .5], b: [2.5, .5] }, { a: [2.5, .5], b: [2.5, -1] }, { a: [0, 2], b: [-1.5, 2] }],
   rooms: [ENTRY, { c: [0, .5], r: .72, h: 1.45 }, { c: [-2.5, -1.2], r: .5, h: 1.25 }, { c: [2.5, -1.2], r: .5, h: 1.25 }],
@@ -66,6 +68,7 @@ const segDist = (x: number, z: number, s: LSeg) => { const dx = s.b[0] - s.a[0],
 /** Walk grid membership: on a passage centreline (±0.26 m) or well inside a chamber. */
 export const inLayout = (zone: keyof typeof tunnelLayouts, x: number, z: number) => {
  const l = tunnelLayouts[zone]
+ if((zone==='L2-D'||zone==='L3-D')&&Math.abs(x)<1.3&&z<0&&z> -1.65)return false
  return l.segs.some(s => segDist(x, z, s) <= .26) || l.rooms.some(r => Math.hypot(x - r.c[0], z - r.c[1]) <= r.r - .3)
 }
 /** Interpretive targets that never count as quest progress (THEMATIC corners). */
