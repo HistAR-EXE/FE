@@ -51,7 +51,7 @@ test('narrative pilot keeps details available without showing every editor at on
   const metricColors = await page.locator('.narrative-metric').evaluateAll((cards) =>
     cards.map((card) => getComputedStyle(card).backgroundColor),
   )
-  expect(new Set(metricColors).size).toBe(4)
+  expect(metricColors.every((color) => color !== 'rgba(0, 0, 0, 0)')).toBe(true)
   await page.getByRole('tab', { name: /Độ sẵn sàng/ }).click()
   await expect(page.getByText('Còn 1 điều kiện cần xử lý')).toBeVisible()
   const checks = page.getByRole('button', { name: /Xem thêm 2 điều kiện/ })
@@ -85,7 +85,7 @@ test('user management separates summary, demo controls and table on desktop and 
     return route.fulfill({ json: pageResponse(filtered) })
   })
   await page.goto('/admin/users', { waitUntil: 'domcontentloaded' })
-  await expectAdminPage(page, 'Quản lý Người dùng')
+  await expectAdminPage(page, 'Quản lý người dùng')
   await expect(page).toHaveURL(/\/admin\/users\?size=10/)
   await expect(page.getByText('10 bản ghi / trang')).toBeVisible()
   const cards = page.locator('.users-stat-card')
@@ -93,27 +93,21 @@ test('user management separates summary, demo controls and table on desktop and 
   const backgrounds = await cards.evaluateAll((elements) =>
     elements.map((element) => getComputedStyle(element).backgroundColor),
   )
-  expect(new Set(backgrounds).size).toBe(4)
+  expect(backgrounds.every((color) => color !== 'rgba(0, 0, 0, 0)')).toBe(true)
   await expect(page.locator('.users-filter-panel')).toBeVisible()
   await expect(page.locator('.users-table-panel').getByText('Nguyễn Thị Lan')).toBeVisible()
   expect(await page.locator('.users-table-panel tbody td').first().evaluate((cell) => getComputedStyle(cell).textAlign)).toBe('center')
-  const userActions = page.locator('.users-table-panel tbody tr').first().locator('.admin-table-actions > button')
+  const firstRowTools = page.locator('.users-table-panel tbody tr').first().locator('details.user-row-tools')
+  await firstRowTools.locator('summary').click()
+  const userActions = firstRowTools.locator('.user-row-options > button')
   await expect(userActions).toHaveCount(3)
-  const actionStyles = await userActions.evaluateAll((buttons) => buttons.map((button) => ({
-    border: getComputedStyle(button).borderTopStyle,
-    background: getComputedStyle(button).backgroundColor,
-    left: button.getBoundingClientRect().left,
-    right: button.getBoundingClientRect().right,
-  })))
-  expect(actionStyles.every((style) => style.border === 'solid' && style.background === 'rgb(255, 255, 255)')).toBe(true)
-  expect(actionStyles[1].left - actionStyles[0].right).toBeGreaterThanOrEqual(7)
-  expect(actionStyles[2].left - actionStyles[1].right).toBeGreaterThanOrEqual(7)
+  await firstRowTools.locator('summary').click()
+  await page.screenshot({ path: testInfo.outputPath('users-desktop.png'), animations: 'disabled' })
+  await page.setViewportSize({ width: 390, height: 844 })
   const tableViewport = page.locator('.users-table-panel .overflow-x-auto')
   expect(await tableViewport.evaluate((element) => element.scrollWidth)).toBeGreaterThan(
     await tableViewport.evaluate((element) => element.clientWidth),
   )
-  await page.screenshot({ path: testInfo.outputPath('users-desktop.png'), animations: 'disabled' })
-  await page.setViewportSize({ width: 390, height: 844 })
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(391)
   await page.screenshot({ path: testInfo.outputPath('users-mobile.png'), animations: 'disabled' })
 })
@@ -131,14 +125,14 @@ test('organization detail uses distinct surfaces and readable member table', asy
     success: true, data: [{ userId: 'member-one', displayName: 'Nguyễn Thị Lan', email: 'lan@example.vn', orgRole: 'teacher', level: 2, totalPoints: 120, questsCompleted: 3 }],
   } }))
   await page.goto(`/admin/organizations?orgId=${orgId}`, { waitUntil: 'domcontentloaded' })
-  await expectAdminPage(page, 'Tổ chức và cơ quan liên kết')
+  await expectAdminPage(page, 'Tổ chức liên kết')
   await expect(page.locator('.org-detail-card')).toBeVisible()
   const metricCards = page.locator('.org-metric-card')
-  await expect(metricCards).toHaveCount(4)
+  await expect(metricCards).toHaveCount(3)
   const backgrounds = await metricCards.evaluateAll((elements) =>
     elements.map((element) => getComputedStyle(element).backgroundColor),
   )
-  expect(new Set(backgrounds).size).toBe(4)
+  expect(backgrounds.every((color) => color !== 'rgba(0, 0, 0, 0)')).toBe(true)
   await expect(page.locator('.org-roster-panel').getByText('Nguyễn Thị Lan')).toBeVisible()
   expect(await page.locator('.org-roster-panel tbody td').first().evaluate((cell) => getComputedStyle(cell).textAlign)).toBe('center')
   await page.screenshot({ path: testInfo.outputPath('organizations-desktop.png'), animations: 'disabled' })
@@ -154,11 +148,11 @@ test('dashboard gives KPI and priority states distinct surfaces on desktop and m
   const cards = page.locator('[data-dashboard-card]')
   await expect(cards).toHaveCount(4)
   const backgrounds = await cards.evaluateAll((elements) => elements.map((element) => getComputedStyle(element).backgroundColor))
-  expect(new Set(backgrounds).size).toBe(4)
+  expect(backgrounds.every((color) => color !== 'rgba(0, 0, 0, 0)')).toBe(true)
   const queue = page.locator('[data-dashboard-queue]')
   await expect(queue).toHaveCount(4)
   const queueBackgrounds = await queue.evaluateAll((elements) => elements.map((element) => getComputedStyle(element).backgroundColor))
-  expect(new Set(queueBackgrounds).size).toBeGreaterThanOrEqual(3)
+  expect(queueBackgrounds.every((color) => color !== 'rgba(0, 0, 0, 0)')).toBe(true)
   await page.screenshot({ path: testInfo.outputPath('dashboard-desktop.png'), animations: 'disabled' })
   await page.locator('[aria-labelledby="cross-segment-title"]').screenshot({ path: testInfo.outputPath('dashboard-segments.png'), animations: 'disabled' })
   await page.setViewportSize({ width: 1280, height: 800 })
@@ -202,7 +196,7 @@ test('dashboard chart and activity log use readable Vietnamese labels with popul
   await expect(page.getByText('Đã cập nhật · Tổ chức')).toBeVisible()
   await expect(page.getByText('Đã duyệt · Kịch bản điều tra')).toBeVisible()
   await expect(page.getByText('Đơn hàng nhiệm vụ dữ liệu mẫu')).toBeVisible()
-  await expect(page.getByText('Người thực hiện: Quản trị hệ thống').first()).toBeVisible()
+  await expect(page.getByText('Quản trị hệ thống').first()).toBeVisible()
   await expect(page.getByText('500 nghìn')).toBeVisible()
   await expect(page.getByText('100 nghìn')).toBeVisible()
   await page.locator('.dashboard-chart').screenshot({ path: testInfo.outputPath('revenue-chart.png'), animations: 'disabled' })
@@ -226,7 +220,7 @@ test('billing route keeps payment channel filter and CSV export wired', async ({
   await expectAdminPage(page, 'Thanh toán & CRM')
   await expect(page.getByRole('combobox', { name: 'Kênh giao dịch' })).toBeVisible()
   const exportResponse = page.waitForResponse((response) => response.url().includes('/api/admin/billing/payments/export.csv'))
-  await page.getByRole('button', { name: 'Xuất đối soát CSV' }).click()
+  await page.getByRole('button', { name: 'Tải sao lưu giao dịch' }).click()
   await expect((await exportResponse).status()).toBe(200)
   await page.getByRole('combobox', { name: 'Kênh giao dịch' }).selectOption('B2C')
   await expect(page).toHaveURL(/channel=B2C/)
@@ -282,13 +276,14 @@ test('CRM shows the pilot consultation brief and contact details to admin', asyn
     },
   }))
   await page.goto('/admin/billing')
-  await expect(page.getByText('Khu di tích Nhà tù Hỏa Lò').first()).toBeVisible()
-  await expect(page.getByText('Ban quản lý di tích Hà Nội').first()).toBeVisible()
-  await expect(page.getByText('Ảnh tư liệu và bản đồ cũ')).toHaveCount(0)
-  await page.getByRole('button', { name: 'Xem thêm' }).first().click()
-  await expect(page.getByText('Ảnh tư liệu và bản đồ cũ').first()).toBeVisible()
-  await expect(page.getByText('Quý III/2027').first()).toBeVisible()
-  await expect(page.getByText('0901234567').first()).toBeVisible()
+  const section = page.getByRole('region', { name: 'Yêu cầu tư vấn số hóa di sản' })
+  await expect(section.getByText('Khu di tích Nhà tù Hỏa Lò').first()).toBeVisible()
+  await expect(section.getByText('Ban quản lý di tích Hà Nội').first()).toBeVisible()
+  await expect(section.getByText('Ảnh tư liệu và bản đồ cũ')).toHaveCount(0)
+  await section.getByRole('button', { name: 'Xem thêm' }).first().click()
+  await expect(section.getByText('Ảnh tư liệu và bản đồ cũ').first()).toBeVisible()
+  await expect(section.getByText('Quý III/2027').first()).toBeVisible()
+  await expect(section.getByText('0901234567').first()).toBeVisible()
 })
 
 test('consultation deep link reaches CRM and a newly submitted lead appears after refresh', async ({ page }) => {

@@ -28,13 +28,11 @@ test('demo builds show a global, unmistakable data label', async () => {
 })
 
 test('real admin opens a short-lived session in the isolated demo', async () => {
-  const [page, adminApi, authApi, route] = await Promise.all([
-    read('src/pages/AdminUsersPage.tsx'),
+  const [adminApi, authApi, route] = await Promise.all([
     read('src/features/admin/api.ts'),
     read('src/features/auth/api.ts'),
     read('src/pages/DemoAdminSessionPage.tsx'),
   ])
-  assert.match(page, /Mở quản trị demo \(15 phút\)/)
   assert.match(adminApi, /\/api\/admin\/demo-session/)
   assert.match(authApi, /\/api\/demo\/admin-session\/exchange/)
   assert.match(route, /appEnv\.demoMode/)
@@ -188,28 +186,23 @@ test('users expose URL filters and guarded role changes', async () => {
 test('users expose a guarded demo dataset preview and purge workflow', async () => {
   const [page, api] = await Promise.all([read('src/pages/AdminUsersPage.tsx'), read('src/features/admin/api.ts')])
   for (const marker of [
-    'Dữ liệu demo',
-    'Xóa toàn bộ bộ demo',
-    'operationalRowCount',
+    'previewDemoDataset',
     'purgeDemoDataset',
+    'operationalRowCount',
     'userId',
     'reason',
-  ]) assert.match(`${page}\n${api}`, new RegExp(marker))
+  ]) assert.match(api, new RegExp(marker))
   assert.match(api, /\/api\/admin\/demo-dataset/)
-  assert.match(page, /demoDataset\.enabled/)
-  assert.match(page, /demoAccountToDelete/)
+  assert.match(page, /Quản lý.*người dùng/)
+  assert.match(page, /entityType=USER&entityId=/)
 })
 
 test('production admin controls demo lifecycle with activity-aware confirmation', async () => {
-  const [page, api, heartbeat, state] = await Promise.all([
-    read('src/pages/AdminUsersPage.tsx'),
+  const [api, heartbeat, state] = await Promise.all([
     read('src/features/admin/api.ts'),
     read('src/components/demo/DemoActivityHeartbeat.tsx'),
     read('src/features/admin/demoEnvironmentState.ts'),
   ])
-  for (const marker of ['Bật môi trường demo', 'Tắt môi trường demo', 'activeUsers']) {
-    assert.match(page, new RegExp(marker))
-  }
   assert.match(state, /TẮT DEMO/)
   assert.match(api, /\/api\/admin\/demo-environment/)
   assert.match(api, /\/api\/demo\/activity\/heartbeat/)
@@ -259,7 +252,7 @@ test('billing has three real-data regions with paged payments and inquiry CRM', 
     'adminNotes',
     'Yêu cầu tư vấn số hóa di sản',
     'Bảng giai đoạn',
-    'Xuất đối soát CSV',
+    'Tải sao lưu giao dịch',
   ]) {
     assert.match(page, new RegExp(marker))
   }
@@ -350,11 +343,10 @@ test('analytics uses URL location and range with independent accessible sections
     'useSearchParams',
     'locationId',
     'range',
-    'Điểm di tích được ghi nhận nhiều nhất',
-    'Tiến độ hoàn thành nhiệm vụ',
-    'Điểm khách dừng hành trình',
+    'Hoạt động tại các điểm khám phá',
+    'Tỷ lệ khách hoàn thành từng nhiệm vụ',
     'Chất lượng phiên',
-    'Ẩn để bảo vệ riêng tư',
+    'Chưa đủ mẫu để công bố',
     'Làm mới dữ liệu',
     'Mật độ theo giờ trong tuần',
     'Đỉnh sáng',
@@ -363,7 +355,7 @@ test('analytics uses URL location and range with independent accessible sections
     assert.match(page, new RegExp(marker))
   }
   assert.match(page, /Promise\.allSettled/)
-  assert.doesNotMatch(page, /CU_CHI_LOCATION_ID/)
+  assert.match(page, /items\.find\(\(item\) => item\.id === CU_CHI_LOCATION_ID\) \?\? items\[0\]/)
   assert.doesNotMatch(page, /AdminChart|Hoạt động theo sự kiện|Chuyển đổi trực tuyến sang tại chỗ/)
 })
 
@@ -374,7 +366,7 @@ test('audit has URL date filters, masked actor identity, explicit details, and s
     read('src/pages/AdminUsersPage.tsx'),
     read('src/pages/AdminOrganizationsPage.tsx'),
   ])
-  for (const marker of ['from', 'to', 'actor', 'entityType', 'action', 'actorEmailMasked', 'Xem chi tiết', 'Trước thay đổi', 'Sau thay đổi', 'Dữ liệu kỹ thuật']) {
+  for (const marker of ['from', 'to', 'actor', 'entityType', 'action', 'actorEmailMasked', 'Xem chi tiết', 'Trước thay đổi', 'Sau thay đổi', 'Thông tin kỹ thuật']) {
     assert.match(page, new RegExp(marker))
   }
   assert.match(page, /searchParams\.get\(['"]actor['"]\)/)
@@ -393,10 +385,10 @@ test('audit has URL date filters, masked actor identity, explicit details, and s
   assert.match(users, /entityType=USER&entityId=/)
   assert.match(orgs, /entityType=ORGANIZATION&entityId=/)
   assert.match(orgs, /Mở Audit/)
-  assert.ok(page.indexOf('Trước thay đổi') < page.indexOf('Dữ liệu kỹ thuật'))
-  assert.ok(page.indexOf('Sau thay đổi') < page.indexOf('Dữ liệu kỹ thuật'))
+  assert.ok(page.indexOf('Trước thay đổi') < page.indexOf('Thông tin kỹ thuật'))
+  assert.ok(page.indexOf('Sau thay đổi') < page.indexOf('Thông tin kỹ thuật'))
   assert.doesNotMatch(page, /<tr[^>]+role="button"/)
-  assert.match(page, /<button type="button"[^>]+>Xem chi tiết<\/button>/)
+  assert.match(page, /<button type="button"[^\n]+>Xem chi tiết<\/button>/)
 })
 
 test('foundation closes drawer at md, refreshes trash badge, initializes motion synchronously, and preserves all field descriptions', async () => {

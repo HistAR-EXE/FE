@@ -113,7 +113,7 @@
   "overrides": {
     "@grpc/grpc-js": "1.13.6",
     "fast-uri": "3.1.9",
-    "follow-redirects": "1.16.1",
+    "follow-redirects": "1.16.3",
     "serialize-javascript": "7.1.4",
     "source-map-js": "1.2.2",
     "zod": "4.6.7"

@@ -410,9 +410,14 @@ function PhotoFrameEditor({
     const hasHeritageRoles = heritageRoles.length > 0
     const initialHeritageRoleId = searchParams.get('role')
     const [selectedHeritageRole, setSelectedHeritageRole] =
-        useState<PublishedHeritageRoleTemplate | null>(null)
+        useState<PublishedHeritageRoleTemplate | null>(
+            () => heritageRoles.find((role) => role.id === initialHeritageRoleId) ?? null,
+        )
     const [heritagePlacement, setHeritagePlacement] =
-        useState<FacePlacement | null>(null)
+        useState<FacePlacement | null>(() => {
+            const role = heritageRoles.find((item) => item.id === initialHeritageRoleId) ?? null
+            return role ? initialPlacement(null, role) : null
+        })
     const draftContextKey = `${stationContext?.siteCode ?? 'cu-chi'}:${
         stationContext?.stationCode ?? 'standalone'
     }:${entrySource ?? 'direct'}`
@@ -487,9 +492,12 @@ function PhotoFrameEditor({
     useEffect(() => {
         const next =
             heritageRoles.find((role) => role.id === initialHeritageRoleId) ?? null
-        setSelectedHeritageRole(next)
-        setHeritagePlacement(next ? initialPlacement(null, next) : null)
-        setHasHeritagePreview(false)
+        setSelectedHeritageRole((current) => {
+            if (current?.id === next?.id) return current
+            setHeritagePlacement(next ? initialPlacement(null, next) : null)
+            setHasHeritagePreview(false)
+            return next
+        })
     }, [heritageRoles, initialHeritageRoleId])
 
     useEffect(() => {
