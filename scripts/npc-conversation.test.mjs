@@ -19,3 +19,11 @@ test('cook callback needs both confirmed meanings, in either discovery order',()
  assert.notEqual(cookReply('SMOKE',[]),cookReply('SMOKE',['KITCHEN_SMOKE_PATH_CORRECT']))
  assert.equal(facts.length,2)
 })
+
+test('pending or unrelated discoveries do not change the cook narrative',()=>{
+ const pending=Object.freeze(['WATER_STORAGE_INSPECTED','MEDICAL_PREPARATION_INSPECTED','KITCHEN_SMOKE_INSPECTED'])
+ for(const topic of ['MEAL','SMOKE','COMMUNITY'])assert.equal(cookReply(topic,pending),cookReply(topic,[]))
+ assert.match(cookReply('MEAL',[]),/Tôi tiếp tục trông nồi/)
+ assert.match(cookReply('SMOKE',[]),/mô hình/)
+ assert.equal(pending.length,3)
+})

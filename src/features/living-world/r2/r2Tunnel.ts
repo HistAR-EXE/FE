@@ -4,6 +4,7 @@ import type {ZoneEnv} from '../zoneEnvironments'
 import type {Zone} from '../worldModel'
 import {place,preload,r2Texture,pbr,roomEnvironment,canvasTexture} from './r2Assets'
 import {R2_CHAR_FILES} from './r2Actors'
+import {createVietnameseOilLamp,type VietnameseOilLamp} from './vietnameseOilLamp'
 import {passages,passagePoints,passageFloor,passageRoof} from '../undergroundContinuity'
 import {tunnelLayouts,isTunnelZone} from '../tunnelLayouts'
 
@@ -36,6 +37,7 @@ let insideFn:((x:number,y:number,z:number)=>boolean)|null=null
 export const tunnelInside=(x:number,y:number,z:number)=>insideFn?insideFn(x,y,z):true
 export function buildTunnel(scene:T.Scene,kit:Kit,zone:Zone,renderer:T.WebGLRenderer,opts:{parent?:T.Object3D;xray?:boolean}={}):ZoneEnv{
  const host=opts.parent??scene,xray=!!opts.xray
+ let teachingModel:T.Group|null=null
  const modelLayers:T.Mesh[]=[],modelLinks:T.Mesh[]=[],relationLines:{mesh:T.Line;id:string}[]=[]
  const lay=zoneLayout(zone),segs=lay.extra,rooms=lay.rooms,wet=lay.depth==='L3',T_=(id:string,dy=0):[number,number,number]=>{const p=lay.lay.targets[id]?.at??[0,0];return [p[0],dy,p[1]]}
  if(!xray){const env=roomEnvironment(renderer);kit.track(env);scene.environment=env.texture;scene.environmentIntensity=.06;scene.background=new T.Color('#060403');scene.fog=new T.Fog('#0b0806',3,11)}
@@ -63,9 +65,9 @@ export function buildTunnel(scene:T.Scene,kit:Kit,zone:Zone,renderer:T.WebGLRend
  floor.geometry.setAttribute('uv1',floor.geometry.attributes.uv)
  if(xray){floor.visible=false;const fg=new T.BufferGeometry(),fp=pos.slice();for(let q=1;q<fp.length;q+=3)fp[q]=.005;fg.setAttribute('position',new T.BufferAttribute(fp,3));fg.setAttribute('uv',new T.BufferAttribute(uv,2));fg.setIndex(idx);fg.computeVertexNormals();const cast=new T.Mesh(kit.track(fg),pbr(kit,'dirt_floor',{repeat:[1,1],color:wet?'#6d5444':'#9c7a62',side:T.DoubleSide}));cast.receiveShadow=true;host.add(cast)}
  if(!xray)host.add(new T.HemisphereLight('#7a6450','#1a120c',.3))
- const targets:Record<string,T.Object3D>={},lights:T.PointLight[]=[],flames:T.Mesh[]=[]
- const flameMat=kit.memo('r2-flame',()=>new T.MeshStandardMaterial({color:'#000',emissive:'#ffcf8a',emissiveIntensity:12}))
- const lamp=(x:number,y:number,z:number,i=1.6)=>{place(host,'vintage_oil_lamp',[x,y,z],{scale:.75});const l=new T.PointLight('#ffb56a',xray?0:i,5.5,1.7);l.position.set(x,y+.2,z);if(!xray)host.add(l);lights.push(l);const f=new T.Mesh(kit.geo('r2-flame-geo',()=>new T.SphereGeometry(.016,8,6)),flameMat);f.position.set(x,y+.17,z);host.add(f);flames.push(f)}
+ const targets:Record<string,T.Object3D>={},oilLamps:VietnameseOilLamp[]=[]
+ const shelfMat=kit.memo('r2-lamp-niche-wood',()=>new T.MeshStandardMaterial({color:'#4a3523',roughness:.92}))
+ const lamp=(x:number,y:number,z:number,i=1.6)=>{if(y>.18){const shelf=new T.Mesh(kit.geo('r2-lamp-shelf',()=>new T.BoxGeometry(.18,.028,.18)),shelfMat);shelf.position.set(x,y-.015,z);shelf.receiveShadow=true;host.add(shelf)}oilLamps.push(createVietnameseOilLamp(host,kit,[x,y,z],{scale:.88,intensity:xray?0:i,distance:5.5,decay:1.7,phase:oilLamps.length*1.7}))}
  const beamMat=kit.memo('r2-beam',()=>new T.MeshBasicMaterial({color:'#fff2d8',transparent:true,opacity:.1,blending:T.AdditiveBlending,depthWrite:false,side:T.DoubleSide}))
  const beam=(x:number,z:number,top:number,r:number)=>{const m=new T.Mesh(kit.geo('r2-beam-'+r,()=>{const c=new T.CylinderGeometry(r*.7,r*1.4,top,20,1,true);c.translate(0,top/2,0);return c}),beamMat);m.position.set(x,0,z);host.add(m);const s=new T.SpotLight('#fff1d6',6,top+2,.35,.6,1.2);s.position.set(x,top+.5,z);s.target.position.set(x,0,z);if(!xray)host.add(s,s.target);m.visible=!xray;return m}
  const proxy=(at:[number,number,number],size:[number,number,number])=>{const m=new T.Mesh(kit.geo('r2-proxy-'+size.join(),()=>new T.BoxGeometry(...size)),kit.memo('r2-proxy-mat',()=>new T.MeshBasicMaterial({visible:false})));m.position.set(...at);host.add(m);return m}
@@ -103,6 +105,7 @@ export function buildTunnel(scene:T.Scene,kit:Kit,zone:Zone,renderer:T.WebGLRend
   const clay=kit.track(new T.MeshStandardMaterial({color:'#b98a62',roughness:.95}))
   const modelRoot=new T.Group();host.add(modelRoot)
   if(zone==='L2-D'){
+   teachingModel=modelRoot
    modelRoot.position.set(0,.76,-.8)
    // Authored teaching cutaway: staggered openings are readable from the room,
    // not an archaeological plan. The top plate represents the surface.
@@ -110,7 +113,7 @@ export function buildTunnel(scene:T.Scene,kit:Kit,zone:Zone,renderer:T.WebGLRend
     const section=new T.Shape();section.moveTo(-.9,-.07);section.lineTo(.9,-.07);section.lineTo(.9,.07);section.lineTo(-.9,.07);section.closePath()
     if(i<3)for(const x of [-.55+i*.12,.28-i*.08]){const hole=new T.Path();hole.absellipse(x,0,.17,.047,0,Math.PI*2,true);section.holes.push(hole)}
     const geometry=new T.ExtrudeGeometry(section,{depth:.8,bevelEnabled:false,curveSegments:16});geometry.translate(0,0,-.4)
-    const slab=new T.Mesh(kit.track(geometry),clay);slab.position.set((i-1.5)*.06,i*.18,0);modelRoot.add(slab);modelLayers.push(slab)
+    const slab=new T.Mesh(kit.track(geometry),clay);slab.userData.modelLayer=['L3','L2','L1','SURFACE'][i];slab.position.set((i-1.5)*.06,i*.18,0);modelRoot.add(slab);modelLayers.push(slab)
     const title=['L3','L2','L1','Mặt đất'][i],texture=kit.track(canvasTexture(256,64,c=>{c.fillStyle='#241e15';c.fillRect(0,0,256,64);c.fillStyle='#f3e2bb';c.textAlign='center';c.font='30px sans-serif';c.fillText(title,128,43)}))
     const tag=new T.Mesh(kit.track(new T.PlaneGeometry(.32,.08)),kit.track(new T.MeshBasicMaterial({map:texture})));tag.position.set(.68,0,.405);slab.add(tag)
    }
@@ -157,8 +160,10 @@ export function buildTunnel(scene:T.Scene,kit:Kit,zone:Zone,renderer:T.WebGLRend
  // reference frame: real section size (62 × 104 cm) drawn as a thin outline at the entry, for honesty about scale
  const ref=new T.LineSegments(kit.track(new T.EdgesGeometry(new T.PlaneGeometry(.62,1.04).translate(0,.52,0))),kit.memo('r2-ref-line',()=>new T.LineBasicMaterial({color:'#e6b07a',transparent:true,opacity:.55})));ref.position.set(0,.01,2.45);ref.visible=xray;host.add(ref) // scale reference only in the cutaway; in walk view it read as stray lines
  return {heightAt:(x,z)=>passageFloor(zone,x,z),floor,targets,endpoints:new Map(),pipes:[],links:[],camera:{position:[0,1,3.2],target:[0,.9,1.6],min:.7,max:1.8,polar:1.55},update:(t,_dt,s)=>{
-  modelLayers.forEach((m,i)=>{m.position.y=i*(s.completed?.includes('MODEL_COMPARE')?.3:.18)})
-  modelLinks.forEach((link,i)=>{
+  if(teachingModel)teachingModel.rotation.y=s.modelView?.yaw??0
+  modelLayers.forEach((m,i)=>{m.position.y=i*(s.completed?.includes('MODEL_COMPARE')?.3:.18);m.visible=!s.modelView||s.modelView.layer==='ALL'||s.modelView.layer===m.userData.modelLayer})
+  modelLinks.forEach((link,i)=>{link.visible=!s.modelView||s.modelView.layer==='ALL'
+
    const x=i%2===0?-.42:.38,a=modelLayers[i].position.clone().add(new T.Vector3(x,.04,.28)),b=modelLayers[i+1].position.clone().add(new T.Vector3(x-.06,-.04,.28)),direction=b.clone().sub(a)
    link.position.copy(a).add(b).multiplyScalar(.5);link.scale.y=direction.length();link.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),direction.normalize())
   })
@@ -169,6 +174,6 @@ export function buildTunnel(scene:T.Scene,kit:Kit,zone:Zone,renderer:T.WebGLRend
    // A static lift distinguishes selection without relying on colour or animated pulses.
    target.position.y=selected?.87:.82
   }
-  for(let i=0;i<lights.length;i++){const k=s.reduced?1:1+Math.sin(t*9+i*1.7)*.06+Math.sin(t*23+i)*.03;if(lights[i].parent)lights[i].intensity=(i<2?1.6:1.3)*k;flames[i].scale.setScalar(k)}
+  for(let i=0;i<oilLamps.length;i++)oilLamps[i].update(t,s.reduced)
  }}
 }

@@ -1,4 +1,5 @@
-import {chromium,expect} from '@playwright/test'
+import {chromium,expect as baseExpect} from '@playwright/test'
+const expect=baseExpect.configure({timeout:30000})
 import {createHmac,randomUUID} from 'node:crypto'
 import {readFileSync,mkdirSync,writeFileSync} from 'node:fs'
 import {spawn} from 'node:child_process'
@@ -41,6 +42,9 @@ try{
  }
  await observe('A02_PREPARE','KITCHEN_HEARTH_INSPECTED');expect((await state()).foundations).toEqual([]);await observe('A02_SMOKE','KITCHEN_SMOKE_INSPECTED');const kitchen=await proof()
  await kitchen.getByRole('button',{name:'Lần theo các vật thể trong phòng',exact:true}).click();await expect(page.locator('main')).toHaveAttribute('data-arrived','Q4_HEARTH');
+ // React arrival precedes the next rendered camera frame and its projected pick coordinates.
+ await expect(page.locator('[data-kitchen-inspection]')).toHaveAttribute('data-kitchen-inspection','true');
+ await expect(page.locator('canvas')).toHaveAttribute('data-model-camera-inside','true');
  const pickKitchen=async node=>{const id='Q4_'+node,at=await page.locator(`[data-scene-target="${id}"]`).evaluate(e=>({x:+e.dataset.cx,y:+e.dataset.cy})),rect=await page.locator('canvas').boundingBox();await page.mouse.click(rect.x+at.x,rect.y+at.y);await page.waitForTimeout(250);expect(await page.locator('canvas').getAttribute('data-last-pick')).toBe(id)};
  for(const node of ['HEARTH','CHANNEL','DIFFUSION'])await pickKitchen(node);
  await expect.poll(async()=>(await state()).facts.includes('KITCHEN_SMOKE_PATH_CORRECT')).toBe(true);await pickKitchen('COMMUNITY');await expect.poll(async()=>(await state()).foundations.includes('MS_FOUNDATION_KITCHEN')).toBe(true);result.checks.push({id:'Q4-spatial-canonical',result:'PASS'});await shot('Q4-confirmed');

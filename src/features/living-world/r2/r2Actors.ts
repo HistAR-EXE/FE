@@ -3,7 +3,10 @@ import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js'
 import type {Kit} from '../../time-portal/tunnel3d/kit'
 import {gltfReady} from './r2Assets'
 import {buildAuthoredCharacter} from './authoredCharacter'
+import {createKhanRanTexture,createCamoParachuteTexture} from './costumeTextures'
 import {elbowPoint} from './armPose'
+import {plantFoot} from './plantedFoot'
+import {finishPoseTransition} from './rigMotion'
 
 // Rigged people for the playable build: Quaternius Universal Base Characters [Standard] + Universal Animation
 // Library [Standard] (CC0). Bodies are the free "Superhero" bases, proportion-adjusted toward an ordinary build
@@ -12,7 +15,17 @@ import {elbowPoint} from './armPose'
 // The returned adapter keeps the createWorldActor API (g/legs/left/right/reach/contact), so gameplay code is unchanged.
 
 export const R2_CHAR_FILES=['Superhero_Male_FullBody','Superhero_Female_FullBody','Hair_SimpleParted','Hair_Buns','Eyebrows_Regular','Eyebrows_Female','UAL1_Runtime']
-export type Clothing={top:string;bottom:string;style?:'baba'|'modern';hat?:'non';scarf?:boolean}
+export type Clothing={
+ top:string
+ bottom:string
+ style?:'baba'|'soldier'|'modern'
+ hat?:'non'|'taibeo'
+ scarf?:boolean
+ headScarf?:boolean
+ camoCape?:boolean
+ belt?:boolean|'leather'|'web'
+ canteen?:boolean
+}
 export type RigOptions={body:'male'|'female';height:number;skin:string;hair:'Hair_SimpleParted'|'Hair_Buns';brows?:boolean;hairColor:string;clothing:Clothing;crouch?:boolean;idle?:string;sample?:boolean}
 export type RigActor={g:T.Group;contact:T.Mesh;legs:T.Object3D[];left:T.Object3D;right:T.Object3D;reach:(target:T.Vector3|null)=>void;grip:(left:T.Vector3|null,right:T.Vector3|null)=>void;tick:(dt:number,reduced:boolean)=>void;setCrouch:(on:boolean)=>void;setTalking:(on:boolean)=>void;setIdle:(clip:string)=>void;dispose:()=>void}
 
@@ -20,9 +33,19 @@ const live=new Set<RigActor>()
 export const tickRigActors=(dt:number,reduced:boolean)=>{for(const a of live)a.tick(dt,reduced)}
 export const clearRigActors=()=>{for(const a of live)a.dispose();live.clear()}
 
-let fabric:T.Texture|undefined,checker:T.Texture|undefined
-const fabricTex=()=>fabric??=(()=>{const c=document.createElement('canvas');c.width=c.height=256;const x=c.getContext('2d')!;x.fillStyle='#fff';x.fillRect(0,0,256,256);let s=11;const r=()=>((s=(s*1664525+1013904223)>>>0)/4294967296);for(let i=0;i<2600;i++){x.fillStyle=`rgba(0,0,0,${r()*.08})`;x.fillRect(r()*256,r()*256,1+r()*2,6+r()*30)}for(let y=0;y<256;y+=3){x.fillStyle='rgba(0,0,0,0.03)';x.fillRect(0,y,256,1)}const t=new T.CanvasTexture(c);t.wrapS=t.wrapT=T.RepeatWrapping;t.colorSpace=T.SRGBColorSpace;return t})()
-const checkerTex=()=>checker??=(()=>{const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d')!;for(let i=0;i<8;i++)for(let j=0;j<8;j++){x.fillStyle=(i+j)%2?'#1a1a1a':'#e8e4da';x.fillRect(i*16,j*16,16,16)}const t=new T.CanvasTexture(c);t.wrapS=t.wrapT=T.RepeatWrapping;t.repeat.set(6,6);t.colorSpace=T.SRGBColorSpace;return t})()
+let fabricBytes:Uint8Array|null=null
+function fabricTex(){
+ if(!fabricBytes){
+  fabricBytes=new Uint8Array(128*128*4);let s=11;const r=()=>((s=(s*1664525+1013904223)>>>0)/4294967296)
+  for(let y=0;y<128;y++)for(let x=0;x<128;x++){
+   const i=(y*128+x)*4,v=Math.round(244-(y%3===0?8:0)-r()*12)
+   fabricBytes[i]=v;fabricBytes[i+1]=v;fabricBytes[i+2]=v;fabricBytes[i+3]=255
+  }
+ }
+ const t=new T.DataTexture(fabricBytes,128,128,T.RGBAFormat)
+ t.wrapS=t.wrapT=T.RepeatWrapping;t.colorSpace=T.SRGBColorSpace;t.needsUpdate=true
+ return t
+}
 
 function bodyOf(root:T.Object3D){let body:T.SkinnedMesh|null=null;root.traverse(o=>{if(!body&&o instanceof T.SkinnedMesh&&/Superhero/i.test((o.material as T.Material).name))body=o});return body as T.SkinnedMesh|null}
 /** Garment shell cut from the body by dominant bone, inflated along normals, Laplacian-smoothed; inherits skin weights. */
@@ -52,7 +75,8 @@ function shell(kit:Kit,body:T.SkinnedMesh,pick:(bone:string,i:number,P:T.BufferA
  }
  compact(g)
  g.computeVertexNormals()
- const m=new T.SkinnedMesh(kit.track(g),kit.track(new T.MeshStandardMaterial({color,roughness:rough,map:map??fabricTex(),side:T.DoubleSide})))
+ const tex=kit.track(map??fabricTex())
+ const m=new T.SkinnedMesh(kit.track(g),kit.track(new T.MeshStandardMaterial({color,roughness:rough,map:tex,side:T.DoubleSide})))
  m.bind(body.skeleton,body.bindMatrix);m.castShadow=true;m.frustumCulled=false;body.parent!.add(m);return m
 }
 /** Drop body triangles fully hidden by garments: no skin poking through cloth when joints bend. */
@@ -66,18 +90,112 @@ function hideCovered(body:T.SkinnedMesh,TOP:Set<string>,LEG:Set<string>,shoes:bo
  body.geometry=ng
 }
 const hiddenCache=new Map<string,T.BufferGeometry>()
-function dress(kit:Kit,root:T.Object3D,{top,bottom,style='baba',hat,scarf}:Clothing){
+function attachToBone(bone:T.Object3D|undefined,child:T.Object3D,worldPos:T.Vector3){
+ if(!bone)return
+ const local=worldPos.clone()
+ bone.worldToLocal(local)
+ child.position.copy(local)
+ bone.add(child)
+}
+function dress(kit:Kit,root:T.Object3D,{top,bottom,style='baba',hat,scarf,headScarf,camoCape,belt,canteen}:Clothing){
  const body=bodyOf(root);if(!body)return
- body.geometry.computeBoundingBox();const bb=body.geometry.boundingBox!,H=bb.max.y-bb.min.y,y0=bb.min.y,hN=(i:number,P:T.BufferAttribute)=>(P.getY(i)-y0)/H,long=style==='baba'
+ body.geometry.computeBoundingBox();const bb=body.geometry.boundingBox!,H=bb.max.y-bb.min.y,y0=bb.min.y,hN=(i:number,P:T.BufferAttribute)=>(P.getY(i)-y0)/H,long=style==='baba'||style==='soldier'
  const TOP=new Set(['spine_01','spine_02','spine_03','clavicle_l','clavicle_r','upperarm_l','upperarm_r','lowerarm_l','lowerarm_r']),LEG=new Set(['thigh_l','thigh_r','calf_l','calf_r','root'])
  // straight hem (no garment edge following the groin crease → no 'leotard' silhouette)
  shell(kit,body,(b,i,P)=>(TOP.has(b)&&hN(i,P)>(long?.4:.53))||(b==='pelvis'&&hN(i,P)>(long?.42:.54))||(b==='neck_01'&&hN(i,P)<.86)||(long&&b.startsWith('thigh')&&hN(i,P)>.4),(b,i,P)=>{const h=hN(i,P);let d=.022;if(h<.6)d+=(.6-h)*(long?.32:.12);if(/lowerarm/.test(b))d=long?.03:.022;return d+(long?.01:.018)},top,{smooth:8})
  shell(kit,body,(b,i,P)=>LEG.has(b)||((b==='pelvis'||b==='spine_01')&&hN(i,P)<=(long?.62:.58))||((b==='foot_l'||b==='foot_r')&&hN(i,P)>.045),(_b,i,P)=>.028+Math.max(0,.45-hN(i,P))*(long?.09:.03),bottom,{smooth:6})
  if(style==='modern')shell(kit,body,(b,i,P)=>/foot|ball/.test(b)||(/calf/.test(b)&&hN(i,P)<.09),()=>.012,'#3a3430',{rough:.7})
- else shell(kit,body,(b,i,P)=>/foot|ball/.test(b)&&hN(i,P)<.02,()=>.006,'#2a2018',{rough:.8})
- if(scarf)shell(kit,body,(b,i,P)=>b==='neck_01'&&hN(i,P)>.78&&hN(i,P)<.88,()=>.05,'#ffffff',{map:checkerTex()})
+ else shell(kit,body,(b,i,P)=>/foot|ball/.test(b)&&hN(i,P)<.032,()=>.008,'#23201d',{rough:.84})
+ if(scarf){
+  const scarfTex=kit.track(createKhanRanTexture(true,[1,1]))
+  shell(kit,body,(b,i,P)=>b==='neck_01'&&hN(i,P)>.77&&hN(i,P)<.885,()=>.048,'#ffffff',{map:scarfTex,rough:.92})
+  // Hai vạt khăn rằn Nam Bộ thả dài trước ngực
+  const chest=root.getObjectByName('spine_03')
+  if(chest){
+   const chestWorld=chest.getWorldPosition(new T.Vector3())
+   const scarfGroup=new T.Group()
+   const scarfMat=kit.track(new T.MeshStandardMaterial({map:scarfTex,roughness:.92,side:T.DoubleSide}))
+   for(const side of [-1,1]){
+    const len=side<0?.27:.3,tailGeo=kit.track(new T.PlaneGeometry(.052,len,4,12)),tp=tailGeo.attributes.position,tu=tailGeo.attributes.uv
+    for(let i=0;i<tp.count;i++){
+     const lx=tp.getX(i),ly=tp.getY(i),k=.5-ly/len
+     tp.setXYZ(i,side*(.026+k*.016)+lx,.1-k*len,.156+Math.sin(k*Math.PI)*.014+(side>0?.005:0))
+     tu.setXY(i,lx/.052+.5,1-k)
+    }
+    tailGeo.computeVertexNormals()
+    const tailMesh=new T.Mesh(tailGeo,scarfMat);tailMesh.castShadow=true;scarfGroup.add(tailMesh)
+   }
+   attachToBone(chest,scarfGroup,chestWorld)
+  }
+ }
+ if(headScarf){
+  const head=root.getObjectByName('Head')
+  if(head){
+   const bandTex=kit.track(createKhanRanTexture(false,[3,.55]))
+   const bandMat=kit.track(new T.MeshStandardMaterial({map:bandTex,roughness:.92,side:T.DoubleSide}))
+   const band=new T.Mesh(kit.geo('r2-head-scarf',()=>new T.CylinderGeometry(.096,.098,.048,24,1,true)),bandMat)
+   band.castShadow=true
+   const wp=head.getWorldPosition(new T.Vector3()).add(new T.Vector3(0,.115,-.006))
+   attachToBone(head,band,wp)
+  }
+ }
+ if(camoCape){
+  const chest=root.getObjectByName('spine_03')
+  if(chest){
+   const capeTex=kit.track(createCamoParachuteTexture([2,2.4]))
+   const capeMat=kit.track(new T.MeshStandardMaterial({map:capeTex,roughness:.74,side:T.DoubleSide}))
+   const capeGeo=kit.geo('r2-camo-cape',()=>{
+    const cols=24,rows=14,cp:number[]=[],cu:number[]=[],ci:number[]=[]
+    for(let r=0;r<=rows;r++){
+     const k=r/rows,span=T.MathUtils.lerp(.8,.62,k)*Math.PI
+     for(let c=0;c<=cols;c++){
+      const u=c/cols,ang=(u-.5)*2*span,pleat=Math.sin(u*Math.PI*8)*.012*k
+      const rx=.12+T.MathUtils.smoothstep(k,0,.2)*.13+k*.045,rz=.11+k*.055+pleat
+      cp.push(Math.sin(ang)*rx,.14-k*.82,-Math.cos(ang)*rz-.02);cu.push(u,1-k)
+      if(r&&c){const n=r*(cols+1)+c;ci.push(n,n-1,n-cols-2,n,n-cols-2,n-cols-1)}
+     }
+    }
+    const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(cp,3));g.setAttribute('uv',new T.Float32BufferAttribute(cu,2));g.setIndex(ci);g.computeVertexNormals();return g
+   })
+   const capeMesh=new T.Mesh(capeGeo,capeMat);capeMesh.castShadow=true
+   attachToBone(chest,capeMesh,chest.getWorldPosition(new T.Vector3()))
+  }
+ }
+ if(belt){
+  const pelvis=root.getObjectByName('pelvis')
+  if(pelvis){
+   const beltGroup=new T.Group()
+   const beltMat=kit.memo('r2-belt-'+String(belt),()=>new T.MeshStandardMaterial({color:belt==='leather'?'#543922':'#485235',roughness:.82}))
+   const ringMesh=new T.Mesh(kit.geo('r2-belt-geo',()=>new T.CylinderGeometry(.176,.178,.044,24)),beltMat);ringMesh.scale.set(1,1,.72);beltGroup.add(ringMesh)
+   const buckle=new T.Mesh(kit.geo('r2-buckle-geo',()=>new T.BoxGeometry(.044,.048,.015)),kit.memo('r2-buckle-mat',()=>new T.MeshStandardMaterial({color:'#8b8062',roughness:.45,metalness:.45})))
+   buckle.position.set(0,0,.128);beltGroup.add(buckle)
+   if(canteen){
+    const pouch=new T.Mesh(kit.geo('r2-canteen-geo',()=>new T.SphereGeometry(1,14,12).scale(.038,.066,.048)),kit.memo('r2-canteen-mat',()=>new T.MeshStandardMaterial({color:'#3c522f',roughness:.72})))
+    pouch.position.set(-.182,-.075,-.01);beltGroup.add(pouch)
+   }
+   attachToBone(pelvis,beltGroup,pelvis.getWorldPosition(new T.Vector3()).add(new T.Vector3(0,.045,0)))
+  }
+ }
  hideCovered(body,TOP,LEG,style==='modern',hN)
- if(hat==='non'){const head=root.getObjectByName('Head')!;const cone=new T.Mesh(kit.geo('r2-non-la',()=>new T.ConeGeometry(.26,.17,40,1,true)),kit.memo('r2-non-la-mat',()=>new T.MeshStandardMaterial({color:'#d9c9a0',roughness:.85,side:T.DoubleSide})));const wp=head.getWorldPosition(new T.Vector3()).add(new T.Vector3(0,.2,0));head.worldToLocal(wp);cone.position.copy(wp);cone.castShadow=true;head.add(cone)}
+ if(hat==='non'){
+  const head=root.getObjectByName('Head')!
+  const cone=new T.Mesh(kit.geo('r2-non-la',()=>new T.ConeGeometry(.26,.17,40,1,true)),kit.memo('r2-non-la-mat',()=>new T.MeshStandardMaterial({color:'#d9c9a0',roughness:.85,side:T.DoubleSide})))
+  cone.castShadow=true
+  attachToBone(head,cone,head.getWorldPosition(new T.Vector3()).add(new T.Vector3(0,.2,0)))
+ }else if(hat==='taibeo'){
+  const head=root.getObjectByName('Head')!
+  const hatGroup=new T.Group()
+  const hatMat=kit.memo('r2-taibeo-mat',()=>new T.MeshStandardMaterial({color:'#495c31',roughness:.92,side:T.DoubleSide}))
+  const crown=new T.Mesh(kit.geo('r2-taibeo-crown',()=>new T.SphereGeometry(1,24,10,0,Math.PI*2,0,Math.PI*.52).scale(.102,.082,.106)),hatMat)
+  const brim=new T.Mesh(kit.geo('r2-taibeo-brim',()=>{
+   const segs=36,rows=4,bp:number[]=[],bi:number[]=[]
+   for(let r=0;r<=rows;r++){const k=r/rows;for(let i=0;i<=segs;i++){const a=i/segs*Math.PI*2,rx=.098+k*.094,rz=.102+k*.098,wave=Math.sin(a*5+.4)*.009*k;bp.push(Math.sin(a)*rx,-.036*k+wave,Math.cos(a)*rz);if(r&&i){const n=r*(segs+1)+i;bi.push(n,n-1,n-segs-2,n,n-segs-2,n-segs-1)}}}
+   const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(bp,3));g.setIndex(bi);g.computeVertexNormals();return g
+  }),hatMat)
+  crown.castShadow=brim.castShadow=true
+  hatGroup.add(crown,brim)
+  attachToBone(head,hatGroup,head.getWorldPosition(new T.Vector3()).add(new T.Vector3(0,.128,-.008)))
+ }
 }
 function rebind(src:T.Object3D,target:T.Object3D,color:string,kit:Kit){
  const out:T.SkinnedMesh[]=[]
@@ -106,7 +224,7 @@ function ordinaryBuild(root:T.Object3D,female:boolean){
 
 export function createRigActor(parent:T.Object3D,kit:Kit,o:RigOptions):RigActor{
  const anim=gltfReady('chars/UAL1_Runtime.glb')
- const model=o.sample?buildAuthoredCharacter(anim.scene,{skin:o.skin,hair:o.hairColor,top:o.clothing.top,bottom:o.clothing.bottom,female:o.body==='female'}):SkeletonUtils.clone(gltfReady('chars/'+(o.body==='female'?'Superhero_Female_FullBody':'Superhero_Male_FullBody')+'.glb').scene)
+ const model=o.sample?buildAuthoredCharacter(anim.scene,{skin:o.skin,hair:o.hairColor,top:o.clothing.top,bottom:o.clothing.bottom,female:o.body==='female',costume:o.clothing}):SkeletonUtils.clone(gltfReady('chars/'+(o.body==='female'?'Superhero_Female_FullBody':'Superhero_Male_FullBody')+'.glb').scene)
  model.traverse(x=>{if(!(x instanceof T.Mesh))return;x.castShadow=true;x.receiveShadow=false;x.frustumCulled=false;if(o.sample){kit.track(x.geometry);kit.track(x.material as T.Material)}else{const m=kit.track((x.material as T.MeshStandardMaterial).clone());if(/Superhero/.test(m.name))m.color.multiply(new T.Color(o.skin));x.material=m}})
  if(!o.sample)for(const f of [o.hair,...(o.brows?[o.body==='female'?'Eyebrows_Female':'Eyebrows_Regular']:[])])for(const m of rebind(gltfReady('chars/'+f+'.glb').scene,model,o.hairColor,kit))model.add(m)
  model.updateMatrixWorld(true);const box=new T.Box3().setFromObject(model),h=box.max.y-box.min.y
@@ -117,7 +235,11 @@ export function createRigActor(parent:T.Object3D,kit:Kit,o:RigOptions):RigActor{
  const mixer=new T.AnimationMixer(model),actions=new Map<string,T.AnimationAction>()
  const action=(name:string)=>{let a=actions.get(name);if(!a){const clip=T.AnimationClip.findByName(anim.animations,name);if(!clip)return undefined;a=mixer.clipAction(clip);actions.set(name,a)}return a}
  let current='',crouch=!!o.crouch,talking=false,idle=o.idle??'Idle_Loop',speed=0,moveHold=0
- const play=(name:string,fade=.25)=>{if(name===current)return;const next=action(name);if(!next)return;const prev=actions.get(current);next.reset().setEffectiveWeight(1).fadeIn(fade).play();if(prev)prev.fadeOut(fade);current=name}
+ const play=(name:string,fade=.25)=>{
+  const next=action(name);if(!next)return
+  if(name!==current){const prev=actions.get(current);next.reset().setEffectiveWeight(1).fadeIn(fade).play();if(prev)prev.fadeOut(fade);current=name}
+  if(fade===0)finishPoseTransition(actions.values(),next)
+ }
  play(crouch?'Crouch_Idle_Loop':idle,0)
  // Dummy joints keep the createWorldActor contract; their rotations are read as intent (arms raised) only.
  const legs=[new T.Object3D(),new T.Object3D()],left=new T.Object3D(),right=new T.Object3D()
@@ -128,6 +250,9 @@ export function createRigActor(parent:T.Object3D,kit:Kit,o:RigOptions):RigActor{
  let reachTarget:T.Vector3|null=null,reachW=0,gripL:T.Vector3|null=null,gripR:T.Vector3|null=null
  const last=new T.Vector3().copy(g.position)
  const footBones=['foot_l','foot_r'].map(name=>model.getObjectByName(name))
+ const legBones=['l','r'].map(side=>({hip:model.getObjectByName('thigh_'+side),knee:model.getObjectByName('calf_'+side)}))
+ let plantedOrientations:T.Quaternion[]=[]
+ let feetLocked=false
  let footReference:T.Vector3[]|null=null,footAnimation='',footYaw=0,footSettled=0
  const vA=new T.Vector3(),vB=new T.Vector3(),vC=new T.Vector3(),vD=new T.Vector3(),q=new T.Quaternion(),qp=new T.Quaternion(),qw=new T.Quaternion()
  const aim=(bone:T.Object3D,child:T.Object3D,to:T.Vector3,w:number)=>{bone.getWorldPosition(vA);child.getWorldPosition(vB);vC.subVectors(vB,vA).normalize();vD.subVectors(to,vA).normalize();q.setFromUnitVectors(vC,vD);bone.getWorldQuaternion(qw);qw.premultiply(q);bone.parent!.getWorldQuaternion(qp);qp.invert().multiply(qw);bone.quaternion.slerp(qp,w);bone.updateMatrixWorld(true)}
@@ -164,12 +289,13 @@ export function createRigActor(parent:T.Object3D,kit:Kit,o:RigOptions):RigActor{
    const moved=last.distanceTo(g.position);last.copy(g.position);speed=dt>0?T.MathUtils.lerp(speed,moved/dt,.3):speed
    if(speed>.25)moveHold=.2;else moveHold=Math.max(0,moveHold-dt)
    const walking=moveHold>0,raised=left.rotation.x<-.5||right.rotation.x<-.5
-   play(walking?(crouch?'Crouch_Fwd_Loop':'Walk_Loop'):crouch?'Crouch_Idle_Loop':talking?'Idle_Talking_Loop':idle)
+   play(walking?(crouch?'Crouch_Fwd_Loop':'Walk_Loop'):crouch?'Crouch_Idle_Loop':talking?'Idle_Talking_Loop':idle,reduced?0:.25)
    const a=actions.get(current);if(a)a.timeScale=walking&&!crouch?T.MathUtils.clamp(speed/1.4,.6,1.6):1
    build.reset();mixer.update(reduced&&!walking?0:dt);build.apply();model.updateMatrixWorld(true)
-   // Ground the authored soles after retargeting. This corrects vertical root offsets;
-   // horizontal foot locking still needs separate gait/contact verification.
-   if(o.sample){
+   // Once both feet are planted, IK already preserves their grounded positions.
+   // Avoid re-skinning every sandal vertex each frame until motion invalidates the anchors.
+   const keepGrounded=feetLocked&&footReference&&!walking&&footAnimation===current&&Math.abs(Math.atan2(Math.sin(g.rotation.y-footYaw),Math.cos(g.rotation.y-footYaw)))<=.01
+   if(o.sample&&!keepGrounded){
     const soles=model.getObjectByName('authored-sandals') as T.SkinnedMesh
     if(soles){let low=Infinity;const p=soles.geometry.attributes.position,v=new T.Vector3()
      for(let i=0;i<p.count;i++){soles.getVertexPosition(i,v).applyMatrix4(soles.matrixWorld);low=Math.min(low,v.y)}
@@ -181,10 +307,13 @@ export function createRigActor(parent:T.Object3D,kit:Kit,o:RigOptions):RigActor{
    if(o.sample){
     const positions=footBones.map(b=>b?.getWorldPosition(new T.Vector3())??new T.Vector3())
     const turning=Math.abs(Math.atan2(Math.sin(g.rotation.y-footYaw),Math.cos(g.rotation.y-footYaw)))>.01
-    if(walking||turning||footAnimation!==current){footReference=null;footSettled=0}
+    if(walking||turning||footAnimation!==current){footReference=null;plantedOrientations=[];footSettled=0}
     else footSettled+=dt
-    if(!footReference&&footSettled>.4)footReference=positions.map(p=>p.clone())
-    g.userData.footFrame={capturedAt:performance.now(),animation:current,walking,turning,settled:!!footReference,root:g.position.toArray(),feet:positions.map((p,i)=>({side:i?'right':'left',position:p.toArray(),horizontalDrift:footReference?Math.hypot(p.x-footReference[i].x,p.z-footReference[i].z):null}))}
+    if(!footReference&&footSettled>.4){footReference=positions.map(p=>p.clone());plantedOrientations=footBones.map(b=>b?.getWorldQuaternion(new T.Quaternion())??new T.Quaternion())}
+    const locked=footBones.map((foot,i)=>!!(footReference&&foot&&legBones[i].hip&&legBones[i].knee&&plantFoot(legBones[i].hip!,legBones[i].knee!,foot,footReference[i],plantedOrientations[i])))
+    feetLocked=locked.every(Boolean)
+    footBones.forEach((b,i)=>{if(b)b.getWorldPosition(positions[i])})
+    g.userData.footFrame={capturedAt:performance.now(),animation:current,walking,turning,settled:!!footReference,root:g.position.toArray(),feet:positions.map((p,i)=>({side:i?'right':'left',locked:locked[i],position:p.toArray(),horizontalDrift:footReference?Math.hypot(p.x-footReference[i].x,p.z-footReference[i].z):null}))}
     footAnimation=current;footYaw=g.rotation.y
    }
    g.userData.activeContact=activeContact

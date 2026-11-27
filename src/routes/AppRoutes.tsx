@@ -58,7 +58,7 @@ const ChatPage = lazy(() => import('../pages/ChatPage').then((module) => ({ defa
 const ExplorePage = lazy(() => import('../pages/ExplorePage').then((module) => ({ default: module.ExplorePage })))
 const LeaderboardPage = lazy(() => import('../pages/LeaderboardPage').then((module) => ({ default: module.LeaderboardPage })))
 const QuestDetailPage = lazy(() => import('../pages/QuestDetailPage').then((module) => ({ default: module.QuestDetailPage })))
-const QuestsPage = lazy(() => import('../pages/QuestsPage').then((module) => ({ default: module.QuestsPage })))
+const QuestWorldPage = lazy(() => import('../pages/QuestWorldPage').then((module) => ({ default: module.QuestWorldPage })))
 const MinigamePage = lazy(() => import('../pages/MinigamePage').then((module) => ({ default: module.MinigamePage })))
 const BattleDioramaPage = lazy(() => import('../pages/BattleDioramaPage').then((module) => ({ default: module.BattleDioramaPage })))
 const PricingPage = lazy(() => import('../pages/PricingPage').then((module) => ({ default: module.PricingPage })))
@@ -165,7 +165,7 @@ export function AppRoutes() {
                                 <Route path="/diorama/:locationId?" element={<SectionErrorBoundary label="Diorama"><BattleDioramaPage /></SectionErrorBoundary>} />
                                 <Route path="/time-portal/:locationId" element={<SectionErrorBoundary label="Cổng thời gian"><TimePortalPage /></SectionErrorBoundary>} />
                                 <Route path="/tour/360/:locationId?" element={<SectionErrorBoundary label="Tour 360"><Tour360Page /></SectionErrorBoundary>} />
-                                <Route path="/quests" element={<QuestsPage />} />
+                                <Route path="/quests" element={<QuestWorldPage />} />
 
                                 <Route path="/quests/:questId/play/:minigameId" element={<MinigamePage />} />
                                 <Route path="/quests/:questId" element={<QuestDetailPage />} />

@@ -6,7 +6,7 @@ import {pbr} from './r2Assets'
 export function buildPassages(scene:T.Scene,kit:Kit,zone:string){
  const targets:Record<string,T.Object3D>={}
  const wood=pbr(kit,'rough_wood',{repeat:[.5,1],color:'#74573c',normalScale:.4})
- const earth=['L1-C','L2-C','L3-B','L3-C'].includes(zone)?pbr(kit,'clay_plaster',{repeat:[2,2],color:'#a88059',side:T.DoubleSide,normalScale:.25}):null
+ const earth=['L1-C','L2-B','L2-C','L3-B','L3-C'].includes(zone)?pbr(kit,'clay_plaster',{repeat:[2,2],color:'#a88059',side:T.DoubleSide,normalScale:.25}):null
  for(const p of Object.values(passages).filter(p=>p.from===zone&&zone!=='S1')){
   const pts=passagePoints(p),opening=passageSample(pts,.2).point,g=new T.Group();g.name='DOOR_'+p.id;g.userData.passage=p.id;g.position.set(...opening);g.rotation.y=Math.atan2(p.out[0],p.out[1]);scene.add(g)
   if(earth){const positions:number[]=[],uv:number[]=[],indices:number[]=[],rings=30,steps=12

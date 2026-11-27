@@ -2,7 +2,10 @@ import * as T from 'three'
 import type {Kit} from '../time-portal/tunnel3d/kit'
 import {lambert,rng,noise2,skyDome,terrain,edge,soilTexture,tree,bamboo,banana,groundCover,hills,puffs,type Rand} from './worldEnvKit'
 import {mergeStaticDescendants} from './worldBatching'
-import type {Zone} from './worldModel'
+import {zones,type Zone} from './worldModel'
+import type {AtmospherePhase} from './worldAtmosphere'
+import type {ModelView} from './worldModelMedia'
+import {createMiniatureVietnameseOilLamp} from './r2/vietnameseOilLamp'
 
 // G3 representative upgrade for the non-S2 scenes of the World Continuity spine.
 // S0 is a present-day *fictional* educational time station. L1-B / L1-D / L2-A / L3-A are a
@@ -11,7 +14,7 @@ import type {Zone} from './worldModel'
 // air path / layered tunnels are drawn. Dimensions, depths and layouts are NOT survey data.
 
 export type ZoneCamera={position:[number,number,number];target:[number,number,number];min:number;max:number;polar:number}
-export type ZoneEnv={heightAt:(x:number,z:number)=>number;floor:T.Mesh;targets:Record<string,T.Object3D>;endpoints:Map<string,T.Vector3>;pipes:T.Mesh[];links:T.Mesh[];camera:ZoneCamera;update:(t:number,dt:number,state:{reduced:boolean;working:boolean;active:string|null;hatch?:string;p2?:string;p2Era?:string|null;completed?:string[];selectedTarget?:string;player?:[number,number]|null})=>void}
+export type ZoneEnv={heightAt:(x:number,z:number)=>number;floor:T.Mesh;targets:Record<string,T.Object3D>;endpoints:Map<string,T.Vector3>;pipes:T.Mesh[];links:T.Mesh[];camera:ZoneCamera;update:(t:number,dt:number,state:{reduced:boolean;working:boolean;active:string|null;hatch?:string;p2?:string;p2Era?:string|null;completed?:string[];selectedTarget?:string;hidden?:boolean;player?:[number,number]|null;atmosphere?:AtmospherePhase;modelView?:ModelView})=>void}
 
 const strata=['#8a6a45','#7a5a3a','#a07a4a','#6e4f33','#93704a']
 function earthColour(y:number,n:number,out:T.Color){const band=Math.floor((-y+n*.25)*2.2);out.set(strata[((band%strata.length)+strata.length)%strata.length]);out.offsetHSL(0,0,n*.04)}
@@ -57,7 +60,7 @@ function tunnel(kit:Kit,from:number,to:number,y:number,faceZ:number,colour='#2b2
  const rim=new T.Mesh(kit.track(new T.EdgesGeometry(new T.ShapeGeometry(shape))),kit.track(new T.LineBasicMaterial({color:'#e7cf9c'})));rim.position.set(mid,y,faceZ+.115);g.add(rim)
  return {group:g,body}
 }
-function lamp(kit:Kit,parent:T.Object3D,at:[number,number,number]){const m=new T.Mesh(kit.geo('lw-oil-lamp',()=>new T.SphereGeometry(.06,8,6)),kit.memo('lw-lamp-glow',()=>new T.MeshBasicMaterial({color:'#ffc977'})));m.position.set(...at);parent.add(m);return m}
+function lamp(kit:Kit,parent:T.Object3D,at:[number,number,number]){return createMiniatureVietnameseOilLamp(parent,kit,[at[0],at[1]-.08,at[2]],.72)}
 
 function buildAir(scene:T.Scene,kit:Kit):ZoneEnv{
  const r=rng(1967201);skyDome(scene,kit,'#9fc0c9','#dfe3c8','#b9b48e');scene.fog=new T.Fog('#dfe3c8',20,62)
@@ -93,7 +96,7 @@ function buildStructure(scene:T.Scene,kit:Kit,zone:Zone):ZoneEnv{
  skyDome(scene,kit,'#9fc0c9','#dfe3c8','#b9b48e');scene.fog=new T.Fog('#dfe3c8',20,62)
  const {floor,height}=excavationGround(scene,kit,3.2,9931);forestFrame(scene,kit,r,height)
  const face=-5.6,levels=[-.7,-1.5,-2.3],targets:Record<string,T.Object3D>={},endpoints=new Map<string,T.Vector3>(),links:T.Mesh[]=[]
- const glows:T.Mesh[]=[]
+ const glows:T.Object3D[]=[]
  levels.forEach((y,i)=>{const t=tunnel(kit,-3.2+i*.4,3-i*.3,y,face,i===focus?'#3a2a1b':'#2a1f15',.62);scene.add(t.group);targets[`STRUCT_LAYER_${i+1}`]=t.body;endpoints.set(`STRUCT_LAYER_${i+1}`,new T.Vector3(0,y,face+.3))
   for(let k=0;k<3;k++)glows.push(lamp(kit,scene,[-2+k*1.8+i*.3,y-.12,face+.16]))})
  const shaft=(x:number,top:number,bottom:number,id:string)=>{const s=tunnel(kit,x-.12,x+.12,(top+bottom)/2,face,'#2a1f15',Math.abs(top-bottom)+.2);s.body.material=kit.track(new T.MeshLambertMaterial({color:'#e1c991'}));s.group.position.z+=.05;scene.add(s.group);targets[id]=s.body;links.push(s.body)}
@@ -129,13 +132,25 @@ function buildStation(scene:T.Scene,kit:Kit):ZoneEnv{
   vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
   fragmentShader:'uniform float time;uniform float power;varying vec2 vUv;void main(){vec2 p=vUv-.5;float r=length(p)*2.0;float a=atan(p.y,p.x);float s=.5+.5*sin(a*5.0+r*14.0-time*2.2);vec3 c=mix(vec3(.55,.85,.75),vec3(.98,.86,.55),s*r);float alpha=smoothstep(1.0,.75,r)*(.25+power*.6)*(.55+.45*s);gl_FragColor=vec4(c,alpha);}'}))
  const veil=new T.Mesh(kit.geo('lw-machine-veil',()=>new T.CircleGeometry(.95,48)),veilMat);veil.position.y=1.38;machine.add(veil)
-  const lanterns:T.Mesh[]=[];for(const [x,z] of [[-3.2,-2.6],[3.2,-2.6],[-3.9,.9],[3.9,.9]] as const)lanterns.push(lamp(kit,scene,[x,2.6,z]))
+  const lanterns:T.Object3D[]=[];for(const [x,z] of [[-3.2,-2.6],[3.2,-2.6],[-3.9,.9],[3.9,.9]] as const)lanterns.push(lamp(kit,scene,[x,2.6,z]))
  return {heightAt:()=>0,floor,targets:{MACHINE:machine},endpoints:new Map(),pipes:[],links:[],camera:{position:[5.4,4.6,8],target:[0,1,-.6],min:5,max:14,polar:1.25},update:(t,dt,s)=>{
   veilMat.uniforms.time.value=s.reduced?0:t;const p=s.active==='MACHINE'||s.working?1:.35;veilMat.uniforms.power.value+=(p-veilMat.uniforms.power.value)*Math.min(1,dt*3)
   if(!s.reduced)ring.rotation.z=t*.12
   for(const l of lanterns)l.scale.setScalar(s.reduced?1:1+Math.sin(t*3+l.position.x)*.06)
  }}
 }
+function buildSurfaceM2(scene:T.Scene,kit:Kit,zone:'S3'|'S4'):ZoneEnv{
+ const r=rng(zone==='S3'?196703:196704)
+ skyDome(scene,kit,zone==='S3'?'#233442':'#9fc0c9',zone==='S3'?'#3b4e5c':'#dfe3c8','#b9b48e')
+ const {floor,height}=excavationGround(scene,kit,.4,zone==='S3'?3311:4411);forestFrame(scene,kit,r,height)
+ const targets:Record<string,T.Object3D>={}
+ for(const t of zones[zone].targets){
+  const g=new T.Group();g.position.set(t.at[0],0,t.at[1]);scene.add(g)
+  const m=new T.Mesh(kit.track(new T.BoxGeometry(.65,.55,.65)),lambert(kit,zone==='S3'?'#8c7651':'#9e7d52'))
+  m.position.y=.28;g.add(m);targets[t.id]=g
+ }
+ return {heightAt:()=>0,floor,targets,endpoints:new Map(),pipes:[],links:[],camera:{position:[0,3.2,6.5],target:[0,.8,-.6],min:3,max:12,polar:1.3},update:()=>{}}
+}
 export function buildZone(zone:Exclude<Zone,'S2'>,scene:T.Scene,kit:Kit):ZoneEnv{
- return zone==='S0'?buildStation(scene,kit):zone==='L1-B'?buildAir(scene,kit):buildStructure(scene,kit,zone)
+ return zone==='S0'?buildStation(scene,kit):zone==='S3'||zone==='S4'?buildSurfaceM2(scene,kit,zone):zone==='L1-B'?buildAir(scene,kit):buildStructure(scene,kit,zone)
 }

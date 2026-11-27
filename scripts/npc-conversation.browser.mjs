@@ -49,6 +49,8 @@ try{
   await page.getByRole('button',{name:'Tôi có thể giúp việc gì?',exact:true}).click()
   await expect(page.getByRole('status').filter({hasText:'Tôi tiếp tục trông nồi'})).toBeVisible()
   await page.getByRole('button',{name:'Bữa ăn liên quan tới những ai?',exact:true}).click()
+  await expect(page.getByRole('button',{name:'Bữa ăn liên quan tới những ai?',exact:true})).toHaveAttribute('aria-pressed','true')
+  await expect(page.getByRole('region',{name:'Lời người nấu bếp',exact:true})).toBeVisible()
   await expect(page.getByRole('status').filter({hasText:'Khi ghé những nơi ấy'})).toBeVisible()
   await page.screenshot({path:path.join(dir,'conversation.png')})
   await page.getByRole('button',{name:'Đóng',exact:true}).click()

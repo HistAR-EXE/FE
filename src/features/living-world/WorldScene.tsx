@@ -10,13 +10,17 @@ import {routesFrom} from './worldContinuity'
 import type {A04Phase} from './a04Experience'
 import {clampTunnelCamera} from './tunnelCamera'
 import {isLivingZone} from './livingSpaces'
-import {roomActionFrame,showRoomActor} from './roomPresentation'
+import {roomActionFrame,conversationFrame,showRoomActor,kitchenFieldOfView,meetingFieldOfView} from './roomPresentation'
 import {disposeWorldScene} from './disposeWorldScene'
 import {passages,passagePoints,passageArrival,passageSample,type V3} from './undergroundContinuity'
 import {warmWorldShaders} from './warmWorldShaders'
+import {kitchenPixelRatio} from './kitchenQuality'
+import type {AtmospherePhase} from './worldAtmosphere'
+import type {ModelView} from './worldModelMedia'
+import {createModelViewerCamera} from './modelViewerCamera'
 
 const gripOf=(a:unknown)=>(a as {grip?:(l:THREE.Vector3|null,r:THREE.Vector3|null)=>void}).grip
-type Props={selectedTarget?:string;passageMotion?:{id:string;phase:string;token:number};onPassageComplete?:()=>void;completed?:string[];onImpact?:()=>void;onPartnerImpact?:()=>void;proof?:boolean;departing?:boolean;controlsActive?:boolean;view?:'walk'|'xray';onReady?:(zone:Shell['zone'])=>void;shell:Shell;rice:number;a04Phase?:A04Phase;working:boolean;airConfirmed:boolean;structureConfirmed:boolean;linkMode:boolean;path:string[];pairs:string[][];talk?:string|null;hatch?:string;firstPerson?:boolean;p2?:string;p2Era?:string|null;onBusy:(busy:boolean)=>void;onMove:(p:Point)=>void;onWalk?:(p:Point)=>void;onPick:(id:string)=>void;onFailure:()=>void}
+type Props={modelView?:ModelView;atmosphere?:AtmospherePhase;selectedTarget?:string;passageMotion?:{id:string;phase:string;token:number};onPassageComplete?:()=>void;completed?:string[];onImpact?:()=>void;onPartnerImpact?:()=>void;proof?:boolean;departing?:boolean;controlsActive?:boolean;view?:'walk'|'xray';onReady?:(zone:Shell['zone'])=>void;shell:Shell;rice:number;a04Phase?:A04Phase;working:boolean;airConfirmed:boolean;structureConfirmed:boolean;linkMode:boolean;path:string[];pairs:string[][];talk?:string|null;hatch?:string;firstPerson?:boolean;p2?:string;p2Era?:string|null;onBusy:(busy:boolean)=>void;onMove:(p:Point)=>void;onWalk?:(p:Point)=>void;onPick:(id:string)=>void;onFailure:()=>void}
 type Label={id:string;object:THREE.Object3D;element:HTMLSpanElement;actor?:boolean}
 export default function WorldScene(props:Props){
  const host=useRef<HTMLDivElement>(null),live=useRef(props)
@@ -31,13 +35,15 @@ export default function WorldScene(props:Props){
   const zone=props.shell.zone
   // G3 immersive: the default journey streams the R2 runtime + this zone's optimized assets; ?debug=1 keeps the G2/G3 CP1 scenes.
   // Underground layers always use the per-layer R2 tunnels (also in ?debug=1), so walk grid, targets and visuals agree (G3 WS6/QA).
-  const immersive=!!props.proof||zone==='S1'||zone.startsWith('L'),xray=props.view==='xray',loadStart=performance.now()
+  const immersive=!!props.proof||zone==='S1'||zone==='S3'||zone==='S4'||zone.startsWith('L'),xray=props.view==='xray',loadStart=performance.now()
   // Per-zone streaming measurement: R2 runtime asset bytes fetched while this zone prepared (Resource Timing).
   const r2Bytes=()=>{let encoded=0,files=0;for(const e of performance.getEntriesByType('resource') as PerformanceResourceTiming[])if(/\.(webp|glb)(\?|$)/.test(e.name)&&e.name.includes('/assets/')){encoded+=e.encodedBodySize||e.transferSize||0;files++}return{encoded,files}},bytesBefore=r2Bytes()
   let R:Awaited<ReturnType<typeof prepareR2Zone>>|null=null
   let renderer:THREE.WebGLRenderer
   try{renderer=rendererRef.current??(rendererRef.current=new THREE.WebGLRenderer({antialias:false,powerPreference:'low-power'}))}catch{live.current.onFailure();return}
-  renderer.toneMapping=THREE.NoToneMapping;renderer.toneMappingExposure=1;renderer.outputColorSpace=THREE.SRGBColorSpace
+  // The kitchen's warm lamps exceeded display range and washed dark cloth out
+  // to pale patches. Compress highlights while preserving the authored colors.
+  renderer.toneMapping=zone==='L1-C'?THREE.ACESFilmicToneMapping:THREE.NoToneMapping;renderer.toneMappingExposure=1;renderer.outputColorSpace=THREE.SRGBColorSpace
   renderer.setSize(Math.max(1,element.clientWidth),Math.max(1,element.clientHeight))
   renderer.domElement.dataset.readiness='preview'
   renderer.domElement.setAttribute('aria-label','Bản xem trước không gian; đang tải chi tiết. Menu và sơ đồ 2D có thể dùng.')
@@ -63,13 +69,22 @@ export default function WorldScene(props:Props){
   const kit=new Kit(),scene=new THREE.Scene(),labels:Label[]=[]
   // Dynamic resolution: start at the device ratio (≤1.5) and step down/up within [0.6, max] from measured frame time,
   // so weak GPUs keep interaction responsive instead of dropping frames (sharpness trades first, never gameplay).
-  const maxRatio=Math.min(window.devicePixelRatio,1.5);let ratio=maxRatio,frameSum=0,frameCount=0,lastAdjust=0;renderer.setPixelRatio(ratio);renderer.domElement.tabIndex=0
+  const maxRatio=Math.min(window.devicePixelRatio,1.5);let ratio=maxRatio,frameSum=0,frameCount=0,lastAdjust=0;const kitchenFrames:number[]=[];renderer.setPixelRatio(ratio);renderer.domElement.tabIndex=0
   renderer.domElement.setAttribute('aria-label','Mô hình 3D. Chạm đối tượng để tới gần, chạm lại để quan sát. WASD để đi. Có điều khiển tương đương bằng bàn phím bên cạnh.')
   element.append(renderer.domElement)
   cleanup=()=>{kit.dispose();renderer.domElement.remove()}
+  const captureRequests=new Set<string>()
+  const captureResult=(requestId:string,result:{dataUrl?:string;error?:string})=>window.dispatchEvent(new CustomEvent('timelens-capture-frame-result',{detail:{requestId,...result}}))
+  const captureRequest=(event:Event)=>{const id=(event as CustomEvent<{requestId?:unknown}>).detail?.requestId;if(typeof id!=='string'||!id||id.length>100)return;if(captureRequests.size>=4){captureResult(id,{error:'Đang chụp khung hình khác. Hãy thử lại.'});return}captureRequests.add(id)}
+  window.addEventListener('timelens-capture-frame',captureRequest)
+  const releaseCapture=()=>{window.removeEventListener('timelens-capture-frame',captureRequest);for(const id of captureRequests)captureResult(id,{error:'Không gian đã thay đổi. Hãy chụp lại.'});captureRequests.clear()}
+  const captureEarlyCleanup=cleanup;cleanup=()=>{releaseCapture();captureEarlyCleanup()}
   const camera=new THREE.PerspectiveCamera(40,1,.1,120)
   const controls=new OrbitControls(camera,renderer.domElement);controls.enablePan=false
-  const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;controls.enableDamping=!reduced
+  const viewerCamera=createModelViewerCamera(camera,controls);let wasModelViewer=false
+  const motionPreference=matchMedia('(prefers-reduced-motion: reduce)');let reduced=motionPreference.matches;controls.enableDamping=!reduced
+  const motionChanged=()=>{reduced=motionPreference.matches;controls.enableDamping=!reduced};motionPreference.addEventListener('change',motionChanged)
+  const motionEarlyCleanup=cleanup;cleanup=()=>{motionPreference.removeEventListener('change',motionChanged);motionEarlyCleanup()}
   const begin=()=>live.current.onBusy(true),end=()=>live.current.onBusy(false);controls.addEventListener('start',begin);controls.addEventListener('end',end)
   const hemi=new THREE.HemisphereLight('#e8f6de','#50402c',2.4);scene.add(hemi);const sun=new THREE.DirectionalLight('#fff4d4',3);sun.position.set(3,8,4);scene.add(sun)
   // Static scenery shadows are baked once per scene load; moving actors use contact shadows.
@@ -82,6 +97,8 @@ export default function WorldScene(props:Props){
   if(zone!=='S2'){
    if(R&&zone==='S5'){env=R.buildMemorial(scene,kit);camClamp=(_t,c)=>{c.y=Math.max(.35,c.y);c.z=Math.max(-3.2,c.z)}}
    else if(R&&zone==='S1'){env=R.buildForest(scene,kit,renderer);const H=R.villageHeight;camClamp=(_t,c)=>{c.y=Math.max(c.y,H(c.x,c.z)+.35)}}
+   else if(R&&zone==='S3'){env=R.buildField(scene,kit,renderer);const H=R.villageHeight;camClamp=(_t,c)=>{c.y=Math.max(c.y,H(c.x,c.z)+.35)}}
+   else if(R&&zone==='S4'){env=R.buildCommunity(scene,kit,renderer);const H=R.villageHeight;camClamp=(_t,c)=>{c.y=Math.max(c.y,H(c.x,c.z)+.35)}}
    else if(R&&zone==='S0'){const st=R.buildStation(scene,kit,renderer);env=st;rigNpc=st.kha;camClamp=(_t,c)=>{c.x=THREE.MathUtils.clamp(c.x,-10.4,10.4);c.z=THREE.MathUtils.clamp(c.z,-9.5,7.5);c.y=THREE.MathUtils.clamp(c.y,.4,6.8)}}
    else if(R&&isLivingZone(zone)){const room=R.buildLivingSpace(scene,kit,zone,renderer);env=room;insideVolume=room.inside;camClamp=(t,c)=>{const sh=live.current.shell;clampTunnelCamera(t,c,new THREE.Vector3(sh.position[0],.85+THREE.MathUtils.smoothstep(1.3-sh.position[1],0,.6)*.7,sh.position[1]),room.inside)}}
    else if(tunnelWalk&&R){env=R.buildTunnel(scene,kit,zone,renderer);const inside=R.tunnelInside;insideVolume=inside;camClamp=(t,c)=>{const s=live.current.shell;clampTunnelCamera(t,c,new THREE.Vector3(s.position[0],live.current.firstPerson?.92:.85,s.position[1]),inside)}}
@@ -93,7 +110,9 @@ export default function WorldScene(props:Props){
    // R2 builders bring their own physically based lighting; legacy lights stay for the X-ray cutaway only.
    hemi.visible=false;sun.visible=false;sun.castShadow=false
    renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=tunnelWalk?1.25:xray?1.1:zone==='S0'?1.05:1
-   renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.shadowMap.autoUpdate=true
+   // Three resolves deprecated PCFSoft to PCF on the first shadow render. Select
+   // that same mode before warm-up so shader cache keys do not change afterward.
+   renderer.shadowMap.type=THREE.PCFShadowMap;renderer.shadowMap.autoUpdate=true
   }
   if(R){const b=r2Bytes();renderer.domElement.dataset.r2Zone=JSON.stringify({zone,view:tunnelWalk?'walk':xray?'xray':'surface',r2BytesThisZone:b.encoded-bytesBefore.encoded,r2FilesThisZone:b.files-bytesBefore.files,r2BytesSession:b.encoded,prepareMs:Math.round(performance.now()-loadStart)})}
   if(s2){camera.position.set(7,6,9);controls.target.set(0,.6,-.7);controls.minDistance=4;controls.maxDistance=20;controls.minAzimuthAngle=-Math.PI/3;controls.maxAzimuthAngle=Math.PI/3;controls.maxPolarAngle=1.25}
@@ -112,15 +131,18 @@ export default function WorldScene(props:Props){
   const npc=s2?.npc??rigNpc??(zone==='S0'?createWorldActor(scene,kit,'#3f5f73',true):null)
   if(npc&&!s2){npc.g.position.set(-2,0,-1);npc.contact.position.set(-2,.005,-1)}
   const chrono=new THREE.Mesh(kit.geo('chrono',()=>new THREE.IcosahedronGeometry(R?.08:.16,R?3:1)),kit.track(R?new THREE.MeshStandardMaterial({color:'#0a1a16',emissive:'#9fe8d0',emissiveIntensity:tunnelWalk?.7:zone==='S1'?.9:2.2 /* S1: never a beacon next to a Q1 clue */,roughness:.3}):new THREE.MeshBasicMaterial({color:'#c6f2da'})));scene.add(chrono)
-  chrono.visible=!s2&&zone!=='S1' // S2 keeps Chrono's guide panel; the guide orb is not presented as finished representative art.
+  chrono.visible=!s2&&zone!=='S1'&&zone!=='S3'&&zone!=='S4' // Surface R2 zones with rigged actors keep Chrono in the guide panel rather than a floating sphere.
   if(npc)label(npc.g,zone==='S0'?'KHA':'NPC_A04',zone==='S0'?'Kha':'Người cùng làm')
   if(env?.targets.MACHINE)label(env.targets.MACHINE,'MACHINE','Máy thời gian')
-  if(s2){label(s2.mortar,'A04','Cối giã gạo');label(s2.playerGrip,'STROKE_LEFT','Chày · nắm / nâng / hạ');label(s2.npcGrip,'STROKE_RIGHT','Nhịp người cùng làm');label(s2.before,'RICE_BEFORE','Lúa còn vỏ');label(s2.after,'RICE_AFTER','Gạo · so sánh')}
+  if(s2){
+   label(s2.mortar,'A04','Cối giã gạo');label(s2.playerGrip,'STROKE_LEFT','Chày · nắm / nâng / hạ');label(s2.npcGrip,'STROKE_RIGHT','Nhịp người cùng làm');label(s2.before,'RICE_BEFORE','Lúa còn vỏ');label(s2.after,'RICE_AFTER','Gạo · so sánh')
+   for(const target of zones.S2.targets)if(target.id!=='A04'&&s2.targets?.[target.id])label(s2.targets[target.id],target.id,target.label)
+  }
   const endpoints=env?.endpoints??new Map<string,THREE.Vector3>(),pipes=env?.pipes??[],links=env?.links??[]
   // Q1 ground clues + decoys are all real pickable objects (pointer/tap or E); optional scene labels never name what they are.
-  if(zone==='S1'&&env)for(const id of ['Q1_TRAIL','Q1_LEAVES','Q1_HATCH','S1_DECOY_1','S1_DECOY_2'])if(env.targets[id])label(env.targets[id],id,'Mặt đất')
+  if(zone==='S1'&&env){for(const id of ['Q1_TRAIL','Q1_LEAVES','Q1_HATCH','S1_DECOY_1','S1_DECOY_2'])if(env.targets[id])label(env.targets[id],id,'Mặt đất');if(env.targets.NPC_LIAISON)label(env.targets.NPC_LIAISON,'NPC_LIAISON','Chiến sĩ giao liên')}
   if(isLivingZone(zone)&&env){for(const target of zones[zone].targets)if(env.targets[target.id])label(env.targets[target.id],target.id,target.label)}
-  if(env&&(zone==='L2-D'||zone==='L3-D'||zone==='S5'))for(const target of zones[zone].targets)if(env.targets[target.id])label(env.targets[target.id],target.id,target.label)
+  if(env&&(zone==='L2-D'||zone==='L3-D'||zone==='S3'||zone==='S4'||zone==='S5'))for(const target of zones[zone].targets)if(env.targets[target.id])label(env.targets[target.id],target.id,target.label)
   if(zone==='L1-B'&&env){for(const [id,text] of [['AIR_SURFACE_OPENING','Lỗ mở'],['AIR_PASSAGE','Đoạn dẫn'],['AIR_INTERIOR','Không gian trong'],['LINK_AIR_LIFE','Liên hệ đời sống']] as const)label(env.targets[id],id,text)}
   else if(zone.startsWith('L')&&env){const t=env.targets;['Lớp trên','Lớp giữa','Lớp dưới'].forEach((text,i)=>{if(t[`STRUCT_LAYER_${i+1}`])label(t[`STRUCT_LAYER_${i+1}`],`STRUCT_LAYER_${i+1}`,text)});if(t.STRUCT_LINK_12)label(t.STRUCT_LINK_12,'STRUCT_LINK_12','Chuyển 1–2');if(t.STRUCT_LINK_23)label(t.STRUCT_LINK_23,'STRUCT_LINK_23','Chuyển 2–3');if(t.L2D_NICHE)label(t.L2D_NICHE,'L2D_NICHE','Góc diễn giải L2-D')}
   // In-world wayfinding by route type (thematic / temporal / knowledge); never presented as a surveyed tunnel.
@@ -130,7 +152,7 @@ export default function WorldScene(props:Props){
   if(s2){const geometries=new Set<THREE.BufferGeometry>();let instanceBytes=0;scene.traverse(o=>{if(o instanceof THREE.Mesh)geometries.add(o.geometry);if(o instanceof THREE.InstancedMesh)instanceBytes+=o.instanceMatrix.array.byteLength+(o.instanceColor?.array.byteLength??0)});let bufferBytes=instanceBytes;for(const g of geometries){for(const a of Object.values(g.attributes))bufferBytes+=a.array.byteLength;if(g.index)bufferBytes+=g.index.array.byteLength}renderer.domElement.dataset.s2Assets=JSON.stringify({uniqueGeometryCount:geometries.size,geometryAndInstanceBufferBytes:bufferBytes,groundTextureRGBABytes:256*256*4,shadowMapPixels:1024*1024,external3DFileBytes:0,note:'Generated CPU buffer bytes; texture RGBA estimate; GPU allocation/driver overhead not measured'})}
   // G3 Phase 2: third-person follow camera on walkable surface zones (S0/S2) of the default journey.
   // Underground cutaway zones keep the orbit viewer until their enterable interiors land (Phase 5).
-  const follow=(!!props.proof||zone==='S1'||tunnelWalk)&&(zone==='S0'||zone==='S1'||zone==='S2'||tunnelWalk)
+  const follow=(!!props.proof||zone==='S1'||zone==='S3'||zone==='S4'||tunnelWalk)&&(zone==='S0'||zone==='S1'||zone==='S2'||zone==='S3'||zone==='S4'||tunnelWalk)
   const colliders:THREE.Object3D[]=[]
   const keys=new Set<string>();let lastDrag=-10,lastMoveSent=0,roomOrbitIntent:string|null=null
   const followTarget=new THREE.Vector3(),camOffset=new THREE.Vector3(),shoulder=new THREE.Vector3(),sph=new THREE.Spherical()
@@ -157,10 +179,10 @@ export default function WorldScene(props:Props){
   const lineGeo=kit.track(new THREE.BufferGeometry()),linePositions=new Float32Array(36);lineGeo.setAttribute('position',new THREE.BufferAttribute(linePositions,3));lineGeo.setDrawRange(0,0)
   const lineMaterial=kit.track(new THREE.LineBasicMaterial({color:'#f3e6a8',depthTest:false})),line=new THREE.LineSegments(lineGeo,lineMaterial);line.renderOrder=3;scene.add(line);let lastPath:string[]|null=null,lastPairs:string[][]|null=null
   const ray=new THREE.Raycaster(),pointer=new THREE.Vector2();let down:Point=[0,0]
-  const hitAt=(e:PointerEvent)=>{const rect=renderer.domElement.getBoundingClientRect();pointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);ray.setFromCamera(pointer,camera);for(const object of pickables)if(object.userData.interactionBone)object.traverse(child=>{if(child instanceof THREE.SkinnedMesh)child.computeBoundingSphere()});const sh=live.current.shell,kitchen=zone==='L1-C'&&!!sh.intent?.startsWith('Q4_')&&!sh.path.length&&Math.hypot(sh.position[0],sh.position[1]+1.5)<.2;const candidates=pickables.filter(o=>kitchen?!['A02_PREPARE','A02_SMOKE'].includes(o.userData.target):!String(o.userData.target??'').startsWith('Q4_'));return ray.intersectObjects(candidates,true)[0]}
+  const hitAt=(e:PointerEvent)=>{const rect=renderer.domElement.getBoundingClientRect();pointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);ray.setFromCamera(pointer,camera);for(const object of pickables)if(object.userData.interactionBone)object.traverse(child=>{if(child instanceof THREE.SkinnedMesh)child.computeBoundingSphere()});const sh=live.current.shell,kitchen=zone==='L1-C'&&!!sh.intent?.startsWith('Q4_')&&!sh.path.length&&Math.hypot(sh.position[0],sh.position[1]+1.5)<.2;const candidates=pickables.filter(o=>kitchen?!['A02_PREPARE','A02_SMOKE','NPC_COOK'].includes(o.userData.target):!String(o.userData.target??'').startsWith('Q4_'));return ray.intersectObjects(candidates,true)[0]}
   const targetOf=(object:THREE.Object3D)=>{let at:THREE.Object3D|null=object;while(at&&!at.userData.target)at=at.parent;return at?.userData.target as string|undefined}
   const pointerDown=(e:PointerEvent)=>{down=[e.clientX,e.clientY]}
-  const pointerMove=(e:PointerEvent)=>{if(e.buttons&&Math.hypot(e.clientX-down[0],e.clientY-down[1])>7)roomOrbitIntent=live.current.shell.intent;const hit=hitAt(e);renderer.domElement.style.cursor=hit&&targetOf(hit.object)?'pointer':'grab'}
+  const pointerMove=(e:PointerEvent)=>{if(live.current.modelView){renderer.domElement.style.cursor='grab';return}if(e.buttons&&Math.hypot(e.clientX-down[0],e.clientY-down[1])>7)roomOrbitIntent=live.current.shell.intent;const hit=hitAt(e);renderer.domElement.style.cursor=hit&&targetOf(hit.object)?'pointer':'grab'}
   const pointerUp=(e:PointerEvent)=>{if(!live.current.controlsActive)return;if(Math.hypot(e.clientX-down[0],e.clientY-down[1])>7)return;const hit=hitAt(e);if(!hit)return;const id=targetOf(hit.object);renderer.domElement.dataset.lastPick=id??'GROUND';if(id)live.current.onPick(id);else if(hit.object.userData.floor)live.current.onMove(tunnelWalk?[snap(hit.point.x),snap(hit.point.z)]:[hit.point.x,hit.point.z])}
   const lost=(e:Event)=>{e.preventDefault();live.current.onFailure()}
   renderer.domElement.addEventListener('pointerdown',pointerDown);renderer.domElement.addEventListener('pointermove',pointerMove);renderer.domElement.addEventListener('pointerup',pointerUp);renderer.domElement.addEventListener('webglcontextlost',lost)
@@ -177,16 +199,20 @@ export default function WorldScene(props:Props){
   const lastContact=new THREE.Vector3()
   const animate=()=>{
    frame=requestAnimationFrame(animate);const p=live.current,s=p.shell,t=(performance.now()-started)/1000,dt=Math.min(.1,t-previous)
+   const viewing=zone==='L2-D'&&!!p.modelView,closing=wasModelViewer&&!viewing,cameraFree=!viewing&&!closing
+   const viewHeight=viewing&&element.clientWidth<640?element.clientHeight*.58:element.clientHeight,viewAspect=element.clientWidth/Math.max(1,viewHeight)
+   if(camera.aspect!==viewAspect){camera.aspect=viewAspect;camera.updateProjectionMatrix()}
+   viewerCamera.update(viewing?p.modelView!:null,camera.aspect);if(closing)focusedIntent=s.intent
    const rise=isLivingZone(zone)?THREE.MathUtils.smoothstep(1.3-s.position[1],0,.6)*.63:0,eyeHeight=.92+rise,aimHeight=.62+rise
-   if(previous>0){frameSum+=t-previous;frameCount++}previous=t
-   if(t-lastAdjust>1.5&&frameCount>=8){const avg=frameSum/frameCount;frameSum=0;frameCount=0;lastAdjust=t;const next=avg>.045?Math.max(.6,ratio-.15):avg<.022?Math.min(maxRatio,ratio+.1):ratio;if(Math.abs(next-ratio)>.01){ratio=next;renderer.setPixelRatio(ratio);renderer.setSize(element.clientWidth,element.clientHeight);renderer.domElement.dataset.pixelRatio=ratio.toFixed(2)}}
-   if(s2)s2.update(t,s.position,s.heading,!!s.path.length,p.a04Phase??'IDLE',p.rice,p.working,reduced,()=>live.current.onImpact?.(),()=>live.current.onPartnerImpact?.())
+   if(previous>0){frameSum+=t-previous;frameCount++;if(zone==='L1-C')kitchenFrames.push(t-previous)}previous=t
+   if(t-lastAdjust>1.5&&frameCount>=8){const avg=frameSum/frameCount,next=zone==='L1-C'?kitchenPixelRatio(ratio,maxRatio,kitchenFrames):avg>.045?Math.max(.6,ratio-.15):avg<.022?Math.min(maxRatio,ratio+.1):ratio;frameSum=0;frameCount=0;kitchenFrames.length=0;lastAdjust=t;if(Math.abs(next-ratio)>.01){ratio=next;renderer.setPixelRatio(ratio);renderer.setSize(element.clientWidth,element.clientHeight);renderer.domElement.dataset.pixelRatio=ratio.toFixed(2)}}
+   if(s2)s2.update(t,s.position,s.heading,!!s.path.length,p.a04Phase??'IDLE',p.rice,p.working,reduced,()=>live.current.onImpact?.(),()=>live.current.onPartnerImpact?.(),p.completed,p.talk??p.selectedTarget,p.atmosphere==='ALERT',document.hidden)
    else{
     const moving=!!s.path.length;avatar.g.position.set(s.position[0],0,s.position[1]);avatar.g.rotation.y=s.heading;avatar.contact.position.set(s.position[0],.005,s.position[1])
     avatar.legs.forEach((leg,i)=>{leg.rotation.x=moving&&!reduced?Math.sin(t*9+i*Math.PI)*.32:0});avatar.left.rotation.x=moving&&!reduced?Math.sin(t*9)*.25:0;avatar.right.rotation.x=moving&&!reduced?-Math.sin(t*9)*.25:0
     if(npc){const talking=p.talk==='KHA'||p.talk==='MACHINE';if(npc===rigNpc)rigNpc?.setTalking(p.talk==='KHA');npcFacing.set(s.position[0],0,s.position[1]);const want=talking?Math.atan2(npcFacing.x-npc.g.position.x,npcFacing.z-npc.g.position.z):.5;npc.g.rotation.y+=(want-npc.g.rotation.y)*Math.min(1,dt*4);npc.g.position.y=reduced?0:Math.sin(t*1.6)*.008
      npc.reach(p.talk==='MACHINE'||(talking&&!reduced&&Math.sin(t*1.2)>.3)?new THREE.Vector3(0,1.4,-1.05):null)}
-    env?.update(t,dt,{reduced,working:p.working||!!p.departing,active:p.departing?'MACHINE':p.talk??null,hatch:p.hatch,p2:p.p2,p2Era:p.p2Era,completed:p.completed,selectedTarget:p.selectedTarget,player:p.passageMotion?null:s.position})
+    env?.update(t,dt,{reduced,working:p.working||!!p.departing,active:p.departing?'MACHINE':p.talk??null,hatch:p.hatch,p2:p.p2,p2Era:p.p2Era,completed:p.completed,selectedTarget:p.selectedTarget,hidden:document.hidden,player:p.passageMotion?null:s.position,atmosphere:p.atmosphere,modelView:p.modelView})
     // Q1 hatch: kneel and sweep, lift the lid with both hands, then crawl down into the shaft (S1 only, rigged Avatar).
     if(zone==='S1'&&R){const rig=avatar as unknown as {setIdle?:(c:string)=>void;setCrouch?:(b:boolean)=>void;reach:(v:THREE.Vector3|null)=>void},h=p.hatch??'HIDDEN',busy=h==='SWEEPING'||h==='OPENING'
      const atHatch=['SWEEPING','REVEALED','OPENING','OPEN','DESCENDING'].includes(h)&&Math.hypot(hatchAt.x-s.position[0],hatchAt.z-s.position[1])<1.6
@@ -218,7 +244,7 @@ export default function WorldScene(props:Props){
     descCam.set(s.position[0]+(s.position[0]-hatchAt.x)*.6,2.1,s.position[1]+(s.position[1]-hatchAt.z)*.6+.4)
     controls.target.lerp(hatchAt.clone().setY(-.5),Math.min(1,dt*(reduced?60:2.4)));camera.position.lerp(descCam,Math.min(1,dt*(reduced?60:1.8)))
    }
-   else if(follow){
+   else if(follow&&cameraFree){
    // G3/G4 rooms: the Avatar's hands follow the room's contact point (bowl, bag, tray, rope…) and it kneels for low objects
    const contactAt=!p.passageMotion&&(isLivingZone(zone)||zone==='S5')?(env as {hands?:()=>THREE.Vector3|null}|null)?.hands?.()??null:null;contactNow=contactAt
    if(R&&isLivingZone(zone)&&'setCrouch' in avatar&&typeof avatar.setCrouch==='function')avatar.setCrouch(s.position[1]>=1.4||!!contactAt&&contactAt.y<.8)
@@ -233,10 +259,10 @@ export default function WorldScene(props:Props){
     if(keys.size&&p.controlsActive){fwd.copy(controls.target).sub(camera.position);fwd.y=0;fwd.normalize();right.crossVectors(fwd,new THREE.Vector3(0,1,0)).normalize();dir.set(0,0,0);if(keys.has('w'))dir.add(fwd);if(keys.has('s'))dir.sub(fwd);if(keys.has('d'))dir.add(right);if(keys.has('a'))dir.sub(right);if(dir.lengthSq()>0&&t-lastMoveSent>.12){lastMoveSent=t;dir.normalize();const next=stepTarget(s.position[0],s.position[1],dir.x,dir.z);if(next){(p.onWalk??p.onMove)(next);renderer.domElement.dataset.lastMove=String(Math.round(performance.now()))}}}
     if(!p.controlsActive)keys.clear()
    }
-   controls.enabled=!!p.controlsActive;controls.update()
+   if(!closing){controls.enabled=!!p.controlsActive||viewing;controls.update()}
    // Reframe once on arrival, including floor hatches. Previously only a moving path turned the camera,
    // so the last corner left the view facing a wall after the Avatar had already turned to the object.
-   if(tunnelWalk&&!s.path.length&&s.intent&&s.intent!==focusedIntent){
+   if(cameraFree&&tunnelWalk&&!s.path.length&&s.intent&&s.intent!==focusedIntent){
     const target=labels.find(l=>l.id===s.intent)
     if(target){
      bounds.setFromObject(target.object);bounds.getCenter(center)
@@ -248,7 +274,7 @@ export default function WorldScene(props:Props){
     }
    }
    if(s.path.length||!s.intent)focusedIntent=null
-   if(follow&&camClamp){
+   if(cameraFree&&follow&&camClamp){
     camClamp(controls.target,camera.position)
     if(tunnelWalk&&p.firstPerson&&camera.position.distanceTo(controls.target)<.012){
      controls.target.set(s.position[0],eyeHeight,s.position[1]);camera.position.copy(controls.target).addScaledVector(lastTunnelOffset,.055);camClamp(controls.target,camera.position)
@@ -298,26 +324,29 @@ export default function WorldScene(props:Props){
     if(k===1&&!passageReported){passageReported=true;requestAnimationFrame(()=>live.current.onPassageComplete?.())}
    }else{passageKey='';delete renderer.domElement.dataset.passageMotion;if(gripping){gripOf(avatar)?.(null,null);gripping=false}}
    R?.tickRigActors(dt,reduced);R?.tickFlora(t,reduced)
-   if(fill)fill.position.set(s.position[0],1.05,s.position[1]+.2)
+   // Keep kitchen readability light outside the torso. The old 20 cm offset
+   // put a point light inside clothing, producing pale shoulder/chest patches.
+   if(fill)fill.position.set(s.position[0]+(zone==='L1-C'?Math.sin(s.heading)*.9:0),zone==='L1-C'?1.65:1.05,s.position[1]+(zone==='L1-C'?Math.cos(s.heading)*.9:.2))
    // G3/G4 rooms: while the hands are on an object, an over-the-shoulder framing shows the contact (first person hid it),
    // then eases back to the player's own view. Collision-clamped inside the room volume.
    // Keep the inspected object in view after its motion settles. A deliberate orbit releases
    // this framing until a different object is selected; walking and exits remain available.
-   const selected=isLivingZone(zone)&&!s.path.length&&(p.talk===s.intent||s.intent==='NPC_COOK')&&s.intent!==roomOrbitIntent?env?.targets[s.intent??'']:null
+   const kitchenAction=zone==='L1-C'&&!s.path.length&&!!s.intent?.startsWith('A02_')&&s.intent!==roomOrbitIntent
+   const selected=isLivingZone(zone)&&!s.path.length&&(p.talk===s.intent||s.intent==='NPC_COOK'||kitchenAction)&&s.intent!==roomOrbitIntent?env?.targets[s.intent??'']:null
    const selectedAt=selected?.userData.interactionBone instanceof THREE.Object3D?selected.userData.interactionBone.getWorldPosition(new THREE.Vector3()):selected?.userData.interactionAnchor instanceof THREE.Vector3?selected.localToWorld(selected.userData.interactionAnchor.clone()):null
    const viewAt=contactNow??selectedAt
    if(zone==='S5'&&!travel&&!s.path.length&&s.intent!==roomOrbitIntent){
     const station=env?.targets[s.intent??'']
     if(station){
-     const look=station.getWorldPosition(new THREE.Vector3())
-     const want=look.clone().add(new THREE.Vector3(.6,1.1,3.2))
+     const look=station.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0,.22,0))
+     const want=look.clone().add(new THREE.Vector3(camera.aspect<1?1.55:1.15,.95,2.35))
      controls.target.lerp(look,Math.min(1,dt*3))
      camera.position.lerp(want,Math.min(1,dt*3))
     }
    }
    if(viewAt)lastContact.copy(viewAt)
    interactW+=((viewAt?1:0)-interactW)*Math.min(1,dt*(viewAt?3.5:2.5))
-   if(isLivingZone(zone)&&interactW>.01&&!travel){const heading=Math.atan2(lastContact.x-s.position[0],lastContact.z-s.position[1]),frame=roomActionFrame(s.position,heading,lastContact.toArray(),camera.aspect)
+   if(isLivingZone(zone)&&interactW>.01&&!travel){const heading=Math.atan2(lastContact.x-s.position[0],lastContact.z-s.position[1]),frame=s.intent==='NPC_COOK'&&selectedAt?conversationFrame(s.position,selectedAt.toArray(),camera.aspect):roomActionFrame(s.position,heading,lastContact.toArray(),camera.aspect,zone==='L1-C')
     const want=new THREE.Vector3(...frame.camera),look=new THREE.Vector3(...frame.look)
     controls.target.lerp(look,interactW);camera.position.lerp(want,interactW);if(insideVolume)clampTunnelCamera(controls.target,camera.position,look,insideVolume)}
    // close tunnel camera: hide the Avatar rather than fill the screen with its back
@@ -331,15 +360,17 @@ export default function WorldScene(props:Props){
     renderer.domElement.dataset.camera=fp?'first-person':'third-person'
     if(t-camStatAt>1){camStatAt=t;renderer.domElement.dataset.cameraView=JSON.stringify({lookYaw:+Math.atan2(controls.target.x-camera.position.x,controls.target.z-camera.position.z).toFixed(2),avatarYaw:+avatar.g.rotation.y.toFixed(2),distance:+d.toFixed(2),opacity:+o.toFixed(2)})} // QA: camera faces the way the Avatar faces?
    }
-   if(follow&&!camClamp){toCam.copy(camera.position).sub(controls.target);const len=toCam.length();camRay.set(controls.target,toCam.normalize());camRay.far=len;const hit=camRay.intersectObjects(colliders,false)[0];if(hit&&hit.distance<len)camera.position.copy(controls.target).addScaledVector(toCam,Math.max(.6,hit.distance-.25))}
+   if(cameraFree&&follow&&!camClamp){toCam.copy(camera.position).sub(controls.target);const len=toCam.length();camRay.set(controls.target,toCam.normalize());camRay.far=len;const hit=camRay.intersectObjects(colliders,false)[0];if(hit&&hit.distance<len)camera.position.copy(controls.target).addScaledVector(toCam,Math.max(.6,hit.distance-.25))}
    // OrbitControls ran before arrival/action/passage framing and collision. Render with
    // the final target rather than the stale rotation from the player's previous pose.
-   const modelInspection=(zone==='L2-D'||zone==='L3-D')&&!p.passageMotion&&Math.hypot(s.position[0],s.position[1]-.5)<.3
+   const modelInspection=(viewing||zone==='L3-D')&&!p.passageMotion&&Math.hypot(s.position[0],s.position[1]-.5)<.3
    element.dataset.modelInspection=String(modelInspection)
    const kitchenInspection=zone==='L1-C'&&!!s.intent?.startsWith('Q4_')&&!s.path.length&&Math.hypot(s.position[0],s.position[1]+1.5)<.2
    element.dataset.kitchenInspection=String(kitchenInspection)
-   if(kitchenInspection){camera.fov=95;camera.updateProjectionMatrix();camera.position.set(0,2,-1);controls.target.set(-.25,.25,-2);renderer.domElement.dataset.modelCameraInside=String(insideVolume?.(0,2,-1)??false)}
-   if(modelInspection){
+   if(zone==='L1-C'){const fov=kitchenFieldOfView(camera.aspect,kitchenInspection,kitchenAction);if(camera.fov!==fov){camera.fov=fov;camera.updateProjectionMatrix()}renderer.domElement.dataset.kitchenCamera=JSON.stringify({position:camera.position.toArray(),target:controls.target.toArray(),fov:camera.fov,action:kitchenAction,inspection:kitchenInspection})}
+   if(zone==='L2-B'){const fov=meetingFieldOfView(camera.aspect);if(camera.fov!==fov){camera.fov=fov;camera.updateProjectionMatrix()}}
+   if(kitchenInspection){camera.position.set(0,2,-1);controls.target.set(-.25,.25,-2);renderer.domElement.dataset.modelCameraInside=String(insideVolume?.(0,2,-1)??false)}
+   if(modelInspection&&!viewing){
     // A wide workstation view includes all relation points in portrait as well
     // as landscape, inside the carved chamber; walking away releases it.
     // Stay in the chamber: the entrance at z=2 has a low ceiling. Fit portrait
@@ -347,10 +378,15 @@ export default function WorldScene(props:Props){
     camera.fov=camera.aspect<.75?100:85;camera.updateProjectionMatrix();camera.position.set(0,1.5,1.2);controls.target.set(0,.9,-1)
     renderer.domElement.dataset.modelCameraInside=String(insideVolume?.(camera.position.x,camera.position.y,camera.position.z)??false)
    }
-   camera.lookAt(controls.target)
-   renderer.render(scene,camera);if(!ready){ready=true;renderer.domElement.dataset.readiness='ready';live.current.onReady?.(zone)}
+   if(viewing){avatar.g.visible=false;camClamp?.(controls.target,camera.position);renderer.domElement.dataset.modelCameraInside=String(insideVolume?.(camera.position.x,camera.position.y,camera.position.z)??false)}
+   if(zone==='L2-D'){const layers:string[]=[];scene.traverse(o=>{if(o.userData.modelLayer&&o.visible)layers.push(o.userData.modelLayer)});renderer.domElement.dataset.modelViewPose=JSON.stringify({active:viewing,camera:camera.position.toArray(),target:controls.target.toArray(),fov:camera.fov,avatar:[s.position[0],s.position[1],s.heading],layers,yaw:env?.targets.MODEL_COMPARE?.rotation.y??0,zoom:p.modelView?.zoom??1})}
+   if(zone==='L2-B')renderer.domElement.dataset.meetingCamera=JSON.stringify({position:camera.position.toArray(),target:controls.target.toArray(),fov:camera.fov,aspect:camera.aspect,inside:insideVolume?.(camera.position.x,camera.position.y,camera.position.z)??false})
+   wasModelViewer=viewing;camera.lookAt(controls.target)
+   renderer.setViewport(0,element.clientHeight-viewHeight,element.clientWidth,viewHeight);renderer.render(scene,camera);
+   if(captureRequests.size){for(const requestId of captureRequests){try{const frame=document.createElement('canvas'),scale=Math.min(1,960/renderer.domElement.width,540/renderer.domElement.height);frame.width=Math.max(1,Math.round(renderer.domElement.width*scale));frame.height=Math.max(1,Math.round(renderer.domElement.height*scale));const ctx=frame.getContext('2d');if(!ctx)throw new Error('Không tạo được ảnh trên thiết bị này.');ctx.drawImage(renderer.domElement,0,0,frame.width,frame.height);captureResult(requestId,{dataUrl:frame.toDataURL('image/png')})}catch{captureResult(requestId,{error:'Không đọc được khung hình 3D. Hãy thử lại khi cảnh đã mở.'})}}captureRequests.clear()}
+   if(!ready){ready=true;renderer.domElement.dataset.readiness='ready';live.current.onReady?.(zone)}
    if(t-poseStat>.1){poseStat=t;renderer.domElement.dataset.avatarPose=JSON.stringify({zone,position:s.position,heading:s.heading,moving:s.path.length>0,lookYaw:Math.atan2(controls.target.x-camera.position.x,controls.target.z-camera.position.z)})}
-   const w=element.clientWidth,h=element.clientHeight
+   const w=element.clientWidth,h=viewHeight
    const projectedLabels: {entry:Label;x:number;y:number;top:number;width:number;height:number}[]=[]
    for(const entry of labels){
     bounds.setFromObject(entry.object);bounds.getCenter(center);if(entry.object.userData.interactionAnchor instanceof THREE.Vector3)center.copy(entry.object.userData.interactionAnchor).applyMatrix4(entry.object.matrixWorld);if(entry.object.userData.interactionBone instanceof THREE.Object3D)entry.object.userData.interactionBone.getWorldPosition(center);projected.copy(center).project(camera)
@@ -374,10 +410,10 @@ export default function WorldScene(props:Props){
     if(at){entry.element.style.transform='none';entry.element.style.left=`${at.x}px`;entry.element.style.top=`${at.y}px`;occupied.push({...at,width,height})}
    }
    if(Math.floor(t)!==lastStat){lastStat=Math.floor(t);renderer.domElement.dataset[s2?'s2Render':'zoneRender']=JSON.stringify({calls:renderer.info.render.calls,triangles:renderer.info.render.triangles,geometries:renderer.info.memory.geometries,textures:renderer.info.memory.textures})
-    if(zone==='L1-C'){const actors:unknown[]=[];let legacyMeshes=0;scene.traverse(o=>{if(o.userData.characterArt)actors.push({art:o.userData.characterArt,position:o.position.toArray(),activeContact:o.userData.activeContact,contactFrame:o.userData.contactFrame,footFrame:o.userData.footFrame});if(o instanceof THREE.Mesh&&/superhero/i.test(o.name))legacyMeshes++});renderer.domElement.dataset.characterQc=JSON.stringify({actors,legacyMeshes})}
+    if(['L1-C','S2','S3','S4','L2-B'].includes(zone)){const actors:unknown[]=[];let legacyMeshes=0;scene.traverse(o=>{if(o.userData.characterArt)actors.push({art:o.userData.characterArt,ambientReaction:o.userData.ambientReaction,position:o.position.toArray(),activeContact:o.userData.activeContact,contactFrame:o.userData.contactFrame,footFrame:o.userData.footFrame,workbench:o.userData.workbench?{...o.userData.workbench,screenHands:(o.userData.workbench.handles as number[][]).map(v=>new THREE.Vector3().fromArray(v).project(camera).toArray())}:undefined});if(o instanceof THREE.Mesh&&/superhero/i.test(o.name))legacyMeshes++});renderer.domElement.dataset.characterQc=JSON.stringify({actors,legacyMeshes})}
    }
   };
-  cleanup=()=>{if(tunnelWalk)walkCamera.current={zone,position:camera.position.clone(),target:controls.target.clone(),firstPerson:fpLast};cancelAnimationFrame(frame);R?.clearRigActors();resize.disconnect();window.removeEventListener('keydown',keyDown);window.removeEventListener('keyup',keyUp);window.removeEventListener('blur',blurKeys);controls.removeEventListener('start',begin);controls.removeEventListener('end',end);controls.dispose();live.current.onBusy(false);renderer.domElement.removeEventListener('pointerdown',pointerDown);renderer.domElement.removeEventListener('pointermove',pointerMove);renderer.domElement.removeEventListener('pointerup',pointerUp);renderer.domElement.removeEventListener('webglcontextlost',lost);labels.forEach(l=>l.element.remove());scene.traverse(o=>{if(o instanceof THREE.InstancedMesh)o.dispose()});disposeWorldScene(scene);kit.dispose();renderer.renderLists.dispose();renderer.domElement.remove()}
+  cleanup=()=>{motionPreference.removeEventListener('change',motionChanged);releaseCapture();if(tunnelWalk)walkCamera.current={zone,position:camera.position.clone(),target:controls.target.clone(),firstPerson:fpLast};cancelAnimationFrame(frame);R?.clearRigActors();resize.disconnect();window.removeEventListener('keydown',keyDown);window.removeEventListener('keyup',keyUp);window.removeEventListener('blur',blurKeys);controls.removeEventListener('start',begin);controls.removeEventListener('end',end);controls.dispose();live.current.onBusy(false);renderer.domElement.removeEventListener('pointerdown',pointerDown);renderer.domElement.removeEventListener('pointermove',pointerMove);renderer.domElement.removeEventListener('pointerup',pointerUp);renderer.domElement.removeEventListener('webglcontextlost',lost);labels.forEach(l=>l.element.remove());scene.traverse(o=>{if(o instanceof THREE.InstancedMesh)o.dispose()});disposeWorldScene(scene);kit.dispose();renderer.renderLists.dispose();renderer.domElement.remove()}
   performance.mark('lw-'+zone+'-compile-start');await warmWorldShaders(renderer,scene,camera,()=>cancelled);performance.mark('lw-'+zone+'-compile-end');
   if(!cancelled)animate()
   }).catch((error:unknown)=>{console.error('[living-world] scene build failed',error);cleanup();if(!cancelled)live.current.onFailure()})

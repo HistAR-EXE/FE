@@ -17,6 +17,8 @@ export const passages:Record<string,Passage>={
  // replacing the cross-layer "continue" jumps (KITCHEN_REST/KITCHEN_CARE/WATER_KITCHEN…).
  MIDDLE_REST:p('MIDDLE_REST','REST_MIDDLE','L2-A','L2-C',[-2,1.5],[-1,0]),
  REST_MIDDLE:p('REST_MIDDLE','MIDDLE_REST','L2-C','L2-A',[-1,3],[-1,0]),
+ REST_MEETING:p('REST_MEETING','MEETING_REST','L2-C','L2-B',[1,3],[1,0]),
+ MEETING_REST:p('MEETING_REST','REST_MEETING','L2-B','L2-C',[-1,3],[-1,0]),
  DEEP_CARE:p('DEEP_CARE','CARE_DEEP','L3-A','L3-B',[-3,2],[-1,0]),
  CARE_DEEP:p('CARE_DEEP','DEEP_CARE','L3-B','L3-A',[-1,3],[-1,0]),
  CARE_WATER:p('CARE_WATER','WATER_CARE','L3-B','L3-C',[1,3],[1,0]),
@@ -29,7 +31,7 @@ export const passages:Record<string,Passage>={
 export type V3=[number,number,number]
 /** Level threshold, a turn, then a low ramp/handhold section ending behind the bend. */
 export function passagePoints(p:Passage):V3[]{
- const [x,z]=p.at,[dx,dz]=p.out,L=Math.hypot(dx,dz),u=dx/L,v=dz/L,side=['KITCHEN_AIR','REST_MIDDLE','CARE_DEEP','WATER_CARE'].includes(p.id)?-1:1
+ const [x,z]=p.at,[dx,dz]=p.out,L=Math.hypot(dx,dz),u=dx/L,v=dz/L,side=['KITCHEN_AIR','REST_MIDDLE','CARE_DEEP','WATER_CARE','MEETING_REST'].includes(p.id)?-1:1
  return [[x,0,z],[x+u*.65,0,z+v*.65],[x+u*1.15-v*.45*side,p.rise*.35,z+v*1.15+u*.45*side],[x+u*1.65-v*.45*side,p.rise,z+v*1.65+u*.45*side]]
 }
 export function passageSample(points:V3[],progress:number):{point:V3;heading:number}{
@@ -50,7 +52,7 @@ const arrivalClear:Record<string,[number,number][]>= {
  MIDDLE_KITCHEN:[[0,2]],LAYER_BACK:[[0,2]],ENTRANCE_AIR:[[-2.5,0]],
  AIR_KITCHEN:[[3,.5]],KITCHEN_MIDDLE:[[0,3],[0,2],[0,1]],LAYER_DEEP:[[3,-.5]],
  // living rooms: step through the low entry into the room so the whole function is in view on arrival (not a wall)
- REST_MIDDLE:[[0,3],[0,2],[0,1]],CARE_DEEP:[[0,3],[0,2],[0,1]],CARE_WATER:[[0,3],[0,2],[0,1]],WATER_CARE:[[0,3],[0,2],[0,1]],
+ REST_MIDDLE:[[0,3],[0,2],[0,1]],REST_MEETING:[[0,3],[0,2],[0,1]],MEETING_REST:[[0,3],[0,2],[0,1]],CARE_DEEP:[[0,3],[0,2],[0,1]],CARE_WATER:[[0,3],[0,2],[0,1]],WATER_CARE:[[0,3],[0,2],[0,1]],
  MIDDLE_REST:[[-1,1.5]],DEEP_CARE:[[-2,2]],
 }
 export function passageArrival(id:string){

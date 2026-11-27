@@ -3,10 +3,10 @@ import {prepareStation} from './r2Station'
 import {prepareVillage,prepareForest} from './r2Village'
 import {prepareTunnel} from './r2Tunnel'
 // One lazily imported chunk for the immersive (R2) runtime; each zone preloads only its own asset list.
-export async function prepareR2(zone:Zone){if(zone==='S0')await prepareStation();else if(zone==='S1')await prepareForest();else if(zone==='S2')await prepareVillage();else await prepareTunnel()}
+export async function prepareR2(zone:Zone){if(zone==='S0')await prepareStation();else if(zone==='S1')await prepareForest();else if(zone==='S2'||zone==='S3'||zone==='S4')await prepareVillage();else await prepareTunnel()}
 export {buildStation} from './r2Station'
 export {buildMemorial} from './r2Memorial'
-export {buildVillage,buildForest,villageHeight} from './r2Village'
+export {buildVillage,buildForest,buildField,buildCommunity,villageHeight} from './r2Village'
 export {buildTunnel,tunnelInside} from './r2Tunnel'
 export {createRigActor,tickRigActors,clearRigActors} from './r2Actors'
 export {r2BytesSoFar} from './r2Assets'

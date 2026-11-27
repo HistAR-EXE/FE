@@ -11,6 +11,7 @@ import type { UserRole } from '../../shared/auth/types'
 import { CU_CHI_LOCATION_ID } from '../../shared/config/constants'
 import { timePortalPath } from '../../shared/config/locationSlug'
 import { SideNavAccount } from './SideNavAccount'
+import { TimeLensMark } from './TimeLensMark'
 import { buildChatPath } from '../../features/chat/chatRoute'
 import { useSiteWorkspaceNavVisible } from '../../features/site-workspace/useSiteWorkspaceNav'
 
@@ -39,7 +40,7 @@ const navItems: readonly NavigationItem[] = [
     // Trung tâm AR dùng chung cho khám phá từ xa và hành trình tại di tích.
     { to: '/ar-experience', icon: 'view_in_ar', label: 'Trải nghiệm AR', prefixes: ['/ar-experience', '/scan'], modes: 'both' as const },
 
-    { to: '/living-world', icon: 'assignment', label: 'Nhiệm vụ', prefixes: ['/living-world', '/quests'], modes: 'both' as const }, // Living World replaces the old quest tab; /quests detail pages stay reachable
+    { to: '/quests', icon: 'assignment', label: 'Nhiệm vụ', prefixes: ['/living-world', '/quests'], modes: 'both' as const }, // Living World replaces the old quest tab; /quests detail pages stay reachable
     { to: '/artifacts', icon: 'history_edu', label: 'Bảo tàng 3D', prefixes: ['/artifacts'], modes: 'both' as const },
     { to: '/photo-frame', icon: 'photo_camera', label: 'Ảnh & chia sẻ', prefixes: ['/photo-frame'], modes: 'both' as const },
     { to: '/leaderboard', icon: 'leaderboard', label: 'Bảng xếp hạng', prefixes: ['/leaderboard'], modes: 'both' as const },
@@ -58,7 +59,7 @@ const mobileNavItems: readonly NavigationItem[] = [
     { to: '/explore', icon: 'explore', label: 'Khám phá', modes: 'both' as const, prefixes: ['/explore', '/home', '/tour/360', '/diorama', '/time-portal'] },
     { to: '/chat', icon: 'forum', label: 'Trợ lý AI', modes: 'both' as const, prefixes: ['/chat'] },
     { to: '/ar-experience', icon: 'view_in_ar', label: 'AR', modes: 'both' as const, prefixes: ['/ar-experience', '/scan'] },
-    { to: '/living-world', icon: 'assignment', label: 'Nhiệm vụ', modes: 'both' as const, prefixes: ['/living-world', '/quests'] },
+    { to: '/quests', icon: 'assignment', label: 'Nhiệm vụ', modes: 'both' as const, prefixes: ['/living-world', '/quests'] },
     { to: '/artifacts', icon: 'history_edu', label: 'Bảo tàng', modes: 'both' as const, prefixes: ['/artifacts'] },
     { to: '/photo-frame', icon: 'photo_camera', label: 'Ảnh & chia sẻ', modes: 'both' as const, prefixes: ['/photo-frame'] },
 ] as const
@@ -172,7 +173,7 @@ export function SideNav({
             </div>
 
             <Link to="/" aria-label="TimeLens - Về trang chủ" title="Về trang chủ" className={`mb-3 flex shrink-0 items-center gap-2 min-w-0 rounded-lg transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0275FB] ${isCollapsed ? 'justify-center' : ''}`}>
-                <img src="/brand/icon-192.png" alt="TimeLens Logo" className="h-10 w-8 shrink-0 object-contain" />
+                <TimeLensMark />
 
                 {!isCollapsed && (
                     <div className="flex min-w-0 flex-col">
@@ -230,7 +231,7 @@ export function SideNavTablet() {
 
     return (
         <nav className={`hidden md:flex lg:hidden h-dvh w-20 fixed left-0 top-0 border-r backdrop-blur-2xl flex-col py-3 px-2.5 z-40 items-center ${t.shellTablet}`}>
-            <Link to="/" aria-label="TimeLens - Về trang chủ" title="Về trang chủ" className="mb-4 flex h-11 w-full shrink-0 items-center justify-center rounded-lg focus-visible:outline-2 focus-visible:outline-[#0275FB]"><img src="/brand/icon-192.png" alt="TimeLens" className="h-10 w-8 object-contain" /></Link>
+            <Link to="/" aria-label="TimeLens - Về trang chủ" title="Về trang chủ" className="mb-4 flex h-11 w-full shrink-0 items-center justify-center rounded-lg focus-visible:outline-2 focus-visible:outline-[#0275FB]"><TimeLensMark /></Link>
             <div className="flex flex-col justify-between gap-1 flex-1 min-h-0 w-full overflow-y-auto custom-scrollbar">
                 {items.map((item) => {
                     const isActive = item.prefixes.some((p) => pathname === p || pathname.startsWith(`${p}/`))
